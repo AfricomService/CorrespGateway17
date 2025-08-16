@@ -1,0 +1,27 @@
+{
+  "correspCareApp": {
+    "rules": {
+      "home": {
+        "title": "Rules",
+        "refreshListLabel": "Actualiser la liste",
+        "createLabel": "Créer un nouveau Rules",
+        "createOrEditLabel": "Créer ou éditer un Rules",
+        "notFound": "Aucun Rules trouvé"
+      },
+      "created": "Un nouveau Rules a été créé avec l'identifiant {{ param }}",
+      "updated": "Le Rules avec l'identifiant {{ param }} a été mis à jour",
+      "deleted": "Le Rules avec l'identifiant {{ param }} a été supprimé",
+      "delete": {
+        "question": "Êtes-vous certain de vouloir supprimer le Rules {{ id }} ?"
+      },
+      "detail": {
+        "title": "Rules"
+      },
+      "id": "ID",
+      "name": "Name",
+      "code": "Code",
+      "isActif": "Is Actif",
+      "file": "File"
+    }
+  }
+}

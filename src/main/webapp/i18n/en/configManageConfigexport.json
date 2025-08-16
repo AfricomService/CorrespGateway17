@@ -1,0 +1,33 @@
+{
+  "correspCareApp": {
+    "configManageConfigexport": {
+      "home": {
+        "title": "Configexports",
+        "refreshListLabel": "Refresh list",
+        "createLabel": "Create a new Configexport",
+        "createOrEditLabel": "Create or edit a Configexport",
+        "notFound": "No Configexports found"
+      },
+      "delete": {
+        "question": "Are you sure you want to delete Configexport {{ id }}?"
+      },
+      "detail": {
+        "title": "Configexport"
+      },
+      "id": "Id",
+      "label": "Label",
+      "active": "Active",
+      "excelFile": "Excel File",
+      "dateCreated": "Date Created",
+      "configMappingJson": "Config Mapping Json",
+      "readAccess": "Read Access"
+    }
+  },
+  "configManageApp": {
+    "configManageConfigexport": {
+      "created": "A new Configexport is created with identifier {{ param }}",
+      "updated": "A Configexport is updated with identifier {{ param }}",
+      "deleted": "A Configexport is deleted with identifier {{ param }}"
+    }
+  }
+}

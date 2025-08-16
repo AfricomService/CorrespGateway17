@@ -1,0 +1,101 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <form name="editForm" role="form" novalidate (ngSubmit)="save()" [formGroup]="editForm">
+      <h2
+        id="jhi-hist-consult-heading"
+        data-cy="HistConsultCreateUpdateHeading"
+        jhiTranslate="correspCareApp.journauxHistConsult.home.createOrEditLabel"
+      >
+        Créer ou éditer un Hist Consult
+      </h2>
+
+      <div>
+        <jhi-alert-error></jhi-alert-error>
+
+        <div class="row mb-3" *ngIf="editForm.controls.id.value !== null">
+          <label class="form-label" jhiTranslate="global.field.id" for="field_id">ID</label>
+          <input type="number" class="form-control" name="id" id="field_id" data-cy="id" formControlName="id" [readonly]="true" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.journauxHistConsult.labelAction" for="field_labelAction"
+            >Label Action</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            name="labelAction"
+            id="field_labelAction"
+            data-cy="labelAction"
+            formControlName="labelAction"
+          />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.journauxHistConsult.user" for="field_user">User</label>
+          <input type="text" class="form-control" name="user" id="field_user" data-cy="user" formControlName="user" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.journauxHistConsult.dateTransaction" for="field_dateTransaction"
+            >Date Transaction</label
+          >
+          <div class="d-flex">
+            <input
+              id="field_dateTransaction"
+              data-cy="dateTransaction"
+              type="datetime-local"
+              class="form-control"
+              name="dateTransaction"
+              formControlName="dateTransaction"
+              placeholder="YYYY-MM-DD HH:mm"
+            />
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.journauxHistConsult.categorie" for="field_categorie">Categorie</label>
+          <input type="text" class="form-control" name="categorie" id="field_categorie" data-cy="categorie" formControlName="categorie" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.journauxHistConsult.navigateur" for="field_navigateur">Navigateur</label>
+          <input
+            type="text"
+            class="form-control"
+            name="navigateur"
+            id="field_navigateur"
+            data-cy="navigateur"
+            formControlName="navigateur"
+          />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.journauxHistConsult.ip" for="field_ip">Ip</label>
+          <input type="text" class="form-control" name="ip" id="field_ip" data-cy="ip" formControlName="ip" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.journauxHistConsult.terminal" for="field_terminal">Terminal</label>
+          <input type="text" class="form-control" name="terminal" id="field_terminal" data-cy="terminal" formControlName="terminal" />
+        </div>
+      </div>
+
+      <div>
+        <button type="button" id="cancel-save" data-cy="entityCreateCancelButton" class="btn btn-secondary" (click)="previousState()">
+          <fa-icon icon="ban"></fa-icon>&nbsp;<span jhiTranslate="entity.action.cancel">Annuler</span>
+        </button>
+
+        <button
+          type="submit"
+          id="save-entity"
+          data-cy="entityCreateSaveButton"
+          [disabled]="editForm.invalid || isSaving"
+          class="btn btn-primary"
+        >
+          <fa-icon icon="save"></fa-icon>&nbsp;<span jhiTranslate="entity.action.save">Sauvegarder</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,44 @@
+{
+  "applications": ["Corresp_Care"],
+  "changelogDate": "20250816103251",
+  "clientRootFolder": "configManage",
+  "databaseType": "sql",
+  "dto": "mapstruct",
+  "embedded": false,
+  "entityTableName": "typedocument",
+  "fields": [
+    {
+      "fieldName": "id",
+      "fieldType": "Long"
+    },
+    {
+      "fieldName": "nom",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "defautdest",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "defaultobject",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "defaultencopie",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "usualstatus",
+      "fieldType": "UsualStatus",
+      "fieldValues": "ACTIVE,DELETED,DISABLED"
+    }
+  ],
+  "fluentMethods": true,
+  "jpaMetamodelFiltering": false,
+  "microserviceName": "configManage",
+  "name": "Typedocument",
+  "pagination": "pagination",
+  "readOnly": false,
+  "relationships": [],
+  "service": "serviceClass"
+}

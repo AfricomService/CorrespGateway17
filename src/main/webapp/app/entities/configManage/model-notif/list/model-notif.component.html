@@ -1,0 +1,155 @@
+<div>
+  <h2 id="page-heading" data-cy="ModelNotifHeading">
+    <span jhiTranslate="correspCareApp.configManageModelNotif.home.title">ModelNotifs</span>
+
+    <div class="d-flex justify-content-end">
+      <button class="btn btn-info me-2" (click)="load()" [disabled]="isLoading">
+        <fa-icon icon="sync" [spin]="isLoading"></fa-icon>
+        <span jhiTranslate="correspCareApp.configManageModelNotif.home.refreshListLabel">Actualiser la liste</span>
+      </button>
+
+      <button
+        id="jh-create-entity"
+        data-cy="entityCreateButton"
+        class="btn btn-primary jh-create-entity create-model-notif"
+        [routerLink]="['/model-notif/new']"
+      >
+        <fa-icon icon="plus"></fa-icon>
+        <span jhiTranslate="correspCareApp.configManageModelNotif.home.createLabel"> Créer un nouveau Model Notif </span>
+      </button>
+    </div>
+  </h2>
+
+  <jhi-alert-error></jhi-alert-error>
+
+  <jhi-alert></jhi-alert>
+
+  <div class="alert alert-warning" id="no-result" *ngIf="modelNotifs?.length === 0">
+    <span jhiTranslate="correspCareApp.configManageModelNotif.home.notFound">Aucun Model Notif trouvé</span>
+  </div>
+
+  <div class="table-responsive table-entities" id="entities" *ngIf="modelNotifs && modelNotifs.length > 0">
+    <table class="table table-striped" aria-describedby="page-heading">
+      <thead>
+        <tr jhiSort [(predicate)]="predicate" [(ascending)]="ascending" (sortChange)="navigateToWithComponentValues()">
+          <th scope="col" jhiSortBy="id">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.configManageModelNotif.id">Id</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="name">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.configManageModelNotif.name">Name</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="famille">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.configManageModelNotif.famille">Famille</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="code">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.configManageModelNotif.code">Code</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="content">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.configManageModelNotif.content">Content</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="subjectFormula">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.configManageModelNotif.subjectFormula">Subject Formula</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="senderEmailFormule">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.configManageModelNotif.senderEmailFormule">Sender Email Formule</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="recepientEmailFormule">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.configManageModelNotif.recepientEmailFormule">Recepient Email Formule</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="createdDate">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.configManageModelNotif.createdDate">Created Date</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let modelNotif of modelNotifs; trackBy: trackId" data-cy="entityTable">
+          <td>
+            <a [routerLink]="['/model-notif', modelNotif.id, 'view']">{{ modelNotif.id }}</a>
+          </td>
+          <td>{{ modelNotif.name }}</td>
+          <td>{{ modelNotif.famille }}</td>
+          <td>{{ modelNotif.code }}</td>
+          <td>{{ modelNotif.content }}</td>
+          <td>{{ modelNotif.subjectFormula }}</td>
+          <td>{{ modelNotif.senderEmailFormule }}</td>
+          <td>{{ modelNotif.recepientEmailFormule }}</td>
+          <td>{{ modelNotif.createdDate | formatMediumDatetime }}</td>
+          <td class="text-end">
+            <div class="btn-group">
+              <button
+                type="submit"
+                [routerLink]="['/model-notif', modelNotif.id, 'view']"
+                class="btn btn-info btn-sm"
+                data-cy="entityDetailsButton"
+              >
+                <fa-icon icon="eye"></fa-icon>
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.view">Voir</span>
+              </button>
+
+              <button
+                type="submit"
+                [routerLink]="['/model-notif', modelNotif.id, 'edit']"
+                class="btn btn-primary btn-sm"
+                data-cy="entityEditButton"
+              >
+                <fa-icon icon="pencil-alt"></fa-icon>
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.edit">Editer</span>
+              </button>
+
+              <button type="submit" (click)="delete(modelNotif)" class="btn btn-danger btn-sm" data-cy="entityDeleteButton">
+                <fa-icon icon="times"></fa-icon>
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.delete">Supprimer</span>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div *ngIf="modelNotifs && modelNotifs.length > 0">
+    <div class="d-flex justify-content-center">
+      <jhi-item-count [params]="{ page: page, totalItems: totalItems, itemsPerPage: itemsPerPage }"></jhi-item-count>
+    </div>
+
+    <div class="d-flex justify-content-center">
+      <ngb-pagination
+        [collectionSize]="totalItems"
+        [page]="page"
+        [pageSize]="itemsPerPage"
+        [maxSize]="5"
+        [rotate]="true"
+        [boundaryLinks]="true"
+        (pageChange)="navigateToPage($event)"
+      ></ngb-pagination>
+    </div>
+  </div>
+</div>

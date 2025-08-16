@@ -1,0 +1,34 @@
+{
+  "correspCareApp": {
+    "journauxHistConsult": {
+      "home": {
+        "title": "Hist Consults",
+        "refreshListLabel": "Refresh list",
+        "createLabel": "Create a new Hist Consult",
+        "createOrEditLabel": "Create or edit a Hist Consult",
+        "notFound": "No Hist Consults found"
+      },
+      "delete": {
+        "question": "Are you sure you want to delete Hist Consult {{ id }}?"
+      },
+      "detail": {
+        "title": "Hist Consult"
+      },
+      "id": "ID",
+      "labelAction": "Label Action",
+      "user": "User",
+      "dateTransaction": "Date Transaction",
+      "categorie": "Categorie",
+      "navigateur": "Navigateur",
+      "ip": "Ip",
+      "terminal": "Terminal"
+    }
+  },
+  "journauxApp": {
+    "journauxHistConsult": {
+      "created": "A new Hist Consult is created with identifier {{ param }}",
+      "updated": "A Hist Consult is updated with identifier {{ param }}",
+      "deleted": "A Hist Consult is deleted with identifier {{ param }}"
+    }
+  }
+}

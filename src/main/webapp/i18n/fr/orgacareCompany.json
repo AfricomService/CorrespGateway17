@@ -1,0 +1,36 @@
+{
+  "correspCareApp": {
+    "orgacareCompany": {
+      "home": {
+        "title": "Companies",
+        "refreshListLabel": "Actualiser la liste",
+        "createLabel": "Créer un nouveau Company",
+        "createOrEditLabel": "Créer ou éditer un Company",
+        "notFound": "Aucun Company trouvé"
+      },
+      "delete": {
+        "question": "Êtes-vous certain de vouloir supprimer le Company {{ id }} ?"
+      },
+      "detail": {
+        "title": "Company"
+      },
+      "id": "Id",
+      "name": "Name",
+      "registrationNumber": "Registration Number",
+      "address": "Address",
+      "email": "Email",
+      "phoneNumber": "Phone Number",
+      "website": "Website",
+      "foundedDate": "Founded Date",
+      "createdDate": "Created Date",
+      "updatedDate": "Updated Date"
+    }
+  },
+  "orgacareApp": {
+    "orgacareCompany": {
+      "created": "Un nouveau Company a été créé avec l'identifiant {{ param }}",
+      "updated": "Le Company avec l'identifiant {{ param }} a été mis à jour",
+      "deleted": "Le Company avec l'identifiant {{ param }} a été supprimé"
+    }
+  }
+}

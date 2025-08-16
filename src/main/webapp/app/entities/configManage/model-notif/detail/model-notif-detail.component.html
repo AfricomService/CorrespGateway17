@@ -1,0 +1,60 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <div *ngIf="modelNotif">
+      <h2 data-cy="modelNotifDetailsHeading"><span jhiTranslate="correspCareApp.configManageModelNotif.detail.title">Model Notif</span></h2>
+
+      <hr />
+
+      <jhi-alert-error></jhi-alert-error>
+
+      <jhi-alert></jhi-alert>
+
+      <dl class="row-md jh-entity-details">
+        <dt><span jhiTranslate="correspCareApp.configManageModelNotif.id">Id</span></dt>
+        <dd>
+          <span>{{ modelNotif.id }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageModelNotif.name">Name</span></dt>
+        <dd>
+          <span>{{ modelNotif.name }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageModelNotif.famille">Famille</span></dt>
+        <dd>
+          <span>{{ modelNotif.famille }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageModelNotif.code">Code</span></dt>
+        <dd>
+          <span>{{ modelNotif.code }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageModelNotif.content">Content</span></dt>
+        <dd>
+          <span>{{ modelNotif.content }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageModelNotif.subjectFormula">Subject Formula</span></dt>
+        <dd>
+          <span>{{ modelNotif.subjectFormula }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageModelNotif.senderEmailFormule">Sender Email Formule</span></dt>
+        <dd>
+          <span>{{ modelNotif.senderEmailFormule }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageModelNotif.recepientEmailFormule">Recepient Email Formule</span></dt>
+        <dd>
+          <span>{{ modelNotif.recepientEmailFormule }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageModelNotif.createdDate">Created Date</span></dt>
+        <dd>
+          <span>{{ modelNotif.createdDate | formatMediumDatetime }}</span>
+        </dd>
+      </dl>
+
+      <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+        <fa-icon icon="arrow-left"></fa-icon>&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+      </button>
+
+      <button type="button" [routerLink]="['/model-notif', modelNotif.id, 'edit']" class="btn btn-primary">
+        <fa-icon icon="pencil-alt"></fa-icon>&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+      </button>
+    </div>
+  </div>
+</div>

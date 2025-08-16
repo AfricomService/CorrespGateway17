@@ -1,0 +1,64 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <div *ngIf="company">
+      <h2 data-cy="companyDetailsHeading"><span jhiTranslate="correspCareApp.orgacareCompany.detail.title">Company</span></h2>
+
+      <hr />
+
+      <jhi-alert-error></jhi-alert-error>
+
+      <jhi-alert></jhi-alert>
+
+      <dl class="row-md jh-entity-details">
+        <dt><span jhiTranslate="correspCareApp.orgacareCompany.id">Id</span></dt>
+        <dd>
+          <span>{{ company.id }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.orgacareCompany.name">Name</span></dt>
+        <dd>
+          <span>{{ company.name }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.orgacareCompany.registrationNumber">Registration Number</span></dt>
+        <dd>
+          <span>{{ company.registrationNumber }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.orgacareCompany.address">Address</span></dt>
+        <dd>
+          <span>{{ company.address }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.orgacareCompany.email">Email</span></dt>
+        <dd>
+          <span>{{ company.email }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.orgacareCompany.phoneNumber">Phone Number</span></dt>
+        <dd>
+          <span>{{ company.phoneNumber }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.orgacareCompany.website">Website</span></dt>
+        <dd>
+          <span>{{ company.website }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.orgacareCompany.foundedDate">Founded Date</span></dt>
+        <dd>
+          <span>{{ company.foundedDate | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.orgacareCompany.createdDate">Created Date</span></dt>
+        <dd>
+          <span>{{ company.createdDate | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.orgacareCompany.updatedDate">Updated Date</span></dt>
+        <dd>
+          <span>{{ company.updatedDate | formatMediumDatetime }}</span>
+        </dd>
+      </dl>
+
+      <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+        <fa-icon icon="arrow-left"></fa-icon>&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+      </button>
+
+      <button type="button" [routerLink]="['/company', company.id, 'edit']" class="btn btn-primary">
+        <fa-icon icon="pencil-alt"></fa-icon>&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+      </button>
+    </div>
+  </div>
+</div>

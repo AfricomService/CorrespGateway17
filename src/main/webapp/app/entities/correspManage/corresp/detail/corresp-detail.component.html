@@ -1,0 +1,164 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <div *ngIf="corresp">
+      <h2 data-cy="correspDetailsHeading"><span jhiTranslate="correspCareApp.correspManageCorresp.detail.title">Corresp</span></h2>
+
+      <hr />
+
+      <jhi-alert-error></jhi-alert-error>
+
+      <jhi-alert></jhi-alert>
+
+      <dl class="row-md jh-entity-details">
+        <dt><span jhiTranslate="global.field.id">ID</span></dt>
+        <dd>
+          <span>{{ corresp.id }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageCorresp.idinstance">Idinstance</span></dt>
+        <dd>
+          <span>{{ corresp.idinstance }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageCorresp.reference">Reference</span></dt>
+        <dd>
+          <span>{{ corresp.reference }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageCorresp.subject">Subject</span></dt>
+        <dd>
+          <span>{{ corresp.subject }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageCorresp.dateCreated">Date Created</span></dt>
+        <dd>
+          <span>{{ corresp.dateCreated | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageCorresp.courrierDate">Courrier Date</span></dt>
+        <dd>
+          <span>{{ corresp.courrierDate | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageCorresp.status">Status</span></dt>
+        <dd>
+          <span jhiTranslate="{{ 'correspCareApp.CorrespStatus.' + corresp.status }}">{{ corresp.status }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageCorresp.priority">Priority</span></dt>
+        <dd>
+          <span>{{ corresp.priority }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageCorresp.body">Body</span></dt>
+        <dd>
+          <span>{{ corresp.body }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageCorresp.corresptype">Corresptype</span></dt>
+        <dd>
+          <span jhiTranslate="{{ 'correspCareApp.CorrespType.' + corresp.corresptype }}">{{ corresp.corresptype }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageCorresp.sender">Sender</span></dt>
+        <dd>
+          <span>{{ corresp.sender }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageCorresp.needsResponse">Needs Response</span></dt>
+        <dd>
+          <span>{{ corresp.needsResponse }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageCorresp.responseTo">Response To</span></dt>
+        <dd>
+          <span>{{ corresp.responseTo }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageCorresp.step">Step</span></dt>
+        <dd>
+          <span>{{ corresp.step }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageCorresp.stepCode">Step Code</span></dt>
+        <dd>
+          <span>{{ corresp.stepCode }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageCorresp.processId">Process Id</span></dt>
+        <dd>
+          <span>{{ corresp.processId }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageCorresp.processVersion">Process Version</span></dt>
+        <dd>
+          <span>{{ corresp.processVersion }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageCorresp.contact">Contact</span></dt>
+        <dd>
+          <span>{{ corresp.contact }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageCorresp.senderReference">Sender Reference</span></dt>
+        <dd>
+          <span>{{ corresp.senderReference }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageCorresp.dispatchType">Dispatch Type</span></dt>
+        <dd>
+          <span jhiTranslate="{{ 'correspCareApp.DispatchType.' + corresp.dispatchType }}">{{ corresp.dispatchType }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageCorresp.contactCompany">Contact Company</span></dt>
+        <dd>
+          <span>{{ corresp.contactCompany }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageCorresp.personCompany">Person Company</span></dt>
+        <dd>
+          <span>{{ corresp.personCompany }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageCorresp.contactAddress">Contact Address</span></dt>
+        <dd>
+          <span>{{ corresp.contactAddress }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageCorresp.contactEmail">Contact Email</span></dt>
+        <dd>
+          <span>{{ corresp.contactEmail }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageCorresp.contactEmailCc">Contact Email Cc</span></dt>
+        <dd>
+          <span>{{ corresp.contactEmailCc }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageCorresp.createdBy">Created By</span></dt>
+        <dd>
+          <span>{{ corresp.createdBy }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageCorresp.updatedBy">Updated By</span></dt>
+        <dd>
+          <span>{{ corresp.updatedBy }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageCorresp.updatedDate">Updated Date</span></dt>
+        <dd>
+          <span>{{ corresp.updatedDate | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageCorresp.dossiers">Dossiers</span></dt>
+        <dd>
+          <span *ngFor="let dossiers of corresp.dossiers; let last = last">
+            <a [routerLink]="['/dossier', dossiers.id, 'view']">{{ dossiers.id }}</a
+            >{{ last ? '' : ', ' }}
+          </span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageCorresp.bordereaux">Bordereaux</span></dt>
+        <dd>
+          <span *ngFor="let bordereaux of corresp.bordereaux; let last = last">
+            <a [routerLink]="['/bordereaux', bordereaux.id, 'view']">{{ bordereaux.id }}</a
+            >{{ last ? '' : ', ' }}
+          </span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageCorresp.attachments">Attachments</span></dt>
+        <dd>
+          <span *ngFor="let attachments of corresp.attachments; let last = last">
+            <a [routerLink]="['/pj', attachments.id, 'view']">{{ attachments.id }}</a
+            >{{ last ? '' : ', ' }}
+          </span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageCorresp.tasks">Tasks</span></dt>
+        <dd>
+          <span *ngFor="let tasks of corresp.tasks; let last = last">
+            <a [routerLink]="['/tasks', tasks.id, 'view']">{{ tasks.id }}</a
+            >{{ last ? '' : ', ' }}
+          </span>
+        </dd>
+      </dl>
+
+      <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+        <fa-icon icon="arrow-left"></fa-icon>&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+      </button>
+
+      <button type="button" [routerLink]="['/corresp', corresp.id, 'edit']" class="btn btn-primary">
+        <fa-icon icon="pencil-alt"></fa-icon>&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+      </button>
+    </div>
+  </div>
+</div>

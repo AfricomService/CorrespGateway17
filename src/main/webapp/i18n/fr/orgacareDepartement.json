@@ -1,0 +1,32 @@
+{
+  "correspCareApp": {
+    "orgacareDepartement": {
+      "home": {
+        "title": "Departements",
+        "refreshListLabel": "Actualiser la liste",
+        "createLabel": "Créer un nouveau Departement",
+        "createOrEditLabel": "Créer ou éditer un Departement",
+        "notFound": "Aucun Departement trouvé"
+      },
+      "delete": {
+        "question": "Êtes-vous certain de vouloir supprimer le Departement {{ id }} ?"
+      },
+      "detail": {
+        "title": "Departement"
+      },
+      "id": "Id",
+      "code": "Code",
+      "name": "Name",
+      "description": "Description",
+      "createdDate": "Created Date",
+      "updatedDate": "Updated Date"
+    }
+  },
+  "orgacareApp": {
+    "orgacareDepartement": {
+      "created": "Un nouveau Departement a été créé avec l'identifiant {{ param }}",
+      "updated": "Le Departement avec l'identifiant {{ param }} a été mis à jour",
+      "deleted": "Le Departement avec l'identifiant {{ param }} a été supprimé"
+    }
+  }
+}

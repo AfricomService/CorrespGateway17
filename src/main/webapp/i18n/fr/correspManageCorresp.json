@@ -1,0 +1,58 @@
+{
+  "correspCareApp": {
+    "correspManageCorresp": {
+      "home": {
+        "title": "Corresps",
+        "refreshListLabel": "Actualiser la liste",
+        "createLabel": "Créer un nouveau Corresp",
+        "createOrEditLabel": "Créer ou éditer un Corresp",
+        "notFound": "Aucun Corresp trouvé"
+      },
+      "delete": {
+        "question": "Êtes-vous certain de vouloir supprimer le Corresp {{ id }} ?"
+      },
+      "detail": {
+        "title": "Corresp"
+      },
+      "id": "ID",
+      "idinstance": "Idinstance",
+      "reference": "Reference",
+      "subject": "Subject",
+      "dateCreated": "Date Created",
+      "courrierDate": "Courrier Date",
+      "status": "Status",
+      "priority": "Priority",
+      "body": "Body",
+      "corresptype": "Corresptype",
+      "sender": "Sender",
+      "needsResponse": "Needs Response",
+      "responseTo": "Response To",
+      "step": "Step",
+      "stepCode": "Step Code",
+      "processId": "Process Id",
+      "processVersion": "Process Version",
+      "contact": "Contact",
+      "senderReference": "Sender Reference",
+      "dispatchType": "Dispatch Type",
+      "contactCompany": "Contact Company",
+      "personCompany": "Person Company",
+      "contactAddress": "Contact Address",
+      "contactEmail": "Contact Email",
+      "contactEmailCc": "Contact Email Cc",
+      "createdBy": "Created By",
+      "updatedBy": "Updated By",
+      "updatedDate": "Updated Date",
+      "dossiers": "Dossiers",
+      "bordereaux": "Bordereaux",
+      "attachments": "Attachments",
+      "tasks": "Tasks"
+    }
+  },
+  "correspManageApp": {
+    "correspManageCorresp": {
+      "created": "Un nouveau Corresp a été créé avec l'identifiant {{ param }}",
+      "updated": "Le Corresp avec l'identifiant {{ param }} a été mis à jour",
+      "deleted": "Le Corresp avec l'identifiant {{ param }} a été supprimé"
+    }
+  }
+}

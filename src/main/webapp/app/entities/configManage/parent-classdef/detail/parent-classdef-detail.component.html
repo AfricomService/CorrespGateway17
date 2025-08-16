@@ -1,0 +1,40 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <div *ngIf="parentClassdef">
+      <h2 data-cy="parentClassdefDetailsHeading">
+        <span jhiTranslate="correspCareApp.configManageParentClassdef.detail.title">Parent Classdef</span>
+      </h2>
+
+      <hr />
+
+      <jhi-alert-error></jhi-alert-error>
+
+      <jhi-alert></jhi-alert>
+
+      <dl class="row-md jh-entity-details">
+        <dt><span jhiTranslate="correspCareApp.configManageParentClassdef.id">Id</span></dt>
+        <dd>
+          <span>{{ parentClassdef.id }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageParentClassdef.type">Type</span></dt>
+        <dd>
+          <span jhiTranslate="{{ 'correspCareApp.CorrespType.' + parentClassdef.type }}">{{ parentClassdef.type }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageParentClassdef.sequenceId">Sequence Id</span></dt>
+        <dd>
+          <div *ngIf="parentClassdef.sequenceId">
+            <a [routerLink]="['/numsequentielle', parentClassdef.sequenceId.id, 'view']">{{ parentClassdef.sequenceId.id }}</a>
+          </div>
+        </dd>
+      </dl>
+
+      <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+        <fa-icon icon="arrow-left"></fa-icon>&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+      </button>
+
+      <button type="button" [routerLink]="['/parent-classdef', parentClassdef.id, 'edit']" class="btn btn-primary">
+        <fa-icon icon="pencil-alt"></fa-icon>&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+      </button>
+    </div>
+  </div>
+</div>

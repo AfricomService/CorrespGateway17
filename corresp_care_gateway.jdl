@@ -1,0 +1,358 @@
+application {
+  config {
+    baseName Corresp_Care
+    applicationType gateway
+    packageName com.africom.ccgateway
+    authenticationType jwt
+    prodDatabaseType postgresql
+    clientFramework angularX
+    buildTool maven
+    cacheProvider hazelcast
+    clientPackageManager npm
+    clientTheme flatly
+    clientThemeVariant primary
+    databaseType sql
+    devDatabaseType postgresql
+    dtoSuffix DTO
+    embeddableLaunchScript false
+    enableHibernateCache false
+    enableSwaggerCodegen false
+    enableTranslation true
+    jhiPrefix jhi
+    languages [fr, ar-ly, en]
+    nativeLanguage fr
+    serverPort 8080
+    serviceDiscoveryType eureka
+    skipClient false
+    skipServer false
+    skipUserManagement false
+    websocket false
+  }
+  entities *
+}
+
+entity Rules {
+  name String,
+  code String,
+  isActif Boolean,
+  file Blob
+}
+
+entity HistConsult {
+  labelAction String, 
+  user String,
+  dateTransaction ZonedDateTime,
+  categorie String,
+  navigateur String,
+  ip String,
+  terminal String
+}
+
+entity Message {
+  content String required,
+  timestamp ZonedDateTime required
+}
+
+entity Corresp {
+    idinstance UUID required,
+    reference String,
+    subject String required,
+    dateCreated ZonedDateTime required,
+    courrierDate ZonedDateTime required,
+    status CorrespStatus required,
+    priority Boolean,
+    body TextBlob,
+    corresptype CorrespType required,
+    sender String required,
+    needsResponse Boolean,
+    responseTo String,
+    step String,
+    stepCode String,
+    processId Long,
+    processVersion String,
+    contact String,
+    senderReference String,
+    dispatchType DispatchType required,
+    contactCompany String,
+    personCompany String,
+    contactAddress String,
+    contactEmail String,
+    contactEmailCc String,
+    createdBy String,
+    updatedBy String,
+    updatedDate ZonedDateTime
+}
+
+entity Note {
+    idinstance UUID required,
+    reference String,
+    subject String required,
+    dateCreated ZonedDateTime required,
+    datePublication ZonedDateTime required,
+    dateEndPublication ZonedDateTime required,
+    status CorrespStatus required,
+    createdBy String,
+    updatedBy String,
+    updatedDate ZonedDateTime
+}
+
+entity Pj {
+    name String,
+    fileType String,
+    path String,
+    creationDate ZonedDateTime,
+    password String,
+    transferable Boolean,
+    uniqueName String,
+    status UsualStatus,
+    createdBy String,
+    updatedBy String,
+    updatedDate ZonedDateTime
+}
+
+entity Tasks {
+    object String required,
+    content Blob,
+    creationDate ZonedDateTime,
+    startDate ZonedDateTime,
+    dueDate ZonedDateTime,
+    closeDate ZonedDateTime,
+    responsible String,
+    status CorrespStatus,
+    createdBy String,
+    updatedBy String,
+    updatedDate ZonedDateTime
+}
+
+entity Bordereaux {
+    reference String required unique,
+    description String,
+    amount BigDecimal required,
+    currency String,
+    status String required,
+    issuedDate ZonedDateTime required,
+    dueDate ZonedDateTime,
+    createdDate ZonedDateTime,
+    updatedDate ZonedDateTime,
+    createdBy String,
+    updatedBy String
+}
+
+entity Dossier {
+    name String,
+    isPublic Boolean,
+    responsible String,
+    status UsualStatus,
+    dossierList Blob,
+    createdBy String,
+    updatedBy String,
+    updatedDate ZonedDateTime
+}
+
+entity HistAction {
+  id Long,
+  dateTransaction ZonedDateTime,
+  loginUser String,
+  transaction String,
+  actionRef String,
+  actionJson String
+}
+
+entity ContactCompany {
+  id Long,
+  nom String required,
+  nomabrege String,
+  matrne String,
+  pays String,
+  adresse String,
+  tel String,
+  fax String,
+  email String,
+  webpage String,
+  etat UsualStatus
+}
+
+entity PersonCompany {
+  id Long,
+  nom String required,
+  pays String,
+  adresse String,
+  tel String,
+  fax String,
+  email String,
+  whatsapp String,
+  etat UsualStatus
+}
+
+entity Company {
+  id Long,                        
+  name String required,           
+  registrationNumber String unique, 
+  address String,                 
+  email String, 
+  phoneNumber String,             
+  website String,                 
+  foundedDate ZonedDateTime,          
+  createdDate ZonedDateTime, 
+  updatedDate ZonedDateTime             
+}
+
+entity OrgaEntity {
+  id Long,
+  name String required,
+  description String,
+  createdDate ZonedDateTime,
+  updatedDate ZonedDateTime
+}
+
+entity Employe {
+  id Long,
+  jobTitle String,
+  email String,
+  phoneNumber String
+}
+
+entity Departement {
+  id Long,
+  code String unique required,
+  name String required,
+  description String,
+  createdDate ZonedDateTime,
+  updatedDate ZonedDateTime
+}
+
+entity ParentClassdef {
+  id Long,
+  type CorrespType
+}
+
+entity Typedocument {
+  id Long,
+  nom String,
+  defautdest String,
+  defaultobject String,
+  defaultencopie String,
+  usualstatus UsualStatus
+}
+
+entity ModelNotif {
+  id UUID required,
+  name String required,
+  famille String,
+  code String unique,
+  content TextBlob,
+  subjectFormula String,
+  senderEmailFormule String required,
+  recepientEmailFormule String,   
+  createdDate ZonedDateTime required
+}
+
+entity Notif {
+  id UUID required,
+  title String,
+  body TextBlob,
+  recipientEmail String required,
+  recipeientccemail String,
+  receipientbccemail String,
+  senderEmail String required,
+  sentDate ZonedDateTime,
+  status NotificationStatus required,
+  typeNotif String,
+  messageID Long
+}
+
+entity Numsequentielle {
+  id UUID required,
+  prefix String,
+  nextNumber Long required,
+  format String
+}
+
+entity Connecteur {
+  id Long,
+  name String,
+  codeRules String,
+  protocol String,
+  host String,
+  port String,
+  enable String,
+  email String,
+  password String, 
+  folderSource String,
+  folderonOK String,
+  folderonError String, 
+  isActif Boolean
+} 
+
+entity Configexport {
+  id Long,
+  label String,
+  active Boolean,
+  excelFile Blob,
+  dateCreated ZonedDateTime,
+  configMappingJson String,
+  readAccess String
+}
+
+entity Myreport {
+  id Long,
+  dateCreated ZonedDateTime,
+  loginName String,
+  loginId Long,
+  nameFile String,
+  nameFolder String,
+  configExportId Long
+}
+
+relationship ManyToMany {
+  Corresp{dossiers} to Dossier{corresps}
+  Corresp{bordereaux} to Bordereaux{corresps}
+  Corresp{attachments} to Pj{corresps}
+  Corresp{tasks} to Tasks{corresps}
+}
+
+relationship OneToOne {
+  Note{attachment} to Pj
+}
+
+relationship ManyToOne {
+  OrgaEntity{departement} to Departement,
+  OrgaEntity{employe} to Employe,
+  Myreport{configexport} to Configexport,
+  ParentClassdef{sequenceId} to Numsequentielle
+}
+
+enum CorrespStatus {
+  DRAFT, IN_PROGRESS, CLOSED, CANCELLED
+}
+
+enum CorrespType {
+  INCOMING, OUTGOING, INTERNAL
+}
+
+enum DispatchType {
+  LETTER, REGISTERED_LETTER, EMAIL, FAX
+}
+
+enum UsualStatus {
+  ACTIVE, DELETED, DISABLED
+}
+
+enum UserRole {
+  BOC_AGENT, DIRECTOR, ADMIN, USER, READALL, READINCOM, READOUT, READINT, CREATEINCOM, CREATEOUT, CREATEINT, MANAGECONTACT
+}
+
+enum NotificationStatus {
+  PENDING, SENT, FAILED
+}
+
+dto * with mapstruct
+paginate * with pagination
+service * with serviceClass
+
+microservice Notif, Connecteur with connectionManage
+microservice Typedocument, ModelNotif, Numsequentielle, Pj, Configexport, Myreport, ContactCompany, PersonCompany, ParentClassdef with configManage
+microservice Company, Departement, OrgaEntity with orgacare
+microservice Corresp, Note, Pj, Tasks, Bordereaux, Dossier, HistAction with correspManage
+microservice HistAction, HistConsult with journaux
+microservice Message with kafkaService

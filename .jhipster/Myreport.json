@@ -1,0 +1,53 @@
+{
+  "applications": ["Corresp_Care"],
+  "changelogDate": "20250816103851",
+  "clientRootFolder": "configManage",
+  "databaseType": "sql",
+  "dto": "mapstruct",
+  "embedded": false,
+  "entityTableName": "myreport",
+  "fields": [
+    {
+      "fieldName": "id",
+      "fieldType": "Long"
+    },
+    {
+      "fieldName": "dateCreated",
+      "fieldType": "ZonedDateTime"
+    },
+    {
+      "fieldName": "loginName",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "loginId",
+      "fieldType": "Long"
+    },
+    {
+      "fieldName": "nameFile",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "nameFolder",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "configExportId",
+      "fieldType": "Long"
+    }
+  ],
+  "fluentMethods": true,
+  "jpaMetamodelFiltering": false,
+  "microserviceName": "configManage",
+  "name": "Myreport",
+  "pagination": "pagination",
+  "readOnly": false,
+  "relationships": [
+    {
+      "otherEntityName": "configexport",
+      "relationshipName": "configexport",
+      "relationshipType": "many-to-one"
+    }
+  ],
+  "service": "serviceClass"
+}

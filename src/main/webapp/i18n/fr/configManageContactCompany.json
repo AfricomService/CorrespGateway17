@@ -1,0 +1,37 @@
+{
+  "correspCareApp": {
+    "configManageContactCompany": {
+      "home": {
+        "title": "ContactCompanies",
+        "refreshListLabel": "Actualiser la liste",
+        "createLabel": "Créer un nouveau Contact Company",
+        "createOrEditLabel": "Créer ou éditer un Contact Company",
+        "notFound": "Aucun Contact Company trouvé"
+      },
+      "delete": {
+        "question": "Êtes-vous certain de vouloir supprimer le Contact Company {{ id }} ?"
+      },
+      "detail": {
+        "title": "Contact Company"
+      },
+      "id": "Id",
+      "nom": "Nom",
+      "nomabrege": "Nomabrege",
+      "matrne": "Matrne",
+      "pays": "Pays",
+      "adresse": "Adresse",
+      "tel": "Tel",
+      "fax": "Fax",
+      "email": "Email",
+      "webpage": "Webpage",
+      "etat": "Etat"
+    }
+  },
+  "configManageApp": {
+    "configManageContactCompany": {
+      "created": "Un nouveau Contact Company a été créé avec l'identifiant {{ param }}",
+      "updated": "Le Contact Company avec l'identifiant {{ param }} a été mis à jour",
+      "deleted": "Le Contact Company avec l'identifiant {{ param }} a été supprimé"
+    }
+  }
+}

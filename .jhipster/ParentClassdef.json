@@ -1,0 +1,34 @@
+{
+  "applications": ["Corresp_Care"],
+  "changelogDate": "20250816103151",
+  "clientRootFolder": "configManage",
+  "databaseType": "sql",
+  "dto": "mapstruct",
+  "embedded": false,
+  "entityTableName": "parent_classdef",
+  "fields": [
+    {
+      "fieldName": "id",
+      "fieldType": "Long"
+    },
+    {
+      "fieldName": "type",
+      "fieldType": "CorrespType",
+      "fieldValues": "INCOMING,OUTGOING,INTERNAL"
+    }
+  ],
+  "fluentMethods": true,
+  "jpaMetamodelFiltering": false,
+  "microserviceName": "configManage",
+  "name": "ParentClassdef",
+  "pagination": "pagination",
+  "readOnly": false,
+  "relationships": [
+    {
+      "otherEntityName": "numsequentielle",
+      "relationshipName": "sequenceId",
+      "relationshipType": "many-to-one"
+    }
+  ],
+  "service": "serviceClass"
+}

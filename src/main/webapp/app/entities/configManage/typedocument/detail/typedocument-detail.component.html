@@ -1,0 +1,50 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <div *ngIf="typedocument">
+      <h2 data-cy="typedocumentDetailsHeading">
+        <span jhiTranslate="correspCareApp.configManageTypedocument.detail.title">Typedocument</span>
+      </h2>
+
+      <hr />
+
+      <jhi-alert-error></jhi-alert-error>
+
+      <jhi-alert></jhi-alert>
+
+      <dl class="row-md jh-entity-details">
+        <dt><span jhiTranslate="correspCareApp.configManageTypedocument.id">Id</span></dt>
+        <dd>
+          <span>{{ typedocument.id }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageTypedocument.nom">Nom</span></dt>
+        <dd>
+          <span>{{ typedocument.nom }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageTypedocument.defautdest">Defautdest</span></dt>
+        <dd>
+          <span>{{ typedocument.defautdest }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageTypedocument.defaultobject">Defaultobject</span></dt>
+        <dd>
+          <span>{{ typedocument.defaultobject }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageTypedocument.defaultencopie">Defaultencopie</span></dt>
+        <dd>
+          <span>{{ typedocument.defaultencopie }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageTypedocument.usualstatus">Usualstatus</span></dt>
+        <dd>
+          <span jhiTranslate="{{ 'correspCareApp.UsualStatus.' + typedocument.usualstatus }}">{{ typedocument.usualstatus }}</span>
+        </dd>
+      </dl>
+
+      <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+        <fa-icon icon="arrow-left"></fa-icon>&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+      </button>
+
+      <button type="button" [routerLink]="['/typedocument', typedocument.id, 'edit']" class="btn btn-primary">
+        <fa-icon icon="pencil-alt"></fa-icon>&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+      </button>
+    </div>
+  </div>
+</div>

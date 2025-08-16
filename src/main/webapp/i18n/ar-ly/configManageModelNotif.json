@@ -1,0 +1,35 @@
+{
+  "correspCareApp": {
+    "configManageModelNotif": {
+      "home": {
+        "title": "Model Notifs",
+        "refreshListLabel": "Refresh list",
+        "createLabel": "Create a new Model Notif",
+        "createOrEditLabel": "Create or edit a Model Notif",
+        "notFound": "No Model Notifs found"
+      },
+      "delete": {
+        "question": "Are you sure you want to delete Model Notif {{ id }}?"
+      },
+      "detail": {
+        "title": "Model Notif"
+      },
+      "id": "Id",
+      "name": "Name",
+      "famille": "Famille",
+      "code": "Code",
+      "content": "Content",
+      "subjectFormula": "Subject Formula",
+      "senderEmailFormule": "Sender Email Formule",
+      "recepientEmailFormule": "Recepient Email Formule",
+      "createdDate": "Created Date"
+    }
+  },
+  "configManageApp": {
+    "configManageModelNotif": {
+      "created": "A new Model Notif is created with identifier {{ param }}",
+      "updated": "A Model Notif is updated with identifier {{ param }}",
+      "deleted": "A Model Notif is deleted with identifier {{ param }}"
+    }
+  }
+}

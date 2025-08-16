@@ -1,0 +1,48 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <div *ngIf="histAction">
+      <h2 data-cy="histActionDetailsHeading"><span jhiTranslate="correspCareApp.journauxHistAction.detail.title">Hist Action</span></h2>
+
+      <hr />
+
+      <jhi-alert-error></jhi-alert-error>
+
+      <jhi-alert></jhi-alert>
+
+      <dl class="row-md jh-entity-details">
+        <dt><span jhiTranslate="correspCareApp.journauxHistAction.id">Id</span></dt>
+        <dd>
+          <span>{{ histAction.id }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.journauxHistAction.dateTransaction">Date Transaction</span></dt>
+        <dd>
+          <span>{{ histAction.dateTransaction | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.journauxHistAction.loginUser">Login User</span></dt>
+        <dd>
+          <span>{{ histAction.loginUser }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.journauxHistAction.transaction">Transaction</span></dt>
+        <dd>
+          <span>{{ histAction.transaction }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.journauxHistAction.actionRef">Action Ref</span></dt>
+        <dd>
+          <span>{{ histAction.actionRef }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.journauxHistAction.actionJson">Action Json</span></dt>
+        <dd>
+          <span>{{ histAction.actionJson }}</span>
+        </dd>
+      </dl>
+
+      <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+        <fa-icon icon="arrow-left"></fa-icon>&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+      </button>
+
+      <button type="button" [routerLink]="['/hist-action', histAction.id, 'edit']" class="btn btn-primary">
+        <fa-icon icon="pencil-alt"></fa-icon>&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+      </button>
+    </div>
+  </div>
+</div>

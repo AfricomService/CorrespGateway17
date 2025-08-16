@@ -1,0 +1,61 @@
+{
+  "applications": ["Corresp_Care"],
+  "changelogDate": "20250816102351",
+  "clientRootFolder": "correspManage",
+  "databaseType": "sql",
+  "dto": "mapstruct",
+  "embedded": false,
+  "entityTableName": "dossier",
+  "fields": [
+    {
+      "fieldName": "name",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "isPublic",
+      "fieldType": "Boolean"
+    },
+    {
+      "fieldName": "responsible",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "status",
+      "fieldType": "UsualStatus",
+      "fieldValues": "ACTIVE,DELETED,DISABLED"
+    },
+    {
+      "fieldName": "dossierList",
+      "fieldType": "byte[]",
+      "fieldTypeBlobContent": "any"
+    },
+    {
+      "fieldName": "createdBy",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "updatedBy",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "updatedDate",
+      "fieldType": "ZonedDateTime"
+    }
+  ],
+  "fluentMethods": true,
+  "jpaMetamodelFiltering": false,
+  "microserviceName": "correspManage",
+  "name": "Dossier",
+  "pagination": "pagination",
+  "readOnly": false,
+  "relationships": [
+    {
+      "otherEntityName": "corresp",
+      "otherEntityRelationshipName": "dossiers",
+      "ownerSide": false,
+      "relationshipName": "corresps",
+      "relationshipType": "many-to-many"
+    }
+  ],
+  "service": "serviceClass"
+}

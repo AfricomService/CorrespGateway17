@@ -1,0 +1,168 @@
+{
+  "applications": ["Corresp_Care"],
+  "changelogDate": "20250816101851",
+  "clientRootFolder": "correspManage",
+  "databaseType": "sql",
+  "dto": "mapstruct",
+  "embedded": false,
+  "entityTableName": "corresp",
+  "fields": [
+    {
+      "fieldName": "idinstance",
+      "fieldType": "UUID",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "reference",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "subject",
+      "fieldType": "String",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "dateCreated",
+      "fieldType": "ZonedDateTime",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "courrierDate",
+      "fieldType": "ZonedDateTime",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "status",
+      "fieldType": "CorrespStatus",
+      "fieldValidateRules": ["required"],
+      "fieldValues": "DRAFT,IN_PROGRESS,CLOSED,CANCELLED"
+    },
+    {
+      "fieldName": "priority",
+      "fieldType": "Boolean"
+    },
+    {
+      "fieldName": "body",
+      "fieldType": "byte[]",
+      "fieldTypeBlobContent": "text"
+    },
+    {
+      "fieldName": "corresptype",
+      "fieldType": "CorrespType",
+      "fieldValidateRules": ["required"],
+      "fieldValues": "INCOMING,OUTGOING,INTERNAL"
+    },
+    {
+      "fieldName": "sender",
+      "fieldType": "String",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "needsResponse",
+      "fieldType": "Boolean"
+    },
+    {
+      "fieldName": "responseTo",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "step",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "stepCode",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "processId",
+      "fieldType": "Long"
+    },
+    {
+      "fieldName": "processVersion",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "contact",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "senderReference",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "dispatchType",
+      "fieldType": "DispatchType",
+      "fieldValidateRules": ["required"],
+      "fieldValues": "LETTER,REGISTERED_LETTER,EMAIL,FAX"
+    },
+    {
+      "fieldName": "contactCompany",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "personCompany",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "contactAddress",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "contactEmail",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "contactEmailCc",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "createdBy",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "updatedBy",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "updatedDate",
+      "fieldType": "ZonedDateTime"
+    }
+  ],
+  "fluentMethods": true,
+  "jpaMetamodelFiltering": false,
+  "microserviceName": "correspManage",
+  "name": "Corresp",
+  "pagination": "pagination",
+  "readOnly": false,
+  "relationships": [
+    {
+      "otherEntityName": "dossier",
+      "otherEntityRelationshipName": "corresps",
+      "ownerSide": true,
+      "relationshipName": "dossiers",
+      "relationshipType": "many-to-many"
+    },
+    {
+      "otherEntityName": "bordereaux",
+      "otherEntityRelationshipName": "corresps",
+      "ownerSide": true,
+      "relationshipName": "bordereaux",
+      "relationshipType": "many-to-many"
+    },
+    {
+      "otherEntityName": "pj",
+      "otherEntityRelationshipName": "corresps",
+      "ownerSide": true,
+      "relationshipName": "attachments",
+      "relationshipType": "many-to-many"
+    },
+    {
+      "otherEntityName": "tasks",
+      "otherEntityRelationshipName": "corresps",
+      "ownerSide": true,
+      "relationshipName": "tasks",
+      "relationshipType": "many-to-many"
+    }
+  ],
+  "service": "serviceClass"
+}

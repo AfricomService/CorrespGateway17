@@ -1,0 +1,58 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <div *ngIf="myreport">
+      <h2 data-cy="myreportDetailsHeading"><span jhiTranslate="correspCareApp.configManageMyreport.detail.title">Myreport</span></h2>
+
+      <hr />
+
+      <jhi-alert-error></jhi-alert-error>
+
+      <jhi-alert></jhi-alert>
+
+      <dl class="row-md jh-entity-details">
+        <dt><span jhiTranslate="correspCareApp.configManageMyreport.id">Id</span></dt>
+        <dd>
+          <span>{{ myreport.id }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageMyreport.dateCreated">Date Created</span></dt>
+        <dd>
+          <span>{{ myreport.dateCreated | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageMyreport.loginName">Login Name</span></dt>
+        <dd>
+          <span>{{ myreport.loginName }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageMyreport.loginId">Login Id</span></dt>
+        <dd>
+          <span>{{ myreport.loginId }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageMyreport.nameFile">Name File</span></dt>
+        <dd>
+          <span>{{ myreport.nameFile }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageMyreport.nameFolder">Name Folder</span></dt>
+        <dd>
+          <span>{{ myreport.nameFolder }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageMyreport.configExportId">Config Export Id</span></dt>
+        <dd>
+          <span>{{ myreport.configExportId }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageMyreport.configexport">Configexport</span></dt>
+        <dd>
+          <div *ngIf="myreport.configexport">
+            <a [routerLink]="['/configexport', myreport.configexport.id, 'view']">{{ myreport.configexport.id }}</a>
+          </div>
+        </dd>
+      </dl>
+
+      <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+        <fa-icon icon="arrow-left"></fa-icon>&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+      </button>
+
+      <button type="button" [routerLink]="['/myreport', myreport.id, 'edit']" class="btn btn-primary">
+        <fa-icon icon="pencil-alt"></fa-icon>&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+      </button>
+    </div>
+  </div>
+</div>

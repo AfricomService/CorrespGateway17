@@ -1,0 +1,74 @@
+{
+  "applications": ["Corresp_Care"],
+  "changelogDate": "20250816102151",
+  "clientRootFolder": "correspManage",
+  "databaseType": "sql",
+  "dto": "mapstruct",
+  "embedded": false,
+  "entityTableName": "tasks",
+  "fields": [
+    {
+      "fieldName": "object",
+      "fieldType": "String",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "content",
+      "fieldType": "byte[]",
+      "fieldTypeBlobContent": "any"
+    },
+    {
+      "fieldName": "creationDate",
+      "fieldType": "ZonedDateTime"
+    },
+    {
+      "fieldName": "startDate",
+      "fieldType": "ZonedDateTime"
+    },
+    {
+      "fieldName": "dueDate",
+      "fieldType": "ZonedDateTime"
+    },
+    {
+      "fieldName": "closeDate",
+      "fieldType": "ZonedDateTime"
+    },
+    {
+      "fieldName": "responsible",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "status",
+      "fieldType": "CorrespStatus",
+      "fieldValues": "DRAFT,IN_PROGRESS,CLOSED,CANCELLED"
+    },
+    {
+      "fieldName": "createdBy",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "updatedBy",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "updatedDate",
+      "fieldType": "ZonedDateTime"
+    }
+  ],
+  "fluentMethods": true,
+  "jpaMetamodelFiltering": false,
+  "microserviceName": "correspManage",
+  "name": "Tasks",
+  "pagination": "pagination",
+  "readOnly": false,
+  "relationships": [
+    {
+      "otherEntityName": "corresp",
+      "otherEntityRelationshipName": "tasks",
+      "ownerSide": false,
+      "relationshipName": "corresps",
+      "relationshipType": "many-to-many"
+    }
+  ],
+  "service": "serviceClass"
+}

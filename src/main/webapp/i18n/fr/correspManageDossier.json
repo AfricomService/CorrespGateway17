@@ -1,0 +1,36 @@
+{
+  "correspCareApp": {
+    "correspManageDossier": {
+      "home": {
+        "title": "Dossiers",
+        "refreshListLabel": "Actualiser la liste",
+        "createLabel": "Créer un nouveau Dossier",
+        "createOrEditLabel": "Créer ou éditer un Dossier",
+        "notFound": "Aucun Dossier trouvé"
+      },
+      "delete": {
+        "question": "Êtes-vous certain de vouloir supprimer le Dossier {{ id }} ?"
+      },
+      "detail": {
+        "title": "Dossier"
+      },
+      "id": "ID",
+      "name": "Name",
+      "isPublic": "Is Public",
+      "responsible": "Responsible",
+      "status": "Status",
+      "dossierList": "Dossier List",
+      "createdBy": "Created By",
+      "updatedBy": "Updated By",
+      "updatedDate": "Updated Date",
+      "corresps": "Corresps"
+    }
+  },
+  "correspManageApp": {
+    "correspManageDossier": {
+      "created": "Un nouveau Dossier a été créé avec l'identifiant {{ param }}",
+      "updated": "Le Dossier avec l'identifiant {{ param }} a été mis à jour",
+      "deleted": "Le Dossier avec l'identifiant {{ param }} a été supprimé"
+    }
+  }
+}

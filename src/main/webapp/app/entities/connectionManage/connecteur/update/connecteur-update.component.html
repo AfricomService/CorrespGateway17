@@ -1,0 +1,127 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <form name="editForm" role="form" novalidate (ngSubmit)="save()" [formGroup]="editForm">
+      <h2
+        id="jhi-connecteur-heading"
+        data-cy="ConnecteurCreateUpdateHeading"
+        jhiTranslate="correspCareApp.connectionManageConnecteur.home.createOrEditLabel"
+      >
+        Créer ou éditer un Connecteur
+      </h2>
+
+      <div>
+        <jhi-alert-error></jhi-alert-error>
+
+        <div class="row mb-3" *ngIf="editForm.controls.id.value !== null">
+          <label class="form-label" jhiTranslate="correspCareApp.connectionManageConnecteur.id" for="field_id">Id</label>
+          <input type="number" class="form-control" name="id" id="field_id" data-cy="id" formControlName="id" [readonly]="true" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.connectionManageConnecteur.name" for="field_name">Name</label>
+          <input type="text" class="form-control" name="name" id="field_name" data-cy="name" formControlName="name" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.connectionManageConnecteur.codeRules" for="field_codeRules"
+            >Code Rules</label
+          >
+          <input type="text" class="form-control" name="codeRules" id="field_codeRules" data-cy="codeRules" formControlName="codeRules" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.connectionManageConnecteur.protocol" for="field_protocol">Protocol</label>
+          <input type="text" class="form-control" name="protocol" id="field_protocol" data-cy="protocol" formControlName="protocol" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.connectionManageConnecteur.host" for="field_host">Host</label>
+          <input type="text" class="form-control" name="host" id="field_host" data-cy="host" formControlName="host" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.connectionManageConnecteur.port" for="field_port">Port</label>
+          <input type="text" class="form-control" name="port" id="field_port" data-cy="port" formControlName="port" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.connectionManageConnecteur.enable" for="field_enable">Enable</label>
+          <input type="text" class="form-control" name="enable" id="field_enable" data-cy="enable" formControlName="enable" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.connectionManageConnecteur.email" for="field_email">Email</label>
+          <input type="text" class="form-control" name="email" id="field_email" data-cy="email" formControlName="email" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.connectionManageConnecteur.password" for="field_password">Password</label>
+          <input type="text" class="form-control" name="password" id="field_password" data-cy="password" formControlName="password" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.connectionManageConnecteur.folderSource" for="field_folderSource"
+            >Folder Source</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            name="folderSource"
+            id="field_folderSource"
+            data-cy="folderSource"
+            formControlName="folderSource"
+          />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.connectionManageConnecteur.folderonOK" for="field_folderonOK"
+            >Folderon OK</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            name="folderonOK"
+            id="field_folderonOK"
+            data-cy="folderonOK"
+            formControlName="folderonOK"
+          />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.connectionManageConnecteur.folderonError" for="field_folderonError"
+            >Folderon Error</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            name="folderonError"
+            id="field_folderonError"
+            data-cy="folderonError"
+            formControlName="folderonError"
+          />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.connectionManageConnecteur.isActif" for="field_isActif">Is Actif</label>
+          <input type="checkbox" class="form-check" name="isActif" id="field_isActif" data-cy="isActif" formControlName="isActif" />
+        </div>
+      </div>
+
+      <div>
+        <button type="button" id="cancel-save" data-cy="entityCreateCancelButton" class="btn btn-secondary" (click)="previousState()">
+          <fa-icon icon="ban"></fa-icon>&nbsp;<span jhiTranslate="entity.action.cancel">Annuler</span>
+        </button>
+
+        <button
+          type="submit"
+          id="save-entity"
+          data-cy="entityCreateSaveButton"
+          [disabled]="editForm.invalid || isSaving"
+          class="btn btn-primary"
+        >
+          <fa-icon icon="save"></fa-icon>&nbsp;<span jhiTranslate="entity.action.save">Sauvegarder</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

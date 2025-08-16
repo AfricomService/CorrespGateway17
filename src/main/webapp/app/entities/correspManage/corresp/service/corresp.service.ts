@@ -1,0 +1,130 @@
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpResponse } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
+import dayjs from 'dayjs/esm';
+
+import { isPresent } from 'app/core/util/operators';
+import { ApplicationConfigService } from 'app/core/config/application-config.service';
+import { createRequestOption } from 'app/core/request/request-util';
+import { ICorresp, NewCorresp } from '../corresp.model';
+
+export type PartialUpdateCorresp = Partial<ICorresp> & Pick<ICorresp, 'id'>;
+
+type RestOf<T extends ICorresp | NewCorresp> = Omit<T, 'dateCreated' | 'courrierDate' | 'updatedDate'> & {
+  dateCreated?: string | null;
+  courrierDate?: string | null;
+  updatedDate?: string | null;
+};
+
+export type RestCorresp = RestOf<ICorresp>;
+
+export type NewRestCorresp = RestOf<NewCorresp>;
+
+export type PartialUpdateRestCorresp = RestOf<PartialUpdateCorresp>;
+
+export type EntityResponseType = HttpResponse<ICorresp>;
+export type EntityArrayResponseType = HttpResponse<ICorresp[]>;
+
+@Injectable({ providedIn: 'root' })
+export class CorrespService {
+  protected resourceUrl = this.applicationConfigService.getEndpointFor('api/corresps', 'correspmanage');
+
+  constructor(protected http: HttpClient, protected applicationConfigService: ApplicationConfigService) {}
+
+  create(corresp: NewCorresp): Observable<EntityResponseType> {
+    const copy = this.convertDateFromClient(corresp);
+    return this.http
+      .post<RestCorresp>(this.resourceUrl, copy, { observe: 'response' })
+      .pipe(map(res => this.convertResponseFromServer(res)));
+  }
+
+  update(corresp: ICorresp): Observable<EntityResponseType> {
+    const copy = this.convertDateFromClient(corresp);
+    return this.http
+      .put<RestCorresp>(`${this.resourceUrl}/${this.getCorrespIdentifier(corresp)}`, copy, { observe: 'response' })
+      .pipe(map(res => this.convertResponseFromServer(res)));
+  }
+
+  partialUpdate(corresp: PartialUpdateCorresp): Observable<EntityResponseType> {
+    const copy = this.convertDateFromClient(corresp);
+    return this.http
+      .patch<RestCorresp>(`${this.resourceUrl}/${this.getCorrespIdentifier(corresp)}`, copy, { observe: 'response' })
+      .pipe(map(res => this.convertResponseFromServer(res)));
+  }
+
+  find(id: number): Observable<EntityResponseType> {
+    return this.http
+      .get<RestCorresp>(`${this.resourceUrl}/${id}`, { observe: 'response' })
+      .pipe(map(res => this.convertResponseFromServer(res)));
+  }
+
+  query(req?: any): Observable<EntityArrayResponseType> {
+    const options = createRequestOption(req);
+    return this.http
+      .get<RestCorresp[]>(this.resourceUrl, { params: options, observe: 'response' })
+      .pipe(map(res => this.convertResponseArrayFromServer(res)));
+  }
+
+  delete(id: number): Observable<HttpResponse<{}>> {
+    return this.http.delete(`${this.resourceUrl}/${id}`, { observe: 'response' });
+  }
+
+  getCorrespIdentifier(corresp: Pick<ICorresp, 'id'>): number {
+    return corresp.id;
+  }
+
+  compareCorresp(o1: Pick<ICorresp, 'id'> | null, o2: Pick<ICorresp, 'id'> | null): boolean {
+    return o1 && o2 ? this.getCorrespIdentifier(o1) === this.getCorrespIdentifier(o2) : o1 === o2;
+  }
+
+  addCorrespToCollectionIfMissing<Type extends Pick<ICorresp, 'id'>>(
+    correspCollection: Type[],
+    ...correspsToCheck: (Type | null | undefined)[]
+  ): Type[] {
+    const corresps: Type[] = correspsToCheck.filter(isPresent);
+    if (corresps.length > 0) {
+      const correspCollectionIdentifiers = correspCollection.map(correspItem => this.getCorrespIdentifier(correspItem)!);
+      const correspsToAdd = corresps.filter(correspItem => {
+        const correspIdentifier = this.getCorrespIdentifier(correspItem);
+        if (correspCollectionIdentifiers.includes(correspIdentifier)) {
+          return false;
+        }
+        correspCollectionIdentifiers.push(correspIdentifier);
+        return true;
+      });
+      return [...correspsToAdd, ...correspCollection];
+    }
+    return correspCollection;
+  }
+
+  protected convertDateFromClient<T extends ICorresp | NewCorresp | PartialUpdateCorresp>(corresp: T): RestOf<T> {
+    return {
+      ...corresp,
+      dateCreated: corresp.dateCreated?.toJSON() ?? null,
+      courrierDate: corresp.courrierDate?.toJSON() ?? null,
+      updatedDate: corresp.updatedDate?.toJSON() ?? null,
+    };
+  }
+
+  protected convertDateFromServer(restCorresp: RestCorresp): ICorresp {
+    return {
+      ...restCorresp,
+      dateCreated: restCorresp.dateCreated ? dayjs(restCorresp.dateCreated) : undefined,
+      courrierDate: restCorresp.courrierDate ? dayjs(restCorresp.courrierDate) : undefined,
+      updatedDate: restCorresp.updatedDate ? dayjs(restCorresp.updatedDate) : undefined,
+    };
+  }
+
+  protected convertResponseFromServer(res: HttpResponse<RestCorresp>): HttpResponse<ICorresp> {
+    return res.clone({
+      body: res.body ? this.convertDateFromServer(res.body) : null,
+    });
+  }
+
+  protected convertResponseArrayFromServer(res: HttpResponse<RestCorresp[]>): HttpResponse<ICorresp[]> {
+    return res.clone({
+      body: res.body ? res.body.map(item => this.convertDateFromServer(item)) : null,
+    });
+  }
+}

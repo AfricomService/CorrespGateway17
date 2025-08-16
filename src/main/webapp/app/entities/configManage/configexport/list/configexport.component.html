@@ -1,0 +1,149 @@
+<div>
+  <h2 id="page-heading" data-cy="ConfigexportHeading">
+    <span jhiTranslate="correspCareApp.configManageConfigexport.home.title">Configexports</span>
+
+    <div class="d-flex justify-content-end">
+      <button class="btn btn-info me-2" (click)="load()" [disabled]="isLoading">
+        <fa-icon icon="sync" [spin]="isLoading"></fa-icon>
+        <span jhiTranslate="correspCareApp.configManageConfigexport.home.refreshListLabel">Actualiser la liste</span>
+      </button>
+
+      <button
+        id="jh-create-entity"
+        data-cy="entityCreateButton"
+        class="btn btn-primary jh-create-entity create-configexport"
+        [routerLink]="['/configexport/new']"
+      >
+        <fa-icon icon="plus"></fa-icon>
+        <span jhiTranslate="correspCareApp.configManageConfigexport.home.createLabel"> Créer un nouveau Configexport </span>
+      </button>
+    </div>
+  </h2>
+
+  <jhi-alert-error></jhi-alert-error>
+
+  <jhi-alert></jhi-alert>
+
+  <div class="alert alert-warning" id="no-result" *ngIf="configexports?.length === 0">
+    <span jhiTranslate="correspCareApp.configManageConfigexport.home.notFound">Aucun Configexport trouvé</span>
+  </div>
+
+  <div class="table-responsive table-entities" id="entities" *ngIf="configexports && configexports.length > 0">
+    <table class="table table-striped" aria-describedby="page-heading">
+      <thead>
+        <tr jhiSort [(predicate)]="predicate" [(ascending)]="ascending" (sortChange)="navigateToWithComponentValues()">
+          <th scope="col" jhiSortBy="id">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.configManageConfigexport.id">Id</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="label">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.configManageConfigexport.label">Label</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="active">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.configManageConfigexport.active">Active</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="excelFile">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.configManageConfigexport.excelFile">Excel File</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="dateCreated">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.configManageConfigexport.dateCreated">Date Created</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="configMappingJson">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.configManageConfigexport.configMappingJson">Config Mapping Json</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="readAccess">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.configManageConfigexport.readAccess">Read Access</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let configexport of configexports; trackBy: trackId" data-cy="entityTable">
+          <td>
+            <a [routerLink]="['/configexport', configexport.id, 'view']">{{ configexport.id }}</a>
+          </td>
+          <td>{{ configexport.label }}</td>
+          <td>{{ configexport.active }}</td>
+          <td>
+            <a
+              *ngIf="configexport.excelFile"
+              (click)="openFile(configexport.excelFile, configexport.excelFileContentType)"
+              jhiTranslate="entity.action.open"
+              >Ouvrir</a
+            >
+            <span *ngIf="configexport.excelFile">{{ configexport.excelFileContentType }}, {{ byteSize(configexport.excelFile) }}</span>
+          </td>
+          <td>{{ configexport.dateCreated | formatMediumDatetime }}</td>
+          <td>{{ configexport.configMappingJson }}</td>
+          <td>{{ configexport.readAccess }}</td>
+          <td class="text-end">
+            <div class="btn-group">
+              <button
+                type="submit"
+                [routerLink]="['/configexport', configexport.id, 'view']"
+                class="btn btn-info btn-sm"
+                data-cy="entityDetailsButton"
+              >
+                <fa-icon icon="eye"></fa-icon>
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.view">Voir</span>
+              </button>
+
+              <button
+                type="submit"
+                [routerLink]="['/configexport', configexport.id, 'edit']"
+                class="btn btn-primary btn-sm"
+                data-cy="entityEditButton"
+              >
+                <fa-icon icon="pencil-alt"></fa-icon>
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.edit">Editer</span>
+              </button>
+
+              <button type="submit" (click)="delete(configexport)" class="btn btn-danger btn-sm" data-cy="entityDeleteButton">
+                <fa-icon icon="times"></fa-icon>
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.delete">Supprimer</span>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div *ngIf="configexports && configexports.length > 0">
+    <div class="d-flex justify-content-center">
+      <jhi-item-count [params]="{ page: page, totalItems: totalItems, itemsPerPage: itemsPerPage }"></jhi-item-count>
+    </div>
+
+    <div class="d-flex justify-content-center">
+      <ngb-pagination
+        [collectionSize]="totalItems"
+        [page]="page"
+        [pageSize]="itemsPerPage"
+        [maxSize]="5"
+        [rotate]="true"
+        [boundaryLinks]="true"
+        (pageChange)="navigateToPage($event)"
+      ></ngb-pagination>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,72 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <div *ngIf="bordereaux">
+      <h2 data-cy="bordereauxDetailsHeading"><span jhiTranslate="correspCareApp.correspManageBordereaux.detail.title">Bordereaux</span></h2>
+
+      <hr />
+
+      <jhi-alert-error></jhi-alert-error>
+
+      <jhi-alert></jhi-alert>
+
+      <dl class="row-md jh-entity-details">
+        <dt><span jhiTranslate="global.field.id">ID</span></dt>
+        <dd>
+          <span>{{ bordereaux.id }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageBordereaux.reference">Reference</span></dt>
+        <dd>
+          <span>{{ bordereaux.reference }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageBordereaux.description">Description</span></dt>
+        <dd>
+          <span>{{ bordereaux.description }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageBordereaux.amount">Amount</span></dt>
+        <dd>
+          <span>{{ bordereaux.amount }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageBordereaux.currency">Currency</span></dt>
+        <dd>
+          <span>{{ bordereaux.currency }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageBordereaux.status">Status</span></dt>
+        <dd>
+          <span>{{ bordereaux.status }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageBordereaux.issuedDate">Issued Date</span></dt>
+        <dd>
+          <span>{{ bordereaux.issuedDate | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageBordereaux.dueDate">Due Date</span></dt>
+        <dd>
+          <span>{{ bordereaux.dueDate | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageBordereaux.createdDate">Created Date</span></dt>
+        <dd>
+          <span>{{ bordereaux.createdDate | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageBordereaux.updatedDate">Updated Date</span></dt>
+        <dd>
+          <span>{{ bordereaux.updatedDate | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageBordereaux.createdBy">Created By</span></dt>
+        <dd>
+          <span>{{ bordereaux.createdBy }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageBordereaux.updatedBy">Updated By</span></dt>
+        <dd>
+          <span>{{ bordereaux.updatedBy }}</span>
+        </dd>
+      </dl>
+
+      <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+        <fa-icon icon="arrow-left"></fa-icon>&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+      </button>
+
+      <button type="button" [routerLink]="['/bordereaux', bordereaux.id, 'edit']" class="btn btn-primary">
+        <fa-icon icon="pencil-alt"></fa-icon>&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+      </button>
+    </div>
+  </div>
+</div>

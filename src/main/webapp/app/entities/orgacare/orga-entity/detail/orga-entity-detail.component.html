@@ -1,0 +1,56 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <div *ngIf="orgaEntity">
+      <h2 data-cy="orgaEntityDetailsHeading"><span jhiTranslate="correspCareApp.orgacareOrgaEntity.detail.title">Orga Entity</span></h2>
+
+      <hr />
+
+      <jhi-alert-error></jhi-alert-error>
+
+      <jhi-alert></jhi-alert>
+
+      <dl class="row-md jh-entity-details">
+        <dt><span jhiTranslate="correspCareApp.orgacareOrgaEntity.id">Id</span></dt>
+        <dd>
+          <span>{{ orgaEntity.id }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.orgacareOrgaEntity.name">Name</span></dt>
+        <dd>
+          <span>{{ orgaEntity.name }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.orgacareOrgaEntity.description">Description</span></dt>
+        <dd>
+          <span>{{ orgaEntity.description }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.orgacareOrgaEntity.createdDate">Created Date</span></dt>
+        <dd>
+          <span>{{ orgaEntity.createdDate | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.orgacareOrgaEntity.updatedDate">Updated Date</span></dt>
+        <dd>
+          <span>{{ orgaEntity.updatedDate | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.orgacareOrgaEntity.departement">Departement</span></dt>
+        <dd>
+          <div *ngIf="orgaEntity.departement">
+            <a [routerLink]="['/departement', orgaEntity.departement.id, 'view']">{{ orgaEntity.departement.id }}</a>
+          </div>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.orgacareOrgaEntity.employe">Employe</span></dt>
+        <dd>
+          <div *ngIf="orgaEntity.employe">
+            <a [routerLink]="['/employe', orgaEntity.employe.id, 'view']">{{ orgaEntity.employe.id }}</a>
+          </div>
+        </dd>
+      </dl>
+
+      <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+        <fa-icon icon="arrow-left"></fa-icon>&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+      </button>
+
+      <button type="button" [routerLink]="['/orga-entity', orgaEntity.id, 'edit']" class="btn btn-primary">
+        <fa-icon icon="pencil-alt"></fa-icon>&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+      </button>
+    </div>
+  </div>
+</div>

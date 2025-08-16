@@ -1,0 +1,48 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <div *ngIf="departement">
+      <h2 data-cy="departementDetailsHeading"><span jhiTranslate="correspCareApp.orgacareDepartement.detail.title">Departement</span></h2>
+
+      <hr />
+
+      <jhi-alert-error></jhi-alert-error>
+
+      <jhi-alert></jhi-alert>
+
+      <dl class="row-md jh-entity-details">
+        <dt><span jhiTranslate="correspCareApp.orgacareDepartement.id">Id</span></dt>
+        <dd>
+          <span>{{ departement.id }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.orgacareDepartement.code">Code</span></dt>
+        <dd>
+          <span>{{ departement.code }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.orgacareDepartement.name">Name</span></dt>
+        <dd>
+          <span>{{ departement.name }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.orgacareDepartement.description">Description</span></dt>
+        <dd>
+          <span>{{ departement.description }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.orgacareDepartement.createdDate">Created Date</span></dt>
+        <dd>
+          <span>{{ departement.createdDate | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.orgacareDepartement.updatedDate">Updated Date</span></dt>
+        <dd>
+          <span>{{ departement.updatedDate | formatMediumDatetime }}</span>
+        </dd>
+      </dl>
+
+      <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+        <fa-icon icon="arrow-left"></fa-icon>&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+      </button>
+
+      <button type="button" [routerLink]="['/departement', departement.id, 'edit']" class="btn btn-primary">
+        <fa-icon icon="pencil-alt"></fa-icon>&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,56 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <div *ngIf="histConsult">
+      <h2 data-cy="histConsultDetailsHeading"><span jhiTranslate="correspCareApp.journauxHistConsult.detail.title">Hist Consult</span></h2>
+
+      <hr />
+
+      <jhi-alert-error></jhi-alert-error>
+
+      <jhi-alert></jhi-alert>
+
+      <dl class="row-md jh-entity-details">
+        <dt><span jhiTranslate="global.field.id">ID</span></dt>
+        <dd>
+          <span>{{ histConsult.id }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.journauxHistConsult.labelAction">Label Action</span></dt>
+        <dd>
+          <span>{{ histConsult.labelAction }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.journauxHistConsult.user">User</span></dt>
+        <dd>
+          <span>{{ histConsult.user }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.journauxHistConsult.dateTransaction">Date Transaction</span></dt>
+        <dd>
+          <span>{{ histConsult.dateTransaction | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.journauxHistConsult.categorie">Categorie</span></dt>
+        <dd>
+          <span>{{ histConsult.categorie }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.journauxHistConsult.navigateur">Navigateur</span></dt>
+        <dd>
+          <span>{{ histConsult.navigateur }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.journauxHistConsult.ip">Ip</span></dt>
+        <dd>
+          <span>{{ histConsult.ip }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.journauxHistConsult.terminal">Terminal</span></dt>
+        <dd>
+          <span>{{ histConsult.terminal }}</span>
+        </dd>
+      </dl>
+
+      <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+        <fa-icon icon="arrow-left"></fa-icon>&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+      </button>
+
+      <button type="button" [routerLink]="['/hist-consult', histConsult.id, 'edit']" class="btn btn-primary">
+        <fa-icon icon="pencil-alt"></fa-icon>&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,149 @@
+<div>
+  <h2 id="page-heading" data-cy="OrgaEntityHeading">
+    <span jhiTranslate="correspCareApp.orgacareOrgaEntity.home.title">OrgaEntities</span>
+
+    <div class="d-flex justify-content-end">
+      <button class="btn btn-info me-2" (click)="load()" [disabled]="isLoading">
+        <fa-icon icon="sync" [spin]="isLoading"></fa-icon>
+        <span jhiTranslate="correspCareApp.orgacareOrgaEntity.home.refreshListLabel">Actualiser la liste</span>
+      </button>
+
+      <button
+        id="jh-create-entity"
+        data-cy="entityCreateButton"
+        class="btn btn-primary jh-create-entity create-orga-entity"
+        [routerLink]="['/orga-entity/new']"
+      >
+        <fa-icon icon="plus"></fa-icon>
+        <span jhiTranslate="correspCareApp.orgacareOrgaEntity.home.createLabel"> Créer un nouveau Orga Entity </span>
+      </button>
+    </div>
+  </h2>
+
+  <jhi-alert-error></jhi-alert-error>
+
+  <jhi-alert></jhi-alert>
+
+  <div class="alert alert-warning" id="no-result" *ngIf="orgaEntities?.length === 0">
+    <span jhiTranslate="correspCareApp.orgacareOrgaEntity.home.notFound">Aucun Orga Entity trouvé</span>
+  </div>
+
+  <div class="table-responsive table-entities" id="entities" *ngIf="orgaEntities && orgaEntities.length > 0">
+    <table class="table table-striped" aria-describedby="page-heading">
+      <thead>
+        <tr jhiSort [(predicate)]="predicate" [(ascending)]="ascending" (sortChange)="navigateToWithComponentValues()">
+          <th scope="col" jhiSortBy="id">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.orgacareOrgaEntity.id">Id</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="name">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.orgacareOrgaEntity.name">Name</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="description">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.orgacareOrgaEntity.description">Description</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="createdDate">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.orgacareOrgaEntity.createdDate">Created Date</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="updatedDate">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.orgacareOrgaEntity.updatedDate">Updated Date</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="departement.id">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.orgacareOrgaEntity.departement">Departement</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="employe.id">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.orgacareOrgaEntity.employe">Employe</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let orgaEntity of orgaEntities; trackBy: trackId" data-cy="entityTable">
+          <td>
+            <a [routerLink]="['/orga-entity', orgaEntity.id, 'view']">{{ orgaEntity.id }}</a>
+          </td>
+          <td>{{ orgaEntity.name }}</td>
+          <td>{{ orgaEntity.description }}</td>
+          <td>{{ orgaEntity.createdDate | formatMediumDatetime }}</td>
+          <td>{{ orgaEntity.updatedDate | formatMediumDatetime }}</td>
+          <td>
+            <div *ngIf="orgaEntity.departement">
+              <a [routerLink]="['/departement', orgaEntity.departement.id, 'view']">{{ orgaEntity.departement.id }}</a>
+            </div>
+          </td>
+          <td>
+            <div *ngIf="orgaEntity.employe">
+              <a [routerLink]="['/employe', orgaEntity.employe.id, 'view']">{{ orgaEntity.employe.id }}</a>
+            </div>
+          </td>
+          <td class="text-end">
+            <div class="btn-group">
+              <button
+                type="submit"
+                [routerLink]="['/orga-entity', orgaEntity.id, 'view']"
+                class="btn btn-info btn-sm"
+                data-cy="entityDetailsButton"
+              >
+                <fa-icon icon="eye"></fa-icon>
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.view">Voir</span>
+              </button>
+
+              <button
+                type="submit"
+                [routerLink]="['/orga-entity', orgaEntity.id, 'edit']"
+                class="btn btn-primary btn-sm"
+                data-cy="entityEditButton"
+              >
+                <fa-icon icon="pencil-alt"></fa-icon>
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.edit">Editer</span>
+              </button>
+
+              <button type="submit" (click)="delete(orgaEntity)" class="btn btn-danger btn-sm" data-cy="entityDeleteButton">
+                <fa-icon icon="times"></fa-icon>
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.delete">Supprimer</span>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div *ngIf="orgaEntities && orgaEntities.length > 0">
+    <div class="d-flex justify-content-center">
+      <jhi-item-count [params]="{ page: page, totalItems: totalItems, itemsPerPage: itemsPerPage }"></jhi-item-count>
+    </div>
+
+    <div class="d-flex justify-content-center">
+      <ngb-pagination
+        [collectionSize]="totalItems"
+        [page]="page"
+        [pageSize]="itemsPerPage"
+        [maxSize]="5"
+        [rotate]="true"
+        [boundaryLinks]="true"
+        (pageChange)="navigateToPage($event)"
+      ></ngb-pagination>
+    </div>
+  </div>
+</div>

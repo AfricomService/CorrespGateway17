@@ -1,0 +1,458 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <form name="editForm" role="form" novalidate (ngSubmit)="save()" [formGroup]="editForm">
+      <h2
+        id="jhi-corresp-heading"
+        data-cy="CorrespCreateUpdateHeading"
+        jhiTranslate="correspCareApp.correspManageCorresp.home.createOrEditLabel"
+      >
+        Créer ou éditer un Corresp
+      </h2>
+
+      <div>
+        <jhi-alert-error></jhi-alert-error>
+
+        <div class="row mb-3" *ngIf="editForm.controls.id.value !== null">
+          <label class="form-label" jhiTranslate="global.field.id" for="field_id">ID</label>
+          <input type="number" class="form-control" name="id" id="field_id" data-cy="id" formControlName="id" [readonly]="true" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.idinstance" for="field_idinstance">Idinstance</label>
+          <input
+            type="text"
+            class="form-control"
+            name="idinstance"
+            id="field_idinstance"
+            data-cy="idinstance"
+            formControlName="idinstance"
+          />
+          <div *ngIf="editForm.get('idinstance')!.invalid && (editForm.get('idinstance')!.dirty || editForm.get('idinstance')!.touched)">
+            <small
+              class="form-text text-danger"
+              *ngIf="editForm.get('idinstance')?.errors?.required"
+              jhiTranslate="entity.validation.required"
+            >
+              Ce champ est obligatoire.
+            </small>
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.reference" for="field_reference">Reference</label>
+          <input type="text" class="form-control" name="reference" id="field_reference" data-cy="reference" formControlName="reference" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.subject" for="field_subject">Subject</label>
+          <input type="text" class="form-control" name="subject" id="field_subject" data-cy="subject" formControlName="subject" />
+          <div *ngIf="editForm.get('subject')!.invalid && (editForm.get('subject')!.dirty || editForm.get('subject')!.touched)">
+            <small
+              class="form-text text-danger"
+              *ngIf="editForm.get('subject')?.errors?.required"
+              jhiTranslate="entity.validation.required"
+            >
+              Ce champ est obligatoire.
+            </small>
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.dateCreated" for="field_dateCreated"
+            >Date Created</label
+          >
+          <div class="d-flex">
+            <input
+              id="field_dateCreated"
+              data-cy="dateCreated"
+              type="datetime-local"
+              class="form-control"
+              name="dateCreated"
+              formControlName="dateCreated"
+              placeholder="YYYY-MM-DD HH:mm"
+            />
+          </div>
+          <div *ngIf="editForm.get('dateCreated')!.invalid && (editForm.get('dateCreated')!.dirty || editForm.get('dateCreated')!.touched)">
+            <small
+              class="form-text text-danger"
+              *ngIf="editForm.get('dateCreated')?.errors?.required"
+              jhiTranslate="entity.validation.required"
+            >
+              Ce champ est obligatoire.
+            </small>
+            <small
+              class="form-text text-danger"
+              [hidden]="!editForm.get('dateCreated')?.errors?.datetimelocal"
+              jhiTranslate="entity.validation.datetimelocal"
+            >
+              Ce champ doit être une date et une heure.
+            </small>
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.courrierDate" for="field_courrierDate"
+            >Courrier Date</label
+          >
+          <div class="d-flex">
+            <input
+              id="field_courrierDate"
+              data-cy="courrierDate"
+              type="datetime-local"
+              class="form-control"
+              name="courrierDate"
+              formControlName="courrierDate"
+              placeholder="YYYY-MM-DD HH:mm"
+            />
+          </div>
+          <div
+            *ngIf="editForm.get('courrierDate')!.invalid && (editForm.get('courrierDate')!.dirty || editForm.get('courrierDate')!.touched)"
+          >
+            <small
+              class="form-text text-danger"
+              *ngIf="editForm.get('courrierDate')?.errors?.required"
+              jhiTranslate="entity.validation.required"
+            >
+              Ce champ est obligatoire.
+            </small>
+            <small
+              class="form-text text-danger"
+              [hidden]="!editForm.get('courrierDate')?.errors?.datetimelocal"
+              jhiTranslate="entity.validation.datetimelocal"
+            >
+              Ce champ doit être une date et une heure.
+            </small>
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.status" for="field_status">Status</label>
+          <select class="form-control" name="status" formControlName="status" id="field_status" data-cy="status">
+            <option [ngValue]="null">{{ 'correspCareApp.CorrespStatus.null' | translate }}</option>
+            <option *ngFor="let correspStatus of correspStatusValues" [value]="correspStatus">
+              {{ 'correspCareApp.CorrespStatus.' + correspStatus | translate }}
+            </option>
+          </select>
+          <div *ngIf="editForm.get('status')!.invalid && (editForm.get('status')!.dirty || editForm.get('status')!.touched)">
+            <small class="form-text text-danger" *ngIf="editForm.get('status')?.errors?.required" jhiTranslate="entity.validation.required">
+              Ce champ est obligatoire.
+            </small>
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.priority" for="field_priority">Priority</label>
+          <input type="checkbox" class="form-check" name="priority" id="field_priority" data-cy="priority" formControlName="priority" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.body" for="field_body">Body</label>
+          <textarea class="form-control" name="body" id="field_body" data-cy="body" formControlName="body"></textarea>
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.corresptype" for="field_corresptype"
+            >Corresptype</label
+          >
+          <select class="form-control" name="corresptype" formControlName="corresptype" id="field_corresptype" data-cy="corresptype">
+            <option [ngValue]="null">{{ 'correspCareApp.CorrespType.null' | translate }}</option>
+            <option *ngFor="let correspType of correspTypeValues" [value]="correspType">
+              {{ 'correspCareApp.CorrespType.' + correspType | translate }}
+            </option>
+          </select>
+          <div *ngIf="editForm.get('corresptype')!.invalid && (editForm.get('corresptype')!.dirty || editForm.get('corresptype')!.touched)">
+            <small
+              class="form-text text-danger"
+              *ngIf="editForm.get('corresptype')?.errors?.required"
+              jhiTranslate="entity.validation.required"
+            >
+              Ce champ est obligatoire.
+            </small>
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.sender" for="field_sender">Sender</label>
+          <input type="text" class="form-control" name="sender" id="field_sender" data-cy="sender" formControlName="sender" />
+          <div *ngIf="editForm.get('sender')!.invalid && (editForm.get('sender')!.dirty || editForm.get('sender')!.touched)">
+            <small class="form-text text-danger" *ngIf="editForm.get('sender')?.errors?.required" jhiTranslate="entity.validation.required">
+              Ce champ est obligatoire.
+            </small>
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.needsResponse" for="field_needsResponse"
+            >Needs Response</label
+          >
+          <input
+            type="checkbox"
+            class="form-check"
+            name="needsResponse"
+            id="field_needsResponse"
+            data-cy="needsResponse"
+            formControlName="needsResponse"
+          />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.responseTo" for="field_responseTo">Response To</label>
+          <input
+            type="text"
+            class="form-control"
+            name="responseTo"
+            id="field_responseTo"
+            data-cy="responseTo"
+            formControlName="responseTo"
+          />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.step" for="field_step">Step</label>
+          <input type="text" class="form-control" name="step" id="field_step" data-cy="step" formControlName="step" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.stepCode" for="field_stepCode">Step Code</label>
+          <input type="text" class="form-control" name="stepCode" id="field_stepCode" data-cy="stepCode" formControlName="stepCode" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.processId" for="field_processId">Process Id</label>
+          <input type="number" class="form-control" name="processId" id="field_processId" data-cy="processId" formControlName="processId" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.processVersion" for="field_processVersion"
+            >Process Version</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            name="processVersion"
+            id="field_processVersion"
+            data-cy="processVersion"
+            formControlName="processVersion"
+          />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.contact" for="field_contact">Contact</label>
+          <input type="text" class="form-control" name="contact" id="field_contact" data-cy="contact" formControlName="contact" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.senderReference" for="field_senderReference"
+            >Sender Reference</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            name="senderReference"
+            id="field_senderReference"
+            data-cy="senderReference"
+            formControlName="senderReference"
+          />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.dispatchType" for="field_dispatchType"
+            >Dispatch Type</label
+          >
+          <select class="form-control" name="dispatchType" formControlName="dispatchType" id="field_dispatchType" data-cy="dispatchType">
+            <option [ngValue]="null">{{ 'correspCareApp.DispatchType.null' | translate }}</option>
+            <option *ngFor="let dispatchType of dispatchTypeValues" [value]="dispatchType">
+              {{ 'correspCareApp.DispatchType.' + dispatchType | translate }}
+            </option>
+          </select>
+          <div
+            *ngIf="editForm.get('dispatchType')!.invalid && (editForm.get('dispatchType')!.dirty || editForm.get('dispatchType')!.touched)"
+          >
+            <small
+              class="form-text text-danger"
+              *ngIf="editForm.get('dispatchType')?.errors?.required"
+              jhiTranslate="entity.validation.required"
+            >
+              Ce champ est obligatoire.
+            </small>
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.contactCompany" for="field_contactCompany"
+            >Contact Company</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            name="contactCompany"
+            id="field_contactCompany"
+            data-cy="contactCompany"
+            formControlName="contactCompany"
+          />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.personCompany" for="field_personCompany"
+            >Person Company</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            name="personCompany"
+            id="field_personCompany"
+            data-cy="personCompany"
+            formControlName="personCompany"
+          />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.contactAddress" for="field_contactAddress"
+            >Contact Address</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            name="contactAddress"
+            id="field_contactAddress"
+            data-cy="contactAddress"
+            formControlName="contactAddress"
+          />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.contactEmail" for="field_contactEmail"
+            >Contact Email</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            name="contactEmail"
+            id="field_contactEmail"
+            data-cy="contactEmail"
+            formControlName="contactEmail"
+          />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.contactEmailCc" for="field_contactEmailCc"
+            >Contact Email Cc</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            name="contactEmailCc"
+            id="field_contactEmailCc"
+            data-cy="contactEmailCc"
+            formControlName="contactEmailCc"
+          />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.createdBy" for="field_createdBy">Created By</label>
+          <input type="text" class="form-control" name="createdBy" id="field_createdBy" data-cy="createdBy" formControlName="createdBy" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.updatedBy" for="field_updatedBy">Updated By</label>
+          <input type="text" class="form-control" name="updatedBy" id="field_updatedBy" data-cy="updatedBy" formControlName="updatedBy" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.updatedDate" for="field_updatedDate"
+            >Updated Date</label
+          >
+          <div class="d-flex">
+            <input
+              id="field_updatedDate"
+              data-cy="updatedDate"
+              type="datetime-local"
+              class="form-control"
+              name="updatedDate"
+              formControlName="updatedDate"
+              placeholder="YYYY-MM-DD HH:mm"
+            />
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <label jhiTranslate="correspCareApp.correspManageCorresp.dossiers" for="field_dossiers">Dossiers</label>
+          <select
+            class="form-control"
+            id="field_dossiers"
+            data-cy="dossiers"
+            multiple
+            name="dossiers"
+            formControlName="dossiers"
+            [compareWith]="compareDossier"
+          >
+            <option [ngValue]="dossierOption" *ngFor="let dossierOption of dossiersSharedCollection">{{ dossierOption.id }}</option>
+          </select>
+        </div>
+
+        <div class="row mb-3">
+          <label jhiTranslate="correspCareApp.correspManageCorresp.bordereaux" for="field_bordereaux">Bordereaux</label>
+          <select
+            class="form-control"
+            id="field_bordereaux"
+            data-cy="bordereaux"
+            multiple
+            name="bordereaux"
+            formControlName="bordereaux"
+            [compareWith]="compareBordereaux"
+          >
+            <option [ngValue]="bordereauxOption" *ngFor="let bordereauxOption of bordereauxSharedCollection">
+              {{ bordereauxOption.id }}
+            </option>
+          </select>
+        </div>
+
+        <div class="row mb-3">
+          <label jhiTranslate="correspCareApp.correspManageCorresp.attachments" for="field_attachments">Attachments</label>
+          <select
+            class="form-control"
+            id="field_attachments"
+            data-cy="attachments"
+            multiple
+            name="attachments"
+            formControlName="attachments"
+            [compareWith]="comparePj"
+          >
+            <option [ngValue]="pjOption" *ngFor="let pjOption of pjsSharedCollection">{{ pjOption.id }}</option>
+          </select>
+        </div>
+
+        <div class="row mb-3">
+          <label jhiTranslate="correspCareApp.correspManageCorresp.tasks" for="field_tasks">Tasks</label>
+          <select
+            class="form-control"
+            id="field_tasks"
+            data-cy="tasks"
+            multiple
+            name="tasks"
+            formControlName="tasks"
+            [compareWith]="compareTasks"
+          >
+            <option [ngValue]="tasksOption" *ngFor="let tasksOption of tasksSharedCollection">{{ tasksOption.id }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <button type="button" id="cancel-save" data-cy="entityCreateCancelButton" class="btn btn-secondary" (click)="previousState()">
+          <fa-icon icon="ban"></fa-icon>&nbsp;<span jhiTranslate="entity.action.cancel">Annuler</span>
+        </button>
+
+        <button
+          type="submit"
+          id="save-entity"
+          data-cy="entityCreateSaveButton"
+          [disabled]="editForm.invalid || isSaving"
+          class="btn btn-primary"
+        >
+          <fa-icon icon="save"></fa-icon>&nbsp;<span jhiTranslate="entity.action.save">Sauvegarder</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

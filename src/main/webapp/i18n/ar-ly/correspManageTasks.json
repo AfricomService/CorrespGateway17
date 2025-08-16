@@ -1,0 +1,39 @@
+{
+  "correspCareApp": {
+    "correspManageTasks": {
+      "home": {
+        "title": "Tasks",
+        "refreshListLabel": "Refresh list",
+        "createLabel": "Create a new Tasks",
+        "createOrEditLabel": "Create or edit a Tasks",
+        "notFound": "No Tasks found"
+      },
+      "delete": {
+        "question": "Are you sure you want to delete Tasks {{ id }}?"
+      },
+      "detail": {
+        "title": "Tasks"
+      },
+      "id": "ID",
+      "object": "Object",
+      "content": "Content",
+      "creationDate": "Creation Date",
+      "startDate": "Start Date",
+      "dueDate": "Due Date",
+      "closeDate": "Close Date",
+      "responsible": "Responsible",
+      "status": "Status",
+      "createdBy": "Created By",
+      "updatedBy": "Updated By",
+      "updatedDate": "Updated Date",
+      "corresps": "Corresps"
+    }
+  },
+  "correspManageApp": {
+    "correspManageTasks": {
+      "created": "A new Tasks is created with identifier {{ param }}",
+      "updated": "A Tasks is updated with identifier {{ param }}",
+      "deleted": "A Tasks is deleted with identifier {{ param }}"
+    }
+  }
+}

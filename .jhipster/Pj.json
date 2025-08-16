@@ -1,0 +1,72 @@
+{
+  "applications": ["Corresp_Care"],
+  "changelogDate": "20250816102051",
+  "clientRootFolder": "correspManage",
+  "databaseType": "sql",
+  "dto": "mapstruct",
+  "embedded": false,
+  "entityTableName": "pj",
+  "fields": [
+    {
+      "fieldName": "name",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "fileType",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "path",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "creationDate",
+      "fieldType": "ZonedDateTime"
+    },
+    {
+      "fieldName": "password",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "transferable",
+      "fieldType": "Boolean"
+    },
+    {
+      "fieldName": "uniqueName",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "status",
+      "fieldType": "UsualStatus",
+      "fieldValues": "ACTIVE,DELETED,DISABLED"
+    },
+    {
+      "fieldName": "createdBy",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "updatedBy",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "updatedDate",
+      "fieldType": "ZonedDateTime"
+    }
+  ],
+  "fluentMethods": true,
+  "jpaMetamodelFiltering": false,
+  "microserviceName": "correspManage",
+  "name": "Pj",
+  "pagination": "pagination",
+  "readOnly": false,
+  "relationships": [
+    {
+      "otherEntityName": "corresp",
+      "otherEntityRelationshipName": "attachments",
+      "ownerSide": false,
+      "relationshipName": "corresps",
+      "relationshipType": "many-to-many"
+    }
+  ],
+  "service": "serviceClass"
+}

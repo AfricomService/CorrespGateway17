@@ -1,0 +1,39 @@
+{
+  "correspCareApp": {
+    "correspManageBordereaux": {
+      "home": {
+        "title": "Bordereaux",
+        "refreshListLabel": "Refresh list",
+        "createLabel": "Create a new Bordereaux",
+        "createOrEditLabel": "Create or edit a Bordereaux",
+        "notFound": "No Bordereaux found"
+      },
+      "delete": {
+        "question": "Are you sure you want to delete Bordereaux {{ id }}?"
+      },
+      "detail": {
+        "title": "Bordereaux"
+      },
+      "id": "ID",
+      "reference": "Reference",
+      "description": "Description",
+      "amount": "Amount",
+      "currency": "Currency",
+      "status": "Status",
+      "issuedDate": "Issued Date",
+      "dueDate": "Due Date",
+      "createdDate": "Created Date",
+      "updatedDate": "Updated Date",
+      "createdBy": "Created By",
+      "updatedBy": "Updated By",
+      "corresps": "Corresps"
+    }
+  },
+  "correspManageApp": {
+    "correspManageBordereaux": {
+      "created": "A new Bordereaux is created with identifier {{ param }}",
+      "updated": "A Bordereaux is updated with identifier {{ param }}",
+      "deleted": "A Bordereaux is deleted with identifier {{ param }}"
+    }
+  }
+}

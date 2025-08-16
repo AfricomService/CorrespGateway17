@@ -1,0 +1,32 @@
+{
+  "correspCareApp": {
+    "configManageTypedocument": {
+      "home": {
+        "title": "Typedocuments",
+        "refreshListLabel": "Actualiser la liste",
+        "createLabel": "Créer un nouveau Typedocument",
+        "createOrEditLabel": "Créer ou éditer un Typedocument",
+        "notFound": "Aucun Typedocument trouvé"
+      },
+      "delete": {
+        "question": "Êtes-vous certain de vouloir supprimer le Typedocument {{ id }} ?"
+      },
+      "detail": {
+        "title": "Typedocument"
+      },
+      "id": "Id",
+      "nom": "Nom",
+      "defautdest": "Defautdest",
+      "defaultobject": "Defaultobject",
+      "defaultencopie": "Defaultencopie",
+      "usualstatus": "Usualstatus"
+    }
+  },
+  "configManageApp": {
+    "configManageTypedocument": {
+      "created": "Un nouveau Typedocument a été créé avec l'identifiant {{ param }}",
+      "updated": "Le Typedocument avec l'identifiant {{ param }} a été mis à jour",
+      "deleted": "Le Typedocument avec l'identifiant {{ param }} a été supprimé"
+    }
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "applications": ["Corresp_Care"],
+  "changelogDate": "20250816101651",
+  "clientRootFolder": "journaux",
+  "databaseType": "sql",
+  "dto": "mapstruct",
+  "embedded": false,
+  "entityTableName": "hist_consult",
+  "fields": [
+    {
+      "fieldName": "labelAction",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "user",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "dateTransaction",
+      "fieldType": "ZonedDateTime"
+    },
+    {
+      "fieldName": "categorie",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "navigateur",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "ip",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "terminal",
+      "fieldType": "String"
+    }
+  ],
+  "fluentMethods": true,
+  "jpaMetamodelFiltering": false,
+  "microserviceName": "journaux",
+  "name": "HistConsult",
+  "pagination": "pagination",
+  "readOnly": false,
+  "relationships": [],
+  "service": "serviceClass"
+}

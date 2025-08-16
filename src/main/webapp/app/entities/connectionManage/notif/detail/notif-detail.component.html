@@ -1,0 +1,68 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <div *ngIf="notif">
+      <h2 data-cy="notifDetailsHeading"><span jhiTranslate="correspCareApp.connectionManageNotif.detail.title">Notif</span></h2>
+
+      <hr />
+
+      <jhi-alert-error></jhi-alert-error>
+
+      <jhi-alert></jhi-alert>
+
+      <dl class="row-md jh-entity-details">
+        <dt><span jhiTranslate="correspCareApp.connectionManageNotif.id">Id</span></dt>
+        <dd>
+          <span>{{ notif.id }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.connectionManageNotif.title">Title</span></dt>
+        <dd>
+          <span>{{ notif.title }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.connectionManageNotif.body">Body</span></dt>
+        <dd>
+          <span>{{ notif.body }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.connectionManageNotif.recipientEmail">Recipient Email</span></dt>
+        <dd>
+          <span>{{ notif.recipientEmail }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.connectionManageNotif.recipeientccemail">Recipeientccemail</span></dt>
+        <dd>
+          <span>{{ notif.recipeientccemail }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.connectionManageNotif.receipientbccemail">Receipientbccemail</span></dt>
+        <dd>
+          <span>{{ notif.receipientbccemail }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.connectionManageNotif.senderEmail">Sender Email</span></dt>
+        <dd>
+          <span>{{ notif.senderEmail }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.connectionManageNotif.sentDate">Sent Date</span></dt>
+        <dd>
+          <span>{{ notif.sentDate | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.connectionManageNotif.status">Status</span></dt>
+        <dd>
+          <span jhiTranslate="{{ 'correspCareApp.NotificationStatus.' + notif.status }}">{{ notif.status }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.connectionManageNotif.typeNotif">Type Notif</span></dt>
+        <dd>
+          <span>{{ notif.typeNotif }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.connectionManageNotif.messageID">Message ID</span></dt>
+        <dd>
+          <span>{{ notif.messageID }}</span>
+        </dd>
+      </dl>
+
+      <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+        <fa-icon icon="arrow-left"></fa-icon>&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+      </button>
+
+      <button type="button" [routerLink]="['/notif', notif.id, 'edit']" class="btn btn-primary">
+        <fa-icon icon="pencil-alt"></fa-icon>&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+      </button>
+    </div>
+  </div>
+</div>

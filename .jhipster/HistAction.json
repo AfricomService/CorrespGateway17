@@ -1,0 +1,43 @@
+{
+  "applications": ["Corresp_Care"],
+  "changelogDate": "20250816102451",
+  "clientRootFolder": "journaux",
+  "databaseType": "sql",
+  "dto": "mapstruct",
+  "embedded": false,
+  "entityTableName": "hist_action",
+  "fields": [
+    {
+      "fieldName": "id",
+      "fieldType": "Long"
+    },
+    {
+      "fieldName": "dateTransaction",
+      "fieldType": "ZonedDateTime"
+    },
+    {
+      "fieldName": "loginUser",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "transaction",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "actionRef",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "actionJson",
+      "fieldType": "String"
+    }
+  ],
+  "fluentMethods": true,
+  "jpaMetamodelFiltering": false,
+  "microserviceName": "journaux",
+  "name": "HistAction",
+  "pagination": "pagination",
+  "readOnly": false,
+  "relationships": [],
+  "service": "serviceClass"
+}

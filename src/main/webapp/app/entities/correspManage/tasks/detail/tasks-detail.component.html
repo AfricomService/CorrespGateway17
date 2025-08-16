@@ -1,0 +1,75 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <div *ngIf="tasks">
+      <h2 data-cy="tasksDetailsHeading"><span jhiTranslate="correspCareApp.correspManageTasks.detail.title">Tasks</span></h2>
+
+      <hr />
+
+      <jhi-alert-error></jhi-alert-error>
+
+      <jhi-alert></jhi-alert>
+
+      <dl class="row-md jh-entity-details">
+        <dt><span jhiTranslate="global.field.id">ID</span></dt>
+        <dd>
+          <span>{{ tasks.id }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageTasks.object">Object</span></dt>
+        <dd>
+          <span>{{ tasks.object }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageTasks.content">Content</span></dt>
+        <dd>
+          <div *ngIf="tasks.content">
+            <a (click)="openFile(tasks.content, tasks.contentContentType)" jhiTranslate="entity.action.open">Ouvrir</a>
+            {{ tasks.contentContentType }}, {{ byteSize(tasks.content) }}
+          </div>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageTasks.creationDate">Creation Date</span></dt>
+        <dd>
+          <span>{{ tasks.creationDate | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageTasks.startDate">Start Date</span></dt>
+        <dd>
+          <span>{{ tasks.startDate | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageTasks.dueDate">Due Date</span></dt>
+        <dd>
+          <span>{{ tasks.dueDate | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageTasks.closeDate">Close Date</span></dt>
+        <dd>
+          <span>{{ tasks.closeDate | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageTasks.responsible">Responsible</span></dt>
+        <dd>
+          <span>{{ tasks.responsible }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageTasks.status">Status</span></dt>
+        <dd>
+          <span jhiTranslate="{{ 'correspCareApp.CorrespStatus.' + tasks.status }}">{{ tasks.status }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageTasks.createdBy">Created By</span></dt>
+        <dd>
+          <span>{{ tasks.createdBy }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageTasks.updatedBy">Updated By</span></dt>
+        <dd>
+          <span>{{ tasks.updatedBy }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageTasks.updatedDate">Updated Date</span></dt>
+        <dd>
+          <span>{{ tasks.updatedDate | formatMediumDatetime }}</span>
+        </dd>
+      </dl>
+
+      <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+        <fa-icon icon="arrow-left"></fa-icon>&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+      </button>
+
+      <button type="button" [routerLink]="['/tasks', tasks.id, 'edit']" class="btn btn-primary">
+        <fa-icon icon="pencil-alt"></fa-icon>&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+      </button>
+    </div>
+  </div>
+</div>

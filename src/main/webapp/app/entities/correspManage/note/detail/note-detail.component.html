@@ -1,0 +1,74 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <div *ngIf="note">
+      <h2 data-cy="noteDetailsHeading"><span jhiTranslate="correspCareApp.correspManageNote.detail.title">Note</span></h2>
+
+      <hr />
+
+      <jhi-alert-error></jhi-alert-error>
+
+      <jhi-alert></jhi-alert>
+
+      <dl class="row-md jh-entity-details">
+        <dt><span jhiTranslate="global.field.id">ID</span></dt>
+        <dd>
+          <span>{{ note.id }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageNote.idinstance">Idinstance</span></dt>
+        <dd>
+          <span>{{ note.idinstance }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageNote.reference">Reference</span></dt>
+        <dd>
+          <span>{{ note.reference }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageNote.subject">Subject</span></dt>
+        <dd>
+          <span>{{ note.subject }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageNote.dateCreated">Date Created</span></dt>
+        <dd>
+          <span>{{ note.dateCreated | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageNote.datePublication">Date Publication</span></dt>
+        <dd>
+          <span>{{ note.datePublication | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageNote.dateEndPublication">Date End Publication</span></dt>
+        <dd>
+          <span>{{ note.dateEndPublication | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageNote.status">Status</span></dt>
+        <dd>
+          <span jhiTranslate="{{ 'correspCareApp.CorrespStatus.' + note.status }}">{{ note.status }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageNote.createdBy">Created By</span></dt>
+        <dd>
+          <span>{{ note.createdBy }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageNote.updatedBy">Updated By</span></dt>
+        <dd>
+          <span>{{ note.updatedBy }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageNote.updatedDate">Updated Date</span></dt>
+        <dd>
+          <span>{{ note.updatedDate | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageNote.attachment">Attachment</span></dt>
+        <dd>
+          <div *ngIf="note.attachment">
+            <a [routerLink]="['/pj', note.attachment.id, 'view']">{{ note.attachment.id }}</a>
+          </div>
+        </dd>
+      </dl>
+
+      <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+        <fa-icon icon="arrow-left"></fa-icon>&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+      </button>
+
+      <button type="button" [routerLink]="['/note', note.id, 'edit']" class="btn btn-primary">
+        <fa-icon icon="pencil-alt"></fa-icon>&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+      </button>
+    </div>
+  </div>
+</div>

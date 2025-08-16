@@ -1,0 +1,39 @@
+{
+  "correspCareApp": {
+    "connectionManageConnecteur": {
+      "home": {
+        "title": "Connecteurs",
+        "refreshListLabel": "Actualiser la liste",
+        "createLabel": "Créer un nouveau Connecteur",
+        "createOrEditLabel": "Créer ou éditer un Connecteur",
+        "notFound": "Aucun Connecteur trouvé"
+      },
+      "delete": {
+        "question": "Êtes-vous certain de vouloir supprimer le Connecteur {{ id }} ?"
+      },
+      "detail": {
+        "title": "Connecteur"
+      },
+      "id": "Id",
+      "name": "Name",
+      "codeRules": "Code Rules",
+      "protocol": "Protocol",
+      "host": "Host",
+      "port": "Port",
+      "enable": "Enable",
+      "email": "Email",
+      "password": "Password",
+      "folderSource": "Folder Source",
+      "folderonOK": "Folderon OK",
+      "folderonError": "Folderon Error",
+      "isActif": "Is Actif"
+    }
+  },
+  "connectionManageApp": {
+    "connectionManageConnecteur": {
+      "created": "Un nouveau Connecteur a été créé avec l'identifiant {{ param }}",
+      "updated": "Le Connecteur avec l'identifiant {{ param }} a été mis à jour",
+      "deleted": "Le Connecteur avec l'identifiant {{ param }} a été supprimé"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "correspCareApp": {
+    "kafkaServiceMessage": {
+      "home": {
+        "title": "Messages",
+        "refreshListLabel": "Actualiser la liste",
+        "createLabel": "Créer un nouveau Message",
+        "createOrEditLabel": "Créer ou éditer un Message",
+        "notFound": "Aucun Message trouvé"
+      },
+      "delete": {
+        "question": "Êtes-vous certain de vouloir supprimer le Message {{ id }} ?"
+      },
+      "detail": {
+        "title": "Message"
+      },
+      "id": "ID",
+      "content": "Content",
+      "timestamp": "Timestamp"
+    }
+  },
+  "kafkaServiceApp": {
+    "kafkaServiceMessage": {
+      "created": "Un nouveau Message a été créé avec l'identifiant {{ param }}",
+      "updated": "Le Message avec l'identifiant {{ param }} a été mis à jour",
+      "deleted": "Le Message avec l'identifiant {{ param }} a été supprimé"
+    }
+  }
+}

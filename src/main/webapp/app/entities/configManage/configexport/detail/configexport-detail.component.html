@@ -1,0 +1,57 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <div *ngIf="configexport">
+      <h2 data-cy="configexportDetailsHeading">
+        <span jhiTranslate="correspCareApp.configManageConfigexport.detail.title">Configexport</span>
+      </h2>
+
+      <hr />
+
+      <jhi-alert-error></jhi-alert-error>
+
+      <jhi-alert></jhi-alert>
+
+      <dl class="row-md jh-entity-details">
+        <dt><span jhiTranslate="correspCareApp.configManageConfigexport.id">Id</span></dt>
+        <dd>
+          <span>{{ configexport.id }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageConfigexport.label">Label</span></dt>
+        <dd>
+          <span>{{ configexport.label }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageConfigexport.active">Active</span></dt>
+        <dd>
+          <span>{{ configexport.active }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageConfigexport.excelFile">Excel File</span></dt>
+        <dd>
+          <div *ngIf="configexport.excelFile">
+            <a (click)="openFile(configexport.excelFile, configexport.excelFileContentType)" jhiTranslate="entity.action.open">Ouvrir</a>
+            {{ configexport.excelFileContentType }}, {{ byteSize(configexport.excelFile) }}
+          </div>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageConfigexport.dateCreated">Date Created</span></dt>
+        <dd>
+          <span>{{ configexport.dateCreated | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageConfigexport.configMappingJson">Config Mapping Json</span></dt>
+        <dd>
+          <span>{{ configexport.configMappingJson }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageConfigexport.readAccess">Read Access</span></dt>
+        <dd>
+          <span>{{ configexport.readAccess }}</span>
+        </dd>
+      </dl>
+
+      <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+        <fa-icon icon="arrow-left"></fa-icon>&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+      </button>
+
+      <button type="button" [routerLink]="['/configexport', configexport.id, 'edit']" class="btn btn-primary">
+        <fa-icon icon="pencil-alt"></fa-icon>&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+      </button>
+    </div>
+  </div>
+</div>

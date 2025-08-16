@@ -1,0 +1,115 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <form name="editForm" role="form" novalidate (ngSubmit)="save()" [formGroup]="editForm">
+      <h2
+        id="jhi-myreport-heading"
+        data-cy="MyreportCreateUpdateHeading"
+        jhiTranslate="correspCareApp.configManageMyreport.home.createOrEditLabel"
+      >
+        Créer ou éditer un Myreport
+      </h2>
+
+      <div>
+        <jhi-alert-error></jhi-alert-error>
+
+        <div class="row mb-3" *ngIf="editForm.controls.id.value !== null">
+          <label class="form-label" jhiTranslate="correspCareApp.configManageMyreport.id" for="field_id">Id</label>
+          <input type="number" class="form-control" name="id" id="field_id" data-cy="id" formControlName="id" [readonly]="true" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.configManageMyreport.dateCreated" for="field_dateCreated"
+            >Date Created</label
+          >
+          <div class="d-flex">
+            <input
+              id="field_dateCreated"
+              data-cy="dateCreated"
+              type="datetime-local"
+              class="form-control"
+              name="dateCreated"
+              formControlName="dateCreated"
+              placeholder="YYYY-MM-DD HH:mm"
+            />
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.configManageMyreport.loginName" for="field_loginName">Login Name</label>
+          <input type="text" class="form-control" name="loginName" id="field_loginName" data-cy="loginName" formControlName="loginName" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.configManageMyreport.loginId" for="field_loginId">Login Id</label>
+          <input type="number" class="form-control" name="loginId" id="field_loginId" data-cy="loginId" formControlName="loginId" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.configManageMyreport.nameFile" for="field_nameFile">Name File</label>
+          <input type="text" class="form-control" name="nameFile" id="field_nameFile" data-cy="nameFile" formControlName="nameFile" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.configManageMyreport.nameFolder" for="field_nameFolder">Name Folder</label>
+          <input
+            type="text"
+            class="form-control"
+            name="nameFolder"
+            id="field_nameFolder"
+            data-cy="nameFolder"
+            formControlName="nameFolder"
+          />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.configManageMyreport.configExportId" for="field_configExportId"
+            >Config Export Id</label
+          >
+          <input
+            type="number"
+            class="form-control"
+            name="configExportId"
+            id="field_configExportId"
+            data-cy="configExportId"
+            formControlName="configExportId"
+          />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.configManageMyreport.configexport" for="field_configexport"
+            >Configexport</label
+          >
+          <select
+            class="form-control"
+            id="field_configexport"
+            data-cy="configexport"
+            name="configexport"
+            formControlName="configexport"
+            [compareWith]="compareConfigexport"
+          >
+            <option [ngValue]="null"></option>
+            <option [ngValue]="configexportOption" *ngFor="let configexportOption of configexportsSharedCollection">
+              {{ configexportOption.id }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <button type="button" id="cancel-save" data-cy="entityCreateCancelButton" class="btn btn-secondary" (click)="previousState()">
+          <fa-icon icon="ban"></fa-icon>&nbsp;<span jhiTranslate="entity.action.cancel">Annuler</span>
+        </button>
+
+        <button
+          type="submit"
+          id="save-entity"
+          data-cy="entityCreateSaveButton"
+          [disabled]="editForm.invalid || isSaving"
+          class="btn btn-primary"
+        >
+          <fa-icon icon="save"></fa-icon>&nbsp;<span jhiTranslate="entity.action.save">Sauvegarder</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

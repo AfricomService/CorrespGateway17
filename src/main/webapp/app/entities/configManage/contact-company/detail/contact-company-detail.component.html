@@ -1,0 +1,70 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <div *ngIf="contactCompany">
+      <h2 data-cy="contactCompanyDetailsHeading">
+        <span jhiTranslate="correspCareApp.configManageContactCompany.detail.title">Contact Company</span>
+      </h2>
+
+      <hr />
+
+      <jhi-alert-error></jhi-alert-error>
+
+      <jhi-alert></jhi-alert>
+
+      <dl class="row-md jh-entity-details">
+        <dt><span jhiTranslate="correspCareApp.configManageContactCompany.id">Id</span></dt>
+        <dd>
+          <span>{{ contactCompany.id }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageContactCompany.nom">Nom</span></dt>
+        <dd>
+          <span>{{ contactCompany.nom }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageContactCompany.nomabrege">Nomabrege</span></dt>
+        <dd>
+          <span>{{ contactCompany.nomabrege }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageContactCompany.matrne">Matrne</span></dt>
+        <dd>
+          <span>{{ contactCompany.matrne }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageContactCompany.pays">Pays</span></dt>
+        <dd>
+          <span>{{ contactCompany.pays }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageContactCompany.adresse">Adresse</span></dt>
+        <dd>
+          <span>{{ contactCompany.adresse }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageContactCompany.tel">Tel</span></dt>
+        <dd>
+          <span>{{ contactCompany.tel }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageContactCompany.fax">Fax</span></dt>
+        <dd>
+          <span>{{ contactCompany.fax }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageContactCompany.email">Email</span></dt>
+        <dd>
+          <span>{{ contactCompany.email }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageContactCompany.webpage">Webpage</span></dt>
+        <dd>
+          <span>{{ contactCompany.webpage }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageContactCompany.etat">Etat</span></dt>
+        <dd>
+          <span jhiTranslate="{{ 'correspCareApp.UsualStatus.' + contactCompany.etat }}">{{ contactCompany.etat }}</span>
+        </dd>
+      </dl>
+
+      <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+        <fa-icon icon="arrow-left"></fa-icon>&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+      </button>
+
+      <button type="button" [routerLink]="['/contact-company', contactCompany.id, 'edit']" class="btn btn-primary">
+        <fa-icon icon="pencil-alt"></fa-icon>&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+      </button>
+    </div>
+  </div>
+</div>

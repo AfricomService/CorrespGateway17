@@ -1,0 +1,10 @@
+{
+  "correspCareApp": {
+    "NotificationStatus": {
+      "null": "",
+      "PENDING": "PENDING",
+      "SENT": "SENT",
+      "FAILED": "FAILED"
+    }
+  }
+}

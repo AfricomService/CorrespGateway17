@@ -1,0 +1,183 @@
+<div>
+  <h2 id="page-heading" data-cy="ConnecteurHeading">
+    <span jhiTranslate="correspCareApp.connectionManageConnecteur.home.title">Connecteurs</span>
+
+    <div class="d-flex justify-content-end">
+      <button class="btn btn-info me-2" (click)="load()" [disabled]="isLoading">
+        <fa-icon icon="sync" [spin]="isLoading"></fa-icon>
+        <span jhiTranslate="correspCareApp.connectionManageConnecteur.home.refreshListLabel">Actualiser la liste</span>
+      </button>
+
+      <button
+        id="jh-create-entity"
+        data-cy="entityCreateButton"
+        class="btn btn-primary jh-create-entity create-connecteur"
+        [routerLink]="['/connecteur/new']"
+      >
+        <fa-icon icon="plus"></fa-icon>
+        <span jhiTranslate="correspCareApp.connectionManageConnecteur.home.createLabel"> Créer un nouveau Connecteur </span>
+      </button>
+    </div>
+  </h2>
+
+  <jhi-alert-error></jhi-alert-error>
+
+  <jhi-alert></jhi-alert>
+
+  <div class="alert alert-warning" id="no-result" *ngIf="connecteurs?.length === 0">
+    <span jhiTranslate="correspCareApp.connectionManageConnecteur.home.notFound">Aucun Connecteur trouvé</span>
+  </div>
+
+  <div class="table-responsive table-entities" id="entities" *ngIf="connecteurs && connecteurs.length > 0">
+    <table class="table table-striped" aria-describedby="page-heading">
+      <thead>
+        <tr jhiSort [(predicate)]="predicate" [(ascending)]="ascending" (sortChange)="navigateToWithComponentValues()">
+          <th scope="col" jhiSortBy="id">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.connectionManageConnecteur.id">Id</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="name">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.connectionManageConnecteur.name">Name</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="codeRules">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.connectionManageConnecteur.codeRules">Code Rules</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="protocol">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.connectionManageConnecteur.protocol">Protocol</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="host">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.connectionManageConnecteur.host">Host</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="port">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.connectionManageConnecteur.port">Port</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="enable">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.connectionManageConnecteur.enable">Enable</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="email">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.connectionManageConnecteur.email">Email</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="password">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.connectionManageConnecteur.password">Password</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="folderSource">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.connectionManageConnecteur.folderSource">Folder Source</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="folderonOK">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.connectionManageConnecteur.folderonOK">Folderon OK</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="folderonError">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.connectionManageConnecteur.folderonError">Folderon Error</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="isActif">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.connectionManageConnecteur.isActif">Is Actif</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let connecteur of connecteurs; trackBy: trackId" data-cy="entityTable">
+          <td>
+            <a [routerLink]="['/connecteur', connecteur.id, 'view']">{{ connecteur.id }}</a>
+          </td>
+          <td>{{ connecteur.name }}</td>
+          <td>{{ connecteur.codeRules }}</td>
+          <td>{{ connecteur.protocol }}</td>
+          <td>{{ connecteur.host }}</td>
+          <td>{{ connecteur.port }}</td>
+          <td>{{ connecteur.enable }}</td>
+          <td>{{ connecteur.email }}</td>
+          <td>{{ connecteur.password }}</td>
+          <td>{{ connecteur.folderSource }}</td>
+          <td>{{ connecteur.folderonOK }}</td>
+          <td>{{ connecteur.folderonError }}</td>
+          <td>{{ connecteur.isActif }}</td>
+          <td class="text-end">
+            <div class="btn-group">
+              <button
+                type="submit"
+                [routerLink]="['/connecteur', connecteur.id, 'view']"
+                class="btn btn-info btn-sm"
+                data-cy="entityDetailsButton"
+              >
+                <fa-icon icon="eye"></fa-icon>
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.view">Voir</span>
+              </button>
+
+              <button
+                type="submit"
+                [routerLink]="['/connecteur', connecteur.id, 'edit']"
+                class="btn btn-primary btn-sm"
+                data-cy="entityEditButton"
+              >
+                <fa-icon icon="pencil-alt"></fa-icon>
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.edit">Editer</span>
+              </button>
+
+              <button type="submit" (click)="delete(connecteur)" class="btn btn-danger btn-sm" data-cy="entityDeleteButton">
+                <fa-icon icon="times"></fa-icon>
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.delete">Supprimer</span>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div *ngIf="connecteurs && connecteurs.length > 0">
+    <div class="d-flex justify-content-center">
+      <jhi-item-count [params]="{ page: page, totalItems: totalItems, itemsPerPage: itemsPerPage }"></jhi-item-count>
+    </div>
+
+    <div class="d-flex justify-content-center">
+      <ngb-pagination
+        [collectionSize]="totalItems"
+        [page]="page"
+        [pageSize]="itemsPerPage"
+        [maxSize]="5"
+        [rotate]="true"
+        [boundaryLinks]="true"
+        (pageChange)="navigateToPage($event)"
+      ></ngb-pagination>
+    </div>
+  </div>
+</div>

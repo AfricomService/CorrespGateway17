@@ -1,0 +1,39 @@
+{
+  "correspCareApp": {
+    "connectionManageConnecteur": {
+      "home": {
+        "title": "Connecteurs",
+        "refreshListLabel": "Refresh list",
+        "createLabel": "Create a new Connecteur",
+        "createOrEditLabel": "Create or edit a Connecteur",
+        "notFound": "No Connecteurs found"
+      },
+      "delete": {
+        "question": "Are you sure you want to delete Connecteur {{ id }}?"
+      },
+      "detail": {
+        "title": "Connecteur"
+      },
+      "id": "Id",
+      "name": "Name",
+      "codeRules": "Code Rules",
+      "protocol": "Protocol",
+      "host": "Host",
+      "port": "Port",
+      "enable": "Enable",
+      "email": "Email",
+      "password": "Password",
+      "folderSource": "Folder Source",
+      "folderonOK": "Folderon OK",
+      "folderonError": "Folderon Error",
+      "isActif": "Is Actif"
+    }
+  },
+  "connectionManageApp": {
+    "connectionManageConnecteur": {
+      "created": "A new Connecteur is created with identifier {{ param }}",
+      "updated": "A Connecteur is updated with identifier {{ param }}",
+      "deleted": "A Connecteur is deleted with identifier {{ param }}"
+    }
+  }
+}

@@ -1,0 +1,63 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <div *ngIf="dossier">
+      <h2 data-cy="dossierDetailsHeading"><span jhiTranslate="correspCareApp.correspManageDossier.detail.title">Dossier</span></h2>
+
+      <hr />
+
+      <jhi-alert-error></jhi-alert-error>
+
+      <jhi-alert></jhi-alert>
+
+      <dl class="row-md jh-entity-details">
+        <dt><span jhiTranslate="global.field.id">ID</span></dt>
+        <dd>
+          <span>{{ dossier.id }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageDossier.name">Name</span></dt>
+        <dd>
+          <span>{{ dossier.name }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageDossier.isPublic">Is Public</span></dt>
+        <dd>
+          <span>{{ dossier.isPublic }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageDossier.responsible">Responsible</span></dt>
+        <dd>
+          <span>{{ dossier.responsible }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageDossier.status">Status</span></dt>
+        <dd>
+          <span jhiTranslate="{{ 'correspCareApp.UsualStatus.' + dossier.status }}">{{ dossier.status }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageDossier.dossierList">Dossier List</span></dt>
+        <dd>
+          <div *ngIf="dossier.dossierList">
+            <a (click)="openFile(dossier.dossierList, dossier.dossierListContentType)" jhiTranslate="entity.action.open">Ouvrir</a>
+            {{ dossier.dossierListContentType }}, {{ byteSize(dossier.dossierList) }}
+          </div>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageDossier.createdBy">Created By</span></dt>
+        <dd>
+          <span>{{ dossier.createdBy }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageDossier.updatedBy">Updated By</span></dt>
+        <dd>
+          <span>{{ dossier.updatedBy }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageDossier.updatedDate">Updated Date</span></dt>
+        <dd>
+          <span>{{ dossier.updatedDate | formatMediumDatetime }}</span>
+        </dd>
+      </dl>
+
+      <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+        <fa-icon icon="arrow-left"></fa-icon>&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+      </button>
+
+      <button type="button" [routerLink]="['/dossier', dossier.id, 'edit']" class="btn btn-primary">
+        <fa-icon icon="pencil-alt"></fa-icon>&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+      </button>
+    </div>
+  </div>
+</div>

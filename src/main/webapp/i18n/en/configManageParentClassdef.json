@@ -1,0 +1,29 @@
+{
+  "correspCareApp": {
+    "configManageParentClassdef": {
+      "home": {
+        "title": "Parent Classdefs",
+        "refreshListLabel": "Refresh list",
+        "createLabel": "Create a new Parent Classdef",
+        "createOrEditLabel": "Create or edit a Parent Classdef",
+        "notFound": "No Parent Classdefs found"
+      },
+      "delete": {
+        "question": "Are you sure you want to delete Parent Classdef {{ id }}?"
+      },
+      "detail": {
+        "title": "Parent Classdef"
+      },
+      "id": "Id",
+      "type": "Type",
+      "sequenceId": "Sequence Id"
+    }
+  },
+  "configManageApp": {
+    "configManageParentClassdef": {
+      "created": "A new Parent Classdef is created with identifier {{ param }}",
+      "updated": "A Parent Classdef is updated with identifier {{ param }}",
+      "deleted": "A Parent Classdef is deleted with identifier {{ param }}"
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "correspCareApp": {
+    "orgacareOrgaEntity": {
+      "home": {
+        "title": "Orga Entities",
+        "refreshListLabel": "Refresh list",
+        "createLabel": "Create a new Orga Entity",
+        "createOrEditLabel": "Create or edit a Orga Entity",
+        "notFound": "No Orga Entities found"
+      },
+      "delete": {
+        "question": "Are you sure you want to delete Orga Entity {{ id }}?"
+      },
+      "detail": {
+        "title": "Orga Entity"
+      },
+      "id": "Id",
+      "name": "Name",
+      "description": "Description",
+      "createdDate": "Created Date",
+      "updatedDate": "Updated Date",
+      "departement": "Departement",
+      "employe": "Employe"
+    }
+  },
+  "orgacareApp": {
+    "orgacareOrgaEntity": {
+      "created": "A new Orga Entity is created with identifier {{ param }}",
+      "updated": "A Orga Entity is updated with identifier {{ param }}",
+      "deleted": "A Orga Entity is deleted with identifier {{ param }}"
+    }
+  }
+}

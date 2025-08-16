@@ -1,0 +1,10 @@
+{
+  "correspCareApp": {
+    "CorrespType": {
+      "null": "",
+      "INCOMING": "INCOMING",
+      "OUTGOING": "OUTGOING",
+      "INTERNAL": "INTERNAL"
+    }
+  }
+}

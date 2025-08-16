@@ -1,0 +1,35 @@
+{
+  "correspCareApp": {
+    "configManagePersonCompany": {
+      "home": {
+        "title": "PersonCompanies",
+        "refreshListLabel": "Actualiser la liste",
+        "createLabel": "Créer un nouveau Person Company",
+        "createOrEditLabel": "Créer ou éditer un Person Company",
+        "notFound": "Aucun Person Company trouvé"
+      },
+      "delete": {
+        "question": "Êtes-vous certain de vouloir supprimer le Person Company {{ id }} ?"
+      },
+      "detail": {
+        "title": "Person Company"
+      },
+      "id": "Id",
+      "nom": "Nom",
+      "pays": "Pays",
+      "adresse": "Adresse",
+      "tel": "Tel",
+      "fax": "Fax",
+      "email": "Email",
+      "whatsapp": "Whatsapp",
+      "etat": "Etat"
+    }
+  },
+  "configManageApp": {
+    "configManagePersonCompany": {
+      "created": "Un nouveau Person Company a été créé avec l'identifiant {{ param }}",
+      "updated": "Le Person Company avec l'identifiant {{ param }} a été mis à jour",
+      "deleted": "Le Person Company avec l'identifiant {{ param }} a été supprimé"
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "correspCareApp": {
+    "configManageMyreport": {
+      "home": {
+        "title": "Myreports",
+        "refreshListLabel": "Actualiser la liste",
+        "createLabel": "Créer un nouveau Myreport",
+        "createOrEditLabel": "Créer ou éditer un Myreport",
+        "notFound": "Aucun Myreport trouvé"
+      },
+      "delete": {
+        "question": "Êtes-vous certain de vouloir supprimer le Myreport {{ id }} ?"
+      },
+      "detail": {
+        "title": "Myreport"
+      },
+      "id": "Id",
+      "dateCreated": "Date Created",
+      "loginName": "Login Name",
+      "loginId": "Login Id",
+      "nameFile": "Name File",
+      "nameFolder": "Name Folder",
+      "configExportId": "Config Export Id",
+      "configexport": "Configexport"
+    }
+  },
+  "configManageApp": {
+    "configManageMyreport": {
+      "created": "Un nouveau Myreport a été créé avec l'identifiant {{ param }}",
+      "updated": "Le Myreport avec l'identifiant {{ param }} a été mis à jour",
+      "deleted": "Le Myreport avec l'identifiant {{ param }} a été supprimé"
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "correspCareApp": {
+    "journauxHistAction": {
+      "home": {
+        "title": "Hist Actions",
+        "refreshListLabel": "Refresh list",
+        "createLabel": "Create a new Hist Action",
+        "createOrEditLabel": "Create or edit a Hist Action",
+        "notFound": "No Hist Actions found"
+      },
+      "delete": {
+        "question": "Are you sure you want to delete Hist Action {{ id }}?"
+      },
+      "detail": {
+        "title": "Hist Action"
+      },
+      "id": "Id",
+      "dateTransaction": "Date Transaction",
+      "loginUser": "Login User",
+      "transaction": "Transaction",
+      "actionRef": "Action Ref",
+      "actionJson": "Action Json"
+    }
+  },
+  "journauxApp": {
+    "journauxHistAction": {
+      "created": "A new Hist Action is created with identifier {{ param }}",
+      "updated": "A Hist Action is updated with identifier {{ param }}",
+      "deleted": "A Hist Action is deleted with identifier {{ param }}"
+    }
+  }
+}

@@ -1,0 +1,89 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <form name="editForm" role="form" novalidate (ngSubmit)="save()" [formGroup]="editForm">
+      <h2
+        id="jhi-hist-action-heading"
+        data-cy="HistActionCreateUpdateHeading"
+        jhiTranslate="correspCareApp.journauxHistAction.home.createOrEditLabel"
+      >
+        Créer ou éditer un Hist Action
+      </h2>
+
+      <div>
+        <jhi-alert-error></jhi-alert-error>
+
+        <div class="row mb-3" *ngIf="editForm.controls.id.value !== null">
+          <label class="form-label" jhiTranslate="correspCareApp.journauxHistAction.id" for="field_id">Id</label>
+          <input type="number" class="form-control" name="id" id="field_id" data-cy="id" formControlName="id" [readonly]="true" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.journauxHistAction.dateTransaction" for="field_dateTransaction"
+            >Date Transaction</label
+          >
+          <div class="d-flex">
+            <input
+              id="field_dateTransaction"
+              data-cy="dateTransaction"
+              type="datetime-local"
+              class="form-control"
+              name="dateTransaction"
+              formControlName="dateTransaction"
+              placeholder="YYYY-MM-DD HH:mm"
+            />
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.journauxHistAction.loginUser" for="field_loginUser">Login User</label>
+          <input type="text" class="form-control" name="loginUser" id="field_loginUser" data-cy="loginUser" formControlName="loginUser" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.journauxHistAction.transaction" for="field_transaction">Transaction</label>
+          <input
+            type="text"
+            class="form-control"
+            name="transaction"
+            id="field_transaction"
+            data-cy="transaction"
+            formControlName="transaction"
+          />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.journauxHistAction.actionRef" for="field_actionRef">Action Ref</label>
+          <input type="text" class="form-control" name="actionRef" id="field_actionRef" data-cy="actionRef" formControlName="actionRef" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.journauxHistAction.actionJson" for="field_actionJson">Action Json</label>
+          <input
+            type="text"
+            class="form-control"
+            name="actionJson"
+            id="field_actionJson"
+            data-cy="actionJson"
+            formControlName="actionJson"
+          />
+        </div>
+      </div>
+
+      <div>
+        <button type="button" id="cancel-save" data-cy="entityCreateCancelButton" class="btn btn-secondary" (click)="previousState()">
+          <fa-icon icon="ban"></fa-icon>&nbsp;<span jhiTranslate="entity.action.cancel">Annuler</span>
+        </button>
+
+        <button
+          type="submit"
+          id="save-entity"
+          data-cy="entityCreateSaveButton"
+          [disabled]="editForm.invalid || isSaving"
+          class="btn btn-primary"
+        >
+          <fa-icon icon="save"></fa-icon>&nbsp;<span jhiTranslate="entity.action.save">Sauvegarder</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

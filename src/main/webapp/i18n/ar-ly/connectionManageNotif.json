@@ -1,0 +1,37 @@
+{
+  "correspCareApp": {
+    "connectionManageNotif": {
+      "home": {
+        "title": "Notifs",
+        "refreshListLabel": "Refresh list",
+        "createLabel": "Create a new Notif",
+        "createOrEditLabel": "Create or edit a Notif",
+        "notFound": "No Notifs found"
+      },
+      "delete": {
+        "question": "Are you sure you want to delete Notif {{ id }}?"
+      },
+      "detail": {
+        "title": "Notif"
+      },
+      "id": "Id",
+      "title": "Title",
+      "body": "Body",
+      "recipientEmail": "Recipient Email",
+      "recipeientccemail": "Recipeientccemail",
+      "receipientbccemail": "Receipientbccemail",
+      "senderEmail": "Sender Email",
+      "sentDate": "Sent Date",
+      "status": "Status",
+      "typeNotif": "Type Notif",
+      "messageID": "Message ID"
+    }
+  },
+  "connectionManageApp": {
+    "connectionManageNotif": {
+      "created": "A new Notif is created with identifier {{ param }}",
+      "updated": "A Notif is updated with identifier {{ param }}",
+      "deleted": "A Notif is deleted with identifier {{ param }}"
+    }
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "applications": ["Corresp_Care"],
+  "changelogDate": "20250816103651",
+  "clientRootFolder": "connectionManage",
+  "databaseType": "sql",
+  "dto": "mapstruct",
+  "embedded": false,
+  "entityTableName": "connecteur",
+  "fields": [
+    {
+      "fieldName": "id",
+      "fieldType": "Long"
+    },
+    {
+      "fieldName": "name",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "codeRules",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "protocol",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "host",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "port",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "enable",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "email",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "password",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "folderSource",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "folderonOK",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "folderonError",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "isActif",
+      "fieldType": "Boolean"
+    }
+  ],
+  "fluentMethods": true,
+  "jpaMetamodelFiltering": false,
+  "microserviceName": "connectionManage",
+  "name": "Connecteur",
+  "pagination": "pagination",
+  "readOnly": false,
+  "relationships": [],
+  "service": "serviceClass"
+}

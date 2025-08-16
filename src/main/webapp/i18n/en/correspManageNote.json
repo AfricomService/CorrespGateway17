@@ -1,0 +1,38 @@
+{
+  "correspCareApp": {
+    "correspManageNote": {
+      "home": {
+        "title": "Notes",
+        "refreshListLabel": "Refresh list",
+        "createLabel": "Create a new Note",
+        "createOrEditLabel": "Create or edit a Note",
+        "notFound": "No Notes found"
+      },
+      "delete": {
+        "question": "Are you sure you want to delete Note {{ id }}?"
+      },
+      "detail": {
+        "title": "Note"
+      },
+      "id": "ID",
+      "idinstance": "Idinstance",
+      "reference": "Reference",
+      "subject": "Subject",
+      "dateCreated": "Date Created",
+      "datePublication": "Date Publication",
+      "dateEndPublication": "Date End Publication",
+      "status": "Status",
+      "createdBy": "Created By",
+      "updatedBy": "Updated By",
+      "updatedDate": "Updated Date",
+      "attachment": "Attachment"
+    }
+  },
+  "correspManageApp": {
+    "correspManageNote": {
+      "created": "A new Note is created with identifier {{ param }}",
+      "updated": "A Note is updated with identifier {{ param }}",
+      "deleted": "A Note is deleted with identifier {{ param }}"
+    }
+  }
+}

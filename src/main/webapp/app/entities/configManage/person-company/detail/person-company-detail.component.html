@@ -1,0 +1,62 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <div *ngIf="personCompany">
+      <h2 data-cy="personCompanyDetailsHeading">
+        <span jhiTranslate="correspCareApp.configManagePersonCompany.detail.title">Person Company</span>
+      </h2>
+
+      <hr />
+
+      <jhi-alert-error></jhi-alert-error>
+
+      <jhi-alert></jhi-alert>
+
+      <dl class="row-md jh-entity-details">
+        <dt><span jhiTranslate="correspCareApp.configManagePersonCompany.id">Id</span></dt>
+        <dd>
+          <span>{{ personCompany.id }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManagePersonCompany.nom">Nom</span></dt>
+        <dd>
+          <span>{{ personCompany.nom }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManagePersonCompany.pays">Pays</span></dt>
+        <dd>
+          <span>{{ personCompany.pays }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManagePersonCompany.adresse">Adresse</span></dt>
+        <dd>
+          <span>{{ personCompany.adresse }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManagePersonCompany.tel">Tel</span></dt>
+        <dd>
+          <span>{{ personCompany.tel }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManagePersonCompany.fax">Fax</span></dt>
+        <dd>
+          <span>{{ personCompany.fax }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManagePersonCompany.email">Email</span></dt>
+        <dd>
+          <span>{{ personCompany.email }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManagePersonCompany.whatsapp">Whatsapp</span></dt>
+        <dd>
+          <span>{{ personCompany.whatsapp }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.configManagePersonCompany.etat">Etat</span></dt>
+        <dd>
+          <span jhiTranslate="{{ 'correspCareApp.UsualStatus.' + personCompany.etat }}">{{ personCompany.etat }}</span>
+        </dd>
+      </dl>
+
+      <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+        <fa-icon icon="arrow-left"></fa-icon>&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+      </button>
+
+      <button type="button" [routerLink]="['/person-company', personCompany.id, 'edit']" class="btn btn-primary">
+        <fa-icon icon="pencil-alt"></fa-icon>&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,39 @@
+{
+  "correspCareApp": {
+    "correspManageBordereaux": {
+      "home": {
+        "title": "Bordereaux",
+        "refreshListLabel": "Actualiser la liste",
+        "createLabel": "Créer un nouveau Bordereaux",
+        "createOrEditLabel": "Créer ou éditer un Bordereaux",
+        "notFound": "Aucun Bordereaux trouvé"
+      },
+      "delete": {
+        "question": "Êtes-vous certain de vouloir supprimer le Bordereaux {{ id }} ?"
+      },
+      "detail": {
+        "title": "Bordereaux"
+      },
+      "id": "ID",
+      "reference": "Reference",
+      "description": "Description",
+      "amount": "Amount",
+      "currency": "Currency",
+      "status": "Status",
+      "issuedDate": "Issued Date",
+      "dueDate": "Due Date",
+      "createdDate": "Created Date",
+      "updatedDate": "Updated Date",
+      "createdBy": "Created By",
+      "updatedBy": "Updated By",
+      "corresps": "Corresps"
+    }
+  },
+  "correspManageApp": {
+    "correspManageBordereaux": {
+      "created": "Un nouveau Bordereaux a été créé avec l'identifiant {{ param }}",
+      "updated": "Le Bordereaux avec l'identifiant {{ param }} a été mis à jour",
+      "deleted": "Le Bordereaux avec l'identifiant {{ param }} a été supprimé"
+    }
+  }
+}

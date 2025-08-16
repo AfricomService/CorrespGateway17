@@ -1,0 +1,39 @@
+{
+  "correspCareApp": {
+    "correspManagePj": {
+      "home": {
+        "title": "Pjs",
+        "refreshListLabel": "Refresh list",
+        "createLabel": "Create a new Pj",
+        "createOrEditLabel": "Create or edit a Pj",
+        "notFound": "No Pjs found"
+      },
+      "delete": {
+        "question": "Are you sure you want to delete Pj {{ id }}?"
+      },
+      "detail": {
+        "title": "Pj"
+      },
+      "id": "ID",
+      "name": "Name",
+      "fileType": "File Type",
+      "path": "Path",
+      "creationDate": "Creation Date",
+      "password": "Password",
+      "transferable": "Transferable",
+      "uniqueName": "Unique Name",
+      "status": "Status",
+      "createdBy": "Created By",
+      "updatedBy": "Updated By",
+      "updatedDate": "Updated Date",
+      "corresps": "Corresps"
+    }
+  },
+  "correspManageApp": {
+    "correspManagePj": {
+      "created": "A new Pj is created with identifier {{ param }}",
+      "updated": "A Pj is updated with identifier {{ param }}",
+      "deleted": "A Pj is deleted with identifier {{ param }}"
+    }
+  }
+}

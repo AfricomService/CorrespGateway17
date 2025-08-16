@@ -1,0 +1,171 @@
+<div>
+  <h2 id="page-heading" data-cy="TasksHeading">
+    <span jhiTranslate="correspCareApp.correspManageTasks.home.title">Tasks</span>
+
+    <div class="d-flex justify-content-end">
+      <button class="btn btn-info me-2" (click)="load()" [disabled]="isLoading">
+        <fa-icon icon="sync" [spin]="isLoading"></fa-icon>
+        <span jhiTranslate="correspCareApp.correspManageTasks.home.refreshListLabel">Actualiser la liste</span>
+      </button>
+
+      <button
+        id="jh-create-entity"
+        data-cy="entityCreateButton"
+        class="btn btn-primary jh-create-entity create-tasks"
+        [routerLink]="['/tasks/new']"
+      >
+        <fa-icon icon="plus"></fa-icon>
+        <span jhiTranslate="correspCareApp.correspManageTasks.home.createLabel"> Créer un nouveau Tasks </span>
+      </button>
+    </div>
+  </h2>
+
+  <jhi-alert-error></jhi-alert-error>
+
+  <jhi-alert></jhi-alert>
+
+  <div class="alert alert-warning" id="no-result" *ngIf="tasks?.length === 0">
+    <span jhiTranslate="correspCareApp.correspManageTasks.home.notFound">Aucun Tasks trouvé</span>
+  </div>
+
+  <div class="table-responsive table-entities" id="entities" *ngIf="tasks && tasks.length > 0">
+    <table class="table table-striped" aria-describedby="page-heading">
+      <thead>
+        <tr jhiSort [(predicate)]="predicate" [(ascending)]="ascending" (sortChange)="navigateToWithComponentValues()">
+          <th scope="col" jhiSortBy="id">
+            <div class="d-flex">
+              <span jhiTranslate="global.field.id">ID</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="object">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.correspManageTasks.object">Object</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="content">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.correspManageTasks.content">Content</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="creationDate">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.correspManageTasks.creationDate">Creation Date</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="startDate">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.correspManageTasks.startDate">Start Date</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="dueDate">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.correspManageTasks.dueDate">Due Date</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="closeDate">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.correspManageTasks.closeDate">Close Date</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="responsible">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.correspManageTasks.responsible">Responsible</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="status">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.correspManageTasks.status">Status</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="createdBy">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.correspManageTasks.createdBy">Created By</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="updatedBy">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.correspManageTasks.updatedBy">Updated By</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="updatedDate">
+            <div class="d-flex">
+              <span jhiTranslate="correspCareApp.correspManageTasks.updatedDate">Updated Date</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let tasks of tasks; trackBy: trackId" data-cy="entityTable">
+          <td>
+            <a [routerLink]="['/tasks', tasks.id, 'view']">{{ tasks.id }}</a>
+          </td>
+          <td>{{ tasks.object }}</td>
+          <td>
+            <a *ngIf="tasks.content" (click)="openFile(tasks.content, tasks.contentContentType)" jhiTranslate="entity.action.open"
+              >Ouvrir</a
+            >
+            <span *ngIf="tasks.content">{{ tasks.contentContentType }}, {{ byteSize(tasks.content) }}</span>
+          </td>
+          <td>{{ tasks.creationDate | formatMediumDatetime }}</td>
+          <td>{{ tasks.startDate | formatMediumDatetime }}</td>
+          <td>{{ tasks.dueDate | formatMediumDatetime }}</td>
+          <td>{{ tasks.closeDate | formatMediumDatetime }}</td>
+          <td>{{ tasks.responsible }}</td>
+          <td jhiTranslate="{{ 'correspCareApp.CorrespStatus.' + tasks.status }}">{{ tasks.status }}</td>
+          <td>{{ tasks.createdBy }}</td>
+          <td>{{ tasks.updatedBy }}</td>
+          <td>{{ tasks.updatedDate | formatMediumDatetime }}</td>
+          <td class="text-end">
+            <div class="btn-group">
+              <button type="submit" [routerLink]="['/tasks', tasks.id, 'view']" class="btn btn-info btn-sm" data-cy="entityDetailsButton">
+                <fa-icon icon="eye"></fa-icon>
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.view">Voir</span>
+              </button>
+
+              <button type="submit" [routerLink]="['/tasks', tasks.id, 'edit']" class="btn btn-primary btn-sm" data-cy="entityEditButton">
+                <fa-icon icon="pencil-alt"></fa-icon>
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.edit">Editer</span>
+              </button>
+
+              <button type="submit" (click)="delete(tasks)" class="btn btn-danger btn-sm" data-cy="entityDeleteButton">
+                <fa-icon icon="times"></fa-icon>
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.delete">Supprimer</span>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div *ngIf="tasks && tasks.length > 0">
+    <div class="d-flex justify-content-center">
+      <jhi-item-count [params]="{ page: page, totalItems: totalItems, itemsPerPage: itemsPerPage }"></jhi-item-count>
+    </div>
+
+    <div class="d-flex justify-content-center">
+      <ngb-pagination
+        [collectionSize]="totalItems"
+        [page]="page"
+        [pageSize]="itemsPerPage"
+        [maxSize]="5"
+        [rotate]="true"
+        [boundaryLinks]="true"
+        (pageChange)="navigateToPage($event)"
+      ></ngb-pagination>
+    </div>
+  </div>
+</div>

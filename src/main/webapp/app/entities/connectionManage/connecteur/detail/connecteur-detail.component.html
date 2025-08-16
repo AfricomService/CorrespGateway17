@@ -1,0 +1,78 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <div *ngIf="connecteur">
+      <h2 data-cy="connecteurDetailsHeading">
+        <span jhiTranslate="correspCareApp.connectionManageConnecteur.detail.title">Connecteur</span>
+      </h2>
+
+      <hr />
+
+      <jhi-alert-error></jhi-alert-error>
+
+      <jhi-alert></jhi-alert>
+
+      <dl class="row-md jh-entity-details">
+        <dt><span jhiTranslate="correspCareApp.connectionManageConnecteur.id">Id</span></dt>
+        <dd>
+          <span>{{ connecteur.id }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.connectionManageConnecteur.name">Name</span></dt>
+        <dd>
+          <span>{{ connecteur.name }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.connectionManageConnecteur.codeRules">Code Rules</span></dt>
+        <dd>
+          <span>{{ connecteur.codeRules }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.connectionManageConnecteur.protocol">Protocol</span></dt>
+        <dd>
+          <span>{{ connecteur.protocol }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.connectionManageConnecteur.host">Host</span></dt>
+        <dd>
+          <span>{{ connecteur.host }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.connectionManageConnecteur.port">Port</span></dt>
+        <dd>
+          <span>{{ connecteur.port }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.connectionManageConnecteur.enable">Enable</span></dt>
+        <dd>
+          <span>{{ connecteur.enable }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.connectionManageConnecteur.email">Email</span></dt>
+        <dd>
+          <span>{{ connecteur.email }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.connectionManageConnecteur.password">Password</span></dt>
+        <dd>
+          <span>{{ connecteur.password }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.connectionManageConnecteur.folderSource">Folder Source</span></dt>
+        <dd>
+          <span>{{ connecteur.folderSource }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.connectionManageConnecteur.folderonOK">Folderon OK</span></dt>
+        <dd>
+          <span>{{ connecteur.folderonOK }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.connectionManageConnecteur.folderonError">Folderon Error</span></dt>
+        <dd>
+          <span>{{ connecteur.folderonError }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.connectionManageConnecteur.isActif">Is Actif</span></dt>
+        <dd>
+          <span>{{ connecteur.isActif }}</span>
+        </dd>
+      </dl>
+
+      <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+        <fa-icon icon="arrow-left"></fa-icon>&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+      </button>
+
+      <button type="button" [routerLink]="['/connecteur', connecteur.id, 'edit']" class="btn btn-primary">
+        <fa-icon icon="pencil-alt"></fa-icon>&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+      </button>
+    </div>
+  </div>
+</div>

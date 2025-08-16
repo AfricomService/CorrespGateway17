@@ -1,0 +1,9 @@
+export enum DispatchType {
+  LETTER = 'LETTER',
+
+  REGISTERED_LETTER = 'REGISTERED_LETTER',
+
+  EMAIL = 'EMAIL',
+
+  FAX = 'FAX',
+}

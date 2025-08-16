@@ -1,0 +1,47 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <div *ngIf="rules">
+      <h2 data-cy="rulesDetailsHeading"><span jhiTranslate="correspCareApp.rules.detail.title">Rules</span></h2>
+
+      <hr />
+
+      <jhi-alert-error></jhi-alert-error>
+
+      <jhi-alert></jhi-alert>
+
+      <dl class="row-md jh-entity-details">
+        <dt><span jhiTranslate="global.field.id">ID</span></dt>
+        <dd>
+          <span>{{ rules.id }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.rules.name">Name</span></dt>
+        <dd>
+          <span>{{ rules.name }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.rules.code">Code</span></dt>
+        <dd>
+          <span>{{ rules.code }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.rules.isActif">Is Actif</span></dt>
+        <dd>
+          <span>{{ rules.isActif }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.rules.file">File</span></dt>
+        <dd>
+          <div *ngIf="rules.file">
+            <a (click)="openFile(rules.file, rules.fileContentType)" jhiTranslate="entity.action.open">Ouvrir</a>
+            {{ rules.fileContentType }}, {{ byteSize(rules.file) }}
+          </div>
+        </dd>
+      </dl>
+
+      <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+        <fa-icon icon="arrow-left"></fa-icon>&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+      </button>
+
+      <button type="button" [routerLink]="['/rules', rules.id, 'edit']" class="btn btn-primary">
+        <fa-icon icon="pencil-alt"></fa-icon>&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+      </button>
+    </div>
+  </div>
+</div>

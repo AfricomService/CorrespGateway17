@@ -1,0 +1,32 @@
+{
+  "correspCareApp": {
+    "orgacareDepartement": {
+      "home": {
+        "title": "Departements",
+        "refreshListLabel": "Refresh list",
+        "createLabel": "Create a new Departement",
+        "createOrEditLabel": "Create or edit a Departement",
+        "notFound": "No Departements found"
+      },
+      "delete": {
+        "question": "Are you sure you want to delete Departement {{ id }}?"
+      },
+      "detail": {
+        "title": "Departement"
+      },
+      "id": "Id",
+      "code": "Code",
+      "name": "Name",
+      "description": "Description",
+      "createdDate": "Created Date",
+      "updatedDate": "Updated Date"
+    }
+  },
+  "orgacareApp": {
+    "orgacareDepartement": {
+      "created": "A new Departement is created with identifier {{ param }}",
+      "updated": "A Departement is updated with identifier {{ param }}",
+      "deleted": "A Departement is deleted with identifier {{ param }}"
+    }
+  }
+}
