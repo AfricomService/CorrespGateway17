@@ -27,7 +27,7 @@ export type EntityArrayResponseType = HttpResponse<IOrgaEntity[]>;
 
 @Injectable({ providedIn: 'root' })
 export class OrgaEntityService {
-  protected resourceUrl = this.applicationConfigService.getEndpointFor('api/orga-entities', 'orgacare');
+  protected resourceUrl = this.applicationConfigService.getEndpointFor('api/orga-entities', 'orgacarecorresp');
 
   constructor(protected http: HttpClient, protected applicationConfigService: ApplicationConfigService) {}
 

@@ -27,7 +27,7 @@ export type EntityArrayResponseType = HttpResponse<IDepartement[]>;
 
 @Injectable({ providedIn: 'root' })
 export class DepartementService {
-  protected resourceUrl = this.applicationConfigService.getEndpointFor('api/departements', 'orgacare');
+  protected resourceUrl = this.applicationConfigService.getEndpointFor('api/departements', 'orgacarecorresp');
 
   constructor(protected http: HttpClient, protected applicationConfigService: ApplicationConfigService) {}
 
