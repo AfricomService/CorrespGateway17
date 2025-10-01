@@ -1,0 +1,55 @@
+/* Target accordion item titles */
+.custom-accordion .dx-accordion-item .dx-accordion-item-title {
+  background-color: #f0f0f0; /* Light gray background */
+  font-weight: 700; /* Thicker font */
+  font-size: 1.1rem; /* Bigger font size */
+  padding: 12px; /* Add spacing */
+  text-transform: uppercase; /* Optional: uppercase */
+  color: #222; /* Dark text */
+  border-radius: 6px; /* Rounded corners */
+  margin-bottom: 8px; /* Space between items */
+}
+
+.title {
+  font-weight: bold;
+  font-style: italic;
+  text-transform: uppercase;
+  padding-bottom: 1em;
+  color: #c1121f;
+}
+
+.filter-panel {
+  margin-bottom: 1em;
+  padding: 1em;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  display: flex;
+  justify-content: flex-start;
+  flex: 1;
+  gap: 1.5em;
+}
+
+.active-filters {
+  margin-bottom: 1em;
+  display: flex;
+  gap: 1em;
+}
+
+.filter-chip {
+  background: #2c3e50;
+  border: 1px solid #ccc;
+  color: white;
+  font-weight: bold;
+  border-radius: 16px;
+  padding: 0.4em 0.8em;
+  margin-right: 0.5em;
+  display: inline-flex;
+  align-items: center;
+}
+
+.remove-btn {
+  margin-left: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  color: white;
+}

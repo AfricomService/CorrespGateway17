@@ -5,9 +5,10 @@ import { CorrespDetailComponent } from './detail/corresp-detail.component';
 import { CorrespUpdateComponent } from './update/corresp-update.component';
 import { CorrespDeleteDialogComponent } from './delete/corresp-delete-dialog.component';
 import { CorrespRoutingModule } from './route/corresp-routing.module';
+import { DxAccordionModule, DxDataGridModule } from 'devextreme-angular';
 
 @NgModule({
-  imports: [SharedModule, CorrespRoutingModule],
+  imports: [SharedModule, CorrespRoutingModule, DxDataGridModule, DxAccordionModule],
   declarations: [CorrespComponent, CorrespDetailComponent, CorrespUpdateComponent, CorrespDeleteDialogComponent],
 })
 export class CorrespManageCorrespModule {}
