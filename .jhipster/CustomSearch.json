@@ -1,0 +1,44 @@
+{
+  "changelogDate": "20251001074012",
+  "clientRootFolder": "correspManage",
+  "databaseType": "sql",
+  "dto": "mapstruct",
+  "fields": [
+    {
+      "fieldName": "dateCreation",
+      "fieldType": "ZonedDateTime"
+    },
+    {
+      "fieldName": "readAccess",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "visibility",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "request",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "entitySearching",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "userLogin",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "name",
+      "fieldType": "String"
+    }
+  ],
+  "jpaMetamodelFiltering": false,
+  "microserviceName": "correspManage",
+  "microservicePath": "D:\\work\\CC_CODE_17\\CorrespManage",
+  "name": "CustomSearch",
+  "pagination": "pagination",
+  "readOnly": false,
+  "relationships": [],
+  "service": "serviceClass"
+}

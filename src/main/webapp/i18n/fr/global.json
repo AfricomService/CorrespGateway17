@@ -31,6 +31,7 @@
         "connectionManageConnecteur": "Connecteur",
         "configManageConfigexport": "Configexport",
         "configManageMyreport": "Myreport",
+        "correspManageCustomSearch": "Custom Search",
         "jhipster-needle-menu-add-entry": "JHipster will add additional entities here (do not translate!)"
       },
       "account": {

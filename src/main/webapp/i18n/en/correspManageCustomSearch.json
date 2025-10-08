@@ -1,0 +1,34 @@
+{
+  "correspCareApp": {
+    "correspManageCustomSearch": {
+      "home": {
+        "title": "Custom Searches",
+        "refreshListLabel": "Refresh list",
+        "createLabel": "Create a new Custom Search",
+        "createOrEditLabel": "Create or edit a Custom Search",
+        "notFound": "No Custom Searches found"
+      },
+      "delete": {
+        "question": "Are you sure you want to delete Custom Search {{ id }}?"
+      },
+      "detail": {
+        "title": "Custom Search"
+      },
+      "id": "ID",
+      "dateCreation": "Date Creation",
+      "readAccess": "Read Access",
+      "visibility": "Visibility",
+      "request": "Request",
+      "entitySearching": "Entity Searching",
+      "userLogin": "User Login",
+      "name": "Name"
+    }
+  },
+  "correspManageApp": {
+    "correspManageCustomSearch": {
+      "created": "A new Custom Search is created with identifier {{ param }}",
+      "updated": "A Custom Search is updated with identifier {{ param }}",
+      "deleted": "A Custom Search is deleted with identifier {{ param }}"
+    }
+  }
+}

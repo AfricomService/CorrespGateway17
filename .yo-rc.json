@@ -45,7 +45,8 @@
       "Numsequentielle",
       "Connecteur",
       "Configexport",
-      "Myreport"
+      "Myreport",
+      "CustomSearch"
     ],
     "entitySuffix": "",
     "gradleEnterpriseHost": "",

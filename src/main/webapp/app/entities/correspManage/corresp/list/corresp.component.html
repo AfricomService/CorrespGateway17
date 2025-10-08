@@ -1,54 +1,127 @@
 <div>
   <h3 class="title">Consultation des Correspondances</h3>
 
-  <div class="filter-panel">
-    <select class="form-select" [(ngModel)]="selectedFilter" (change)="resetFilterValue()">
-      <option value="" disabled selected>-- Choisir un filtre --</option>
-      <option *ngFor="let opt of availableFilters" [value]="opt.value">
-        {{ opt.label }}
-      </option>
-    </select>
+  <div class="filter-panel-container">
+    <div class="filter-header" (click)="togglePanel()">
+      <h5 style="margin: 0; font-weight: bold; font-style: italic; text-transform: uppercase">Filtres</h5>
+      <span [class.open]="isOpen" class="arrow">
+        <i class="arrow" [style.transform]="isOpen ? 'rotate(180deg)' : 'rotate(0deg)'">&#9660;</i>
+      </span>
+    </div>
 
-    <ng-container [ngSwitch]="selectedFilter">
-      <!-- Reference -->
-      <input class="form-control" *ngSwitchCase="'reference'" type="text" [(ngModel)]="filterValue" placeholder="Entrer une référence" />
+    <div class="filter-content" [class.open]="isOpen">
+      <div class="filter-panel">
+        <select class="form-select" [(ngModel)]="selectedFilter" (change)="resetFilterValue()">
+          <option value="" disabled selected>-- Choisir un filtre --</option>
+          <option *ngFor="let opt of availableFilters" [value]="opt.value">
+            {{ opt.label }}
+          </option>
+        </select>
 
-      <select class="form-select" *ngSwitchCase="'status'" [(ngModel)]="filterValue">
-        <option *ngFor="let s of statusOptions" [value]="s.value">{{ s.label }}</option>
-      </select>
+        <ng-container [ngSwitch]="selectedFilter">
+          <input
+            class="form-control"
+            *ngSwitchCase="'reference'"
+            type="text"
+            [(ngModel)]="filterValue"
+            placeholder="Entrer une référence"
+          />
 
-      <select class="form-select" *ngSwitchCase="'dispatchType'" [(ngModel)]="filterValue">
-        <option *ngFor="let d of dispatchOptions" [value]="d.value">{{ d.label }}</option>
-      </select>
+          <select class="form-select" *ngSwitchCase="'status'" [(ngModel)]="filterValue">
+            <option *ngFor="let s of statusOptions" [value]="s.value">{{ s.label }}</option>
+          </select>
 
-      <div style="display: flex; gap: 1em; align-items: center" *ngSwitchCase="'courrierDate'">
-        <input class="form-control" type="date" [(ngModel)]="dateRange.startDate" />
-        <span style="font-weight: bold">➔</span>
-        <input class="form-control" type="date" [(ngModel)]="dateRange.endDate" />
+          <select class="form-select" *ngSwitchCase="'dispatchType'" [(ngModel)]="filterValue">
+            <option *ngFor="let d of dispatchOptions" [value]="d.value">{{ d.label }}</option>
+          </select>
+
+          <div style="display: flex; gap: 1em; align-items: center" *ngSwitchCase="'courrierDate'">
+            <input class="form-control" type="date" [(ngModel)]="dateRange.startDate" />
+            <span style="font-weight: bold">➔</span>
+            <input class="form-control" type="date" [(ngModel)]="dateRange.endDate" />
+          </div>
+        </ng-container>
+
+        <button
+          [disabled]="
+            !selectedFilter ||
+            (selectedFilter !== 'courrierDate' && !filterValue) ||
+            (selectedFilter === 'courrierDate' && (!dateRange.startDate || !dateRange.endDate))
+          "
+          class="btn btn-primary"
+          (click)="addFilter()"
+        >
+          Ajouter
+        </button>
+
+        <button class="btn btn-danger" (click)="applyFilters()" [disabled]="activeFilters.length === 0">Appliquer</button>
       </div>
-    </ng-container>
 
-    <button
-      [disabled]="
-        !selectedFilter ||
-        (selectedFilter !== 'courrierDate' && !filterValue) ||
-        (selectedFilter === 'courrierDate' && (!dateRange.startDate || !dateRange.endDate))
-      "
-      class="btn btn-primary"
-      (click)="addFilter()"
-    >
-      Ajouter
-    </button>
+      <div class="active-filters-custom-filter" *ngIf="!(activeFilters.length > 0)">
+        <div style="display: flex; flex-direction: row; gap: 1em; flex-wrap: wrap">
+          <div class="filter-chip-wrapper-custom-filter" *ngFor="let filter of loadedFiltres">
+            <span class="filter-chip-custom-filter" [class.active-custom-filter]="filter.active" (click)="selectOnlyThisFilter(filter)">
+              {{ filter.name }}
+            </span>
+            <div class="tooltip-custom-filter">
+              <div *ngFor="let entry of getFilterEntries(filter.filters)">{{ entry.key }}: {{ entry.value }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-    <button class="btn btn-danger" (click)="applyFilters()" [disabled]="activeFilters.length === 0">Appliquer</button>
+      <div class="active-filters" *ngIf="activeFilters.length > 0">
+        <div style="display: flex; flex-direction: row; gap: 1em; flex-wrap: wrap">
+          <span style="display: flex; gap: 0.5em" *ngFor="let filter of activeFilters; let i = index" class="filter-chip">
+            {{ filter.label }} : {{ filter.displayValue }}
+            <span class="remove-btn" (click)="removeFilter(i)">X</span>
+          </span>
+        </div>
+        <!--    <div>-->
+        <!--          <span *ngIf="filterApplied"  style="text-align: center;cursor: pointer" (click)="saveCustomFilters()" class="filter-chip">-->
+        <!--      Sauvegarder ce filtre-->
+        <!--    </span>-->
+        <!--    </div>-->
+
+        <div>
+          <span
+            *ngIf="filterApplied"
+            style="text-align: center; cursor: pointer"
+            class="filter-chip"
+            (click)="openCustomSearchModal(saveFilterModal)"
+            [class.disabled-btn]="isSaving"
+          >
+            {{ isSaving ? 'Filtre ajouté avec succès' : 'Sauvegarder ce filtre' }}
+          </span>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <div class="active-filters" *ngIf="activeFilters.length > 0">
-    <span style="display: flex; gap: 0.5em" *ngFor="let filter of activeFilters; let i = index" class="filter-chip">
-      {{ filter.label }} : {{ filter.displayValue }}
-      <span class="remove-btn" (click)="removeFilter(i)">X</span>
-    </span>
-  </div>
+  <ng-template #saveFilterModal let-saveFilterModal class="modal-dialog">
+    <div class="modal-header">
+      <h4 class="modal-title">Ajout de filtre pérsonalisé</h4>
+    </div>
+    <div class="modal-body">
+      <div style="padding-bottom: 1.5em">
+        <input class="form-control" type="text" [(ngModel)]="nameFilter" placeholder="Entrer le nom de votre filtre pérsonalisé" />
+      </div>
+      <div class="active-filters" *ngIf="activeFilters.length > 0">
+        <div style="display: flex; flex-direction: row; gap: 1em; flex-wrap: wrap">
+          <span style="display: flex; gap: 0.5em" *ngFor="let filter of activeFilters; let i = index" class="filter-chip">
+            {{ filter.label }} : {{ filter.displayValue }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn btn-light btn-model" (click)="saveFilterModal.close('Close click')">
+        <span>Annuler</span>
+      </button>
+      <button type="submit" class="btn btn-primary btn-model" (click)="saveCustomFilters()"><span>Enregistrer</span></button>
+    </div>
+  </ng-template>
 
   <dx-data-grid
     [dataSource]="datasource"

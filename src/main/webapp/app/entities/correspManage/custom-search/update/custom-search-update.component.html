@@ -1,0 +1,114 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <form name="editForm" role="form" novalidate (ngSubmit)="save()" [formGroup]="editForm">
+      <h2
+        id="jhi-custom-search-heading"
+        data-cy="CustomSearchCreateUpdateHeading"
+        jhiTranslate="correspCareApp.correspManageCustomSearch.home.createOrEditLabel"
+      >
+        Créer ou éditer un Custom Search
+      </h2>
+
+      <div>
+        <jhi-alert-error></jhi-alert-error>
+
+        <div class="row mb-3" *ngIf="editForm.controls.id.value !== null">
+          <label class="form-label" jhiTranslate="global.field.id" for="field_id">ID</label>
+          <input type="number" class="form-control" name="id" id="field_id" data-cy="id" formControlName="id" [readonly]="true" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageCustomSearch.dateCreation" for="field_dateCreation"
+            >Date Creation</label
+          >
+          <div class="d-flex">
+            <input
+              id="field_dateCreation"
+              data-cy="dateCreation"
+              type="datetime-local"
+              class="form-control"
+              name="dateCreation"
+              formControlName="dateCreation"
+              placeholder="YYYY-MM-DD HH:mm"
+            />
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageCustomSearch.readAccess" for="field_readAccess"
+            >Read Access</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            name="readAccess"
+            id="field_readAccess"
+            data-cy="readAccess"
+            formControlName="readAccess"
+          />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageCustomSearch.visibility" for="field_visibility"
+            >Visibility</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            name="visibility"
+            id="field_visibility"
+            data-cy="visibility"
+            formControlName="visibility"
+          />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageCustomSearch.request" for="field_request">Request</label>
+          <input type="text" class="form-control" name="request" id="field_request" data-cy="request" formControlName="request" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageCustomSearch.entitySearching" for="field_entitySearching"
+            >Entity Searching</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            name="entitySearching"
+            id="field_entitySearching"
+            data-cy="entitySearching"
+            formControlName="entitySearching"
+          />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageCustomSearch.userLogin" for="field_userLogin"
+            >User Login</label
+          >
+          <input type="text" class="form-control" name="userLogin" id="field_userLogin" data-cy="userLogin" formControlName="userLogin" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageCustomSearch.name" for="field_name">Name</label>
+          <input type="text" class="form-control" name="name" id="field_name" data-cy="name" formControlName="name" />
+        </div>
+      </div>
+
+      <div>
+        <button type="button" id="cancel-save" data-cy="entityCreateCancelButton" class="btn btn-secondary" (click)="previousState()">
+          <fa-icon icon="ban"></fa-icon>&nbsp;<span jhiTranslate="entity.action.cancel">Annuler</span>
+        </button>
+
+        <button
+          type="submit"
+          id="save-entity"
+          data-cy="entityCreateSaveButton"
+          [disabled]="editForm.invalid || isSaving"
+          class="btn btn-primary"
+        >
+          <fa-icon icon="save"></fa-icon>&nbsp;<span jhiTranslate="entity.action.save">Sauvegarder</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

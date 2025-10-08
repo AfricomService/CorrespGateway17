@@ -15,6 +15,8 @@ import { DataUtils } from 'app/core/util/data-util.service';
 import { DxDataGridComponent } from 'devextreme-angular';
 import CustomStore from 'devextreme/data/custom_store';
 import { CorrespType } from '../../../enumerations/corresp-type.model';
+import { CustomSearchService } from '../../custom-search/service/custom-search.service';
+import { CustomSearchView } from '../../custom-search/custom-search-view';
 
 interface Filter {
   field: string;
@@ -67,6 +69,18 @@ export class CorrespComponent implements OnInit {
 
   activeFilters: Filter[] = [];
 
+  endpoint!: string;
+
+  filterApplied = false;
+
+  isSaving = false;
+
+  nameFilter = '';
+
+  loadedFiltres: CustomSearchView[] = [];
+
+  selectedSearch: CustomSearchView | null = null;
+
   // Options
   statusOptions = [
     { value: 'DRAFT', label: 'Brouillon' },
@@ -90,6 +104,14 @@ export class CorrespComponent implements OnInit {
     { value: 'courrierDate', label: 'Date courrier' },
   ];
 
+  FILTER_LABELS_FR: { [key: string]: string } = {
+    reference: 'Référence',
+    dispatchType: 'Type d’envoi',
+    status: 'Statut',
+    startDate: 'Date de début',
+    endDate: 'Date de fin',
+  };
+
   // Dynamic list depending on active filters
   get availableFilters() {
     const usedFields = this.activeFilters.map(f => f.field);
@@ -108,13 +130,15 @@ export class CorrespComponent implements OnInit {
     public router: Router,
     protected dataUtils: DataUtils,
     protected modalService: NgbModal,
-    protected http: HttpClient
+    protected http: HttpClient,
+    protected customSearchService: CustomSearchService
   ) {}
 
   trackId = (_index: number, item: ICorresp): number => this.correspService.getCorrespIdentifier(item);
 
   ngOnInit(): void {
     this.selectedItemsAcc = ['Information Generales', 'Tasks'];
+    this.customSearchService.getByUserLogin().subscribe(res => (this.loadedFiltres = res));
     this.load();
   }
 
@@ -183,7 +207,7 @@ export class CorrespComponent implements OnInit {
         //   }
         // });
 
-        let endpoint = `${this.resourceUrl}-filter?${params.$paging}`;
+        this.endpoint = `${this.resourceUrl}-filter?${params.$paging}`;
 
         console.log('filter from inside');
         console.log(filter);
@@ -192,16 +216,16 @@ export class CorrespComponent implements OnInit {
           filter.forEach(f => {
             switch (f.field) {
               case 'reference':
-                endpoint += `&reference=${f.value}`;
+                this.endpoint += `&reference=${f.value}`;
                 break;
               case 'status':
-                endpoint += `&status=${f.value}`;
+                this.endpoint += `&status=${f.value}`;
                 break;
               case 'dispatchType':
-                endpoint += `&dispatchType=${f.value}`;
+                this.endpoint += `&dispatchType=${f.value}`;
                 break;
               case 'courrierDate':
-                endpoint += `&startDate=${f.value.startDate}&endDate=${f.value.endDate}`;
+                this.endpoint += `&startDate=${f.value.startDate}&endDate=${f.value.endDate}`;
                 break;
               default:
                 console.log('No Filter');
@@ -218,7 +242,7 @@ export class CorrespComponent implements OnInit {
         // console.log("endpoint", this.dateRange);
 
         return this.http
-          .get(endpoint)
+          .get(this.endpoint)
           .toPromise()
           .then((data: any) => ({
             data: data.content,
@@ -424,11 +448,19 @@ export class CorrespComponent implements OnInit {
   removeFilter(index: number) {
     this.activeFilters.splice(index, 1);
     this.datasource = this.createDataSource(this.activeFilters);
+
+    this.isSaving = false;
+    this.filterApplied = this.activeFilters.length > 0;
   }
 
   applyFilters() {
     console.log('Filters applied:', this.activeFilters);
     this.datasource = this.createDataSource(this.activeFilters);
+
+    this.isSaving = false;
+    this.filterApplied = this.activeFilters.length > 0;
+
+    this.loadedFiltres.forEach(f => (f.active = false));
   }
 
   navigateToWithComponentValues(): void {
@@ -508,5 +540,91 @@ export class CorrespComponent implements OnInit {
     // this.router.navigate(['/corresp', e.data.id, 'view'])
     const url = this.router.serializeUrl(this.router.createUrlTree([`/corresp/${e.data.id}/view`]));
     window.open(url);
+  }
+
+  // saveCustomFilters():void {
+  //   this.customSearchService.saveCustomSearch({request:this.endpoint,entitySearching:"CORRESP"}).subscribe(res => {
+  //     console.log(res)
+  //   })
+  // }
+
+  openCustomSearchModal(content: any): void {
+    this.nameFilter = '';
+    this.modalService.open(content, { size: 'xl' });
+  }
+
+  saveCustomFilters(): void {
+    if (this.isSaving) return;
+
+    console.log('name filter', this.nameFilter);
+
+    this.customSearchService.saveCustomSearch({ request: this.endpoint, entitySearching: 'CORRESP', name: this.nameFilter }).subscribe({
+      next: res => {
+        console.log(res);
+        this.isSaving = true;
+        this.customSearchService.getByUserLogin().subscribe(res => (this.loadedFiltres = res));
+        this.nameFilter = '';
+        this.modalService.dismissAll();
+      },
+      error: err => {
+        console.error(err);
+      },
+    });
+  }
+
+  selectSearch(search: CustomSearchView): void {
+    this.selectedSearch = search;
+    console.log('Selected search:', search);
+  }
+
+  formatFilters(filters: { [key: string]: string }): string {
+    return Object.entries(filters)
+      .map(([key, value]) => `${key}: ${value}`)
+      .join('\n'); // newline for each filter
+  }
+
+  // getFilterEntries(filters: { [key: string]: string }) {
+  //   return Object.entries(filters).map(([key, value]) => ({ key, value }));
+  // }
+
+  getFilterEntries(filters: { [key: string]: string }) {
+    return Object.entries(filters).map(([key, value]) => ({
+      key: this.FILTER_LABELS_FR[key] || key, // fallback to key if not in map
+      value,
+    }));
+  }
+
+  toggleFilterColor(filter: CustomSearchView): void {
+    filter.active = !filter.active;
+  }
+
+  selectOnlyThisFilter(selectedFilter: CustomSearchView): void {
+    this.loadedFiltres.forEach(filter => {
+      if (filter === selectedFilter) {
+        filter.active = !filter.active;
+
+        if (filter.active) {
+          const filtersArray: Filter[] = Object.keys(selectedFilter.filters).map(key => {
+            return {
+              field: key,
+              label: key,
+              value: selectedFilter.filters[key],
+              displayValue: '',
+            };
+          });
+          this.datasource = this.createDataSource(filtersArray);
+        } else {
+          this.datasource = this.createDataSource();
+        }
+      } else {
+        filter.active = false;
+      }
+    });
+  }
+
+  isOpen = true; // default open
+
+  togglePanel() {
+    this.isOpen = !this.isOpen;
   }
 }
