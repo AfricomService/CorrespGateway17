@@ -124,6 +124,11 @@ import { RouterModule } from '@angular/router';
         data: { pageTitle: 'correspCareApp.configManageMyreport.home.title' },
         loadChildren: () => import('./configManage/myreport/myreport.module').then(m => m.ConfigManageMyreportModule),
       },
+      {
+        path: 'custom-search',
+        data: { pageTitle: 'correspCareApp.correspManageCustomSearch.home.title' },
+        loadChildren: () => import('./correspManage/custom-search/custom-search.module').then(m => m.CorrespManageCustomSearchModule),
+      },
       /* jhipster-needle-add-entity-route - JHipster will add entity modules routes here */
     ]),
   ],

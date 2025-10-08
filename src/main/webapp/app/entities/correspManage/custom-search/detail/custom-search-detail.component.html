@@ -1,0 +1,58 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <div *ngIf="customSearch">
+      <h2 data-cy="customSearchDetailsHeading">
+        <span jhiTranslate="correspCareApp.correspManageCustomSearch.detail.title">Custom Search</span>
+      </h2>
+
+      <hr />
+
+      <jhi-alert-error></jhi-alert-error>
+
+      <jhi-alert></jhi-alert>
+
+      <dl class="row-md jh-entity-details">
+        <dt><span jhiTranslate="global.field.id">ID</span></dt>
+        <dd>
+          <span>{{ customSearch.id }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageCustomSearch.dateCreation">Date Creation</span></dt>
+        <dd>
+          <span>{{ customSearch.dateCreation | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageCustomSearch.readAccess">Read Access</span></dt>
+        <dd>
+          <span>{{ customSearch.readAccess }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageCustomSearch.visibility">Visibility</span></dt>
+        <dd>
+          <span>{{ customSearch.visibility }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageCustomSearch.request">Request</span></dt>
+        <dd>
+          <span>{{ customSearch.request }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageCustomSearch.entitySearching">Entity Searching</span></dt>
+        <dd>
+          <span>{{ customSearch.entitySearching }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageCustomSearch.userLogin">User Login</span></dt>
+        <dd>
+          <span>{{ customSearch.userLogin }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageCustomSearch.name">Name</span></dt>
+        <dd>
+          <span>{{ customSearch.name }}</span>
+        </dd>
+      </dl>
+
+      <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+        <fa-icon icon="arrow-left"></fa-icon>&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+      </button>
+
+      <button type="button" [routerLink]="['/custom-search', customSearch.id, 'edit']" class="btn btn-primary">
+        <fa-icon icon="pencil-alt"></fa-icon>&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+      </button>
+    </div>
+  </div>
+</div>

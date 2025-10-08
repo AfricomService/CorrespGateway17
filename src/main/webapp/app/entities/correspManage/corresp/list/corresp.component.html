@@ -1,288 +1,150 @@
 <div>
-  <h2 id="page-heading" data-cy="CorrespHeading">
-    <span jhiTranslate="correspCareApp.correspManageCorresp.home.title">Corresps</span>
+  <h3 class="title">Consultation des Correspondances</h3>
 
-    <div class="d-flex justify-content-end">
-      <button class="btn btn-info me-2" (click)="load()" [disabled]="isLoading">
-        <fa-icon icon="sync" [spin]="isLoading"></fa-icon>
-        <span jhiTranslate="correspCareApp.correspManageCorresp.home.refreshListLabel">Actualiser la liste</span>
+  <div class="filter-panel-container">
+    <div class="filter-header" (click)="togglePanel()">
+      <h5 style="margin: 0; font-weight: bold; font-style: italic; text-transform: uppercase">Filtres</h5>
+      <span [class.open]="isOpen" class="arrow">
+        <i class="arrow" [style.transform]="isOpen ? 'rotate(180deg)' : 'rotate(0deg)'">&#9660;</i>
+      </span>
+    </div>
+
+    <div class="filter-content" [class.open]="isOpen">
+      <div class="filter-panel">
+        <select class="form-select" [(ngModel)]="selectedFilter" (change)="resetFilterValue()">
+          <option value="" disabled selected>-- Choisir un filtre --</option>
+          <option *ngFor="let opt of availableFilters" [value]="opt.value">
+            {{ opt.label }}
+          </option>
+        </select>
+
+        <ng-container [ngSwitch]="selectedFilter">
+          <input
+            class="form-control"
+            *ngSwitchCase="'reference'"
+            type="text"
+            [(ngModel)]="filterValue"
+            placeholder="Entrer une référence"
+          />
+
+          <select class="form-select" *ngSwitchCase="'status'" [(ngModel)]="filterValue">
+            <option *ngFor="let s of statusOptions" [value]="s.value">{{ s.label }}</option>
+          </select>
+
+          <select class="form-select" *ngSwitchCase="'dispatchType'" [(ngModel)]="filterValue">
+            <option *ngFor="let d of dispatchOptions" [value]="d.value">{{ d.label }}</option>
+          </select>
+
+          <div style="display: flex; gap: 1em; align-items: center" *ngSwitchCase="'courrierDate'">
+            <input class="form-control" type="date" [(ngModel)]="dateRange.startDate" />
+            <span style="font-weight: bold">➔</span>
+            <input class="form-control" type="date" [(ngModel)]="dateRange.endDate" />
+          </div>
+        </ng-container>
+
+        <button
+          [disabled]="
+            !selectedFilter ||
+            (selectedFilter !== 'courrierDate' && !filterValue) ||
+            (selectedFilter === 'courrierDate' && (!dateRange.startDate || !dateRange.endDate))
+          "
+          class="btn btn-primary"
+          (click)="addFilter()"
+        >
+          Ajouter
+        </button>
+
+        <button class="btn btn-danger" (click)="applyFilters()" [disabled]="activeFilters.length === 0">Appliquer</button>
+      </div>
+
+      <div class="active-filters-custom-filter" *ngIf="!(activeFilters.length > 0)">
+        <div style="display: flex; flex-direction: row; gap: 1em; flex-wrap: wrap">
+          <div class="filter-chip-wrapper-custom-filter" *ngFor="let filter of loadedFiltres">
+            <span class="filter-chip-custom-filter" [class.active-custom-filter]="filter.active" (click)="selectOnlyThisFilter(filter)">
+              {{ filter.name }}
+            </span>
+            <div class="tooltip-custom-filter">
+              <div *ngFor="let entry of getFilterEntries(filter.filters)">{{ entry.key }}: {{ entry.value }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="active-filters" *ngIf="activeFilters.length > 0">
+        <div style="display: flex; flex-direction: row; gap: 1em; flex-wrap: wrap">
+          <span style="display: flex; gap: 0.5em" *ngFor="let filter of activeFilters; let i = index" class="filter-chip">
+            {{ filter.label }} : {{ filter.displayValue }}
+            <span class="remove-btn" (click)="removeFilter(i)">X</span>
+          </span>
+        </div>
+        <!--    <div>-->
+        <!--          <span *ngIf="filterApplied"  style="text-align: center;cursor: pointer" (click)="saveCustomFilters()" class="filter-chip">-->
+        <!--      Sauvegarder ce filtre-->
+        <!--    </span>-->
+        <!--    </div>-->
+
+        <div>
+          <span
+            *ngIf="filterApplied"
+            style="text-align: center; cursor: pointer"
+            class="filter-chip"
+            (click)="openCustomSearchModal(saveFilterModal)"
+            [class.disabled-btn]="isSaving"
+          >
+            {{ isSaving ? 'Filtre ajouté avec succès' : 'Sauvegarder ce filtre' }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #saveFilterModal let-saveFilterModal class="modal-dialog">
+    <div class="modal-header">
+      <h4 class="modal-title">Ajout de filtre pérsonalisé</h4>
+    </div>
+    <div class="modal-body">
+      <div style="padding-bottom: 1.5em">
+        <input class="form-control" type="text" [(ngModel)]="nameFilter" placeholder="Entrer le nom de votre filtre pérsonalisé" />
+      </div>
+      <div class="active-filters" *ngIf="activeFilters.length > 0">
+        <div style="display: flex; flex-direction: row; gap: 1em; flex-wrap: wrap">
+          <span style="display: flex; gap: 0.5em" *ngFor="let filter of activeFilters; let i = index" class="filter-chip">
+            {{ filter.label }} : {{ filter.displayValue }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn btn-light btn-model" (click)="saveFilterModal.close('Close click')">
+        <span>Annuler</span>
       </button>
-
-      <button
-        id="jh-create-entity"
-        data-cy="entityCreateButton"
-        class="btn btn-primary jh-create-entity create-corresp"
-        [routerLink]="['/corresp/new']"
-      >
-        <fa-icon icon="plus"></fa-icon>
-        <span jhiTranslate="correspCareApp.correspManageCorresp.home.createLabel"> Créer un nouveau Corresp </span>
-      </button>
+      <button type="submit" class="btn btn-primary btn-model" (click)="saveCustomFilters()"><span>Enregistrer</span></button>
     </div>
-  </h2>
+  </ng-template>
 
-  <jhi-alert-error></jhi-alert-error>
+  <dx-data-grid
+    [dataSource]="datasource"
+    [showBorders]="true"
+    [height]="'100%'"
+    [columnAutoWidth]="true"
+    [remoteOperations]="{ paging: true }"
+    (onRowDblClick)="onRowDoubleClick($event)"
+    (onRowPrepared)="onRowPrepared($event)"
+  >
+    <dxo-paging [enabled]="true" [pageSize]="15"></dxo-paging>
 
-  <jhi-alert></jhi-alert>
+    <dxi-column dataField="reference" caption="Reference"></dxi-column>
+    <dxi-column dataField="subject" caption="Subject"></dxi-column>
+    <dxi-column dataField="courrierDate" caption="Courrier Date" dataType="date"></dxi-column>
+    <dxi-column dataField="status" caption="Status"></dxi-column>
+    <dxi-column dataField="step" caption="Step"></dxi-column>
+    <dxi-column dataField="dispatchType" caption="Dispatch Type"></dxi-column>
 
-  <div class="alert alert-warning" id="no-result" *ngIf="corresps?.length === 0">
-    <span jhiTranslate="correspCareApp.correspManageCorresp.home.notFound">Aucun Corresp trouvé</span>
-  </div>
-
-  <div class="table-responsive table-entities" id="entities" *ngIf="corresps && corresps.length > 0">
-    <table class="table table-striped" aria-describedby="page-heading">
-      <thead>
-        <tr jhiSort [(predicate)]="predicate" [(ascending)]="ascending" (sortChange)="navigateToWithComponentValues()">
-          <th scope="col" jhiSortBy="id">
-            <div class="d-flex">
-              <span jhiTranslate="global.field.id">ID</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="idinstance">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.correspManageCorresp.idinstance">Idinstance</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="reference">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.correspManageCorresp.reference">Reference</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="subject">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.correspManageCorresp.subject">Subject</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="dateCreated">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.correspManageCorresp.dateCreated">Date Created</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="courrierDate">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.correspManageCorresp.courrierDate">Courrier Date</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="status">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.correspManageCorresp.status">Status</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="priority">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.correspManageCorresp.priority">Priority</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="body">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.correspManageCorresp.body">Body</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="corresptype">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.correspManageCorresp.corresptype">Corresptype</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="sender">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.correspManageCorresp.sender">Sender</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="needsResponse">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.correspManageCorresp.needsResponse">Needs Response</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="responseTo">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.correspManageCorresp.responseTo">Response To</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="step">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.correspManageCorresp.step">Step</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="stepCode">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.correspManageCorresp.stepCode">Step Code</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="processId">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.correspManageCorresp.processId">Process Id</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="processVersion">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.correspManageCorresp.processVersion">Process Version</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="contact">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.correspManageCorresp.contact">Contact</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="senderReference">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.correspManageCorresp.senderReference">Sender Reference</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="dispatchType">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.correspManageCorresp.dispatchType">Dispatch Type</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="contactCompany">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.correspManageCorresp.contactCompany">Contact Company</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="personCompany">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.correspManageCorresp.personCompany">Person Company</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="contactAddress">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.correspManageCorresp.contactAddress">Contact Address</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="contactEmail">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.correspManageCorresp.contactEmail">Contact Email</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="contactEmailCc">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.correspManageCorresp.contactEmailCc">Contact Email Cc</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="createdBy">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.correspManageCorresp.createdBy">Created By</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="updatedBy">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.correspManageCorresp.updatedBy">Updated By</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="updatedDate">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.correspManageCorresp.updatedDate">Updated Date</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col"></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let corresp of corresps; trackBy: trackId" data-cy="entityTable">
-          <td>
-            <a [routerLink]="['/corresp', corresp.id, 'view']">{{ corresp.id }}</a>
-          </td>
-          <td>{{ corresp.idinstance }}</td>
-          <td>{{ corresp.reference }}</td>
-          <td>{{ corresp.subject }}</td>
-          <td>{{ corresp.dateCreated | formatMediumDatetime }}</td>
-          <td>{{ corresp.courrierDate | formatMediumDatetime }}</td>
-          <td jhiTranslate="{{ 'correspCareApp.CorrespStatus.' + corresp.status }}">{{ corresp.status }}</td>
-          <td>{{ corresp.priority }}</td>
-          <td>{{ corresp.body }}</td>
-          <td jhiTranslate="{{ 'correspCareApp.CorrespType.' + corresp.corresptype }}">{{ corresp.corresptype }}</td>
-          <td>{{ corresp.sender }}</td>
-          <td>{{ corresp.needsResponse }}</td>
-          <td>{{ corresp.responseTo }}</td>
-          <td>{{ corresp.step }}</td>
-          <td>{{ corresp.stepCode }}</td>
-          <td>{{ corresp.processId }}</td>
-          <td>{{ corresp.processVersion }}</td>
-          <td>{{ corresp.contact }}</td>
-          <td>{{ corresp.senderReference }}</td>
-          <td jhiTranslate="{{ 'correspCareApp.DispatchType.' + corresp.dispatchType }}">{{ corresp.dispatchType }}</td>
-          <td>{{ corresp.contactCompany }}</td>
-          <td>{{ corresp.personCompany }}</td>
-          <td>{{ corresp.contactAddress }}</td>
-          <td>{{ corresp.contactEmail }}</td>
-          <td>{{ corresp.contactEmailCc }}</td>
-          <td>{{ corresp.createdBy }}</td>
-          <td>{{ corresp.updatedBy }}</td>
-          <td>{{ corresp.updatedDate | formatMediumDatetime }}</td>
-          <td class="text-end">
-            <div class="btn-group">
-              <button
-                type="submit"
-                [routerLink]="['/corresp', corresp.id, 'view']"
-                class="btn btn-info btn-sm"
-                data-cy="entityDetailsButton"
-              >
-                <fa-icon icon="eye"></fa-icon>
-                <span class="d-none d-md-inline" jhiTranslate="entity.action.view">Voir</span>
-              </button>
-
-              <button
-                type="submit"
-                [routerLink]="['/corresp', corresp.id, 'edit']"
-                class="btn btn-primary btn-sm"
-                data-cy="entityEditButton"
-              >
-                <fa-icon icon="pencil-alt"></fa-icon>
-                <span class="d-none d-md-inline" jhiTranslate="entity.action.edit">Editer</span>
-              </button>
-
-              <button type="submit" (click)="delete(corresp)" class="btn btn-danger btn-sm" data-cy="entityDeleteButton">
-                <fa-icon icon="times"></fa-icon>
-                <span class="d-none d-md-inline" jhiTranslate="entity.action.delete">Supprimer</span>
-              </button>
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <div *ngIf="corresps && corresps.length > 0">
-    <div class="d-flex justify-content-center">
-      <jhi-item-count [params]="{ page: page, totalItems: totalItems, itemsPerPage: itemsPerPage }"></jhi-item-count>
-    </div>
-
-    <div class="d-flex justify-content-center">
-      <ngb-pagination
-        [collectionSize]="totalItems"
-        [page]="page"
-        [pageSize]="itemsPerPage"
-        [maxSize]="5"
-        [rotate]="true"
-        [boundaryLinks]="true"
-        (pageChange)="navigateToPage($event)"
-      ></ngb-pagination>
-    </div>
-  </div>
+    <dxi-column caption="Priorité" alignment="center" [fixed]="true" fixedPosition="right" cellTemplate="ActionTemplate">
+      <div *dxTemplate="let d of 'ActionTemplate'">
+        <span *ngIf="d.data.priority" style="color: red; font-weight: bold">🚨</span>
+      </div>
+    </dxi-column>
+  </dx-data-grid>
 </div>

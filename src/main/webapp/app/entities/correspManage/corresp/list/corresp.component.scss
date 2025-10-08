@@ -1,0 +1,230 @@
+/* Target accordion item titles */
+.custom-accordion .dx-accordion-item .dx-accordion-item-title {
+  background-color: #f0f0f0; /* Light gray background */
+  font-weight: 700; /* Thicker font */
+  font-size: 1.1rem; /* Bigger font size */
+  padding: 12px; /* Add spacing */
+  text-transform: uppercase; /* Optional: uppercase */
+  color: #222; /* Dark text */
+  border-radius: 6px; /* Rounded corners */
+  margin-bottom: 8px; /* Space between items */
+}
+
+.title {
+  font-weight: bold;
+  font-style: italic;
+  text-transform: uppercase;
+  padding-bottom: 0.5em;
+  color: #c1121f;
+}
+
+.active-filters {
+  margin-bottom: 1em;
+  display: flex;
+  gap: 1em;
+  justify-content: space-between;
+}
+
+.filter-chip {
+  background: #2c3e50;
+  border: 1px solid #ccc;
+  color: white;
+  font-weight: bold;
+  border-radius: 16px;
+  padding: 0.4em 0.8em;
+  margin-right: 0.5em;
+  display: inline-flex;
+  align-items: center;
+}
+
+.remove-btn {
+  margin-left: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  color: white;
+}
+
+.disabled-btn {
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+modal-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 2em;
+}
+
+.searches-container {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  flex-direction: column;
+  gap: 1em;
+  padding: 1.5em 1em;
+}
+
+.search-card {
+  display: flex;
+  align-items: center;
+  padding: 0.5em;
+  border: 2px solid #bdc3c7; /* default soft gray */
+  border-radius: 10px;
+  background: #ecf0f1; /* light neutral */
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.search-card:hover {
+  border-color: #34495e; /* darker on hover */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.search-card.selected {
+  border-color: #2c3e50; /* dark slate */
+  background: #2c3e50;
+  color: #ecf0f1; /* make text readable on dark background */
+}
+
+.search-card.selected b {
+  color: #ecf0f1; /* keep labels readable */
+}
+
+.filters-line {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px; /* spacing between filters */
+}
+
+.filters-line span {
+  font-size: 14px;
+}
+
+.active-filters-custom-filter {
+  margin-bottom: 1em;
+  display: flex;
+  gap: 1em;
+  justify-content: space-between;
+}
+
+.filter-chip-wrapper-custom-filter {
+  position: relative;
+  display: inline-block;
+}
+
+/* Default inverted colors */
+.filter-chip-custom-filter {
+  background: white;
+  color: #2c3e50;
+  border: 1px solid #2c3e50;
+  font-weight: bold;
+  border-radius: 16px;
+  padding: 0.4em 0.8em;
+  margin-right: 0.5em;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+/* Active (clicked) state → original dark style */
+.filter-chip-custom-filter.active-custom-filter {
+  background: #2c3e50;
+  color: white;
+  border: 1px solid #ccc;
+}
+
+/* Tooltip styling */
+.tooltip-custom-filter {
+  visibility: hidden;
+  background-color: #34495e;
+  color: #fff;
+  text-align: left;
+  border-radius: 8px;
+  padding: 0.5em;
+  position: absolute;
+  z-index: 10;
+  bottom: 120%;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  font-size: 0.85em;
+}
+
+/* Show tooltip on hover */
+.filter-chip-wrapper-custom-filter:hover .tooltip-custom-filter {
+  visibility: visible;
+  opacity: 1;
+}
+
+.filter-panel-container {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1em;
+}
+
+/* Header with title + arrow */
+.filter-header {
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #2c3e50;
+  color: white;
+  padding: 0.75em 1em;
+}
+
+.toggle-arrow {
+  user-select: none;
+}
+
+.arrow {
+  display: inline-block;
+  transition: transform 0.3s ease;
+  transform: rotate(0deg);
+}
+
+.arrow.open {
+  transform: rotate(180deg);
+}
+
+.filter-panel {
+  margin-bottom: 1em;
+  padding: 1em;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  display: flex;
+  justify-content: flex-start;
+  flex: 1;
+  gap: 1.5em;
+}
+
+.filter-content.open {
+  max-height: 1000px; /* large enough for all content */
+  opacity: 1;
+  padding: 1em;
+}
+
+.filter-content {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  padding: 0 1em;
+  transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease, margin 0.3s ease;
+}
+
+.filter-content:not(.open) {
+  max-height: 0;
+  opacity: 0;
+  padding: 0;
+  margin: 0;
+  border: none;
+}
