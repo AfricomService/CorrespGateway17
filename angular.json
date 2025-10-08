@@ -35,7 +35,11 @@
               "src/main/webapp/manifest.webapp",
               "src/main/webapp/robots.txt"
             ],
-            "styles": ["src/main/webapp/content/scss/vendor.scss", "src/main/webapp/content/scss/global.scss"],
+            "styles": [
+              "src/main/webapp/content/scss/vendor.scss",
+              "src/main/webapp/content/scss/global.scss",
+              "node_modules/devextreme/dist/css/dx.light.css"
+            ],
             "scripts": []
           },
           "configurations": {
@@ -104,6 +108,7 @@
       "path": "./target/angular/",
       "environment": "all"
     },
-    "packageManager": "npm"
+    "packageManager": "npm",
+    "analytics": "2494fc41-5b51-4845-a682-b268eafd06c7"
   }
 }
