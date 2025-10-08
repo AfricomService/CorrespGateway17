@@ -1,79 +1,106 @@
-<div class="row">
-  <div class="col-md-3">
-    <span class="hipster img-fluid rounded"></span>
-  </div>
+<div *ngIf="account">
+  <!--<div style="display: flex;flex-direction: column;justify-content: space-between;align-items: center;width: 100%">-->
 
-  <div class="col-md-9">
-    <h1 class="display-4"><span jhiTranslate="home.title">Bienvenue, Java Hipster !</span> (Corresp Care)</h1>
-
-    <p class="lead" jhiTranslate="home.subtitle">Ceci est votre page d'accueil</p>
-
-    <div [ngSwitch]="account !== null">
-      <div class="alert alert-success" *ngSwitchCase="true">
-        <span id="home-logged-message" *ngIf="account" jhiTranslate="home.logged.message" [translateValues]="{ username: account.login }"
-          >Vous êtes connecté en tant que "{{ account.login }}".</span
-        >
-      </div>
-
-      <div class="alert alert-warning" *ngSwitchCase="false">
-        <span jhiTranslate="global.messages.info.authenticated.prefix">Si vous voulez vous </span>
-        <a class="alert-link" (click)="login()" jhiTranslate="global.messages.info.authenticated.link">connecter</a
-        ><span jhiTranslate="global.messages.info.authenticated.suffix"
-          >, vous pouvez utiliser les comptes par défaut : <br />
-          - Administrateur (nom d'utilisateur="admin" et mot de passe ="admin") <br />
-          - Utilisateur (nom d'utilisateur="user" et mot de passe ="user").</span
-        >
-      </div>
-
-      <div class="alert alert-warning" *ngSwitchCase="false">
-        <span jhiTranslate="global.messages.info.register.noaccount">Vous n'avez pas encore de compte ?</span>&nbsp;
-        <a class="alert-link" routerLink="account/register" jhiTranslate="global.messages.info.register.link">Créer un compte</a>
+  <div class="row" style="display: flex; flex-direction: column; justify-content: space-between; gap: 2em; align-items: center">
+    <div style="width: 100%; padding-bottom: 2em">
+      <h3 style="padding-left: 0px; font-weight: bold; font-style: italic; text-transform: uppercase; padding-bottom: 1em; color: #c1121f">
+        Bienvenue, {{ account.firstName }} !
+      </h3>
+      <h4 style="font-weight: bold; font-style: italic; text-transform: uppercase; padding-bottom: 1em">ajouter un Courrier</h4>
+      <div
+        style="display: flex; flex-direction: row; justify-content: space-between; padding-left: 0px; padding-right: 0px"
+        class="col-md-12"
+      >
+        <div class="col-md-2 button_slide slide_right">Arrivée</div>
+        <div class="col-md-2 button_slide slide_right">Sortant</div>
+        <div class="col-md-2 button_slide slide_right">Interne</div>
       </div>
     </div>
 
-    <p jhiTranslate="home.question">Si vous avez des questions à propos de JHipster :</p>
+    <div style="padding-left: 0px; padding-right: 0px; display: flex; flex-direction: row; justify-content: space-between; width: 100%">
+      <div style="width: 45%">
+        <h4 style="font-weight: bold; font-style: italic; text-transform: uppercase">Taches En Cours</h4>
+        <div style="padding-left: 0px; padding-right: 0px">
+          <dx-data-grid
+            [dataSource]="tasks!"
+            (onDataErrorOccurred)="refresh()"
+            [errorRowEnabled]="false"
+            [showBorders]="true"
+            [height]="'100%'"
+            (onRowDblClick)="onRowDblClick($event)"
+            [selection]="selection"
+            [loadPanel]="loadPanel"
+            [export]="export"
+            [sorting]="sorting"
+            [columnAutoWidth]="true"
+            [searchPanel]="searchPanel"
+          >
+            <dxi-column dataField="object" caption="Object" dataType="string" alignment="alignment"></dxi-column>
 
-    <ul>
-      <li>
-        <a href="https://www.jhipster.tech/" target="_blank" rel="noopener noreferrer" jhiTranslate="home.link.homepage"
-          >Page d'accueil de JHipster</a
-        >
-      </li>
-      <li>
-        <a
-          href="https://stackoverflow.com/tags/jhipster/info"
-          target="_blank"
-          rel="noopener noreferrer"
-          jhiTranslate="home.link.stackoverflow"
-          >JHipster sur Stack Overflow</a
-        >
-      </li>
-      <li>
-        <a
-          href="https://github.com/jhipster/generator-jhipster/issues?state=open"
-          target="_blank"
-          rel="noopener noreferrer"
-          jhiTranslate="home.link.bugtracker"
-          >JHipster bug tracker</a
-        >
-      </li>
-      <li>
-        <a href="https://gitter.im/jhipster/generator-jhipster" target="_blank" rel="noopener noreferrer" jhiTranslate="home.link.chat"
-          >JHipster public chat room</a
-        >
-      </li>
-      <li>
-        <a href="https://twitter.com/jhipster" target="_blank" rel="noopener noreferrer" jhiTranslate="home.link.follow"
-          >Suivez @jhipster sur Twitter</a
-        >
-      </li>
-    </ul>
+            <dxi-column
+              dataField="creationDate"
+              caption="Date De Creation"
+              dataType="date"
+              format="yyyy-MM-dd HH:mm"
+              alignment="alignment"
+            ></dxi-column>
 
-    <p>
-      <span jhiTranslate="home.like">Si vous aimez JHipster, donnez nous une étoile sur</span>
-      <a href="https://github.com/jhipster/generator-jhipster" target="_blank" rel="noopener noreferrer" jhiTranslate="home.github"
-        >GitHub </a
-      >!
-    </p>
+            <dxi-column
+              dataField="startDate"
+              caption="Date De Début"
+              dataType="date"
+              format="yyyy-MM-dd HH:mm"
+              alignment="alignment"
+            ></dxi-column>
+
+            <dxi-column
+              dataField="duedate"
+              caption="Date Limite"
+              dataType="date"
+              format="yyyy-MM-dd HH:mm"
+              alignment="alignment"
+            ></dxi-column>
+
+            <dxi-column
+              dataField="closeDate"
+              caption="Date De Cloture"
+              dataType="date"
+              format="yyyy-MM-dd HH:mm"
+              alignment="alignment"
+            ></dxi-column>
+
+            <dxi-column dataField="responsible" caption="Résponsable" dataType="string" alignment="alignment"></dxi-column>
+          </dx-data-grid>
+        </div>
+      </div>
+      <div style="width: 45%">
+        <h4 style="font-weight: bold; font-style: italic; text-transform: uppercase">Dossiers</h4>
+        <div style="padding-left: 0px; padding-right: 0px">
+          <dx-data-grid
+            [dataSource]="dossiers!"
+            (onDataErrorOccurred)="refresh()"
+            [errorRowEnabled]="false"
+            [showBorders]="true"
+            [height]="'100%'"
+            (onRowDblClick)="onRowDblClickDossier($event)"
+            [selection]="selection"
+            [loadPanel]="loadPanel"
+            [searchPanel]="searchPanel"
+            [export]="export"
+            [sorting]="sorting"
+            [columnAutoWidth]="true"
+            (onRowPrepared)="onRowPrepared($event)"
+          >
+            <dxi-column dataField="name" caption="Nom" dataType="string" alignment="alignment"></dxi-column>
+
+            <dxi-column dataField="isPublic" caption="Publique" dataType="boolean" alignment="alignment"></dxi-column>
+
+            <dxi-column dataField="responsible" caption="Responsable" dataType="string" alignment="alignment"></dxi-column>
+
+            <dxi-column dataField="status" caption="Etat" dataType="string" alignment="alignment"></dxi-column>
+          </dx-data-grid>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
