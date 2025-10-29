@@ -11,9 +11,9 @@
         style="display: flex; flex-direction: row; justify-content: space-between; padding-left: 0px; padding-right: 0px"
         class="col-md-12"
       >
-        <div class="col-md-2 button_slide slide_right">Arrivée</div>
-        <div class="col-md-2 button_slide slide_right">Sortant</div>
-        <div class="col-md-2 button_slide slide_right">Interne</div>
+        <div class="col-md-2 button_slide slide_right" (click)="onTypeClicked('Arrivée')">Arrivée</div>
+        <div class="col-md-2 button_slide slide_right" (click)="onTypeClicked('Sortant')">Sortant</div>
+        <div class="col-md-2 button_slide slide_right" (click)="onTypeClicked('Interne')">Interne</div>
       </div>
     </div>
 

@@ -8,6 +8,8 @@ import { isPresent } from 'app/core/util/operators';
 import { ApplicationConfigService } from 'app/core/config/application-config.service';
 import { createRequestOption } from 'app/core/request/request-util';
 import { ICorresp, NewCorresp } from '../corresp.model';
+import { ITasks } from '../../tasks/tasks.model';
+import { IPj } from '../../pj/pj.model';
 
 export type PartialUpdateCorresp = Partial<ICorresp> & Pick<ICorresp, 'id'>;
 
@@ -16,6 +18,11 @@ type RestOf<T extends ICorresp | NewCorresp> = Omit<T, 'dateCreated' | 'courrier
   courrierDate?: string | null;
   updatedDate?: string | null;
 };
+
+interface IFileUpload {
+  fileId: string;
+  uniqueFileName: string;
+}
 
 export type RestCorresp = RestOf<ICorresp>;
 
@@ -126,5 +133,18 @@ export class CorrespService {
     return res.clone({
       body: res.body ? res.body.map(item => this.convertDateFromServer(item)) : null,
     });
+  }
+
+  // ------------------------------------------------------------------
+
+  saveCorrespWithTasksAndPj(correspDTO: ICorresp, tasksDTOS: ITasks[], pjs: IPj[]) {
+    const formData = new FormData();
+
+    // JSON data → stringify
+    formData.append('correspDTO', new Blob([JSON.stringify(correspDTO)], { type: 'application/json' }));
+    formData.append('tasksDTOS', new Blob([JSON.stringify(tasksDTOS)], { type: 'application/json' }));
+    formData.append('pjs', new Blob([JSON.stringify(pjs)], { type: 'application/json' }));
+
+    return this.http.post(`${this.resourceUrl}WithTasksAndPjs`, formData);
   }
 }

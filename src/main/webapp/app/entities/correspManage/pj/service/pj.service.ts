@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpResponse } from '@angular/common/http';
+import { HttpClient, HttpEvent, HttpEventType, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import dayjs from 'dayjs/esm';
@@ -118,5 +118,46 @@ export class PjService {
     return res.clone({
       body: res.body ? res.body.map(item => this.convertDateFromServer(item)) : null,
     });
+  }
+
+  // uploadPj(file: File, req?: any): Observable<string> {
+  //   const options = createRequestOption(req);
+  //
+  //   const formData: FormData = new FormData();
+  //   formData.append('file', file);
+  //
+  //   return this.http.post(`${this.resourceUrl}/uploadPj`, formData, { params: options, responseType: 'text' });
+  // }
+
+  uploadPj(file: File, req?: any): Observable<number | string> {
+    const options = createRequestOption(req);
+
+    const formData: FormData = new FormData();
+    formData.append('file', file);
+
+    return this.http
+      .post(`${this.resourceUrl}/uploadPj`, formData, {
+        params: options,
+        responseType: 'text',
+        reportProgress: true, // Enable progress reporting
+        observe: 'events', // Observe all HTTP events
+      })
+      .pipe(
+        map((event: HttpEvent<any>) => {
+          if (event.type === HttpEventType.UploadProgress) {
+            // Calculate progress percentage
+            const percentDone = event.total ? Math.round((100 * event.loaded) / event.total) : 0;
+            return percentDone;
+          } else if (event.type === HttpEventType.Response) {
+            // Upload complete, return response body
+            return event.body;
+          }
+          return 0; // For other event types
+        })
+      );
+  }
+  deletePj(req?: any): Observable<HttpResponse<{}>> {
+    const options = createRequestOption(req);
+    return this.http.delete<{}>(this.resourceUrl, { params: options, observe: 'response' });
   }
 }

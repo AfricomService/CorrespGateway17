@@ -112,6 +112,8 @@ export class CorrespComponent implements OnInit {
     endDate: 'Date de fin',
   };
 
+  htmlContent: string = '<p>Hello DevExtreme!</p>';
+
   // Dynamic list depending on active filters
   get availableFilters() {
     const usedFields = this.activeFilters.map(f => f.field);

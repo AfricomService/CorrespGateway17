@@ -96,4 +96,7 @@ export class HomeComponent implements OnInit {
       }
     }
   }
+  onTypeClicked(type: string): void {
+    this.router.navigate(['/corresp/new'], { queryParams: { type } });
+  }
 }

@@ -1,458 +1,722 @@
-<div class="d-flex justify-content-center">
-  <div class="col-8">
-    <form name="editForm" role="form" novalidate (ngSubmit)="save()" [formGroup]="editForm">
-      <h2
-        id="jhi-corresp-heading"
-        data-cy="CorrespCreateUpdateHeading"
-        jhiTranslate="correspCareApp.correspManageCorresp.home.createOrEditLabel"
+<div style="width: 100%; display: flex; flex-direction: column; padding: 0 16px">
+  <!-- Title Section -->
+  <div style="margin-bottom: 1em">
+    <h4 style="color: #c1121f; text-transform: uppercase; font-weight: 600; font-style: italic; margin: 0">Ajouter Une Correspondance</h4>
+  </div>
+
+  <!-- Top Toolbar -->
+  <div
+    style="
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background-color: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      margin-bottom: 1.5em;
+    "
+  >
+    <!-- Left Side Buttons -->
+    <div style="display: flex; gap: 12px">
+      <button class="btn btn-outline-primary" style="font-weight: 600; text-transform: uppercase">Réponse</button>
+      <button class="btn btn-outline-primary" style="font-weight: 600; text-transform: uppercase">Imprimer</button>
+      <button class="btn btn-outline-primary" style="font-weight: 600; text-transform: uppercase">Journal</button>
+      <button [disabled]="isUploading" (click)="saveCorresp()" class="btn btn-primary" style="font-weight: 600; text-transform: uppercase">
+        Enregistrer
+      </button>
+    </div>
+
+    <!-- Right Side Button -->
+    <div style="display: flex; gap: 1em; align-items: center">
+      <h5
+        style="font-weight: bold; margin: 0"
+        [ngStyle]="{
+          color:
+            correspType === 'Arrivée' ? '#2e7d32' : correspType === 'Sortant' ? '#e65100' : correspType === 'Interne' ? '#1565c0' : 'black'
+        }"
       >
-        Créer ou éditer un Corresp
-      </h2>
+        {{ correspType }}
+      </h5>
+      <button class="btn btn-outline-secondary" style="font-weight: 600; text-transform: uppercase">Identifier</button>
+    </div>
+  </div>
 
-      <div>
-        <jhi-alert-error></jhi-alert-error>
-
-        <div class="row mb-3" *ngIf="editForm.controls.id.value !== null">
-          <label class="form-label" jhiTranslate="global.field.id" for="field_id">ID</label>
-          <input type="number" class="form-control" name="id" id="field_id" data-cy="id" formControlName="id" [readonly]="true" />
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.idinstance" for="field_idinstance">Idinstance</label>
-          <input
-            type="text"
-            class="form-control"
-            name="idinstance"
-            id="field_idinstance"
-            data-cy="idinstance"
-            formControlName="idinstance"
-          />
-          <div *ngIf="editForm.get('idinstance')!.invalid && (editForm.get('idinstance')!.dirty || editForm.get('idinstance')!.touched)">
-            <small
-              class="form-text text-danger"
-              *ngIf="editForm.get('idinstance')?.errors?.required"
-              jhiTranslate="entity.validation.required"
+  <!-- Form -->
+  <div style="display: flex; flex-direction: column; flex-grow: 1">
+    <div style="display: flex; flex-grow: 1; gap: 16px; padding-bottom: 1em">
+      <!-- Left Column -->
+      <div style="flex: 1">
+        <div
+          style="padding: 16px; border: 1px solid #ccc; border-radius: 12px; height: 100%; display: flex; flex-direction: column; gap: 16px"
+        >
+          <!-- ACCORDION 1: Informations générales -->
+          <div style="border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden">
+            <div
+              (click)="toggleAccordion('infoGen')"
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 16px;
+                background-color: #f8f9fa;
+                cursor: pointer;
+                user-select: none;
+                transition: background-color 0.3s ease;
+              "
+              [style.background-color]="accordionStates['infoGen'] ? '#e9ecef' : '#f8f9fa'"
             >
-              Ce champ est obligatoire.
-            </small>
-          </div>
-        </div>
+              <h5 style="font-weight: 600; margin: 0; color: #2c3e50">
+                Informations générales - <span style="color: deeppink">DRAFT</span>
+              </h5>
+              <svg
+                [style.transform]="accordionStates['infoGen'] ? 'rotate(180deg)' : 'rotate(0deg)'"
+                style="transition: transform 0.3s ease; width: 20px; height: 20px"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
 
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.reference" for="field_reference">Reference</label>
-          <input type="text" class="form-control" name="reference" id="field_reference" data-cy="reference" formControlName="reference" />
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.subject" for="field_subject">Subject</label>
-          <input type="text" class="form-control" name="subject" id="field_subject" data-cy="subject" formControlName="subject" />
-          <div *ngIf="editForm.get('subject')!.invalid && (editForm.get('subject')!.dirty || editForm.get('subject')!.touched)">
-            <small
-              class="form-text text-danger"
-              *ngIf="editForm.get('subject')?.errors?.required"
-              jhiTranslate="entity.validation.required"
+            <div
+              [style.max-height]="accordionStates['infoGen'] ? '2000px' : '0'"
+              style="overflow: hidden; transition: max-height 0.5s ease, padding 0.5s ease"
+              [style.padding]="accordionStates['infoGen'] ? '16px' : '0 16px'"
             >
-              Ce champ est obligatoire.
-            </small>
-          </div>
-        </div>
+              <form>
+                <div style="padding-bottom: 1.5em; display: flex; gap: 12px; border-bottom: 1px dashed #5570a3">
+                  <div style="flex: 1">
+                    <label class="form-label fw-semibold">Type de document <span class="text-danger">*</span></label>
+                    <select
+                      class="form-select"
+                      [(ngModel)]="selectedTypeDocument"
+                      name="typeDocument"
+                      (ngModelChange)="onTypeDocumentChange()"
+                    >
+                      <option [ngValue]="undefined">-- Sélectionner un type --</option>
+                      <option *ngFor="let type of typedocuments" [ngValue]="type">
+                        {{ type.nom }}
+                      </option>
+                    </select>
+                  </div>
+                  <div style="flex: 1">
+                    <label class="form-label fw-semibold"> Date <span class="text-danger">*</span> </label>
+                    <input
+                      type="date"
+                      class="form-control"
+                      [class.is-invalid]="validationInfoGenErrors['date']"
+                      [(ngModel)]="date"
+                      name="date"
+                      [attr.min]="minDate"
+                      [attr.max]="maxDate"
+                    />
+                    <div class="invalid-feedback" *ngIf="validationInfoGenErrors['date']">
+                      {{ validationInfoGenErrors['date'] }}
+                    </div>
+                  </div>
+                </div>
+                <div style="margin-bottom: 1.5em; padding-top: 15px">
+                  <label class="form-label fw-semibold">Objet <span class="text-danger">*</span></label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    [class.is-invalid]="validationInfoGenErrors['objet']"
+                    [(ngModel)]="objet"
+                    name="objet"
+                    placeholder="Entrer l'objet de la correspondance"
+                  />
+                  <div class="invalid-feedback" *ngIf="validationInfoGenErrors['objet']">
+                    {{ validationInfoGenErrors['objet'] }}
+                  </div>
+                </div>
 
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.dateCreated" for="field_dateCreated"
-            >Date Created</label
-          >
-          <div class="d-flex">
-            <input
-              id="field_dateCreated"
-              data-cy="dateCreated"
-              type="datetime-local"
-              class="form-control"
-              name="dateCreated"
-              formControlName="dateCreated"
-              placeholder="YYYY-MM-DD HH:mm"
-            />
+                <!-- Expéditeur / Destinataire -->
+                <div style="display: flex; gap: 12px; margin-bottom: 1.5em">
+                  <div style="flex: 1">
+                    <label class="form-label fw-semibold">Expéditeur <span class="text-danger">*</span></label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      [class.is-invalid]="validationInfoGenErrors['expediteur']"
+                      [(ngModel)]="expediteur"
+                      name="expediteur"
+                      placeholder="Entrer l'expéditeur"
+                    />
+                    <div class="invalid-feedback" *ngIf="validationInfoGenErrors['expediteur']">
+                      {{ validationInfoGenErrors['expediteur'] }}
+                    </div>
+                  </div>
+
+                  <div style="flex: 1">
+                    <label class="form-label fw-semibold">Destinataire <span class="text-danger">*</span></label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      [class.is-invalid]="validationInfoGenErrors['destinataire']"
+                      [(ngModel)]="destinataire"
+                      name="destinataire"
+                      placeholder="Entrer le destinataire"
+                    />
+                    <div class="invalid-feedback" *ngIf="validationInfoGenErrors['destinataire']">
+                      {{ validationInfoGenErrors['destinataire'] }}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Réponse sur / Étape / Priorité -->
+                <div style="display: flex; gap: 12px; margin-bottom: 1.5em">
+                  <div style="flex: 1">
+                    <label class="form-label fw-semibold">Contact <span class="text-danger">*</span></label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      [class.is-invalid]="validationInfoGenErrors['contactEmail']"
+                      [(ngModel)]="contactEmail"
+                      name="contactEmail"
+                      placeholder="Entrer le contact"
+                    />
+                    <div class="invalid-feedback" *ngIf="validationInfoGenErrors['contact']">
+                      {{ validationInfoGenErrors['contact'] }}
+                    </div>
+                  </div>
+
+                  <div style="flex: 1">
+                    <label class="form-label fw-semibold">Contact En Copie</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      [(ngModel)]="contactEmailCC"
+                      name="contactEmailCC"
+                      placeholder="Entrer le contact en copie"
+                    />
+                  </div>
+                </div>
+
+                <div style="display: flex; gap: 12px; margin-bottom: 1.5em; border-top: 1px dashed #5570a3">
+                  <div style="flex: 1; display: flex; align-items: center; gap: 16px; padding-top: 30px">
+                    <div style="flex: 1">
+                      <label class="form-label fw-semibold">Reponse Sur</label>
+                      <input
+                        type="text"
+                        class="form-control"
+                        [(ngModel)]="reponseSur"
+                        name="reponseSur"
+                        placeholder="Entrer la Reponse Sur"
+                      />
+                    </div>
+                    <div style="flex: 1">
+                      <label class="form-label fw-semibold">Confidentialité</label>
+                      <input type="text" class="form-control" placeholder="Entrer la Confidentialité" />
+                    </div>
+
+                    <div style="flex: 1">
+                      <label class="form-label fw-semibold">Réference Emétteur</label>
+                      <input
+                        type="text"
+                        class="form-control"
+                        [(ngModel)]="referenceEmetteur"
+                        name="referenceEmetteur"
+                        placeholder="Entrer la Réference d'émetteur"
+                      />
+                    </div>
+
+                    <div style="flex: 0.1; display: flex; flex-direction: column; align-items: center; height: 70px">
+                      <label class="form-label fw-semibold mb-0" style="padding-bottom: 15px">Important</label>
+                      <input
+                        type="checkbox"
+                        class="form-check-input"
+                        name="priority"
+                        [(ngModel)]="priorite"
+                        value="Prioritaire"
+                        style="transform: scale(1.7); cursor: pointer"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
           </div>
-          <div *ngIf="editForm.get('dateCreated')!.invalid && (editForm.get('dateCreated')!.dirty || editForm.get('dateCreated')!.touched)">
-            <small
-              class="form-text text-danger"
-              *ngIf="editForm.get('dateCreated')?.errors?.required"
-              jhiTranslate="entity.validation.required"
+
+          <!-- ACCORDION 2: Tâches Associées -->
+          <div style="border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden">
+            <div
+              (click)="toggleAccordion('taches')"
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 16px;
+                background-color: #f8f9fa;
+                cursor: pointer;
+                user-select: none;
+                transition: background-color 0.3s ease;
+              "
+              [style.background-color]="accordionStates['taches'] ? '#e9ecef' : '#f8f9fa'"
             >
-              Ce champ est obligatoire.
-            </small>
-            <small
-              class="form-text text-danger"
-              [hidden]="!editForm.get('dateCreated')?.errors?.datetimelocal"
-              jhiTranslate="entity.validation.datetimelocal"
+              <h5 style="font-weight: 600; margin: 0; color: #2c3e50">Tâches Associées</h5>
+              <div style="display: flex; align-items: center; gap: 12px">
+                <button
+                  class="btn btn-primary btn-sm"
+                  style="font-weight: bold; font-size: 1.2em; padding: 0 0.5em"
+                  (click)="openTasksModal(AddTaskModal); $event.stopPropagation()"
+                >
+                  +
+                </button>
+                <svg
+                  [style.transform]="accordionStates['taches'] ? 'rotate(180deg)' : 'rotate(0deg)'"
+                  style="transition: transform 0.3s ease; width: 20px; height: 20px"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+
+            <div
+              [style.max-height]="accordionStates['taches'] ? '2000px' : '0'"
+              style="overflow: hidden; transition: max-height 0.5s ease, padding 0.5s ease"
+              [style.padding]="accordionStates['taches'] ? '16px' : '0 16px'"
             >
-              Ce champ doit être une date et une heure.
-            </small>
+              <!-- Tasks List -->
+              <div *ngIf="tasks.length > 0" style="display: flex; flex-direction: column; gap: 12px">
+                <div
+                  *ngFor="let task of tasks; let i = index"
+                  style="
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    padding: 12px;
+                    background-color: #f8f9fa;
+                    border-radius: 8px;
+                    border-left: 4px solid #0d6efd;
+                  "
+                >
+                  <p style="margin: 0; color: #495057; line-height: 1.6; flex: 1">
+                    <strong>{{ getTaskDetails(task).responsableName }}</strong> effectuera la tâche de "<strong
+                      style="text-transform: uppercase"
+                      >{{ getTaskDetails(task).typeTask }}</strong
+                    >"
+                    <span *ngIf="getTaskDetails(task).dateLimite.length > 0">
+                      en ne dépassant pas la date limite du <strong>{{ getTaskDetails(task).dateLimite }}</strong> </span
+                    >.
+                  </p>
+
+                  <button
+                    class="btn btn-warning btn-sm"
+                    (click)="editTask(i, AddTaskModal)"
+                    style="
+                      min-width: 32px;
+                      height: 32px;
+                      padding: 0;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      flex-shrink: 0;
+                      color: white;
+                    "
+                    title="Editer la tâche"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      fill="currentColor"
+                      class="bi bi-pencil"
+                      viewBox="0 0 16 16"
+                    >
+                      <path
+                        d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325"
+                      />
+                    </svg>
+                  </button>
+                  <button
+                    class="btn btn-danger btn-sm"
+                    (click)="removeTask(i)"
+                    style="
+                      min-width: 32px;
+                      height: 32px;
+                      padding: 0;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      flex-shrink: 0;
+                      color: white;
+                    "
+                    title="Supprimer la tâche"
+                  >
+                    X
+                  </button>
+                </div>
+              </div>
+
+              <!-- Empty State -->
+              <div
+                *ngIf="tasks.length === 0"
+                style="padding: 24px; text-align: center; background-color: #f8f9fa; border-radius: 8px; border: 2px dashed #dee2e6"
+              >
+                <p style="margin: 0; color: #6c757d; font-style: italic">
+                  Aucune tâche associée. Cliquez sur le bouton "+" pour ajouter une tâche.
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.courrierDate" for="field_courrierDate"
-            >Courrier Date</label
-          >
-          <div class="d-flex">
-            <input
-              id="field_courrierDate"
-              data-cy="courrierDate"
-              type="datetime-local"
-              class="form-control"
-              name="courrierDate"
-              formControlName="courrierDate"
-              placeholder="YYYY-MM-DD HH:mm"
-            />
-          </div>
-          <div
-            *ngIf="editForm.get('courrierDate')!.invalid && (editForm.get('courrierDate')!.dirty || editForm.get('courrierDate')!.touched)"
-          >
-            <small
-              class="form-text text-danger"
-              *ngIf="editForm.get('courrierDate')?.errors?.required"
-              jhiTranslate="entity.validation.required"
-            >
-              Ce champ est obligatoire.
-            </small>
-            <small
-              class="form-text text-danger"
-              [hidden]="!editForm.get('courrierDate')?.errors?.datetimelocal"
-              jhiTranslate="entity.validation.datetimelocal"
-            >
-              Ce champ doit être une date et une heure.
-            </small>
-          </div>
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.status" for="field_status">Status</label>
-          <select class="form-control" name="status" formControlName="status" id="field_status" data-cy="status">
-            <option [ngValue]="null">{{ 'correspCareApp.CorrespStatus.null' | translate }}</option>
-            <option *ngFor="let correspStatus of correspStatusValues" [value]="correspStatus">
-              {{ 'correspCareApp.CorrespStatus.' + correspStatus | translate }}
-            </option>
-          </select>
-          <div *ngIf="editForm.get('status')!.invalid && (editForm.get('status')!.dirty || editForm.get('status')!.touched)">
-            <small class="form-text text-danger" *ngIf="editForm.get('status')?.errors?.required" jhiTranslate="entity.validation.required">
-              Ce champ est obligatoire.
-            </small>
-          </div>
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.priority" for="field_priority">Priority</label>
-          <input type="checkbox" class="form-check" name="priority" id="field_priority" data-cy="priority" formControlName="priority" />
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.body" for="field_body">Body</label>
-          <textarea class="form-control" name="body" id="field_body" data-cy="body" formControlName="body"></textarea>
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.corresptype" for="field_corresptype"
-            >Corresptype</label
-          >
-          <select class="form-control" name="corresptype" formControlName="corresptype" id="field_corresptype" data-cy="corresptype">
-            <option [ngValue]="null">{{ 'correspCareApp.CorrespType.null' | translate }}</option>
-            <option *ngFor="let correspType of correspTypeValues" [value]="correspType">
-              {{ 'correspCareApp.CorrespType.' + correspType | translate }}
-            </option>
-          </select>
-          <div *ngIf="editForm.get('corresptype')!.invalid && (editForm.get('corresptype')!.dirty || editForm.get('corresptype')!.touched)">
-            <small
-              class="form-text text-danger"
-              *ngIf="editForm.get('corresptype')?.errors?.required"
-              jhiTranslate="entity.validation.required"
-            >
-              Ce champ est obligatoire.
-            </small>
-          </div>
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.sender" for="field_sender">Sender</label>
-          <input type="text" class="form-control" name="sender" id="field_sender" data-cy="sender" formControlName="sender" />
-          <div *ngIf="editForm.get('sender')!.invalid && (editForm.get('sender')!.dirty || editForm.get('sender')!.touched)">
-            <small class="form-text text-danger" *ngIf="editForm.get('sender')?.errors?.required" jhiTranslate="entity.validation.required">
-              Ce champ est obligatoire.
-            </small>
-          </div>
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.needsResponse" for="field_needsResponse"
-            >Needs Response</label
-          >
-          <input
-            type="checkbox"
-            class="form-check"
-            name="needsResponse"
-            id="field_needsResponse"
-            data-cy="needsResponse"
-            formControlName="needsResponse"
-          />
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.responseTo" for="field_responseTo">Response To</label>
-          <input
-            type="text"
-            class="form-control"
-            name="responseTo"
-            id="field_responseTo"
-            data-cy="responseTo"
-            formControlName="responseTo"
-          />
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.step" for="field_step">Step</label>
-          <input type="text" class="form-control" name="step" id="field_step" data-cy="step" formControlName="step" />
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.stepCode" for="field_stepCode">Step Code</label>
-          <input type="text" class="form-control" name="stepCode" id="field_stepCode" data-cy="stepCode" formControlName="stepCode" />
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.processId" for="field_processId">Process Id</label>
-          <input type="number" class="form-control" name="processId" id="field_processId" data-cy="processId" formControlName="processId" />
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.processVersion" for="field_processVersion"
-            >Process Version</label
-          >
-          <input
-            type="text"
-            class="form-control"
-            name="processVersion"
-            id="field_processVersion"
-            data-cy="processVersion"
-            formControlName="processVersion"
-          />
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.contact" for="field_contact">Contact</label>
-          <input type="text" class="form-control" name="contact" id="field_contact" data-cy="contact" formControlName="contact" />
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.senderReference" for="field_senderReference"
-            >Sender Reference</label
-          >
-          <input
-            type="text"
-            class="form-control"
-            name="senderReference"
-            id="field_senderReference"
-            data-cy="senderReference"
-            formControlName="senderReference"
-          />
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.dispatchType" for="field_dispatchType"
-            >Dispatch Type</label
-          >
-          <select class="form-control" name="dispatchType" formControlName="dispatchType" id="field_dispatchType" data-cy="dispatchType">
-            <option [ngValue]="null">{{ 'correspCareApp.DispatchType.null' | translate }}</option>
-            <option *ngFor="let dispatchType of dispatchTypeValues" [value]="dispatchType">
-              {{ 'correspCareApp.DispatchType.' + dispatchType | translate }}
-            </option>
-          </select>
-          <div
-            *ngIf="editForm.get('dispatchType')!.invalid && (editForm.get('dispatchType')!.dirty || editForm.get('dispatchType')!.touched)"
-          >
-            <small
-              class="form-text text-danger"
-              *ngIf="editForm.get('dispatchType')?.errors?.required"
-              jhiTranslate="entity.validation.required"
-            >
-              Ce champ est obligatoire.
-            </small>
-          </div>
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.contactCompany" for="field_contactCompany"
-            >Contact Company</label
-          >
-          <input
-            type="text"
-            class="form-control"
-            name="contactCompany"
-            id="field_contactCompany"
-            data-cy="contactCompany"
-            formControlName="contactCompany"
-          />
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.personCompany" for="field_personCompany"
-            >Person Company</label
-          >
-          <input
-            type="text"
-            class="form-control"
-            name="personCompany"
-            id="field_personCompany"
-            data-cy="personCompany"
-            formControlName="personCompany"
-          />
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.contactAddress" for="field_contactAddress"
-            >Contact Address</label
-          >
-          <input
-            type="text"
-            class="form-control"
-            name="contactAddress"
-            id="field_contactAddress"
-            data-cy="contactAddress"
-            formControlName="contactAddress"
-          />
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.contactEmail" for="field_contactEmail"
-            >Contact Email</label
-          >
-          <input
-            type="text"
-            class="form-control"
-            name="contactEmail"
-            id="field_contactEmail"
-            data-cy="contactEmail"
-            formControlName="contactEmail"
-          />
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.contactEmailCc" for="field_contactEmailCc"
-            >Contact Email Cc</label
-          >
-          <input
-            type="text"
-            class="form-control"
-            name="contactEmailCc"
-            id="field_contactEmailCc"
-            data-cy="contactEmailCc"
-            formControlName="contactEmailCc"
-          />
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.createdBy" for="field_createdBy">Created By</label>
-          <input type="text" class="form-control" name="createdBy" id="field_createdBy" data-cy="createdBy" formControlName="createdBy" />
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.updatedBy" for="field_updatedBy">Updated By</label>
-          <input type="text" class="form-control" name="updatedBy" id="field_updatedBy" data-cy="updatedBy" formControlName="updatedBy" />
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.correspManageCorresp.updatedDate" for="field_updatedDate"
-            >Updated Date</label
-          >
-          <div class="d-flex">
-            <input
-              id="field_updatedDate"
-              data-cy="updatedDate"
-              type="datetime-local"
-              class="form-control"
-              name="updatedDate"
-              formControlName="updatedDate"
-              placeholder="YYYY-MM-DD HH:mm"
-            />
-          </div>
-        </div>
-
-        <div class="row mb-3">
-          <label jhiTranslate="correspCareApp.correspManageCorresp.dossiers" for="field_dossiers">Dossiers</label>
-          <select
-            class="form-control"
-            id="field_dossiers"
-            data-cy="dossiers"
-            multiple
-            name="dossiers"
-            formControlName="dossiers"
-            [compareWith]="compareDossier"
-          >
-            <option [ngValue]="dossierOption" *ngFor="let dossierOption of dossiersSharedCollection">{{ dossierOption.id }}</option>
-          </select>
-        </div>
-
-        <div class="row mb-3">
-          <label jhiTranslate="correspCareApp.correspManageCorresp.bordereaux" for="field_bordereaux">Bordereaux</label>
-          <select
-            class="form-control"
-            id="field_bordereaux"
-            data-cy="bordereaux"
-            multiple
-            name="bordereaux"
-            formControlName="bordereaux"
-            [compareWith]="compareBordereaux"
-          >
-            <option [ngValue]="bordereauxOption" *ngFor="let bordereauxOption of bordereauxSharedCollection">
-              {{ bordereauxOption.id }}
-            </option>
-          </select>
-        </div>
-
-        <div class="row mb-3">
-          <label jhiTranslate="correspCareApp.correspManageCorresp.attachments" for="field_attachments">Attachments</label>
-          <select
-            class="form-control"
-            id="field_attachments"
-            data-cy="attachments"
-            multiple
-            name="attachments"
-            formControlName="attachments"
-            [compareWith]="comparePj"
-          >
-            <option [ngValue]="pjOption" *ngFor="let pjOption of pjsSharedCollection">{{ pjOption.id }}</option>
-          </select>
-        </div>
-
-        <div class="row mb-3">
-          <label jhiTranslate="correspCareApp.correspManageCorresp.tasks" for="field_tasks">Tasks</label>
-          <select
-            class="form-control"
-            id="field_tasks"
-            data-cy="tasks"
-            multiple
-            name="tasks"
-            formControlName="tasks"
-            [compareWith]="compareTasks"
-          >
-            <option [ngValue]="tasksOption" *ngFor="let tasksOption of tasksSharedCollection">{{ tasksOption.id }}</option>
-          </select>
         </div>
       </div>
 
-      <div>
-        <button type="button" id="cancel-save" data-cy="entityCreateCancelButton" class="btn btn-secondary" (click)="previousState()">
-          <fa-icon icon="ban"></fa-icon>&nbsp;<span jhiTranslate="entity.action.cancel">Annuler</span>
-        </button>
-
-        <button
-          type="submit"
-          id="save-entity"
-          data-cy="entityCreateSaveButton"
-          [disabled]="editForm.invalid || isSaving"
-          class="btn btn-primary"
+      <!-- Right Column -->
+      <div style="flex: 1">
+        <div
+          style="padding: 16px; border: 1px solid #ccc; border-radius: 12px; height: 100%; display: flex; flex-direction: column; gap: 16px"
         >
-          <fa-icon icon="save"></fa-icon>&nbsp;<span jhiTranslate="entity.action.save">Sauvegarder</span>
-        </button>
+          <!-- ACCORDION 3: Corps de la Correspondance -->
+          <div style="border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden">
+            <div
+              (click)="toggleAccordion('corps')"
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 16px;
+                background-color: #f8f9fa;
+                cursor: pointer;
+                user-select: none;
+                transition: background-color 0.3s ease;
+              "
+              [style.background-color]="accordionStates['corps'] ? '#e9ecef' : '#f8f9fa'"
+            >
+              <h5 style="font-weight: 600; margin: 0; color: #2c3e50">Corps de la Correspondance</h5>
+              <svg
+                [style.transform]="accordionStates['corps'] ? 'rotate(180deg)' : 'rotate(0deg)'"
+                style="transition: transform 0.3s ease; width: 20px; height: 20px"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+
+            <div
+              [style.max-height]="accordionStates['corps'] ? '2000px' : '0'"
+              style="overflow: hidden; transition: max-height 0.5s ease, padding 0.5s ease"
+              [style.padding]="accordionStates['corps'] ? '16px' : '0 16px'"
+            >
+              <dx-html-editor [(value)]="htmlContent" [height]="365" [placeholder]="'Type your content here...'">
+                <dxo-toolbar [multiline]="true">
+                  <dxi-item name="undo"></dxi-item>
+                  <dxi-item name="redo"></dxi-item>
+                  <dxi-item name="separator"></dxi-item>
+                  <dxi-item
+                    name="size"
+                    [acceptedValues]="['8pt', '10pt', '12pt', '14pt', '18pt', '24pt', '36pt']"
+                    [options]="{ inputAttr: { 'aria-label': 'Font size' } }"
+                  ></dxi-item>
+                  <dxi-item
+                    name="font"
+                    [acceptedValues]="[
+                      'Arial',
+                      'Courier New',
+                      'Georgia',
+                      'Impact',
+                      'Lucida Console',
+                      'Tahoma',
+                      'Times New Roman',
+                      'Verdana'
+                    ]"
+                    [options]="{ inputAttr: { 'aria-label': 'Font family' } }"
+                  ></dxi-item>
+                  <dxi-item name="separator"></dxi-item>
+                  <dxi-item name="bold"></dxi-item>
+                  <dxi-item name="italic"></dxi-item>
+                  <dxi-item name="strike"></dxi-item>
+                  <dxi-item name="underline"></dxi-item>
+                  <dxi-item name="separator"></dxi-item>
+                  <dxi-item name="alignLeft"></dxi-item>
+                  <dxi-item name="alignCenter"></dxi-item>
+                  <dxi-item name="alignRight"></dxi-item>
+                  <dxi-item name="alignJustify"></dxi-item>
+                  <dxi-item name="separator"></dxi-item>
+                  <dxi-item name="orderedList"></dxi-item>
+                  <dxi-item name="bulletList"></dxi-item>
+                  <dxi-item name="separator"></dxi-item>
+                  <dxi-item
+                    name="header"
+                    [acceptedValues]="[false, 1, 2, 3, 4, 5]"
+                    [options]="{ inputAttr: { 'aria-label': 'Header' } }"
+                  ></dxi-item>
+                  <dxi-item name="separator"></dxi-item>
+                  <dxi-item name="color"></dxi-item>
+                  <dxi-item name="background"></dxi-item>
+                  <dxi-item name="separator"></dxi-item>
+                  <dxi-item name="link"></dxi-item>
+                  <dxi-item name="image"></dxi-item>
+                  <dxi-item name="separator"></dxi-item>
+                  <dxi-item name="clear"></dxi-item>
+                  <dxi-item name="codeBlock"></dxi-item>
+                  <dxi-item name="blockquote"></dxi-item>
+                  <dxi-item name="separator"></dxi-item>
+                  <dxi-item name="insertTable"></dxi-item>
+                  <dxi-item name="deleteTable"></dxi-item>
+                  <dxi-item name="insertRowAbove"></dxi-item>
+                  <dxi-item name="insertRowBelow"></dxi-item>
+                  <dxi-item name="deleteRow"></dxi-item>
+                  <dxi-item name="insertColumnLeft"></dxi-item>
+                  <dxi-item name="insertColumnRight"></dxi-item>
+                  <dxi-item name="deleteColumn"></dxi-item>
+                </dxo-toolbar>
+              </dx-html-editor>
+            </div>
+          </div>
+
+          <!-- ACCORDION 4: Pièces jointes associées -->
+          <div style="border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden">
+            <div
+              (click)="toggleAccordion('pieces')"
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 16px;
+                background-color: #f8f9fa;
+                cursor: pointer;
+                user-select: none;
+                transition: background-color 0.3s ease;
+              "
+              [style.background-color]="accordionStates['pieces'] ? '#e9ecef' : '#f8f9fa'"
+            >
+              <h5 style="font-weight: 600; margin: 0; color: #2c3e50">Pièces jointes associées</h5>
+              <div style="display: flex; align-items: center; gap: 12px">
+                <button
+                  class="btn btn-primary btn-sm"
+                  (click)="fileInput.click(); $event.stopPropagation()"
+                  [disabled]="isUploading"
+                  [style.opacity]="isUploading ? '0.5' : '1'"
+                  [style.cursor]="isUploading ? 'not-allowed' : 'pointer'"
+                  style="font-weight: bold; font-size: 1.2em; padding: 0 0.5em"
+                >
+                  +
+                </button>
+                <svg
+                  [style.transform]="accordionStates['pieces'] ? 'rotate(180deg)' : 'rotate(0deg)'"
+                  style="transition: transform 0.3s ease; width: 20px; height: 20px"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+            <input type="file" #fileInput (change)="onFileSelected($event)" hidden />
+
+            <div
+              [style.max-height]="accordionStates['pieces'] ? '2000px' : '0'"
+              style="overflow: hidden; transition: max-height 0.5s ease, padding 0.5s ease"
+              [style.padding]="accordionStates['pieces'] ? '16px' : '0 16px'"
+            >
+              <!-- Uploaded Files -->
+              <div *ngIf="uploadedFiles.length > 0" style="display: flex; flex-direction: column; gap: 12px">
+                <div
+                  *ngFor="let file of uploadedFiles; let i = index"
+                  style="
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                    padding: 12px;
+                    background-color: #f8f9fa;
+                    border-radius: 8px;
+                    border-left: 4px solid #0d6efd;
+                  "
+                >
+                  <!-- File Info Row -->
+                  <div style="display: flex; align-items: center; gap: 12px">
+                    <p style="margin: 0; color: #495057; line-height: 1.6; flex: 1">
+                      <strong>{{ file.name }}</strong> ({{ file.size / 1024 | number: '1.0-2' }} KB)
+                    </p>
+                    <button
+                      class="btn btn-danger btn-sm"
+                      (click)="removeFile(i)"
+                      [disabled]="getUploadProgress(i) !== null"
+                      style="
+                        min-width: 32px;
+                        height: 32px;
+                        padding: 0;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        flex-shrink: 0;
+                        color: white;
+                      "
+                      [style.opacity]="getUploadProgress(i) !== null ? '0.5' : '1'"
+                      [style.cursor]="getUploadProgress(i) !== null ? 'not-allowed' : 'pointer'"
+                      title="Supprimer le fichier"
+                    >
+                      X
+                    </button>
+                  </div>
+
+                  <!-- Progress Bar -->
+                  <div
+                    *ngIf="getUploadProgress(i) !== null"
+                    style="width: 100%; background-color: #e9ecef; border-radius: 4px; overflow: hidden; height: 8px"
+                  >
+                    <div
+                      [style.width.%]="getUploadProgress(i)"
+                      style="height: 100%; background: linear-gradient(90deg, #0d6efd 0%, #0a58ca 100%); transition: width 0.3s ease"
+                    ></div>
+                  </div>
+
+                  <!-- Upload Status Text -->
+                  <div *ngIf="getUploadProgress(i) !== null" style="font-size: 0.85em; color: #6c757d; text-align: right">
+                    <span *ngIf="getUploadProgress(i)! < 100">Téléchargement en cours... {{ getUploadProgress(i) }} %</span>
+                    <span *ngIf="getUploadProgress(i) === 100" style="color: #198754">✓ Téléchargement terminé</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Empty State -->
+              <div
+                *ngIf="uploadedFiles.length === 0"
+                style="padding: 24px; text-align: center; background-color: #f8f9fa; border-radius: 8px; border: 2px dashed #dee2e6"
+              >
+                <p style="margin: 0; color: #6c757d; font-style: italic">
+                  Aucune Piece Jointe associée. Cliquez sur le bouton "+" pour ajouter une Piece Jointe.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Toolbar -->
+    <div
+      style="
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        padding: 12px 16px;
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        margin-top: 1em;
+      "
+    >
+      <div style="display: flex; gap: 12px">
+        <button class="btn btn-success" style="font-weight: 600; text-transform: uppercase; min-width: 120px">Soumettre</button>
+        <button class="btn btn-secondary" style="font-weight: 600; text-transform: uppercase; min-width: 120px">Annuler</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Template  -->
+<ng-template #AddTaskModal let-AddTaskModal class="modal-dialog modal-lg modal-dialog-centered">
+  <div class="modal-header">
+    <h4 class="modal-title" style="color: #2c3e50; font-weight: bold; text-transform: uppercase; font-style: italic">
+      {{ isEditMode ? 'Modification de la tâche' : "Affectation d'une nouvelle tâche" }}
+    </h4>
+  </div>
+
+  <div style="height: 100%" class="modal-body">
+    <form>
+      <div style="display: flex; flex-direction: column; gap: 1.5em">
+        <div style="display: flex; align-items: center; justify-content: space-between">
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Type De Tache <span class="text-danger">*</span></label>
+            <div style="display: flex; align-items: center; gap: 1.5em">
+              <button
+                type="button"
+                class="btn"
+                style="font-weight: 700; text-transform: uppercase"
+                [ngClass]="selectedType === 'lecture' ? 'btn-primary' : 'btn-outline-primary'"
+                (click)="selectedType = 'lecture'"
+              >
+                Lecture
+              </button>
+
+              <button
+                type="button"
+                class="btn"
+                style="font-weight: 700; text-transform: uppercase"
+                [ngClass]="selectedType === 'signature' ? 'btn-primary' : 'btn-outline-primary'"
+                (click)="selectedType = 'signature'"
+              >
+                Signature
+              </button>
+
+              <button
+                type="button"
+                class="btn"
+                style="font-weight: 700; text-transform: uppercase"
+                [ngClass]="selectedType === 'traitement' ? 'btn-primary' : 'btn-outline-primary'"
+                (click)="selectedType = 'traitement'"
+              >
+                Traitement
+              </button>
+
+              <button
+                type="button"
+                class="btn"
+                style="font-weight: 700; text-transform: uppercase"
+                [ngClass]="selectedType === 'validation' ? 'btn-primary' : 'btn-outline-primary'"
+                (click)="selectedType = 'validation'"
+              >
+                Validation
+              </button>
+            </div>
+            <div class="text-danger small mt-1" *ngIf="validationErrors['typeTask']">
+              {{ validationErrors['typeTask'] }}
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Date limite</label>
+            <input type="date" class="form-control" [(ngModel)]="dateLimite" name="dateLimite" />
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <div class="col-md-12 mb-3 mb-md-0">
+            <label class="form-label fw-semibold">Responsable <span class="text-danger">*</span></label>
+            <dx-list
+              [dataSource]="users"
+              [searchExpr]="searchExpr"
+              selectionMode="single"
+              [(selectedItems)]="selectedUser"
+              [height]="350"
+              [searchEnabled]="true"
+              searchMode="contains"
+              [showSelectionControls]="true"
+              [class.border-danger]="validationErrors['responsable']"
+              class="border rounded"
+              itemTemplate="listItem"
+            >
+              <div *dxTemplate="let item of 'listItem'">
+                <div>{{ item.firstName }} {{ item.lastName }}</div>
+              </div>
+            </dx-list>
+            <div class="text-danger small mt-1" *ngIf="validationErrors['responsable']">
+              {{ validationErrors['responsable'] }}
+            </div>
+          </div>
+        </div>
       </div>
     </form>
   </div>
-</div>
+
+  <div class="modal-footer">
+    <button type="button" class="btn btn-light btn-model" (click)="AddTaskModal.close('Close click')">Annuler</button>
+    <button type="button" class="btn btn-primary btn-model" (click)="saveTask()">
+      {{ isEditMode ? 'Mettre à jour' : 'Enregistrer' }}
+    </button>
+  </div>
+</ng-template>
