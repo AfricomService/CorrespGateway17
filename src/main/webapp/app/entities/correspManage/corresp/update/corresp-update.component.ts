@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { HttpResponse } from '@angular/common/http';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import { finalize, map } from 'rxjs/operators';
 
@@ -28,43 +28,64 @@ import { NgForm } from '@angular/forms';
 
 import dayjs from 'dayjs/esm';
 import { ITypedocument } from '../../../configManage/typedocument/typedocument.model';
+import { TypedocumentService } from '../../../configManage/typedocument/service/typedocument.service';
 
+// ============================================================================
+// 🟠 INTERFACE: FileIndexLink
+// ----------------------------------------------------------------------------
+// Used to maintain a mapping between a file's index in the local array
+// and its uniqueName generated during upload.
+// ============================================================================
 interface FileIndexLink {
   index: number;
   uniqueName: string;
 }
 
+// ============================================================================
+// 🟣 COMPONENT: CorrespUpdateComponent
+// ----------------------------------------------------------------------------
+// Main component class handling the full lifecycle of creating/updating a
+// correspondence (Corresp), including file uploads, tasks, validation,
+// and saving.
+//
+// Template: corresp-update.component.html
+// Styles:   corresp-update.scss
+// ============================================================================
 @Component({
   selector: 'jhi-corresp-update',
   templateUrl: './corresp-update.component.html',
   styleUrls: ['corresp-update.scss'],
 })
 export class CorrespUpdateComponent implements OnInit {
+  // ==========================================================================
+  // 🟢 SECTION: CLASS-LEVEL VARIABLES AND INITIAL STATE
+  // --------------------------------------------------------------------------
+  // These properties store all dynamic data, form values, upload progress,
+  // lists of users, tasks, attachments, and UI state information.
+  // ==========================================================================
+
   isSaving = false;
   corresp!: ICorresp;
-  // correspStatusValues = Object.keys(CorrespStatus);
-  // correspTypeValues = Object.keys(CorrespType);
-  // dispatchTypeValues = Object.keys(DispatchType);
 
-  // dossiersSharedCollection: IDossier[] = [];
-  // bordereauxSharedCollection: IBordereaux[] = [];
-  // pjsSharedCollection: IPj[] = [];
+  // --- Storage for tasks and attachments ---
   tasksToSave: ITasks[] = [];
   pjsToSave: IPj[] = [];
+
+  // --- File tracking for uploads ---
   fileLinks: FileIndexLink[] = [];
+  uploadProgress: Map<string, number> = new Map(); // Per-file progress tracking
+  isUploading = false; // Prevents new uploads while one is in progress
 
-  uploadProgress: Map<string, number> = new Map(); // Track progress per uniqueName
-  isUploading = false; // Disable + button during upload
-
+  // --- Rich text (HTML content) body of the correspondence ---
   htmlContent: string = 'Ajouter Votre Contenu !';
 
+  // --- General Info Fields ---
   taskObject = '';
   responsable = '';
   dateDebut = '';
   dateFin = '';
   dateLimite = '';
   selectedType = '';
-
   objet = '';
   expediteur = '';
   date = '';
@@ -78,122 +99,46 @@ export class CorrespUpdateComponent implements OnInit {
   contactEmailCC = '';
   referenceEmetteur = '';
 
+  // --- User-related fields for task assignment ---
   users: IUser[] = [];
-  // filteredUsers: any[] = [];
   userSearch = '';
   selectedUser: IUser[] = [];
-
   editingTaskIndex: number | null = null;
   isEditMode: boolean = false;
 
+  // --- Reactive Form Reference ---
   editForm: CorrespFormGroup = this.correspFormService.createCorrespFormGroup();
 
+  // --- Function used by search boxes (to display user login) ---
   searchExpr = function (dataItem: IUser): string {
     return dataItem.login!;
   };
 
+  // --- File uploads (local memory only) ---
   uploadedFiles: File[] = [];
 
+  // --- Accordion UI sections open/closed states ---
   accordionStates: { [key: string]: boolean } = {
-    infoGen: true, // Open by default
-    taches: true, // Open by default
-    corps: true, // Open by default
-    pieces: true, // Open by default
+    infoGen: true,
+    taches: true,
+    corps: true,
+    pieces: true,
   };
 
-  tasks: Array<{
-    typeTask: string;
-    responsable: any;
-    dateLimite: string;
-  }> = [
-    // {
-    //   taskObject: 'Développement du module de gestion',
-    //   responsable: 'anas.daoud',
-    //   dateDebut: '2025-10-15',
-    //   dateFin: '2025-10-25',
-    //   dateLimite: '2025-10-30'
-    // },
-    // {
-    //   taskObject: 'Révision et correction des bugs',
-    //   responsable: 'anas.daoud',
-    //   dateDebut: '2025-10-20',
-    //   dateFin: '2025-10-28',
-    //   dateLimite: '2025-11-05'
-    // },
-    // {
-    //   taskObject: 'Rédaction de la documentation technique',
-    //   responsable: 'anas.daoud',
-    //   dateDebut: '2025-10-18',
-    //   dateFin: '2025-10-26',
-    //   dateLimite: '2025-11-02'
-    // },
-    // {
-    //   taskObject: 'Tests et validation des fonctionnalités',
-    //   responsable: 'anas.daoud',
-    //   dateDebut: '2025-10-22',
-    //   dateFin: '2025-11-01',
-    //   dateLimite: '2025-11-08'
-    // },
-    // {
-    //   taskObject: 'Déploiement en environnement de production',
-    //   responsable: 'anas.daoud',
-    //   dateDebut: '2025-11-02',
-    //   dateFin: '2025-11-10',
-    //   dateLimite: '2025-11-15'
-    // }
-  ];
+  // --- Task list (temporary) ---
+  tasks: Array<{ typeTask: string; responsable: any; dateLimite: string }> = [];
 
   correspType!: string;
 
+  // --- Date boundaries for forms (used in date inputs) ---
   minDate!: string;
   maxDate!: string;
 
-  typedocuments: ITypedocument[] = [
-    {
-      id: 1,
-      nom: 'Demande de travail',
-      defautdest: 'administratif@africomesservices.com',
-      defaultobject: 'Consultation',
-      defaultencopie: 'chef.technique@africomesservices.com',
-    },
-    {
-      id: 2,
-      nom: 'Facture',
-      defautdest: 'comptabilite@africomesservices.com',
-      defaultobject: 'Transmission facture',
-      defaultencopie: 'admin@africomesservices.com',
-    },
-    {
-      id: 3,
-      nom: 'Rapport technique',
-      defautdest: 'support@africomesservices.com',
-      defaultobject: 'Rapport d’intervention',
-      defaultencopie: 'service.tech@africomesservices.com',
-    },
-    {
-      id: 4,
-      nom: 'Note interne',
-      defautdest: 'direction@africomesservices.com',
-      defaultobject: 'Note interne',
-      defaultencopie: 'rh@africomesservices.com',
-    },
-    {
-      id: 5,
-      nom: 'Commande',
-      defautdest: 'achat@africomesservices.com',
-      defaultobject: 'Nouvelle commande',
-      defaultencopie: 'logistique@africomesservices.com',
-    },
-    {
-      id: 6,
-      nom: 'Réclamation',
-      defautdest: 'support.client@africomesservices.com',
-      defaultobject: 'Réclamation client',
-      defaultencopie: 'qualite@africomesservices.com',
-    },
-  ];
-
+  // --- Type Document Management ---
+  typedocuments: ITypedocument[] = [];
   selectedTypeDocument?: ITypedocument;
+
+  finalPath = '';
 
   constructor(
     protected dataUtils: DataUtils,
@@ -207,9 +152,20 @@ export class CorrespUpdateComponent implements OnInit {
     protected activatedRoute: ActivatedRoute,
     protected modalService: NgbModal,
     protected userService: UserService,
-    protected route: ActivatedRoute
+    protected route: ActivatedRoute,
+    protected typeDocumentService: TypedocumentService,
+    public router: Router
   ) {}
+
+  // ==========================================================================
+  // 🟢 LIFECYCLE HOOK: ngOnInit()
+  // --------------------------------------------------------------------------
+
   ngOnInit(): void {
+    this.typeDocumentService.query({ page: 0, size: 1000 }).subscribe(res => {
+      this.typedocuments = res.body!;
+    });
+
     const today = new Date();
 
     this.date = today.toISOString().split('T')[0];
@@ -243,62 +199,19 @@ export class CorrespUpdateComponent implements OnInit {
     return result;
   }
 
-  // ----------------------------- INFO GENEREALES -----------------------------------------------------
+  // ====================================================================================================================================================
+  // ====================================================================================================================================================
+  // ====================================================================================================================================================
+  // ====================================================================================================================================================
+  // ====================================================================================================================================================
+  // 🟢------------------------------------------------------------- INFO GENERALES----------------------------------------------------------------------
+  // ====================================================================================================================================================
+  // ====================================================================================================================================================
+  // ====================================================================================================================================================
+  // ====================================================================================================================================================
+  // ====================================================================================================================================================
 
-  // onFileSelected(event: any): void {
-  //   const file = event.target.files[0];
-  //   if (file) {
-  //     this.uploadedFiles.push(file);
-  //
-  //     const uniquePjName =  this.generateRandomId(10);
-  //
-  //     const pjModel: IPj = {} as IPj;
-  //
-  //     const parts = file.name.split('.');
-  //     pjModel.name = parts.slice(0, -1).join('.');
-  //     pjModel.fileType = parts[parts.length - 1];
-  //     pjModel.uniqueName = uniquePjName;
-  //
-  //     this.pjsToSave.push(pjModel)
-  //
-  //     console.log(this.pjsToSave);
-  //
-  //   }
-  //   event.target.value = ''; // reset input
-  // }
-
-  onFileSelected(event: any): void {
-    const file = event.target.files[0];
-    if (file) {
-      this.uploadedFiles.push(file);
-
-      const uniquePjName = this.generateRandomId(10);
-
-      const pjModel: IPj = {} as IPj;
-      const parts = file.name.split('.');
-
-      pjModel.name = parts.slice(0, -1).join('.');
-      pjModel.fileType = parts[parts.length - 1];
-      pjModel.uniqueName = uniquePjName;
-
-      this.pjsToSave.push(pjModel);
-
-      // 🔗 link file index to uniqueName
-      this.fileLinks.push({ index: this.uploadedFiles.length - 1, uniqueName: uniquePjName });
-
-      // Initialize progress at 0
-      this.uploadProgress.set(uniquePjName, 0);
-
-      // Start upload with progress tracking
-      this.uploadFileWithProgress(file, uniquePjName);
-
-      console.log(this.pjsToSave);
-    }
-
-    event.target.value = ''; // reset input
-  }
-
-  uploadFileWithProgress(file: File, uniqueName: string): void {
+  uploadFileWithProgress(file: File, uniqueName: string, pjModel: IPj): void {
     this.isUploading = true;
 
     const req = { uniqueName }; // Pass uniqueName to backend
@@ -312,7 +225,16 @@ export class CorrespUpdateComponent implements OnInit {
           // Upload complete - response is string
           this.uploadProgress.set(uniqueName, 100);
           console.log('Upload successful:', progressOrResponse);
-          this.accordionStates['pieces'] = !this.accordionStates['pieces'];
+
+          if (!this.accordionStates['pieces']) {
+            this.accordionStates['pieces'] = true;
+          }
+
+          pjModel.path = progressOrResponse;
+          console.log('pjModel updated:', pjModel);
+          // console.log(progressOrResponse)
+          // this.finalPath = progressOrResponse
+          // console.log(this.finalPath)
 
           // Keep progress at 100% briefly, then remove to show complete state
           setTimeout(() => {
@@ -338,45 +260,45 @@ export class CorrespUpdateComponent implements OnInit {
     });
   }
 
-  // removeFile(index?: number, uniqueName?: string): void {
-  //
-  //   if (index !== undefined && index >= 0 && index < this.uploadedFiles.length) {
-  //     this.uploadedFiles.splice(index, 1);
-  //   }
-  //
-  //   if (uniqueName) {
-  //     this.pjsToSave = this.pjsToSave.filter(pj => pj.uniqueName !== uniqueName);
-  //   }
-  //
-  //   console.log(this.pjsToSave);
-  // }
+  onFileSelected(event: any): void {
+    const file = event.target.files[0];
+    if (file) {
+      // this.finalPath = '';
 
-  // removeFile(index?: number): void {
-  //   if (index === undefined || index < 0 || index >= this.uploadedFiles.length) {
-  //     return;
-  //   }
-  //
-  //   // Find the uniqueName for this file index
-  //   const link = this.fileLinks.find(l => l.index === index);
-  //
-  //   // Remove file
-  //   this.uploadedFiles.splice(index, 1);
-  //
-  //   // Remove from pjsToSave using uniqueName (if found)
-  //   if (link?.uniqueName) {
-  //     this.pjsToSave = this.pjsToSave.filter(pj => pj.uniqueName !== link.uniqueName);
-  //   }
-  //
-  //   // Clean up the mapping
-  //   this.fileLinks = this.fileLinks.filter(l => l.index !== index);
-  //
-  //   // Update remaining indexes to stay in sync
-  //   this.fileLinks.forEach(l => {
-  //     if (l.index > index) l.index -= 1;
-  //   });
-  //
-  //   console.log(this.pjsToSave);
-  // }
+      this.uploadedFiles.push(file);
+
+      const uniquePjName = this.generateRandomId(10);
+
+      const pjModel: IPj = {} as IPj;
+      const parts = file.name.split('.');
+
+      pjModel.name = parts.slice(0, -1).join('.');
+      pjModel.fileType = parts[parts.length - 1];
+      pjModel.uniqueName = uniquePjName;
+
+      // 🔗 link file index to uniqueName
+      this.fileLinks.push({ index: this.uploadedFiles.length - 1, uniqueName: uniquePjName });
+
+      // Initialize progress at 0
+      this.uploadProgress.set(uniquePjName, 0);
+
+      // Start upload with progress tracking
+      this.uploadFileWithProgress(file, uniquePjName, pjModel);
+
+      // pjModel.path = this.finalPath;
+      // console.log('this.finalPath')
+      // console.log(this.finalPath)
+      //
+      // console.log('pjModel')
+      // console.log(pjModel)
+
+      this.pjsToSave.push(pjModel);
+
+      console.log(this.pjsToSave);
+    }
+
+    event.target.value = ''; // reset input
+  }
 
   removeFile(index?: number): void {
     if (index === undefined || index < 0 || index >= this.uploadedFiles.length) {
@@ -448,85 +370,104 @@ export class CorrespUpdateComponent implements OnInit {
     return null;
   }
 
-  // saveCorresp(): void {
-  //   this.validationInfoGenErrors = {};
-  //
-  //   if (!this.validateInfoGeneralesForm()) {
-  //     return;
-  //   }
-  //
-  //   const corresp = {
-  //     objet: this.objet,
-  //   };
-  //
-  //   console.log('Task added:', corresp);
-  //
-  //   // Reset form and close modal
-  //   this.resetInfoGenForm();
-  //
-  // }
+  // ====================================================================================================================================================
+  // ====================================================================================================================================================
+  // ====================================================================================================================================================
+  // ====================================================================================================================================================
+  // ====================================================================================================================================================
+  // 🟢------------------------------------------------------------- SAVE CORRESP ----------------------------------------------------------------------
+  // ====================================================================================================================================================
+  // ====================================================================================================================================================
+  // ====================================================================================================================================================
+  // ====================================================================================================================================================
+  // ====================================================================================================================================================
 
   saveCorresp(): void {
     // Clear previous validation errors
+    console.log('INSIDE');
     this.validationInfoGenErrors = {};
+
+    console.log('INSIDE 1');
 
     // Run validation — if something’s missing, stop here
     if (!this.validateInfoGeneralesForm()) {
       return;
     }
 
+    console.log('INSIDE 2');
+
     if (!this.corresp) {
       this.corresp = {} as ICorresp; // initialize as empty object
     }
 
+    console.log('INSIDE 3');
+
+    this.corresp!.courrierDate = dayjs(this.date);
     this.corresp!.subject = this.objet;
     this.corresp!.sender = this.expediteur;
-    this.corresp!.courrierDate = dayjs(this.date);
+    this.corresp!.contact = this.destinataire;
+    this.corresp!.contactEmail = this.contactEmail;
+    this.corresp!.contactEmailCc = this.contactEmailCC;
     this.corresp!.responseTo = this.reponseSur;
-    this.corresp!.step = this.etape;
+    this.corresp!.senderReference = this.referenceEmetteur;
     this.corresp!.priority = this.priorite === 'Prioritaire';
-    this.corresp!.responseTo = this.destinataire;
     this.corresp!.body = this.htmlContent;
+
+    switch (this.selectedType) {
+      case 'Demande de travail':
+      case 'Commande':
+      case 'Rapport technique':
+      case 'Réclamation':
+        this.corresp!.dispatchType = DispatchType.EMAIL;
+        break;
+
+      case 'Facture':
+        this.corresp!.dispatchType = DispatchType.REGISTERED_LETTER;
+        break;
+
+      case 'Note interne':
+        this.corresp!.dispatchType = DispatchType.LETTER;
+        break;
+
+      default:
+        this.corresp!.dispatchType = DispatchType.EMAIL;
+        break;
+    }
+
+    switch (this.correspType) {
+      case 'Arrivée':
+        this.corresp!.corresptype = CorrespType.INCOMING;
+        break;
+      case 'Sortant':
+        this.corresp!.corresptype = CorrespType.OUTGOING;
+        break;
+      case 'Interne':
+        this.corresp!.corresptype = CorrespType.INTERNAL;
+        break;
+    }
+
+    console.log(this.corresp);
+    console.log(this.tasksToSave);
+    console.log(this.pjsToSave);
 
     this.tasks.forEach(t => {
       const taskModel: ITasks = {} as ITasks;
 
       taskModel.responsible = t.responsable;
       taskModel.dueDate = dayjs(t.dateLimite);
+      taskModel.taskType = t.typeTask;
 
       this.tasksToSave.push(taskModel);
     });
-
-    // this.uploadedFiles.forEach(f => {
-    //
-    //   const uniquePjName =  this.generateRandomId(10);
-    //
-    //   const pjModel: IPj = {} as IPj;
-    //
-    //   const parts = f.name.split('.');
-    //   pjModel.name = parts.slice(0, -1).join('.');
-    //   pjModel.fileType = parts[parts.length - 1];
-    //   pjModel.uniqueName = uniquePjName;
-    //
-    //   this.pjsToSave.push(pjModel)
-    // })
 
     console.log(this.corresp);
     console.log(this.tasksToSave);
     console.log(this.pjsToSave);
 
     this.correspService.saveCorrespWithTasksAndPj(this.corresp, this.tasksToSave, this.pjsToSave).subscribe(res => {
-      console.log('okk');
+      // console.log('okk');
+      this.router.navigate(['/corresp']);
     });
-
-    // console.log('Correspondance enregistrée :', corresp);
-
-    // Reset the form after saving
-    // this.resetInfoGenForm();
-  }
-
-  resetInfoGenForm(): void {
-    this.objet = '';
   }
 
   validateInfoGeneralesForm(): boolean {
@@ -545,22 +486,22 @@ export class CorrespUpdateComponent implements OnInit {
       this.validationInfoGenErrors['date'] = 'La date est obligatoire';
       isValid = false;
     }
-    if (!this.courrier?.trim()) {
-      this.validationInfoGenErrors['courrier'] = 'Le courrier est obligatoire';
-      isValid = false;
-    }
-    if (!this.etape?.trim()) {
-      this.validationInfoGenErrors['etape'] = "L'étape est obligatoire";
-      isValid = false;
-    }
+    // if (!this.courrier?.trim()) {
+    //   this.validationInfoGenErrors['courrier'] = 'Le courrier est obligatoire';
+    //   isValid = false;
+    // }
+    // if (!this.etape?.trim()) {
+    //   this.validationInfoGenErrors['etape'] = "L'étape est obligatoire";
+    //   isValid = false;
+    // }
     if (!this.destinataire?.trim()) {
       this.validationInfoGenErrors['destinataire'] = 'Le destinataire est obligatoire';
       isValid = false;
     }
-    if (!this.dispatchType?.trim()) {
-      this.validationInfoGenErrors['dispatchType'] = "Le type d'envoi est obligatoire";
-      isValid = false;
-    }
+    // if (!this.dispatchType?.trim()) {
+    //   this.validationInfoGenErrors['dispatchType'] = "Le type d'envoi est obligatoire";
+    //   isValid = false;
+    // }
 
     if (!this.contactEmail?.trim()) {
       this.validationInfoGenErrors['contactEmail'] = 'Le contact est obligatoire';
@@ -582,7 +523,17 @@ export class CorrespUpdateComponent implements OnInit {
 
   validationInfoGenErrors: { [key: string]: string } = {};
 
-  // ------------------------------------------------- TASKS --------------------------------------------------------------------------------------
+  // ====================================================================================================================================================
+  // ====================================================================================================================================================
+  // ====================================================================================================================================================
+  // ====================================================================================================================================================
+  // ====================================================================================================================================================
+  // 🟢-------------------------------------------------------------- TASKS -----------------------------------------------------------------------------
+  // ====================================================================================================================================================
+  // ====================================================================================================================================================
+  // ====================================================================================================================================================
+  // ====================================================================================================================================================
+  // ====================================================================================================================================================
 
   saveTask(): void {
     // Reset any previous validation states

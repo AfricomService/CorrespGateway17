@@ -15,6 +15,7 @@ export interface ITasks {
   status?: CorrespStatus | null;
   createdBy?: string | null;
   updatedBy?: string | null;
+  taskType?: string | null;
   updatedDate?: dayjs.Dayjs | null;
   corresps?: Pick<ICorresp, 'id'>[] | null;
 }
