@@ -29,6 +29,8 @@ import { NgForm } from '@angular/forms';
 import dayjs from 'dayjs/esm';
 import { ITypedocument } from '../../../configManage/typedocument/typedocument.model';
 import { TypedocumentService } from '../../../configManage/typedocument/service/typedocument.service';
+import { IOrga } from '../orga';
+import { DepartementTreeFeignDTO } from './DepartementTreeFeignDTO';
 
 // ============================================================================
 // 🟠 INTERFACE: FileIndexLink
@@ -140,6 +142,13 @@ export class CorrespUpdateComponent implements OnInit {
 
   finalPath = '';
 
+  orgaList: IOrga[] = [];
+
+  selectedOrga: any = null;
+
+  departements: DepartementTreeFeignDTO[] = [];
+  selectedDepartement = '';
+
   constructor(
     protected dataUtils: DataUtils,
     protected eventManager: EventManager,
@@ -162,6 +171,10 @@ export class CorrespUpdateComponent implements OnInit {
   // --------------------------------------------------------------------------
 
   ngOnInit(): void {
+    this.correspService.queryOrga().subscribe(res => {
+      this.orgaList = res.body!;
+    });
+
     this.typeDocumentService.query({ page: 0, size: 1000 }).subscribe(res => {
       this.typedocuments = res.body!;
     });
@@ -546,7 +559,7 @@ export class CorrespUpdateComponent implements OnInit {
 
     const taskData = {
       typeTask: this.selectedType,
-      responsable: this.selectedUser[0].login,
+      responsable: this.selectedDepartement,
       dateLimite: this.dateLimite,
     };
 
@@ -590,11 +603,11 @@ export class CorrespUpdateComponent implements OnInit {
   }
 
   getTaskDetails(task: any): any {
-    const userSelected = this.findUserByLogin(task.responsable, this.users);
+    // const userSelected = this.findUserByLogin(task.responsable, this.users);
 
     return {
       typeTask: task.typeTask,
-      responsableName: `${userSelected.firstName} ${userSelected.lastName}`,
+      responsableName: task.responsable,
       dateLimite: task.dateLimite ? this.formatDate(task.dateLimite) : '',
     };
   }
@@ -618,48 +631,21 @@ export class CorrespUpdateComponent implements OnInit {
       isValid = false;
     }
 
-    // Validate responsible person
-    if (!this.selectedUser || this.selectedUser.length === 0) {
-      this.validationErrors['responsable'] = 'Le responsable est obligatoire';
+    // Validate task name
+    if (!this.selectedOrga) {
+      this.validationErrors['organigramme'] = 'L Organigramme est obligatoire';
       isValid = false;
     }
 
-    // // Validate dates exist
-    // if (!this.dateDebut) {
-    //   this.validationErrors['dateDebut'] = 'La date de début est obligatoire';
+    if (!this.selectedDepartement || this.selectedDepartement.trim() === '') {
+      this.validationErrors['departement'] = 'Le departement est obligatoire';
+      isValid = false;
+    }
+
+    // // Validate responsible person
+    // if (!this.selectedUser || this.selectedUser.length === 0) {
+    //   this.validationErrors['responsable'] = 'Le responsable est obligatoire';
     //   isValid = false;
-    // }
-    //
-    // if (!this.dateFin) {
-    //   this.validationErrors['dateFin'] = 'La date de fin est obligatoire';
-    //   isValid = false;
-    // }
-    //
-    // if (!this.dateLimite) {
-    //   this.validationErrors['dateLimite'] = 'La date limite est obligatoire';
-    //   isValid = false;
-    // }
-    //
-    // // Validate date logic if all dates are present
-    // if (this.dateDebut && this.dateFin && this.dateLimite) {
-    //   const debut = new Date(this.dateDebut);
-    //   const fin = new Date(this.dateFin);
-    //   const limite = new Date(this.dateLimite);
-    //
-    //   if (debut >= fin) {
-    //     this.validationErrors['dateFin'] = 'La date de fin doit être après la date de début';
-    //     isValid = false;
-    //   }
-    //
-    //   if (fin >= limite) {
-    //     this.validationErrors['dateLimite'] = 'La date limite doit être après la date de fin';
-    //     isValid = false;
-    //   }
-    //
-    //   if (debut >= limite) {
-    //     this.validationErrors['dateLimite'] = 'La date limite doit être après la date de début';
-    //     isValid = false;
-    //   }
     // }
 
     return isValid;
@@ -678,7 +664,9 @@ export class CorrespUpdateComponent implements OnInit {
       this.selectedUser = Array.of(this.findUserByLogin(task.responsable, this.users));
       this.dateLimite = task.dateLimite;
     } else {
-      // Add mode - reset form
+      // Add mode - reset for
+      this.selectedOrga = null;
+      this.selectedDepartement = '';
       this.isEditMode = false;
       this.editingTaskIndex = null;
       this.resetForm();
@@ -696,6 +684,55 @@ export class CorrespUpdateComponent implements OnInit {
     });
   }
 
+  onOrgaChange(): void {
+    if (!this.selectedOrga) return;
+
+    const req = { orgaCode: this.selectedOrga.orgaCode };
+
+    this.correspService.queryOrgaDeps(req).subscribe({
+      next: res => {
+        this.departements = (res.body as DepartementTreeFeignDTO[]) || [];
+        this.expandAllDepartments(this.departements);
+      },
+      error: err => console.error('Erreur lors du chargement des départements', err),
+    });
+  }
+
+  private expandAllDepartments(nodes: DepartementTreeFeignDTO[]): void {
+    nodes.forEach(node => {
+      (node as any).expanded = true; // DevExtreme reconnaît 'expanded'
+      if (node.children && node.children.length > 0) {
+        this.expandAllDepartments(node.children);
+      }
+    });
+  }
+
+  selectDep(event: any) {
+    console.log(event);
+    this.selectedDepartement = event.itemData.nom;
+  }
+
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
   // --------------------------------------------------------------------------------------------------------------------
 
   byteSize(base64String: string): string {

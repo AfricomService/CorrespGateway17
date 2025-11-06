@@ -43,17 +43,22 @@ public class TokenProvider {
     public TokenProvider(JHipsterProperties jHipsterProperties, SecurityMetersService securityMetersService) {
         byte[] keyBytes;
         String secret = jHipsterProperties.getSecurity().getAuthentication().getJwt().getBase64Secret();
-        if (!ObjectUtils.isEmpty(secret)) {
-            log.debug("Using a Base64-encoded JWT secret key");
-            keyBytes = Decoders.BASE64.decode(secret);
-        } else {
-            log.warn(
-                "Warning: the JWT key used is not Base64-encoded. " +
-                "We recommend using the `jhipster.security.authentication.jwt.base64-secret` key for optimum security."
+        //        if (!ObjectUtils.isEmpty(secret)) {
+        //            log.debug("Using a Base64-encoded JWT secret key");
+        //            keyBytes = Decoders.BASE64.decode(secret);
+        //        } else {
+        //            log.warn(
+        //                "Warning: the JWT key used is not Base64-encoded. " +
+        //                "We recommend using the `jhipster.security.authentication.jwt.base64-secret` key for optimum security."
+        //            );
+        //            secret = jHipsterProperties.getSecurity().getAuthentication().getJwt().getSecret();
+        //            keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+        //        }
+        keyBytes =
+            Decoders.BASE64.decode(
+                "MDQ2ODMwMzc5NGEyYmZhMzAwNjI3ODNkNzg5MDQ5YzUyNDg3OTg1YTUwZTk1MGY4NDAwYzU0OTI2ZTQ4OWQ2YjYzNGI1NzFhMGNlZmYzZmRkOWVhZDAwZDEwYmU2NWNhMTE1OTk5MmQ2N2Y2N2IyNThlNDFiMTMzOWZhMmZkM2E="
             );
-            secret = jHipsterProperties.getSecurity().getAuthentication().getJwt().getSecret();
-            keyBytes = secret.getBytes(StandardCharsets.UTF_8);
-        }
+
         key = Keys.hmacShaKeyFor(keyBytes);
         jwtParser = Jwts.parserBuilder().setSigningKey(key).build();
         this.tokenValidityInMilliseconds = 1000 * jHipsterProperties.getSecurity().getAuthentication().getJwt().getTokenValidityInSeconds();
@@ -74,13 +79,20 @@ public class TokenProvider {
             validity = new Date(now + this.tokenValidityInMilliseconds);
         }
 
+        //        return Jwts
+        //            .builder()
+        //            .setSubject(authentication.getName())
+        //            .claim(AUTHORITIES_KEY, authorities)
+        //            .signWith(key, SignatureAlgorithm.HS512)
+        //            .setExpiration(validity)
+        //            .serializeToJsonWith(new JacksonSerializer<>())
+        //            .compact();
         return Jwts
             .builder()
             .setSubject(authentication.getName())
             .claim(AUTHORITIES_KEY, authorities)
             .signWith(key, SignatureAlgorithm.HS512)
             .setExpiration(validity)
-            .serializeToJsonWith(new JacksonSerializer<>())
             .compact();
     }
 

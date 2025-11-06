@@ -10,6 +10,8 @@ import { createRequestOption } from 'app/core/request/request-util';
 import { ICorresp, NewCorresp } from '../corresp.model';
 import { ITasks } from '../../tasks/tasks.model';
 import { IPj } from '../../pj/pj.model';
+import { IOrga } from '../orga';
+import { DepartementTreeFeignDTO } from '../update/DepartementTreeFeignDTO';
 
 export type PartialUpdateCorresp = Partial<ICorresp> & Pick<ICorresp, 'id'>;
 
@@ -36,6 +38,11 @@ export type EntityArrayResponseType = HttpResponse<ICorresp[]>;
 @Injectable({ providedIn: 'root' })
 export class CorrespService {
   protected resourceUrl = this.applicationConfigService.getEndpointFor('api/corresps', 'correspmanage');
+  protected resourceUrlOrganigramme = this.applicationConfigService.getEndpointFor('api/orgacares', 'configmanage');
+  protected resourceUrlDepartementsFromOrgaCare = this.applicationConfigService.getEndpointFor(
+    'api/DepartementsFromOrgaCare',
+    'configmanage'
+  );
 
   constructor(protected http: HttpClient, protected applicationConfigService: ApplicationConfigService) {}
 
@@ -71,6 +78,15 @@ export class CorrespService {
     return this.http
       .get<RestCorresp[]>(this.resourceUrl, { params: options, observe: 'response' })
       .pipe(map(res => this.convertResponseArrayFromServer(res)));
+  }
+
+  queryOrga(): Observable<HttpResponse<IOrga[]>> {
+    return this.http.get<IOrga[]>(this.resourceUrlOrganigramme, { observe: 'response' });
+  }
+
+  queryOrgaDeps(req?: any): Observable<HttpResponse<DepartementTreeFeignDTO[]>> {
+    const options = createRequestOption(req);
+    return this.http.get<DepartementTreeFeignDTO[]>(this.resourceUrlDepartementsFromOrgaCare, { params: options, observe: 'response' });
   }
 
   delete(id: number): Observable<HttpResponse<{}>> {
