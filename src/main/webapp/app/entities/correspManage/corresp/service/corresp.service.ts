@@ -12,6 +12,7 @@ import { ITasks } from '../../tasks/tasks.model';
 import { IPj } from '../../pj/pj.model';
 import { IOrga } from '../orga';
 import { DepartementTreeFeignDTO } from '../update/DepartementTreeFeignDTO';
+import { ITypedocument } from '../../../configManage/typedocument/typedocument.model';
 
 export type PartialUpdateCorresp = Partial<ICorresp> & Pick<ICorresp, 'id'>;
 
@@ -153,13 +154,14 @@ export class CorrespService {
 
   // ------------------------------------------------------------------
 
-  saveCorrespWithTasksAndPj(correspDTO: ICorresp, tasksDTOS: ITasks[], pjs: IPj[]) {
+  saveCorrespWithTasksAndPj(correspDTO: ICorresp, tasksDTOS: ITasks[], pjs: IPj[], typeDocumentDTO?: ITypedocument) {
     const formData = new FormData();
 
     // JSON data → stringify
     formData.append('correspDTO', new Blob([JSON.stringify(correspDTO)], { type: 'application/json' }));
     formData.append('tasksDTOS', new Blob([JSON.stringify(tasksDTOS)], { type: 'application/json' }));
     formData.append('pjs', new Blob([JSON.stringify(pjs)], { type: 'application/json' }));
+    formData.append('typeDoc', new Blob([JSON.stringify(typeDocumentDTO)], { type: 'application/json' }));
 
     return this.http.post(`${this.resourceUrl}WithTasksAndPjs`, formData);
   }

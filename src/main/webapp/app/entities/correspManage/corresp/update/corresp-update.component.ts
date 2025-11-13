@@ -477,10 +477,12 @@ export class CorrespUpdateComponent implements OnInit {
     console.log(this.tasksToSave);
     console.log(this.pjsToSave);
 
-    this.correspService.saveCorrespWithTasksAndPj(this.corresp, this.tasksToSave, this.pjsToSave).subscribe(res => {
-      // console.log('okk');
-      this.router.navigate(['/corresp']);
-    });
+    this.correspService
+      .saveCorrespWithTasksAndPj(this.corresp, this.tasksToSave, this.pjsToSave, this.selectedTypeDocument)
+      .subscribe(res => {
+        // console.log('okk');
+        this.router.navigate(['/corresp']);
+      });
   }
 
   validateInfoGeneralesForm(): boolean {
