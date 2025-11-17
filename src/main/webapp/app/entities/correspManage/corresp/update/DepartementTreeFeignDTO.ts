@@ -3,4 +3,6 @@ export interface DepartementTreeFeignDTO {
   code: string;
   nom: string;
   children: DepartementTreeFeignDTO[];
+  selected: boolean;
+  organigrammeId?: number | null;
 }

@@ -31,6 +31,7 @@ import { ITypedocument } from '../../../configManage/typedocument/typedocument.m
 import { TypedocumentService } from '../../../configManage/typedocument/service/typedocument.service';
 import { IOrga } from '../orga';
 import { DepartementTreeFeignDTO } from './DepartementTreeFeignDTO';
+import { IDepartement } from '../../../orgacare/departement/departement.model';
 
 // ============================================================================
 // 🟠 INTERFACE: FileIndexLink
@@ -195,11 +196,50 @@ export class CorrespUpdateComponent implements OnInit {
     this.loadUsers();
   }
 
-  onTypeDocumentChange() {
-    if (this.selectedTypeDocument) {
-      this.objet = this.selectedTypeDocument.defaultobject || '';
-      this.destinataire = this.selectedTypeDocument.defautdest || '';
-      this.contactEmailCC = this.selectedTypeDocument.defaultencopie || '';
+  onTypeDocumentChange(): void {
+    if (!this.selectedTypeDocument) {
+      // Réinitialiser si aucun type document sélectionné
+      this.objet = '';
+      this.destinataire = '';
+      this.contactEmailCC = '';
+      return;
+    }
+
+    this.objet = this.selectedTypeDocument.defaultobject || '';
+
+    if (this.selectedTypeDocument.defautdest) {
+      this.correspService.queryOrgaDepsByCode({ code: this.selectedTypeDocument.defautdest }).subscribe({
+        next: (res: HttpResponse<IDepartement>) => {
+          if (res.body) {
+            this.destinataire = res.body.email || '';
+          } else {
+            this.destinataire = '';
+          }
+        },
+        error: () => {
+          this.destinataire = '';
+        },
+      });
+    } else {
+      this.destinataire = '';
+    }
+
+    // 3️⃣ Contact en copie (CC)
+    if (this.selectedTypeDocument.defaultencopie) {
+      this.correspService.queryOrgaDepsByCode({ code: this.selectedTypeDocument.defaultencopie }).subscribe({
+        next: (res: HttpResponse<IDepartement>) => {
+          if (res.body) {
+            this.contactEmailCC = res.body.email || '';
+          } else {
+            this.contactEmailCC = '';
+          }
+        },
+        error: () => {
+          this.contactEmailCC = '';
+        },
+      });
+    } else {
+      this.contactEmailCC = '';
     }
   }
 

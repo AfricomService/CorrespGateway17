@@ -12,6 +12,8 @@ import { ITasks } from '../../tasks/tasks.model';
 import { IPj } from '../../pj/pj.model';
 import { IOrga } from '../orga';
 import { DepartementTreeFeignDTO } from '../update/DepartementTreeFeignDTO';
+import { IDepartement } from '../../../orgacare/departement/departement.model';
+import { organigrammeFeignDTO } from '../update/organigrammeFeignDTO';
 
 export type PartialUpdateCorresp = Partial<ICorresp> & Pick<ICorresp, 'id'>;
 
@@ -43,6 +45,10 @@ export class CorrespService {
     'api/DepartementsFromOrgaCare',
     'configmanage'
   );
+  protected resourceUrlOrganigrammesFromOrgaCare = this.applicationConfigService.getEndpointFor(
+    'api/OrganigrammesFromOrgaCare',
+    'configmanage'
+  );
 
   constructor(protected http: HttpClient, protected applicationConfigService: ApplicationConfigService) {}
 
@@ -72,7 +78,9 @@ export class CorrespService {
       .get<RestCorresp>(`${this.resourceUrl}/${id}`, { observe: 'response' })
       .pipe(map(res => this.convertResponseFromServer(res)));
   }
-
+  getAllDepartements(): Observable<IDepartement[]> {
+    return this.http.get<IDepartement[]>(this.resourceUrl);
+  }
   query(req?: any): Observable<EntityArrayResponseType> {
     const options = createRequestOption(req);
     return this.http
@@ -87,6 +95,24 @@ export class CorrespService {
   queryOrgaDeps(req?: any): Observable<HttpResponse<DepartementTreeFeignDTO[]>> {
     const options = createRequestOption(req);
     return this.http.get<DepartementTreeFeignDTO[]>(this.resourceUrlDepartementsFromOrgaCare, { params: options, observe: 'response' });
+  }
+
+  queryOrgaDepsByCode(req?: any): Observable<HttpResponse<IDepartement>> {
+    const options = createRequestOption(req);
+    return this.http.get<IDepartement>(`${this.resourceUrlDepartementsFromOrgaCare}ByCode`, { params: options, observe: 'response' });
+  }
+  queryOrgaById(req?: any): Observable<HttpResponse<organigrammeFeignDTO[]>> {
+    const options = createRequestOption(req);
+    return this.http.get<organigrammeFeignDTO[]>(this.resourceUrlOrganigrammesFromOrgaCare, { params: options, observe: 'response' });
+  }
+
+  getOrgaCodeByDeptCode(req?: any): Observable<HttpResponse<string>> {
+    const options = createRequestOption(req);
+    return this.http.get<string>(`${this.resourceUrlOrganigrammesFromOrgaCare}ByCodeDept`, {
+      params: options,
+      observe: 'response',
+      responseType: 'text' as 'json',
+    });
   }
 
   delete(id: number): Observable<HttpResponse<{}>> {

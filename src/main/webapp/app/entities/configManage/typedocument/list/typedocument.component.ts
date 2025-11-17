@@ -10,6 +10,8 @@ import { ITEMS_PER_PAGE, PAGE_HEADER, TOTAL_COUNT_RESPONSE_HEADER } from 'app/co
 import { ASC, DESC, SORT, ITEM_DELETED_EVENT, DEFAULT_SORT_DATA } from 'app/config/navigation.constants';
 import { EntityArrayResponseType, TypedocumentService } from '../service/typedocument.service';
 import { TypedocumentDeleteDialogComponent } from '../delete/typedocument-delete-dialog.component';
+import { CorrespService } from '../../../correspManage/corresp/service/corresp.service';
+import { IDepartement } from '../../../orgacare/departement/departement.model';
 
 @Component({
   selector: 'jhi-typedocument',
@@ -18,7 +20,7 @@ import { TypedocumentDeleteDialogComponent } from '../delete/typedocument-delete
 export class TypedocumentComponent implements OnInit {
   typedocuments?: ITypedocument[];
   isLoading = false;
-
+  departements!: IDepartement[];
   predicate = 'id';
   ascending = true;
 
@@ -28,6 +30,7 @@ export class TypedocumentComponent implements OnInit {
 
   constructor(
     protected typedocumentService: TypedocumentService,
+    protected correspService: CorrespService,
     protected activatedRoute: ActivatedRoute,
     public router: Router,
     protected modalService: NgbModal
@@ -37,6 +40,9 @@ export class TypedocumentComponent implements OnInit {
 
   ngOnInit(): void {
     this.load();
+    this.correspService.getAllDepartements().subscribe(data => {
+      this.departements = data;
+    });
   }
 
   delete(typedocument: ITypedocument): void {

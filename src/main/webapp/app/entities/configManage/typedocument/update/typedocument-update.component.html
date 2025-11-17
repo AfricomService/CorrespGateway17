@@ -8,68 +8,66 @@
       >
         Créer ou éditer un Typedocument
       </h2>
-
-      <div>
+      <div class="p-3">
         <jhi-alert-error></jhi-alert-error>
 
-        <div class="row mb-3" *ngIf="editForm.controls.id.value !== null">
-          <label class="form-label" jhiTranslate="correspCareApp.configManageTypedocument.id" for="field_id">Id</label>
-          <input type="number" class="form-control" name="id" id="field_id" data-cy="id" formControlName="id" [readonly]="true" />
+        <!-- ID -->
+        <!--        <div class="mb-3" *ngIf="editForm.controls.id.value !== null">-->
+        <!--          <label class="form-label" jhiTranslate="correspCareApp.configManageTypedocument.id">Id</label>-->
+        <!--          <input-->
+        <!--            type="number"-->
+        <!--            class="form-control"-->
+        <!--            formControlName="id"-->
+        <!--            [readonly]="true"-->
+        <!--          />-->
+        <!--        </div>-->
+
+        <!-- NOM -->
+        <div class="mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.configManageTypedocument.nom">Nom</label>
+          <input type="text" class="form-control" formControlName="nom" />
         </div>
 
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.configManageTypedocument.nom" for="field_nom">Nom</label>
-          <input type="text" class="form-control" name="nom" id="field_nom" data-cy="nom" formControlName="nom" />
+        <!-- DEFAUTDEST -->
+        <div class="mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.configManageTypedocument.defautdest"> Defautdest </label>
+
+          <div class="d-flex">
+            <input type="text" class="form-control" formControlName="defautdest" />
+
+            <button type="button" class="btn btn-secondary ms-2" (click)="openAddTaskModal(AddTaskModal)">
+              {{ isEditMode ? 'Modifier' : 'Ajouter' }}
+            </button>
+          </div>
         </div>
 
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.configManageTypedocument.defautdest" for="field_defautdest"
-            >Defautdest</label
-          >
-          <input
-            type="text"
-            class="form-control"
-            name="defautdest"
-            id="field_defautdest"
-            data-cy="defautdest"
-            formControlName="defautdest"
-          />
+        <!-- DEFAULTOBJECT -->
+        <div class="mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.configManageTypedocument.defaultobject"> Defaultobject </label>
+          <input type="text" class="form-control" formControlName="defaultobject" />
         </div>
 
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.configManageTypedocument.defaultobject" for="field_defaultobject"
-            >Defaultobject</label
-          >
-          <input
-            type="text"
-            class="form-control"
-            name="defaultobject"
-            id="field_defaultobject"
-            data-cy="defaultobject"
-            formControlName="defaultobject"
-          />
+        <!-- DEFAULTENCOPIE -->
+        <div class="mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.configManageTypedocument.defaultencopie"> Defaultencopie </label>
+
+          <div class="d-flex">
+            <input type="text" class="form-control" formControlName="defaultencopie" />
+
+            <button type="button" class="btn btn-secondary ms-2" (click)="openAddTaskModal1(AddTaskModal1)">
+              {{ isEditMode ? 'Modifier' : 'Ajouter' }}
+            </button>
+          </div>
         </div>
 
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.configManageTypedocument.defaultencopie" for="field_defaultencopie"
-            >Defaultencopie</label
-          >
-          <input
-            type="text"
-            class="form-control"
-            name="defaultencopie"
-            id="field_defaultencopie"
-            data-cy="defaultencopie"
-            formControlName="defaultencopie"
-          />
-        </div>
+        <!-- USUALSTATUS -->
+        <div class="mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.configManageTypedocument.usualstatus"> Usualstatus </label>
 
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.configManageTypedocument.usualstatus" for="field_usualstatus"
-            >Usualstatus</label
-          >
-          <select class="form-control" name="usualstatus" formControlName="usualstatus" id="field_usualstatus" data-cy="usualstatus">
-            <option [ngValue]="null">{{ 'correspCareApp.UsualStatus.null' | translate }}</option>
+          <select class="form-control" formControlName="usualstatus">
+            <option [ngValue]="null">
+              {{ 'correspCareApp.UsualStatus.null' | translate }}
+            </option>
             <option *ngFor="let usualStatus of usualStatusValues" [value]="usualStatus">
               {{ 'correspCareApp.UsualStatus.' + usualStatus | translate }}
             </option>
@@ -77,9 +75,158 @@
         </div>
       </div>
 
-      <div>
+      <ng-template #AddTaskModal let-AddTaskModal class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-header">
+          <h5 class="modal-title">Modifier un département</h5>
+          <button type="button" class="btn-close" aria-label="Close" (click)="AddTaskModal.close('Close click')"></button>
+        </div>
+
+        <div style="height: 100%" class="modal-body">
+          <form>
+            <div style="display: flex; flex-direction: column; gap: 1.5em">
+              <!-- ORGANIGRAMME -->
+              <div class="row mb-3">
+                <div class="col-md-12 mb-3 mb-md-0">
+                  <label class="form-label fw-semibold">Organigramme <span class="text-danger">*</span></label>
+                  <select
+                    class="form-select"
+                    [(ngModel)]="selectedOrga"
+                    name="organigramme"
+                    (change)="onOrgaChange()"
+                    [class.border-danger]="validationErrors['organigramme']"
+                  >
+                    <option value="" disabled>-- Sélectionner un organigramme --</option>
+                    <option *ngFor="let orga of orgaList" [ngValue]="orga">
+                      {{ orga.organigramme }}
+                    </option>
+                  </select>
+                  <div class="text-danger small mt-1" *ngIf="validationErrors['organigramme']">
+                    {{ validationErrors['organigramme'] }}
+                  </div>
+                </div>
+              </div>
+
+              <!-- DÉPARTEMENTS -->
+              <div class="row mb-3">
+                <div class="col-md-12 mb-3 mb-md-0">
+                  <label class="form-label fw-semibold">Département <span class="text-danger">*</span></label>
+
+                  <dx-tree-view
+                    #treeView
+                    [items]="departements"
+                    [selectedExpr]="'selected'"
+                    displayExpr="nom"
+                    selectionMode="single"
+                    [expandAllEnabled]="true"
+                    [searchEnabled]="true"
+                    searchMode="contains"
+                    [height]="450"
+                    [dataStructure]="'tree'"
+                    [keyExpr]="'id'"
+                    [parentIdExpr]="'parentId'"
+                    [itemsExpr]="'children'"
+                    [selectByClick]="true"
+                    (onItemClick)="selectDepDest($event, AddTaskModal)"
+                    [class.border-danger]="validationErrors['departement']"
+                    class="border rounded"
+                  >
+                  </dx-tree-view>
+
+                  <div class="text-danger small mt-1" *ngIf="validationErrors['departement']">
+                    {{ validationErrors['departement'] }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <div class="modal-footer d-flex justify-content-between">
+          <div>Departement selectionné : {{ selectedDepartementNom || 'Aucun' }}-{{ selectedDepartement?.code || 'Aucun' }}</div>
+          <div>
+            <button type="button" class="btn btn-light" (click)="AddTaskModal.close('Close click')">Annuler</button>
+            <button type="button" class="btn btn-primary" (click)="save()">Enregistrer</button>
+          </div>
+        </div>
+      </ng-template>
+
+      <ng-template #AddTaskModal1 let-AddTaskModal1 class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-header">
+          <h5 class="modal-title">Sélectionner un département</h5>
+          <button type="button" class="btn-close" aria-label="Close" (click)="AddTaskModal1.close('Close click')"></button>
+        </div>
+
+        <div style="height: 100%" class="modal-body">
+          <form>
+            <div style="display: flex; flex-direction: column; gap: 1.5em">
+              <!-- ORGANIGRAMME -->
+              <div class="row mb-3">
+                <div class="col-md-12 mb-3 mb-md-0">
+                  <label class="form-label fw-semibold">Organigramme <span class="text-danger">*</span></label>
+                  <select
+                    class="form-select"
+                    [(ngModel)]="selectedOrga"
+                    name="organigramme"
+                    (change)="onOrgaChange1()"
+                    [class.border-danger]="validationErrors['organigramme']"
+                  >
+                    <option value="" disabled selected>-- Sélectionner un organigramme --</option>
+                    <option *ngFor="let orga of orgaList" [ngValue]="orga">
+                      {{ orga.organigramme }}
+                    </option>
+                  </select>
+                  <div class="text-danger small mt-1" *ngIf="validationErrors['organigramme']">
+                    {{ validationErrors['organigramme'] }}
+                  </div>
+                </div>
+              </div>
+
+              <!-- DÉPARTEMENTS -->
+              <div class="row mb-3">
+                <div class="col-md-12 mb-3 mb-md-0">
+                  <label class="form-label fw-semibold">Département <span class="text-danger">*</span></label>
+
+                  <dx-tree-view
+                    #treeView1
+                    [items]="departementsCC"
+                    displayExpr="nom"
+                    selectionMode="single"
+                    [expandAllEnabled]="true"
+                    [searchEnabled]="true"
+                    searchMode="contains"
+                    [height]="450"
+                    [dataStructure]="'tree'"
+                    [keyExpr]="'id'"
+                    [parentIdExpr]="'parentId'"
+                    [itemsExpr]="'children'"
+                    [selectByClick]="true"
+                    (onItemClick)="selectDepCopie($event, AddTaskModal1)"
+                    [class.border-danger]="validationErrors['departement1']"
+                    class="border rounded"
+                  >
+                  </dx-tree-view>
+
+                  <div class="text-danger small mt-1" *ngIf="validationErrors['departement']">
+                    {{ validationErrors['departement'] }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <div class="modal-footer d-flex justify-content-between">
+          <div>Departement selectionné : {{ selectedDepartementNom1 || 'Aucun' }}-{{ selectedDepartement1?.code || 'Aucun' }}</div>
+          <div>
+            <button type="button" class="btn btn-light" (click)="AddTaskModal1.close('Close click')">Annuler</button>
+            <button type="button" class="btn btn-primary" (click)="save()">Enregistrer</button>
+          </div>
+        </div>
+      </ng-template>
+      <div class="d-flex justify-content-end gap-2 mt-4">
         <button type="button" id="cancel-save" data-cy="entityCreateCancelButton" class="btn btn-secondary" (click)="previousState()">
-          <fa-icon icon="ban"></fa-icon>&nbsp;<span jhiTranslate="entity.action.cancel">Annuler</span>
+          <fa-icon icon="ban"></fa-icon>&nbsp;
+          <span jhiTranslate="entity.action.cancel">Annuler</span>
         </button>
 
         <button
@@ -89,7 +236,8 @@
           [disabled]="editForm.invalid || isSaving"
           class="btn btn-primary"
         >
-          <fa-icon icon="save"></fa-icon>&nbsp;<span jhiTranslate="entity.action.save">Sauvegarder</span>
+          <fa-icon icon="save"></fa-icon>&nbsp;
+          <span jhiTranslate="entity.action.save">Sauvegarder</span>
         </button>
       </div>
     </form>
