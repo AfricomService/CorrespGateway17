@@ -71,8 +71,20 @@ export class TasksService {
       .get<RestTasks[]>(`${this.resourceUrl}/tasksByEtat`, { params: options, observe: 'response' })
       .pipe(map((res: HttpResponse<RestTasks[]>) => this.convertResponseArrayFromServer(res)));
   }
+
+  getAllTasksByCorrespId(req?: any): Observable<EntityArrayResponseType> {
+    const options = createRequestOption(req);
+    return this.http
+      .get<RestTasks[]>(`${this.resourceUrl}/tasksByCorrespId`, { params: options, observe: 'response' })
+      .pipe(map((res: HttpResponse<RestTasks[]>) => this.convertResponseArrayFromServer(res)));
+  }
+
   delete(id: number): Observable<HttpResponse<{}>> {
     return this.http.delete(`${this.resourceUrl}/${id}`, { observe: 'response' });
+  }
+
+  deleteTaskFromCorrespAndDB(correspId: number, tasksId: number): Observable<HttpResponse<{}>> {
+    return this.http.delete(`${this.resourceUrl}/deleteTaskFromCorrespAndDB/${correspId}/${tasksId}`, { observe: 'response' });
   }
 
   getTasksIdentifier(tasks: Pick<ITasks, 'id'>): number {

@@ -695,6 +695,7 @@ export class CorrespUpdateComponent implements OnInit {
       next: res => {
         this.departements = (res.body as DepartementTreeFeignDTO[]) || [];
         this.expandAllDepartments(this.departements);
+        // this.departements[0].selected = true;
       },
       error: err => console.error('Erreur lors du chargement des départements', err),
     });

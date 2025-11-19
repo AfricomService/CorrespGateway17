@@ -157,12 +157,27 @@ export class CorrespService {
   saveCorrespWithTasksAndPj(correspDTO: ICorresp, tasksDTOS: ITasks[], pjs: IPj[], typeDocumentDTO?: ITypedocument) {
     const formData = new FormData();
 
-    // JSON data → stringify
     formData.append('correspDTO', new Blob([JSON.stringify(correspDTO)], { type: 'application/json' }));
     formData.append('tasksDTOS', new Blob([JSON.stringify(tasksDTOS)], { type: 'application/json' }));
     formData.append('pjs', new Blob([JSON.stringify(pjs)], { type: 'application/json' }));
     formData.append('typeDoc', new Blob([JSON.stringify(typeDocumentDTO)], { type: 'application/json' }));
 
     return this.http.post(`${this.resourceUrl}WithTasksAndPjs`, formData);
+  }
+
+  addTaskToCorresp(tasksDTO: ITasks, correspId: number) {
+    const formData = new FormData();
+
+    formData.append('correspId', correspId.toString());
+
+    formData.append('tasksDTO', new Blob([JSON.stringify(tasksDTO)], { type: 'application/json' }));
+
+    return this.http.post(`${this.resourceUrl}AddTaskToCorresp`, formData);
+  }
+
+  changeTaskStatus(req?: any) {
+    const options = createRequestOption(req);
+
+    return this.http.patch(`${this.resourceUrl}ChangeTaskStatus`, options);
   }
 }
