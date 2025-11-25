@@ -180,4 +180,16 @@ export class CorrespService {
 
     return this.http.patch(`${this.resourceUrl}ChangeTaskStatus`, options);
   }
+
+  soumettreCorresp(req?: any) {
+    const options = createRequestOption(req);
+
+    return this.http.patch(`${this.resourceUrl}SoumettreCorresp`, options);
+  }
+
+  cloturerCorresp(req?: any) {
+    const options = createRequestOption(req);
+
+    return this.http.patch(`${this.resourceUrl}CloturerCorresp`, options);
+  }
 }

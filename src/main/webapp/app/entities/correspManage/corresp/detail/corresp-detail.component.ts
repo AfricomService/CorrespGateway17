@@ -86,6 +86,8 @@ export class CorrespDetailComponent implements OnInit {
 
   btnSaveTaskDisabled = false;
 
+  selectedPj: IPj | null = null;
+
   constructor(
     protected activatedRoute: ActivatedRoute,
     protected router: Router,
@@ -121,9 +123,13 @@ export class CorrespDetailComponent implements OnInit {
   }
 
   formatLongDate(date: dayjs.Dayjs | string | null | undefined): string {
-    if (!date) return ''; // Return empty string or '-' if date is missing
-
+    if (!date) return '';
     return dayjs(date).format('dddd DD MMMM YYYY').toUpperCase();
+  }
+
+  formatLongDateWithTime(date: dayjs.Dayjs | string | null | undefined): string {
+    if (!date) return '';
+    return dayjs(date).format('dddd DD MMMM YYYY - HH:mm').toUpperCase();
   }
 
   // --- Mock Data Generation ---
@@ -349,7 +355,7 @@ export class CorrespDetailComponent implements OnInit {
 
   selectDep(event: any) {
     console.log(event);
-    this.selectedDepartement = event.itemData.nom;
+    this.selectedDepartement = event.itemData.code;
   }
 
   deleteTask(correspId: number, tasksId: number): void {
@@ -362,5 +368,42 @@ export class CorrespDetailComponent implements OnInit {
     this.correspService.changeTaskStatus({ correspId, taskId, status }).subscribe(res => {
       window.location.reload();
     });
+  }
+
+  soumettreCorresp(correspId: number): void {
+    this.correspService.soumettreCorresp({ correspId }).subscribe(res => {
+      window.location.reload();
+    });
+  }
+
+  cloturerCorresp(correspId: number): void {
+    this.correspService.cloturerCorresp({ correspId }).subscribe(res => {
+      window.location.reload();
+    });
+  }
+
+  togglePreview(pj: IPj): void {
+    if (this.selectedPj && this.selectedPj.id === pj.id) {
+      this.selectedPj = null; // Close if clicking the same one
+    } else {
+      this.selectedPj = pj; // Open new one
+    }
+  }
+
+  closePreview(): void {
+    this.selectedPj = null;
+  }
+
+  getStatusLabelAndColor(status: CorrespStatus): { label: string; color: string } {
+    switch (status) {
+      case CorrespStatus.DRAFT:
+        return { label: 'Brouillon', color: 'deeppink' };
+      case CorrespStatus.IN_PROGRESS:
+        return { label: 'En cours', color: '#0d6efd' }; // bleu
+      case CorrespStatus.CLOSED:
+        return { label: 'Clôturé', color: '#6a2020' }; // rouge foncé
+      default:
+        return { label: status, color: 'gray' };
+    }
   }
 }

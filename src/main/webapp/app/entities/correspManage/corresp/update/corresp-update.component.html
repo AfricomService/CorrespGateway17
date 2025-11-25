@@ -18,17 +18,10 @@
     "
   >
     <!-- Left Side Buttons -->
-    <div style="display: flex; gap: 12px">
-      <button class="btn btn-outline-primary" style="font-weight: 600; text-transform: uppercase">Réponse</button>
-      <button class="btn btn-outline-primary" style="font-weight: 600; text-transform: uppercase">Imprimer</button>
-      <button class="btn btn-outline-primary" style="font-weight: 600; text-transform: uppercase">Journal</button>
-      <button [disabled]="isUploading" (click)="saveCorresp()" class="btn btn-primary" style="font-weight: 600; text-transform: uppercase">
-        Enregistrer
-      </button>
-    </div>
-
-    <!-- Right Side Button -->
-    <div style="display: flex; gap: 1em; align-items: center">
+    <div style="display: flex; gap: 12px; align-items: center">
+      <!--      <button class="btn btn-outline-primary" style="font-weight: 600; text-transform: uppercase">Réponse</button>-->
+      <!--      <button class="btn btn-outline-primary" style="font-weight: 600; text-transform: uppercase">Imprimer</button>-->
+      <!--      <button class="btn btn-outline-primary" style="font-weight: 600; text-transform: uppercase">Journal</button>-->
       <h5
         style="font-weight: bold; margin: 0"
         [ngStyle]="{
@@ -39,6 +32,13 @@
         {{ correspType }}
       </h5>
       <button class="btn btn-outline-secondary" style="font-weight: 600; text-transform: uppercase">Identifier</button>
+    </div>
+
+    <!-- Right Side Button -->
+    <div style="display: flex; gap: 1em; align-items: center">
+      <button [disabled]="isUploading" (click)="saveCorresp()" class="btn btn-primary" style="font-weight: 600; text-transform: uppercase">
+        Enregistrer
+      </button>
     </div>
   </div>
 
@@ -66,9 +66,7 @@
               "
               [style.background-color]="accordionStates['infoGen'] ? '#e9ecef' : '#f8f9fa'"
             >
-              <h5 style="font-weight: 600; margin: 0; color: #2c3e50">
-                Informations générales - <span style="color: deeppink">DRAFT</span>
-              </h5>
+              <h5 style="font-weight: 600; margin: 0; color: #2c3e50">Informations générales</h5>
               <svg
                 [style.transform]="accordionStates['infoGen'] ? 'rotate(180deg)' : 'rotate(0deg)'"
                 style="transition: transform 0.3s ease; width: 20px; height: 20px"
@@ -294,11 +292,11 @@
                     padding: 12px;
                     background-color: #f8f9fa;
                     border-radius: 8px;
-                    border-left: 4px solid #0d6efd;
+                    border-left: 4px solid deeppink;
                   "
                 >
                   <p style="margin: 0; color: #495057; line-height: 1.6; flex: 1">
-                    <strong>{{ getTaskDetails(task).responsableName }}</strong> effectuera la tâche de "<strong
+                    <strong>{{ getTaskDetails(task).responsableDisplay }}</strong> effectuera la tâche de "<strong
                       style="text-transform: uppercase"
                       >{{ getTaskDetails(task).typeTask }}</strong
                     >"
@@ -598,23 +596,23 @@
     </div>
 
     <!-- Bottom Toolbar -->
-    <div
-      style="
-        display: flex;
-        justify-content: flex-end;
-        align-items: center;
-        padding: 12px 16px;
-        background-color: #f8f9fa;
-        border: 1px solid #dee2e6;
-        border-radius: 8px;
-        margin-top: 1em;
-      "
-    >
-      <div style="display: flex; gap: 12px">
-        <button class="btn btn-secondary" style="font-weight: 600; text-transform: uppercase; min-width: 120px">Annuler</button>
-        <button class="btn btn-success" style="font-weight: 600; text-transform: uppercase; min-width: 120px">Soumettre</button>
-      </div>
-    </div>
+    <!--    <div-->
+    <!--      style="-->
+    <!--        display: flex;-->
+    <!--        justify-content: flex-end;-->
+    <!--        align-items: center;-->
+    <!--        padding: 12px 16px;-->
+    <!--        background-color: #f8f9fa;-->
+    <!--        border: 1px solid #dee2e6;-->
+    <!--        border-radius: 8px;-->
+    <!--        margin-top: 1em;-->
+    <!--      "-->
+    <!--    >-->
+    <!--      <div style="display: flex; gap: 12px">-->
+    <!--        <button class="btn btn-secondary" style="font-weight: 600; text-transform: uppercase; min-width: 120px">Annuler</button>-->
+    <!--        <button class="btn btn-success" style="font-weight: 600; text-transform: uppercase; min-width: 120px">Soumettre</button>-->
+    <!--      </div>-->
+    <!--    </div>-->
   </div>
 </div>
 

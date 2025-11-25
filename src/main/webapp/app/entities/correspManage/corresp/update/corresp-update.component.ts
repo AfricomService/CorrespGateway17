@@ -128,7 +128,7 @@ export class CorrespUpdateComponent implements OnInit {
   };
 
   // --- Task list (temporary) ---
-  tasks: Array<{ typeTask: string; responsable: any; dateLimite: string }> = [];
+  tasks: Array<{ typeTask: string; responsable: any; dateLimite: string; responsableName: string }> = [];
 
   correspType!: string;
 
@@ -148,6 +148,7 @@ export class CorrespUpdateComponent implements OnInit {
 
   departements: DepartementTreeFeignDTO[] = [];
   selectedDepartement = '';
+  selectedDepartementName = '';
 
   constructor(
     protected dataUtils: DataUtils,
@@ -563,6 +564,7 @@ export class CorrespUpdateComponent implements OnInit {
       typeTask: this.selectedType,
       responsable: this.selectedDepartement,
       dateLimite: this.dateLimite,
+      responsableName: this.selectedDepartementName,
     };
 
     // this.tasksToSave.push(taskModel)
@@ -610,6 +612,7 @@ export class CorrespUpdateComponent implements OnInit {
     return {
       typeTask: task.typeTask,
       responsableName: task.responsable,
+      responsableDisplay: task.responsableName,
       dateLimite: task.dateLimite ? this.formatDate(task.dateLimite) : '',
     };
   }
@@ -669,6 +672,7 @@ export class CorrespUpdateComponent implements OnInit {
       // Add mode - reset for
       this.selectedOrga = null;
       this.selectedDepartement = '';
+      this.selectedDepartementName = '';
       this.isEditMode = false;
       this.editingTaskIndex = null;
       this.resetForm();
@@ -712,7 +716,8 @@ export class CorrespUpdateComponent implements OnInit {
 
   selectDep(event: any) {
     console.log(event);
-    this.selectedDepartement = event.itemData.nom;
+    this.selectedDepartement = event.itemData.code;
+    this.selectedDepartementName = event.itemData.nom;
   }
 
   // --------------------------------------------------------------------------------------------------------------------

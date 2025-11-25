@@ -70,6 +70,12 @@ export class PjService {
       .pipe(map(res => this.convertResponseArrayFromServer(res)));
   }
 
+  getFile(pjId: number): Observable<Blob> {
+    return this.http.get(`${this.resourceUrl}/getFile?pjId=${pjId}`, {
+      responseType: 'blob',
+    });
+  }
+
   delete(id: number): Observable<HttpResponse<{}>> {
     return this.http.delete(`${this.resourceUrl}/${id}`, { observe: 'response' });
   }

@@ -17,14 +17,7 @@
       margin-bottom: 1.5em;
     "
   >
-    <div style="display: flex; gap: 12px">
-      <button class="btn btn-outline-primary" style="font-weight: 600; text-transform: uppercase">Réponse</button>
-      <button class="btn btn-outline-primary" style="font-weight: 600; text-transform: uppercase">Imprimer</button>
-      <button class="btn btn-outline-primary" style="font-weight: 600; text-transform: uppercase">Journal</button>
-      <button class="btn btn-primary" style="font-weight: 600; text-transform: uppercase">Enregistrer</button>
-    </div>
-
-    <div style="display: flex; gap: 1em; align-items: center">
+    <div style="display: flex; gap: 12px; align-items: center">
       <h5
         [ngStyle]="{
           color:
@@ -35,6 +28,13 @@
         {{ correspType }}
       </h5>
       <button class="btn btn-outline-secondary" style="font-weight: 600; text-transform: uppercase">Identifier</button>
+      <!--      <button class="btn btn-primary" style="font-weight: 600; text-transform: uppercase">Enregistrer</button>-->
+    </div>
+
+    <div style="display: flex; gap: 1em; align-items: center">
+      <button class="btn btn-outline-primary" style="font-weight: 600; text-transform: uppercase">Réponse</button>
+      <button class="btn btn-outline-primary" style="font-weight: 600; text-transform: uppercase">Imprimer</button>
+      <button class="btn btn-outline-primary" style="font-weight: 600; text-transform: uppercase">Journal</button>
     </div>
   </div>
 
@@ -58,7 +58,13 @@
                 user-select: none;
               "
             >
-              <h5 style="font-weight: 600; margin: 0; color: #2c3e50">Informations Générales</h5>
+              <h5 style="font-weight: 600; margin: 0; color: #2c3e50">
+                Informations Générales -
+                <span *ngIf="correspLoaded" [style.color]="getStatusLabelAndColor(correspLoaded.status!).color">
+                  {{ getStatusLabelAndColor(correspLoaded.status!).label }}
+                </span>
+              </h5>
+
               <svg
                 [style.transform]="accordionStates['infoGen'] ? 'rotate(180deg)' : 'rotate(0deg)'"
                 fill="none"
@@ -107,22 +113,23 @@
               <h5 style="font-weight: 600; margin: 0; color: #2c3e50">Tâches Associées</h5>
               <div style="display: flex; align-items: center; gap: 12px">
                 <button
+                  (click)="openTasksModal(AddTaskModal); $event.stopPropagation()"
                   [disabled]="btnSaveTaskDisabled"
                   class="btn btn-primary btn-sm"
                   style="font-weight: bold; font-size: 1.2em; padding: 0 0.5em"
-                  (click)="openTasksModal(AddTaskModal); $event.stopPropagation()"
+                  *ngIf="correspLoaded.status !== CorrespStatus.CLOSED"
                 >
                   +
                 </button>
                 <svg
                   [style.transform]="accordionStates['taches'] ? 'rotate(180deg)' : 'rotate(0deg)'"
-                  style="transition: transform 0.3s ease; width: 20px; height: 20px"
-                  xmlns="http://www.w3.org/2000/svg"
                   fill="none"
-                  viewBox="0 0 24 24"
                   stroke="currentColor"
+                  style="transition: transform 0.3s ease; width: 20px; height: 20px"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
                 >
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                  <path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
                 </svg>
               </div>
             </div>
@@ -178,15 +185,15 @@
 
                   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px">
                     <p style="margin: 0; color: #212529; line-height: 1.4; font-size: 0.95em">
-                      <strong>{{ task.responsible?.toUpperCase() }}</strong> : Tâche de
+                      <strong>{{ task.responsableName?.toUpperCase() }}</strong> : Tâche de
                       <strong>{{ task.taskType }}</strong>
                     </p>
                     <div style="display: flex; gap: 0.5em">
                       <span
+                        (click)="changeTasksStatus(correspLoaded.id, task.id, 'CANCELLED')"
                         *ngIf="CorrespStatus.DRAFT === task.status"
                         [style.background-color]="'#6a2020'"
                         class="badge"
-                        (click)="changeTasksStatus(correspLoaded.id, task.id, 'CANCELLED')"
                         style="font-size: 0.7em; text-transform: uppercase; cursor: pointer"
                       >
                         annuler
@@ -203,30 +210,30 @@
                       </span>
 
                       <span
+                        (click)="changeTasksStatus(correspLoaded.id, task.id, 'IN_PROGRESS')"
                         *ngIf="CorrespStatus.DRAFT === task.status"
                         [style.background-color]="'#0d6efd'"
                         class="badge"
-                        (click)="changeTasksStatus(correspLoaded.id, task.id, 'IN_PROGRESS')"
                         style="font-size: 0.7em; text-transform: uppercase; cursor: pointer"
                       >
                         commencer
                       </span>
 
                       <span
+                        (click)="changeTasksStatus(correspLoaded.id, task.id, 'CANCELLED')"
                         *ngIf="CorrespStatus.IN_PROGRESS === task.status"
                         [style.background-color]="'#6a2020'"
                         class="badge"
-                        (click)="changeTasksStatus(correspLoaded.id, task.id, 'CANCELLED')"
                         style="font-size: 0.7em; text-transform: uppercase; cursor: pointer"
                       >
                         annuler
                       </span>
 
                       <span
+                        (click)="changeTasksStatus(correspLoaded.id, task.id, 'CLOSED')"
                         *ngIf="CorrespStatus.IN_PROGRESS === task.status"
                         [style.background-color]="'#198754'"
                         class="badge"
-                        (click)="changeTasksStatus(correspLoaded.id, task.id, 'CLOSED')"
                         style="font-size: 0.7em; text-transform: uppercase; cursor: pointer"
                       >
                         terminer
@@ -244,62 +251,6 @@
                   </div>
                 </div>
               </div>
-
-              <!--              <div *ngIf="tasks.length > 0" style="display: flex; flex-direction: column; gap: 12px">-->
-              <!--                <div-->
-              <!--                  *ngFor="let task of tasks"-->
-              <!--                  [style.border-left]="'5px solid ' + getTaskColor(task.status)"-->
-              <!--                  style="-->
-              <!--                                  padding: 12px;-->
-              <!--                                  background-color: #fff;-->
-              <!--                                  border-radius: 6px;-->
-              <!--                                  box-shadow: 0 1px 3px rgba(0,0,0,0.1);-->
-              <!--                                  display: flex;-->
-              <!--                                  flex-direction: column;-->
-              <!--                                "-->
-              <!--                >-->
-              <!--                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">-->
-              <!--                                    <span [style.background-color]="getTaskColor(task.status)"-->
-              <!--                                          class="badge"-->
-              <!--                                          style="font-size: 0.7em; text-transform: uppercase;">-->
-              <!--                                      {{ getTaskLabel(task.status) }}-->
-              <!--                                    </span>-->
-              <!--                    <span *ngIf="task.status !== CorrespStatus.CANCELLED" style="font-size: 0.85em; color: #6c757d;">Échéance: {{ formatDate(task.dueDate) }}</span>-->
-              <!--                  </div>-->
-
-              <!--                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">-->
-              <!--                    <p style="margin: 0; color: #212529; line-height: 1.4; font-size: 0.95em;">-->
-              <!--                      <strong>{{ task.responsible?.toUpperCase() }}</strong> : Tâche de <strong>{{ task.taskType }}</strong>-->
-              <!--                    </p>-->
-              <!--                    <div style="display: flex;gap: .5em">-->
-              <!--                      <span *ngIf="CorrespStatus.DRAFT === task.status" [style.background-color]="'#dc3545'"-->
-              <!--                            class="badge"-->
-              <!--                            style="font-size: 0.7em; text-transform: uppercase;cursor: pointer">-->
-              <!--                        SUPPRIMER-->
-              <!--                      </span>-->
-
-              <!--                      <span *ngIf="CorrespStatus.DRAFT === task.status" [style.background-color]="'#0d6efd'"-->
-              <!--                            class="badge"-->
-              <!--                            style="font-size: 0.7em; text-transform: uppercase;cursor: pointer">-->
-              <!--                        commencer-->
-              <!--                      </span>-->
-
-              <!--                      <span *ngIf="CorrespStatus.IN_PROGRESS === task.status" [style.background-color]="'#198754'"-->
-              <!--                            class="badge"-->
-              <!--                            style="font-size: 0.7em; text-transform: uppercase;cursor: pointer">-->
-              <!--                        terminer-->
-              <!--                      </span>-->
-
-              <!--                      <span *ngIf="CorrespStatus.CLOSED === task.status" [style.background-color]="'#2c3e50'"-->
-              <!--                            class="badge"-->
-              <!--                            style="font-size: 0.7em; text-transform: uppercase;">-->
-              <!--                        terminée - {{formatLongDate(task.closeDate)}}-->
-              <!--                      </span>-->
-              <!--                    </div>-->
-              <!--                  </div>-->
-
-              <!--                </div>-->
-              <!--              </div>-->
 
               <div *ngIf="tasks.length === 0" style="text-align: center; padding: 10px; color: #999">
                 <i>Aucune tâche associée.</i>
@@ -384,24 +335,11 @@
               [style.padding]="accordionStates['pieces'] ? '16px' : '0 16px'"
               style="overflow: hidden; transition: max-height 0.5s ease, padding 0.5s ease"
             >
-              <!--              <div style="display: flex; flex-wrap: wrap; gap: 10px;">-->
-              <!--                <button-->
-              <!--                  *ngFor="let pj of attachments"-->
-              <!--                  class="btn btn-outline-dark d-flex align-items-center gap-2 shadow-sm"-->
-              <!--                  style="border-radius: 20px; padding: 6px 16px;"-->
-              <!--                >-->
-              <!--                  <i class="fa fa-paperclip"></i>-->
-              <!--                  <strong>{{ pj.name }}.{{ pj.fileType }}</strong>-->
-              <!--                </button>-->
-
-              <!--                <span *ngIf="attachments.length === 0" style="color: #999; font-style: italic;">-->
-              <!--                  Aucune pièce jointe.-->
-              <!--                </span>-->
-              <!--              </div>              -->
-
               <div style="display: flex; flex-wrap: wrap; gap: 10px">
                 <button
+                  (click)="togglePreview(pj)"
                   *ngFor="let pj of pjsLoaded"
+                  [class.active-file]="selectedPj?.id === pj.id"
                   class="btn btn-outline-dark d-flex align-items-center gap-2 shadow-sm"
                   style="border-radius: 20px; padding: 6px 16px"
                 >
@@ -410,6 +348,25 @@
                 </button>
 
                 <span *ngIf="attachments.length === 0" style="color: #999; font-style: italic"> Aucune pièce jointe. </span>
+              </div>
+              <div *ngIf="selectedPj" class="inline-preview-box">
+                <app-file-preview [fileName]="selectedPj.name + '.' + selectedPj.fileType" [pjId]="selectedPj.id"> </app-file-preview>
+
+                <!--                <div class="preview-header">-->
+                <!--                 <span class="preview-title">-->
+                <!--                    Aperçu: <strong>{{ selectedPj.name }}.{{ selectedPj.fileType }}</strong>-->
+                <!--                    </span>-->
+                <!--                  <button class="btn btn-sm btn-danger" (click)="closePreview()">-->
+                <!--                    &times; Fermer-->
+                <!--                  </button>-->
+                <!--                </div>-->
+
+                <!--                <div class="preview-content">-->
+                <!--                  <app-file-preview-->
+                <!--                    [pjId]="selectedPj.id"-->
+                <!--                    [fileName]="selectedPj.name + '.' + selectedPj.fileType">-->
+                <!--                  </app-file-preview>-->
+                <!--                </div>-->
               </div>
             </div>
           </div>
@@ -429,23 +386,58 @@
       margin-top: 1em;
     "
   >
-    <div style="display: flex; gap: 12px">
-      <button class="btn btn-secondary" style="font-weight: 600; text-transform: uppercase; min-width: 120px">Annuler</button>
-      <!--      <button class="btn btn-success" style="font-weight: 600; text-transform: uppercase; min-width: 120px">Soumettre</button>-->
-      <button class="btn btn-danger" style="font-weight: 600; text-transform: uppercase; min-width: 120px">Clôturer</button>
+    <div
+      *ngIf="correspLoaded.status !== CorrespStatus.CLOSED"
+      style="display: flex; align-items: center; width: 100%; justify-content: space-between"
+    >
+      <div>
+        <button
+          class="btn"
+          style="color: white; cursor: auto; font-weight: 600; text-transform: uppercase; min-width: 120px; background-color: #1f57ba"
+        >
+          Dernière modification - {{ formatLongDateWithTime(correspLoaded.updatedDate) }}
+        </button>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px">
+        <button class="btn btn-secondary" style="font-weight: 600; text-transform: uppercase; min-width: 120px">Annuler</button>
+        <button
+          (click)="soumettreCorresp(correspLoaded.id)"
+          *ngIf="correspLoaded.status === CorrespStatus.DRAFT"
+          class="btn btn-success"
+          style="font-weight: 600; text-transform: uppercase; min-width: 120px"
+        >
+          Soumettre
+        </button>
+        <button
+          (click)="cloturerCorresp(correspLoaded.id)"
+          *ngIf="correspLoaded.status === CorrespStatus.IN_PROGRESS"
+          class="btn btn-danger"
+          style="font-weight: 600; text-transform: uppercase; min-width: 120px"
+        >
+          Clôturer
+        </button>
+      </div>
+    </div>
+    <div *ngIf="correspLoaded.status === CorrespStatus.CLOSED" style="display: flex; gap: 12px">
+      <button
+        class="btn"
+        style="color: white; cursor: auto; font-weight: 600; text-transform: uppercase; min-width: 120px; background-color: #6a2020"
+      >
+        Correspendance Clôturée - {{ formatLongDate(correspLoaded.updatedDate) }}
+      </button>
     </div>
   </div>
 </div>
 
 <!-- Modal Template  -->
-<ng-template #AddTaskModal let-AddTaskModal class="modal-dialog modal-lg modal-dialog-centered">
+<ng-template #AddTaskModal class="modal-dialog modal-lg modal-dialog-centered" let-AddTaskModal>
   <div class="modal-header">
     <h4 class="modal-title" style="color: #2c3e50; font-weight: bold; text-transform: uppercase; font-style: italic">
       "Affectation d'une nouvelle tâche
     </h4>
   </div>
 
-  <div style="height: 100%" class="modal-body">
+  <div class="modal-body" style="height: 100%">
     <form>
       <div style="display: flex; flex-direction: column; gap: 1.5em">
         <!-- TYPE DE TACHE + DATE LIMITE -->
@@ -454,53 +446,53 @@
             <label class="form-label fw-semibold">Type De Tâche <span class="text-danger">*</span></label>
             <div style="display: flex; align-items: center; gap: 1.5em">
               <button
-                type="button"
+                (click)="selectedType = 'lecture'"
+                [ngClass]="selectedType === 'lecture' ? 'btn-primary' : 'btn-outline-primary'"
                 class="btn"
                 style="font-weight: 700; text-transform: uppercase"
-                [ngClass]="selectedType === 'lecture' ? 'btn-primary' : 'btn-outline-primary'"
-                (click)="selectedType = 'lecture'"
+                type="button"
               >
                 Lecture
               </button>
 
               <button
-                type="button"
+                (click)="selectedType = 'signature'"
+                [ngClass]="selectedType === 'signature' ? 'btn-primary' : 'btn-outline-primary'"
                 class="btn"
                 style="font-weight: 700; text-transform: uppercase"
-                [ngClass]="selectedType === 'signature' ? 'btn-primary' : 'btn-outline-primary'"
-                (click)="selectedType = 'signature'"
+                type="button"
               >
                 Signature
               </button>
 
               <button
-                type="button"
+                (click)="selectedType = 'traitement'"
+                [ngClass]="selectedType === 'traitement' ? 'btn-primary' : 'btn-outline-primary'"
                 class="btn"
                 style="font-weight: 700; text-transform: uppercase"
-                [ngClass]="selectedType === 'traitement' ? 'btn-primary' : 'btn-outline-primary'"
-                (click)="selectedType = 'traitement'"
+                type="button"
               >
                 Traitement
               </button>
 
               <button
-                type="button"
+                (click)="selectedType = 'validation'"
+                [ngClass]="selectedType === 'validation' ? 'btn-primary' : 'btn-outline-primary'"
                 class="btn"
                 style="font-weight: 700; text-transform: uppercase"
-                [ngClass]="selectedType === 'validation' ? 'btn-primary' : 'btn-outline-primary'"
-                (click)="selectedType = 'validation'"
+                type="button"
               >
                 Validation
               </button>
             </div>
-            <div class="text-danger small mt-1" *ngIf="validationErrors['typeTask']">
+            <div *ngIf="validationErrors['typeTask']" class="text-danger small mt-1">
               {{ validationErrors['typeTask'] }}
             </div>
           </div>
 
           <div class="col-md-4">
             <label class="form-label fw-semibold">Date limite</label>
-            <input type="date" class="form-control" [(ngModel)]="dateLimite" name="dateLimite" />
+            <input [(ngModel)]="dateLimite" class="form-control" name="dateLimite" type="date" />
           </div>
         </div>
 
@@ -509,18 +501,18 @@
           <div class="col-md-12 mb-3 mb-md-0">
             <label class="form-label fw-semibold">Organigramme <span class="text-danger">*</span></label>
             <select
-              class="form-select"
-              [(ngModel)]="selectedOrga"
-              name="organigramme"
               (change)="onOrgaChange()"
+              [(ngModel)]="selectedOrga"
               [class.border-danger]="validationErrors['organigramme']"
+              class="form-select"
+              name="organigramme"
             >
-              <option value="" disabled selected>-- Sélectionner un organigramme --</option>
+              <option disabled selected value="">-- Sélectionner un organigramme --</option>
               <option *ngFor="let orga of orgaList" [ngValue]="orga">
                 {{ orga.organigramme }}
               </option>
             </select>
-            <div class="text-danger small mt-1" *ngIf="validationErrors['organigramme']">
+            <div *ngIf="validationErrors['organigramme']" class="text-danger small mt-1">
               {{ validationErrors['organigramme'] }}
             </div>
           </div>
@@ -532,27 +524,27 @@
             <label class="form-label fw-semibold">Département <span class="text-danger">*</span></label>
 
             <dx-tree-view
-              id="treeView"
-              [items]="departements"
-              [selectedExpr]="'selected'"
-              displayExpr="nom"
-              selectionMode="single"
-              [expandAllEnabled]="true"
-              [searchEnabled]="true"
-              searchMode="contains"
-              [height]="450"
-              [dataStructure]="'tree'"
-              [keyExpr]="'id'"
-              [parentIdExpr]="'parentId'"
-              [itemsExpr]="'children'"
-              [selectByClick]="true"
               (onItemClick)="selectDep($event)"
               [class.border-danger]="validationErrors['departement']"
+              [dataStructure]="'tree'"
+              [expandAllEnabled]="true"
+              [height]="450"
+              [itemsExpr]="'children'"
+              [items]="departements"
+              [keyExpr]="'id'"
+              [parentIdExpr]="'parentId'"
+              [searchEnabled]="true"
+              [selectByClick]="true"
+              [selectedExpr]="'selected'"
               class="border rounded"
+              displayExpr="nom"
+              id="treeView"
+              searchMode="contains"
+              selectionMode="single"
             >
             </dx-tree-view>
 
-            <div class="text-danger small mt-1" *ngIf="validationErrors['departement']">
+            <div *ngIf="validationErrors['departement']" class="text-danger small mt-1">
               {{ validationErrors['departement'] }}
             </div>
           </div>
@@ -562,7 +554,7 @@
   </div>
 
   <div class="modal-footer">
-    <button type="button" class="btn btn-light btn-model" (click)="AddTaskModal.close('Close click')">Annuler</button>
-    <button type="button" class="btn btn-primary btn-model" (click)="saveTask()">Enregistrer</button>
+    <button (click)="AddTaskModal.close('Close click')" class="btn btn-light btn-model" type="button">Annuler</button>
+    <button (click)="saveTask()" class="btn btn-primary btn-model" type="button">Enregistrer</button>
   </div>
 </ng-template>
