@@ -1,0 +1,40 @@
+<div class="preview-container">
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-spinner">Loading Preview...</div>
+
+  <!-- Error State -->
+  <div *ngIf="errorMsg" class="error-msg">
+    {{ errorMsg }}
+  </div>
+
+  <div *ngIf="!isLoading && !errorMsg" class="content-area">
+    <div [ngSwitch]="fileType">
+      <div *ngSwitchCase="'image'" class="img-wrapper">
+        <img [src]="imageSrc" alt="File Preview" />
+      </div>
+
+      <div *ngSwitchCase="'pdf'" class="pdf-wrapper">
+        <pdf-viewer [src]="pdfSrc!" [render-text]="true" [original-size]="false" [style.width.%]="100" [style.height.vh]="80"></pdf-viewer>
+      </div>
+
+      <div *ngSwitchCase="'docx'" class="docx-wrapper">
+        <div #docxContainer class="docx-canvas"></div>
+      </div>
+
+      <div *ngSwitchCase="'excel'" class="excel-wrapper">
+        <div [innerHTML]="excelHtml" class="excel-table-container"></div>
+      </div>
+
+      <div *ngSwitchDefault class="fallback-wrapper">
+        <div class="file-icon">📄</div>
+        <h3>Preview not available for this file type</h3>
+        <p>Please download the file to view it.</p>
+        <button (click)="downloadFile()" class="btn-download">Download File</button>
+      </div>
+    </div>
+
+    <div *ngIf="fileType !== 'unsupported'" class="download-wrapper">
+      <button (click)="downloadFile()" class="btn-download">Download File</button>
+    </div>
+  </div>
+</div>

@@ -95,11 +95,15 @@
     "dayjs": "1.11.5",
     "devextreme": "^22.2.6",
     "devextreme-angular": "^22.2.6",
+    "docx-preview": "^0.3.7",
+    "file-saver": "^2.0.5",
     "moment": "^2.27.0",
+    "ng2-pdf-viewer": "^9.1.5",
     "ngx-infinite-scroll": "14.0.0",
     "ngx-webstorage": "10.0.1",
     "rxjs": "7.5.6",
     "tslib": "2.4.0",
+    "xlsx": "^0.18.5",
     "zone.js": "0.11.6"
   },
   "devDependencies": {
@@ -110,6 +114,7 @@
     "@angular/cli": "14.2.1",
     "@angular/compiler-cli": "14.2.0",
     "@angular/service-worker": "14.2.0",
+    "@types/file-saver": "^2.0.7",
     "@types/jest": "28.1.8",
     "@types/node": "16.11.56",
     "@typescript-eslint/eslint-plugin": "5.36.1",

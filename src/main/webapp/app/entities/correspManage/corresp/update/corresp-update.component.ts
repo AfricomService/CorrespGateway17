@@ -129,7 +129,7 @@ export class CorrespUpdateComponent implements OnInit {
   };
 
   // --- Task list (temporary) ---
-  tasks: Array<{ typeTask: string; responsable: any; dateLimite: string }> = [];
+  tasks: Array<{ typeTask: string; responsable: any; dateLimite: string; responsableName: string }> = [];
 
   correspType!: string;
 
@@ -149,6 +149,7 @@ export class CorrespUpdateComponent implements OnInit {
 
   departements: DepartementTreeFeignDTO[] = [];
   selectedDepartement = '';
+  selectedDepartementName = '';
 
   constructor(
     protected dataUtils: DataUtils,
@@ -517,10 +518,12 @@ export class CorrespUpdateComponent implements OnInit {
     console.log(this.tasksToSave);
     console.log(this.pjsToSave);
 
-    this.correspService.saveCorrespWithTasksAndPj(this.corresp, this.tasksToSave, this.pjsToSave).subscribe(res => {
-      // console.log('okk');
-      this.router.navigate(['/corresp']);
-    });
+    this.correspService
+      .saveCorrespWithTasksAndPj(this.corresp, this.tasksToSave, this.pjsToSave, this.selectedTypeDocument)
+      .subscribe(res => {
+        // console.log('okk');
+        this.router.navigate(['/corresp']);
+      });
   }
 
   validateInfoGeneralesForm(): boolean {
@@ -601,6 +604,7 @@ export class CorrespUpdateComponent implements OnInit {
       typeTask: this.selectedType,
       responsable: this.selectedDepartement,
       dateLimite: this.dateLimite,
+      responsableName: this.selectedDepartementName,
     };
 
     // this.tasksToSave.push(taskModel)
@@ -648,6 +652,7 @@ export class CorrespUpdateComponent implements OnInit {
     return {
       typeTask: task.typeTask,
       responsableName: task.responsable,
+      responsableDisplay: task.responsableName,
       dateLimite: task.dateLimite ? this.formatDate(task.dateLimite) : '',
     };
   }
@@ -707,6 +712,7 @@ export class CorrespUpdateComponent implements OnInit {
       // Add mode - reset for
       this.selectedOrga = null;
       this.selectedDepartement = '';
+      this.selectedDepartementName = '';
       this.isEditMode = false;
       this.editingTaskIndex = null;
       this.resetForm();
@@ -733,6 +739,7 @@ export class CorrespUpdateComponent implements OnInit {
       next: res => {
         this.departements = (res.body as DepartementTreeFeignDTO[]) || [];
         this.expandAllDepartments(this.departements);
+        // this.departements[0].selected = true;
       },
       error: err => console.error('Erreur lors du chargement des départements', err),
     });
@@ -749,7 +756,8 @@ export class CorrespUpdateComponent implements OnInit {
 
   selectDep(event: any) {
     console.log(event);
-    this.selectedDepartement = event.itemData.nom;
+    this.selectedDepartement = event.itemData.code;
+    this.selectedDepartementName = event.itemData.nom;
   }
 
   // --------------------------------------------------------------------------------------------------------------------
