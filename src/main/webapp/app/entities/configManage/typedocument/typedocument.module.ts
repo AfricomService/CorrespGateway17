@@ -5,9 +5,10 @@ import { TypedocumentDetailComponent } from './detail/typedocument-detail.compon
 import { TypedocumentUpdateComponent } from './update/typedocument-update.component';
 import { TypedocumentDeleteDialogComponent } from './delete/typedocument-delete-dialog.component';
 import { TypedocumentRoutingModule } from './route/typedocument-routing.module';
+import { DxTreeViewModule } from 'devextreme-angular';
 
 @NgModule({
-  imports: [SharedModule, TypedocumentRoutingModule],
+  imports: [SharedModule, TypedocumentRoutingModule, DxTreeViewModule],
   declarations: [TypedocumentComponent, TypedocumentDetailComponent, TypedocumentUpdateComponent, TypedocumentDeleteDialogComponent],
 })
 export class ConfigManageTypedocumentModule {}
