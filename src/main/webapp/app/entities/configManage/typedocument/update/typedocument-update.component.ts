@@ -104,7 +104,7 @@ export class TypedocumentUpdateComponent implements OnInit {
         this.selectedDepartement1 = dep;
         this.selectedDepartementNom1 = dep.nom;
         this.editForm.get('defaultencopie')?.setValue(dep.code);
-
+        // this.onOrgaChange1();
         setTimeout(() => this.treeView1?.instance.selectItem(dep.id));
       }
     }
@@ -125,12 +125,17 @@ export class TypedocumentUpdateComponent implements OnInit {
 
   save(): void {
     this.isSaving = true;
+    this.modalService.dismissAll();
     const typedocument = this.typedocumentFormService.getTypedocument(this.editForm);
     if (typedocument.id !== null) {
       this.subscribeToSaveResponse(this.typedocumentService.update(typedocument));
     } else {
       this.subscribeToSaveResponse(this.typedocumentService.create(typedocument));
     }
+  }
+
+  dismissAll(): void {
+    this.modalService.dismissAll();
   }
 
   protected subscribeToSaveResponse(result: Observable<HttpResponse<ITypedocument>>): void {
@@ -292,6 +297,7 @@ export class TypedocumentUpdateComponent implements OnInit {
     this.selectedDepartement = e.itemData;
     this.selectedDepartementNom = e.itemData.nom;
     this.editForm.get('defautdest')?.setValue(e.itemData.code);
+    this.editForm.get('labelDD')?.setValue(e.itemData.nom);
 
     // modal.close();
   }
@@ -300,6 +306,7 @@ export class TypedocumentUpdateComponent implements OnInit {
     this.selectedDepartement1 = e.itemData;
     this.selectedDepartementNom1 = e.itemData.nom;
     this.editForm.get('defaultencopie')?.setValue(e.itemData.code);
+    this.editForm.get('labelDCC')?.setValue(e.itemData.nom);
     // modalRef.close();
   }
 

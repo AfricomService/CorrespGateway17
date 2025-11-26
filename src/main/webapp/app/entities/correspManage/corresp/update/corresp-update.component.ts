@@ -97,9 +97,11 @@ export class CorrespUpdateComponent implements OnInit {
   etape = '';
   priorite = 'Normal';
   destinataire = '';
+  destinataireLabel = '';
   dispatchType = '';
   contactEmail = '';
   contactEmailCC = '';
+  contactEmailCCLabel = '';
   referenceEmetteur = '';
 
   // --- User-related fields for task assignment ---
@@ -202,7 +204,9 @@ export class CorrespUpdateComponent implements OnInit {
       // Réinitialiser si aucun type document sélectionné
       this.objet = '';
       this.destinataire = '';
+      this.destinataireLabel = '';
       this.contactEmailCC = '';
+      this.contactEmailCCLabel = '';
       return;
     }
 
@@ -212,17 +216,22 @@ export class CorrespUpdateComponent implements OnInit {
       this.correspService.queryOrgaDepsByCode({ code: this.selectedTypeDocument.defautdest }).subscribe({
         next: (res: HttpResponse<IDepartement>) => {
           if (res.body) {
+            console.log('res body');
+            console.log(res.body);
             this.destinataire = res.body.email || '';
+            this.destinataireLabel = res.body.nom || '';
           } else {
             this.destinataire = '';
           }
         },
         error: () => {
           this.destinataire = '';
+          this.destinataireLabel = '';
         },
       });
     } else {
       this.destinataire = '';
+      this.destinataireLabel = '';
     }
 
     // 3️⃣ Contact en copie (CC)
@@ -231,16 +240,20 @@ export class CorrespUpdateComponent implements OnInit {
         next: (res: HttpResponse<IDepartement>) => {
           if (res.body) {
             this.contactEmailCC = res.body.email || '';
+            this.contactEmailCCLabel = res.body.nom || '';
           } else {
             this.contactEmailCC = '';
+            this.contactEmailCCLabel = '';
           }
         },
         error: () => {
           this.contactEmailCC = '';
+          this.contactEmailCCLabel = '';
         },
       });
     } else {
       this.contactEmailCC = '';
+      this.contactEmailCCLabel = '';
     }
   }
 
@@ -460,8 +473,9 @@ export class CorrespUpdateComponent implements OnInit {
     this.corresp!.subject = this.objet;
     this.corresp!.sender = this.expediteur;
     this.corresp!.contact = this.destinataire;
+    this.corresp!.labelDestinataire = this.destinataireLabel;
     this.corresp!.contactEmail = this.contactEmail;
-    this.corresp!.contactEmailCc = this.contactEmailCC;
+    this.corresp!.labelContactCC = this.contactEmailCCLabel;
     this.corresp!.responseTo = this.reponseSur;
     this.corresp!.senderReference = this.referenceEmetteur;
     this.corresp!.priority = this.priorite === 'Prioritaire';
@@ -550,7 +564,7 @@ export class CorrespUpdateComponent implements OnInit {
     //   this.validationInfoGenErrors['etape'] = "L'étape est obligatoire";
     //   isValid = false;
     // }
-    if (!this.destinataire?.trim()) {
+    if (!this.destinataireLabel?.trim()) {
       this.validationInfoGenErrors['destinataire'] = 'Le destinataire est obligatoire';
       isValid = false;
     }

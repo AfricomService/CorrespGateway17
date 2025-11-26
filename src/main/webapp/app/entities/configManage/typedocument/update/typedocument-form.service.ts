@@ -23,6 +23,8 @@ type TypedocumentFormGroupContent = {
   defaultobject: FormControl<ITypedocument['defaultobject']>;
   defaultencopie: FormControl<ITypedocument['defaultencopie']>;
   usualstatus: FormControl<ITypedocument['usualstatus']>;
+  labelDCC: FormControl<ITypedocument['labelDCC']>;
+  labelDD: FormControl<ITypedocument['labelDD']>;
 };
 
 export type TypedocumentFormGroup = FormGroup<TypedocumentFormGroupContent>;
@@ -47,6 +49,8 @@ export class TypedocumentFormService {
       defaultobject: new FormControl(typedocumentRawValue.defaultobject),
       defaultencopie: new FormControl(typedocumentRawValue.defaultencopie),
       usualstatus: new FormControl(typedocumentRawValue.usualstatus),
+      labelDCC: new FormControl(typedocumentRawValue.labelDCC),
+      labelDD: new FormControl(typedocumentRawValue.labelDD),
     });
   }
 

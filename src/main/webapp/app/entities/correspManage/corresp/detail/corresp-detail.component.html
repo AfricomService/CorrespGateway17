@@ -86,7 +86,8 @@
                 <p style="margin-bottom: 0.5rem"><strong>Objet :</strong> {{ correspLoaded.subject }}</p>
                 <p style="margin-bottom: 0.5rem">
                   <strong>Expéditeur :</strong> {{ correspLoaded.sender }} <span class="text-muted"> | </span>
-                  <strong>Destinataire :</strong> {{ correspLoaded.contact }}
+                  <strong>Destinataire :</strong> {{ correspLoaded.labelDestinataire }} <span class="text-muted"> | </span>
+                  <strong>CC :</strong> {{ correspLoaded.labelContactCC }}
                 </p>
                 <p style="margin-bottom: 0">
                   <strong>Date :</strong> {{ formatLongDate(correspLoaded.courrierDate) }} <span class="text-muted"> | </span>
@@ -418,7 +419,7 @@
         </button>
       </div>
     </div>
-    <div *ngIf="correspLoaded.status === CorrespStatus.CLOSED" style="display: flex; gap: 12px">
+    <div *ngIf="correspLoaded.status === CorrespStatus.CLOSED" style="display: flex; gap: 12px; justify-content: flex-start; width: 100%">
       <button
         class="btn"
         style="color: white; cursor: auto; font-weight: 600; text-transform: uppercase; min-width: 120px; background-color: #6a2020"
@@ -430,16 +431,16 @@
 </div>
 
 <!-- Modal Template  -->
-<ng-template #AddTaskModal class="modal-dialog modal-lg modal-dialog-centered" let-AddTaskModal>
+<ng-template style="padding: 0 2em" #AddTaskModal class="modal-dialog modal-lg modal-dialog-centered" let-AddTaskModal>
   <div class="modal-header">
     <h4 class="modal-title" style="color: #2c3e50; font-weight: bold; text-transform: uppercase; font-style: italic">
-      "Affectation d'une nouvelle tâche
+      Affectation d'une nouvelle tâche
     </h4>
   </div>
 
   <div class="modal-body" style="height: 100%">
     <form>
-      <div style="display: flex; flex-direction: column; gap: 1.5em">
+      <div style="display: flex; flex-direction: column; gap: 1.5em; padding: 0">
         <!-- TYPE DE TACHE + DATE LIMITE -->
         <div style="display: flex; align-items: center; justify-content: space-between">
           <div class="col-md-4">

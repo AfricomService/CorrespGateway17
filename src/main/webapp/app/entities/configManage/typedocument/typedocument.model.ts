@@ -6,6 +6,8 @@ export interface ITypedocument {
   defautdest?: string | null;
   defaultobject?: string | null;
   defaultencopie?: string | null;
+  labelDD?: string | null;
+  labelDCC?: string | null;
   usualstatus?: UsualStatus | null;
 }
 

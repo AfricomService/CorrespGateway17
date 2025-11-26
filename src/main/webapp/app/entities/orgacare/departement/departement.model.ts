@@ -4,6 +4,7 @@ export interface IDepartement {
   id: number;
   code?: string | null;
   name?: string | null;
+  nom?: string | null;
   email?: string | null;
   description?: string | null;
   createdDate?: dayjs.Dayjs | null;

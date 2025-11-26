@@ -35,6 +35,8 @@ export interface ICorresp {
   contactEmailCc?: string | null;
   createdBy?: string | null;
   updatedBy?: string | null;
+  labelDestinataire?: string | null;
+  labelContactCC?: string | null;
   updatedDate?: dayjs.Dayjs | null;
   dossiers?: Pick<IDossier, 'id'>[] | null;
   bordereaux?: Pick<IBordereaux, 'id'>[] | null;

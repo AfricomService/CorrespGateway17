@@ -154,8 +154,9 @@
                       type="text"
                       class="form-control"
                       [class.is-invalid]="validationInfoGenErrors['destinataire']"
-                      [(ngModel)]="destinataire"
+                      [(ngModel)]="destinataireLabel"
                       name="destinataire"
+                      [readonly]="destinataireLabel"
                       placeholder="Entrer le destinataire"
                     />
                     <div class="invalid-feedback" *ngIf="validationInfoGenErrors['destinataire']">
@@ -186,7 +187,8 @@
                     <input
                       type="text"
                       class="form-control"
-                      [(ngModel)]="contactEmailCC"
+                      [(ngModel)]="contactEmailCCLabel"
+                      [readonly]="contactEmailCCLabel"
                       name="contactEmailCC"
                       placeholder="Entrer le contact en copie"
                     />
