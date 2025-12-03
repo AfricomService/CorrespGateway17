@@ -121,6 +121,11 @@ export class CorrespDetailComponent implements OnInit {
       this.orgaList = res.body!;
     });
   }
+  loadCorresp(id: number): void {
+    this.correspService.find(id).subscribe((res: HttpResponse<ICorresp>) => {
+      this.correspLoaded = res.body!;
+    });
+  }
 
   formatLongDate(date: dayjs.Dayjs | string | null | undefined): string {
     if (!date) return '';
@@ -379,6 +384,17 @@ export class CorrespDetailComponent implements OnInit {
   cloturerCorresp(correspId: number): void {
     this.correspService.cloturerCorresp({ correspId }).subscribe(res => {
       window.location.reload();
+    });
+  }
+  generateReference(): void {
+    if (!this.correspLoaded || !this.correspLoaded.id) return;
+
+    this.correspService.generateReferenceForCorresp(this.correspLoaded.id).subscribe({
+      next: (res: ICorresp) => {
+        this.correspLoaded.reference = res.reference;
+        console.log('Référence générée :', res.reference);
+      },
+      error: err => console.error('Erreur génération référence :', err),
     });
   }
 

@@ -16,7 +16,6 @@ import { IDepartement } from '../../../orgacare/departement/departement.model';
 import { organigrammeFeignDTO } from '../update/organigrammeFeignDTO';
 import { ITypedocument } from '../../../configManage/typedocument/typedocument.model';
 
-
 export type PartialUpdateCorresp = Partial<ICorresp> & Pick<ICorresp, 'id'>;
 
 type RestOf<T extends ICorresp | NewCorresp> = Omit<T, 'dateCreated' | 'courrierDate' | 'updatedDate'> & {
@@ -181,13 +180,15 @@ export class CorrespService {
 
   // ------------------------------------------------------------------
 
-  saveCorrespWithTasksAndPj(correspDTO: ICorresp, tasksDTOS: ITasks[], pjs: IPj[], typeDocumentDTO?: ITypedocument) {
+  saveCorrespWithTasksAndPj(correspDTO: ICorresp, tasksDTOS: ITasks[], pjs: IPj[], typeDocumentDTO?: ITypedocument, withRef?: boolean) {
     const formData = new FormData();
 
     formData.append('correspDTO', new Blob([JSON.stringify(correspDTO)], { type: 'application/json' }));
     formData.append('tasksDTOS', new Blob([JSON.stringify(tasksDTOS)], { type: 'application/json' }));
     formData.append('pjs', new Blob([JSON.stringify(pjs)], { type: 'application/json' }));
     formData.append('typeDoc', new Blob([JSON.stringify(typeDocumentDTO)], { type: 'application/json' }));
+
+    formData.append('withRef', new Blob([JSON.stringify(withRef)], { type: 'application/json' }));
 
     return this.http.post(`${this.resourceUrl}WithTasksAndPjs`, formData);
   }
@@ -206,6 +207,9 @@ export class CorrespService {
     const options = createRequestOption(req);
 
     return this.http.patch(`${this.resourceUrl}ChangeTaskStatus`, options);
+  }
+  generateReferenceForCorresp(id: number): Observable<ICorresp> {
+    return this.http.patch<ICorresp>(`${this.resourceUrl}/${id}/generateReference`, {});
   }
 
   soumettreCorresp(req?: any) {

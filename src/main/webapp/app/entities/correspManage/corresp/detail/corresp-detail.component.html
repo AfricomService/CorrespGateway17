@@ -27,7 +27,16 @@
       >
         {{ correspType }}
       </h5>
-      <button class="btn btn-outline-secondary" style="font-weight: 600; text-transform: uppercase">Identifier</button>
+      <div *ngIf="correspLoaded?.reference; else showButton">
+        <span>{{ correspLoaded.reference }}</span>
+      </div>
+
+      <ng-template #showButton>
+        <button class="btn btn-outline-secondary" (click)="generateReference()" style="font-weight: 600; text-transform: uppercase">
+          Identifier
+        </button>
+      </ng-template>
+
       <!--      <button class="btn btn-primary" style="font-weight: 600; text-transform: uppercase">Enregistrer</button>-->
     </div>
 
