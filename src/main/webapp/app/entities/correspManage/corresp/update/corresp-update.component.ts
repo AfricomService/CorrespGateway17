@@ -492,7 +492,11 @@ export class CorrespUpdateComponent implements OnInit {
   // ====================================================================================================================================================
   // ====================================================================================================================================================
 
-  saveCorresp(): void {
+  // affectReference(typeCorresp:string):string{
+  //
+  // }
+
+  saveCorresp(withReference: boolean): void {
     // Clear previous validation errors
     console.log('INSIDE');
     this.validationInfoGenErrors = {};
@@ -523,6 +527,11 @@ export class CorrespUpdateComponent implements OnInit {
     this.corresp!.senderReference = this.referenceEmetteur;
     this.corresp!.priority = this.priorite === 'Prioritaire';
     this.corresp!.body = this.htmlContent;
+    // this.corresp!.reference =
+
+    // if (withReference){
+    //   this.corresp!.reference = withReference;
+    // }
 
     switch (this.selectedType) {
       case 'Demande de travail':
@@ -577,7 +586,7 @@ export class CorrespUpdateComponent implements OnInit {
     console.log(this.pjsToSave);
 
     this.correspService
-      .saveCorrespWithTasksAndPj(this.corresp, this.tasksToSave, this.pjsToSave, this.selectedTypeDocument)
+      .saveCorrespWithTasksAndPj(this.corresp, this.tasksToSave, this.pjsToSave, this.selectedTypeDocument, withReference)
       .subscribe(res => {
         // console.log('okk');
         this.router.navigate(['/corresp']);

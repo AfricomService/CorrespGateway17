@@ -31,12 +31,19 @@
       >
         {{ correspType }}
       </h5>
-      <button class="btn btn-outline-secondary" style="font-weight: 600; text-transform: uppercase">Identifier</button>
+      <button class="btn btn-outline-secondary" style="font-weight: 600; text-transform: uppercase" (click)="saveCorresp(true)">
+        Identifier
+      </button>
     </div>
 
     <!-- Right Side Button -->
     <div style="display: flex; gap: 1em; align-items: center">
-      <button [disabled]="isUploading" (click)="saveCorresp()" class="btn btn-primary" style="font-weight: 600; text-transform: uppercase">
+      <button
+        [disabled]="isUploading"
+        (click)="saveCorresp(false)"
+        class="btn btn-primary"
+        style="font-weight: 600; text-transform: uppercase"
+      >
         Enregistrer
       </button>
     </div>
