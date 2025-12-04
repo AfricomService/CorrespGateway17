@@ -179,6 +179,16 @@ export class CorrespService {
   }
 
   // ------------------------------------------------------------------
+  updateCorrespDraft(id: number, correspDTO: any, typeDocumentDTO: any): Observable<HttpResponse<ICorresp>> {
+    const formData: FormData = new FormData();
+
+    formData.append('correspDTO', new Blob([JSON.stringify(correspDTO)], { type: 'application/json' }));
+    formData.append('typeDocumentDTO', new Blob([JSON.stringify(typeDocumentDTO)], { type: 'application/json' }));
+
+    return this.http.put<ICorresp>(`${this.resourceUrl}/update/${id}`, formData, {
+      observe: 'response',
+    });
+  }
 
   saveCorrespWithTasksAndPj(correspDTO: ICorresp, tasksDTOS: ITasks[], pjs: IPj[], typeDocumentDTO?: ITypedocument, withRef?: boolean) {
     const formData = new FormData();

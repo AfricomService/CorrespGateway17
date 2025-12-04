@@ -10,6 +10,7 @@ import { DispatchType } from 'app/entities/enumerations/dispatch-type.model';
 export interface ICorresp {
   id: number;
   idinstance?: string | null;
+  typeDocumentId?: string | null;
   reference?: string | null;
   subject?: string | null;
   dateCreated?: dayjs.Dayjs | null;

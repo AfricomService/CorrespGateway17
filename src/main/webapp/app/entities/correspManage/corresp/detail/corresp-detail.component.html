@@ -4,7 +4,15 @@
   <!--      Détail de la Correspondance-->
   <!--    </h4>-->
   <!--  </div>-->
-
+  <div
+    *ngIf="notificationMessage"
+    [ngClass]="{ 'alert-success': notificationType === 'success', 'alert-danger': notificationType === 'error' }"
+    class="alert"
+    role="alert"
+    style="margin-bottom: 16px"
+  >
+    {{ notificationMessage }}
+  </div>
   <div
     style="
       display: flex;
@@ -28,7 +36,9 @@
         {{ correspType }}
       </h5>
       <div *ngIf="correspLoaded?.reference; else showButton">
-        <span>{{ correspLoaded.reference }}</span>
+        <span style="font-weight: bold; font-size: 1.2em">
+          {{ correspLoaded.reference }}
+        </span>
       </div>
 
       <ng-template #showButton>
@@ -40,10 +50,24 @@
       <!--      <button class="btn btn-primary" style="font-weight: 600; text-transform: uppercase">Enregistrer</button>-->
     </div>
 
+    <!--    <div style="display: flex; gap: 1em; align-items: center">-->
+    <!--      <button class="btn btn-outline-primary" style="font-weight: 600; text-transform: uppercase">Réponse</button>-->
+    <!--      <button class="btn btn-outline-primary" style="font-weight: 600; text-transform: uppercase">Imprimer</button>-->
+    <!--      <button class="btn btn-outline-primary" style="font-weight: 600; text-transform: uppercase">Journal</button>-->
+    <!--    </div>-->
     <div style="display: flex; gap: 1em; align-items: center">
       <button class="btn btn-outline-primary" style="font-weight: 600; text-transform: uppercase">Réponse</button>
       <button class="btn btn-outline-primary" style="font-weight: 600; text-transform: uppercase">Imprimer</button>
       <button class="btn btn-outline-primary" style="font-weight: 600; text-transform: uppercase">Journal</button>
+      <button
+        *ngIf="correspLoaded?.status === 'DRAFT'"
+        (click)="saveDraft()"
+        [disabled]="isSaving"
+        class="btn btn-primary"
+        style="font-weight: 600; text-transform: uppercase"
+      >
+        Enregistrer
+      </button>
     </div>
   </div>
 
@@ -53,10 +77,11 @@
         <div
           style="padding: 16px; border: 1px solid #ccc; border-radius: 12px; height: 100%; display: flex; flex-direction: column; gap: 16px"
         >
+          <!-- 🟦 BLOC ACCORDÉON INFORMATIONS GÉNÉRALES -->
           <div style="border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden">
+            <!-- HEADER ACCORDÉON -->
             <div
               (click)="toggleAccordion('infoGen')"
-              [style.background-color]="accordionStates['infoGen'] ? '#e9ecef' : '#f8f9fa'"
               style="
                 display: flex;
                 justify-content: space-between;
@@ -65,7 +90,9 @@
                 background-color: #f8f9fa;
                 cursor: pointer;
                 user-select: none;
+                transition: background-color 0.3s ease;
               "
+              [style.background-color]="accordionStates['infoGen'] ? '#e9ecef' : '#f8f9fa'"
             >
               <h5 style="font-weight: 600; margin: 0; color: #2c3e50">
                 Informations Générales -
@@ -76,34 +103,187 @@
 
               <svg
                 [style.transform]="accordionStates['infoGen'] ? 'rotate(180deg)' : 'rotate(0deg)'"
-                fill="none"
-                stroke="currentColor"
                 style="transition: transform 0.3s ease; width: 20px; height: 20px"
-                viewBox="0 0 24 24"
                 xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
               >
-                <path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
               </svg>
             </div>
 
+            <!-- 🟢 SI DRAFT : afficher le formulaire -->
             <div
+              *ngIf="correspLoaded?.status === 'DRAFT'; else lectureInfoGen"
               [style.max-height]="accordionStates['infoGen'] ? '2000px' : '0'"
-              [style.padding]="accordionStates['infoGen'] ? '16px' : '0 16px'"
               style="overflow: hidden; transition: max-height 0.5s ease, padding 0.5s ease"
+              [style.padding]="accordionStates['infoGen'] ? '16px' : '0 16px'"
             >
-              <div class="alert alert-light" role="alert" style="border: 1px solid #dee2e6; color: #495057">
-                <p style="margin-bottom: 0.5rem"><strong>Objet :</strong> {{ correspLoaded.subject }}</p>
-                <p style="margin-bottom: 0.5rem">
-                  <strong>Expéditeur :</strong> {{ correspLoaded.sender }} <span class="text-muted"> | </span>
-                  <strong>Destinataire :</strong> {{ correspLoaded.labelDestinataire }} <span class="text-muted"> | </span>
-                  <strong>CC :</strong> {{ correspLoaded.labelContactCC }}
-                </p>
-                <p style="margin-bottom: 0">
-                  <strong>Date :</strong> {{ formatLongDate(correspLoaded.courrierDate) }} <span class="text-muted"> | </span>
-                  <strong>Contact :</strong> {{ correspLoaded.contactEmail }}
-                </p>
-              </div>
+              <!-- 🔽 FORMULAIRE EXACTEMENT TEL QUE FOURNI -->
+              <form>
+                <div style="padding-bottom: 1.5em; display: flex; gap: 12px; border-bottom: 1px dashed #5570a3">
+                  <div style="flex: 1">
+                    <label class="form-label fw-semibold">Type de document <span class="text-danger">*</span></label>
+                    <select
+                      class="form-select"
+                      [(ngModel)]="selectedTypeDocument"
+                      name="typeDocument"
+                      (ngModelChange)="onTypeDocumentChange()"
+                    >
+                      <option [ngValue]="undefined">-- Sélectionner un type --</option>
+                      <option *ngFor="let type of typedocuments" [ngValue]="type">
+                        {{ type.nom }}
+                      </option>
+                    </select>
+                  </div>
+
+                  <div style="flex: 1">
+                    <label class="form-label fw-semibold"> Date <span class="text-danger">*</span> </label>
+                    <input
+                      type="date"
+                      class="form-control"
+                      [class.is-invalid]="validationInfoGenErrors['date']"
+                      [(ngModel)]="date"
+                      name="date"
+                      [attr.min]="minDate"
+                      [attr.max]="maxDate"
+                    />
+                    <div class="invalid-feedback" *ngIf="validationInfoGenErrors['date']">
+                      {{ validationInfoGenErrors['date'] }}
+                    </div>
+                  </div>
+                </div>
+
+                <div style="margin-bottom: 1.5em; padding-top: 15px">
+                  <label class="form-label fw-semibold">Objet <span class="text-danger">*</span></label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    [class.is-invalid]="validationInfoGenErrors['objet']"
+                    [(ngModel)]="objet"
+                    name="objet"
+                    placeholder="Entrer l'objet de la correspondance"
+                  />
+                  <div class="invalid-feedback" *ngIf="validationInfoGenErrors['objet']">
+                    {{ validationInfoGenErrors['objet'] }}
+                  </div>
+                </div>
+
+                <!-- Expéditeur / Destinataire -->
+                <div style="display: flex; gap: 12px; margin-bottom: 1.5em">
+                  <div style="flex: 1">
+                    <label class="form-label fw-semibold">Expéditeur <span class="text-danger">*</span></label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      [class.is-invalid]="validationInfoGenErrors['expediteur']"
+                      [(ngModel)]="expediteur"
+                      name="expediteur"
+                      placeholder="Entrer l'expéditeur"
+                    />
+                    <div class="invalid-feedback" *ngIf="validationInfoGenErrors['expediteur']">
+                      {{ validationInfoGenErrors['expediteur'] }}
+                    </div>
+                  </div>
+
+                  <div style="flex: 1">
+                    <label class="form-label fw-semibold">Destinataire <span class="text-danger">*</span></label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      [class.is-invalid]="validationInfoGenErrors['destinataire']"
+                      [(ngModel)]="destinataireLabel"
+                      name="destinataire"
+                      [readonly]="destinataireLabel"
+                      placeholder="Entrer le destinataire"
+                    />
+                    <div class="invalid-feedback" *ngIf="validationInfoGenErrors['destinataire']">
+                      {{ validationInfoGenErrors['destinataire'] }}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Contact / CC -->
+                <div style="display: flex; gap: 12px; margin-bottom: 1.5em">
+                  <div style="flex: 1">
+                    <label class="form-label fw-semibold">Contact <span class="text-danger">*</span></label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      [class.is-invalid]="validationInfoGenErrors['contactEmail']"
+                      [(ngModel)]="contactEmail"
+                      name="contactEmail"
+                      placeholder="Entrer le contact"
+                    />
+                  </div>
+
+                  <div style="flex: 1">
+                    <label class="form-label fw-semibold">Contact En Copie</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      [(ngModel)]="contactEmailCCLabel"
+                      [readonly]="contactEmailCCLabel"
+                      name="contactEmailCC"
+                      placeholder="Entrer le contact en copie"
+                    />
+                  </div>
+                </div>
+
+                <!-- Autres champs -->
+                <div style="display: flex; gap: 12px; margin-bottom: 1.5em; border-top: 1px dashed #5570a3">
+                  <div style="flex: 1; display: flex; align-items: center; gap: 16px; padding-top: 30px">
+                    <div style="flex: 1">
+                      <label class="form-label fw-semibold">Reponse Sur</label>
+                      <input type="text" class="form-control" [(ngModel)]="reponseSur" name="reponseSur" />
+                    </div>
+
+                    <div style="flex: 1">
+                      <label class="form-label fw-semibold">Confidentialité</label>
+                      <input type="text" class="form-control" placeholder="Entrer la Confidentialité" />
+                    </div>
+
+                    <div style="flex: 1">
+                      <label class="form-label fw-semibold">Réference Emétteur</label>
+                      <input type="text" class="form-control" [(ngModel)]="referenceEmetteur" name="referenceEmetteur" />
+                    </div>
+
+                    <div style="flex: 0.1; display: flex; flex-direction: column; align-items: center; height: 70px">
+                      <label class="form-label fw-semibold mb-0" style="padding-bottom: 15px">Important</label>
+                      <input
+                        type="checkbox"
+                        class="form-check-input"
+                        name="priority"
+                        [(ngModel)]="priorite"
+                        value="Prioritaire"
+                        style="transform: scale(1.7); cursor: pointer"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </form>
             </div>
+
+            <ng-template #lectureInfoGen>
+              <div
+                [style.max-height]="accordionStates['infoGen'] ? '2000px' : '0'"
+                [style.padding]="accordionStates['infoGen'] ? '16px' : '0 16px'"
+                style="overflow: hidden; transition: max-height 0.5s ease, padding 0.5s ease"
+              >
+                <div class="alert alert-light" role="alert" style="border: 1px solid #dee2e6; color: #495057">
+                  <p><strong>Objet :</strong> {{ correspLoaded.subject }}</p>
+                  <p>
+                    <strong>Expéditeur :</strong> {{ correspLoaded.sender }} | <strong>Destinataire :</strong>
+                    {{ correspLoaded.labelDestinataire }} | <strong>CC :</strong> {{ correspLoaded.labelContactCC }}
+                  </p>
+                  <p>
+                    <strong>Date :</strong> {{ formatLongDate(correspLoaded.courrierDate) }} | <strong>Contact :</strong>
+                    {{ correspLoaded.contactEmail }}
+                  </p>
+                </div>
+              </div>
+            </ng-template>
           </div>
 
           <div style="border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden">
@@ -275,41 +455,72 @@
           style="padding: 16px; border: 1px solid #ccc; border-radius: 12px; height: 100%; display: flex; flex-direction: column; gap: 16px"
         >
           <div style="border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden">
+            <!-- Titre avec toggle -->
             <div
               (click)="toggleAccordion('corps')"
-              [style.background-color]="accordionStates['corps'] ? '#e9ecef' : '#f8f9fa'"
               style="
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
                 padding: 16px;
                 background-color: #f8f9fa;
-                border-bottom: 1px solid #dee2e6;
+                cursor: pointer;
+                user-select: none;
+                transition: background-color 0.3s ease;
               "
+              [style.background-color]="accordionStates['corps'] ? '#e9ecef' : '#f8f9fa'"
             >
-              <div style="display: flex; align-items: center; cursor: pointer; flex-grow: 1">
-                <h5 style="font-weight: 600; margin: 0; color: #2c3e50; margin-right: 10px">Corps de la Correspondance</h5>
-              </div>
+              <h5 style="font-weight: 600; margin: 0; color: #2c3e50">Corps de la Correspondance</h5>
               <svg
                 [style.transform]="accordionStates['corps'] ? 'rotate(180deg)' : 'rotate(0deg)'"
-                fill="none"
-                stroke="currentColor"
                 style="transition: transform 0.3s ease; width: 20px; height: 20px"
-                viewBox="0 0 24 24"
                 xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
               >
-                <path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
               </svg>
             </div>
 
+            <!-- Corps : editable si DRAFT, sinon lecture seule -->
             <div
               [style.max-height]="accordionStates['corps'] ? '2000px' : '0'"
               [style.padding]="accordionStates['corps'] ? '16px' : '0 16px'"
               style="overflow: hidden; transition: max-height 0.5s ease, padding 0.5s ease"
             >
-              <div style="background: #fff; padding: 10px; border: 1px solid #eee; border-radius: 4px; min-height: 100px">
-                <div [innerHTML]="correspLoaded.body"></div>
-              </div>
+              <!-- Si DRAFT -->
+              <ng-container *ngIf="correspLoaded?.status === 'DRAFT'; else readOnlyBody">
+                <dx-html-editor [(value)]="htmlContent" [height]="365" [placeholder]="'Tapez votre contenu ici...'">
+                  <dxo-toolbar [multiline]="true">
+                    <dxi-item name="undo"></dxi-item>
+                    <dxi-item name="redo"></dxi-item>
+                    <dxi-item name="separator"></dxi-item>
+                    <dxi-item name="bold"></dxi-item>
+                    <dxi-item name="italic"></dxi-item>
+                    <dxi-item name="underline"></dxi-item>
+                    <dxi-item name="strike"></dxi-item>
+                    <dxi-item name="separator"></dxi-item>
+                    <dxi-item name="alignLeft"></dxi-item>
+                    <dxi-item name="alignCenter"></dxi-item>
+                    <dxi-item name="alignRight"></dxi-item>
+                    <dxi-item name="alignJustify"></dxi-item>
+                    <dxi-item name="separator"></dxi-item>
+                    <dxi-item name="orderedList"></dxi-item>
+                    <dxi-item name="bulletList"></dxi-item>
+                    <dxi-item name="separator"></dxi-item>
+                    <dxi-item name="link"></dxi-item>
+                    <dxi-item name="image"></dxi-item>
+                    <dxi-item name="clear"></dxi-item>
+                  </dxo-toolbar>
+                </dx-html-editor>
+              </ng-container>
+              <!-- Si autre status : lecture seule -->
+              <ng-template #readOnlyBody>
+                <div style="background: #fff; padding: 10px; border: 1px solid #eee; border-radius: 4px; min-height: 100px">
+                  <div [innerHTML]="correspLoaded?.body"></div>
+                </div>
+              </ng-template>
             </div>
           </div>
 
