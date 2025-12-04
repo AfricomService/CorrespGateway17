@@ -83,6 +83,7 @@ export class CorrespDetailComponent implements OnInit {
 
   dateLimite = '';
   selectedType = '';
+  commentaire = '';
 
   btnSaveTaskDisabled = false;
 
@@ -277,6 +278,7 @@ export class CorrespDetailComponent implements OnInit {
     taskModel.responsible = this.selectedDepartement;
     taskModel.dueDate = dayjs(this.dateLimite);
     taskModel.taskType = this.selectedType;
+    taskModel.commentaire = this.commentaire;
 
     console.log(taskModel);
 
@@ -291,6 +293,7 @@ export class CorrespDetailComponent implements OnInit {
 
   resetForm(): void {
     this.dateLimite = '';
+    this.commentaire = '';
     this.validationErrors = {};
     this.selectedDepartement = '';
     this.selectedType = '';

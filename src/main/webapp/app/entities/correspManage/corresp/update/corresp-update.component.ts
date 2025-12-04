@@ -1,8 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { HttpResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Observable } from 'rxjs';
-import { finalize, map } from 'rxjs/operators';
+import { Observable, switchMap } from 'rxjs';
+import { finalize, map, tap } from 'rxjs/operators';
 
 import { CorrespFormService, CorrespFormGroup } from './corresp-form.service';
 import { ICorresp } from '../corresp.model';
@@ -104,6 +104,8 @@ export class CorrespUpdateComponent implements OnInit {
   contactEmailCCLabel = '';
   referenceEmetteur = '';
 
+  commentaire = '';
+
   // --- User-related fields for task assignment ---
   users: IUser[] = [];
   userSearch = '';
@@ -131,7 +133,7 @@ export class CorrespUpdateComponent implements OnInit {
   };
 
   // --- Task list (temporary) ---
-  tasks: Array<{ typeTask: string; responsable: any; dateLimite: string; responsableName: string }> = [];
+  tasks: Array<{ typeTask: string; responsable: any; dateLimite: string; responsableName: string; commentaire: string }> = [];
 
   correspType!: string;
 
@@ -148,8 +150,12 @@ export class CorrespUpdateComponent implements OnInit {
   orgaList: IOrga[] = [];
 
   selectedOrga: any = null;
+  selectedOrgaDest: any = null;
+  selectedOrgaCC: any = null;
 
   departements: DepartementTreeFeignDTO[] = [];
+  departementsDest: DepartementTreeFeignDTO[] = [];
+  departementsCC: DepartementTreeFeignDTO[] = [];
   selectedDepartement = '';
   selectedDepartementName = '';
 
@@ -181,6 +187,19 @@ export class CorrespUpdateComponent implements OnInit {
 
     this.typeDocumentService.query({ page: 0, size: 1000 }).subscribe(res => {
       this.typedocuments = res.body!;
+
+      const autre: ITypedocument = {
+        id: 0, // or -1 if you prefer
+        nom: 'Autre',
+        defautdest: null,
+        defaultobject: null,
+        defaultencopie: null,
+        labelDD: null,
+        labelDCC: null,
+        usualstatus: null,
+      };
+
+      this.typedocuments.push(autre);
     });
 
     const today = new Date();
@@ -213,6 +232,8 @@ export class CorrespUpdateComponent implements OnInit {
     this.objet = this.selectedTypeDocument.defaultobject || '';
 
     if (this.selectedTypeDocument.defautdest) {
+      this.tasks = [];
+
       this.correspService.queryOrgaDepsByCode({ code: this.selectedTypeDocument.defautdest }).subscribe({
         next: (res: HttpResponse<IDepartement>) => {
           if (res.body) {
@@ -220,6 +241,18 @@ export class CorrespUpdateComponent implements OnInit {
             console.log(res.body);
             this.destinataire = res.body.email || '';
             this.destinataireLabel = res.body.nom || '';
+
+            const taskData = {
+              typeTask: 'traitement',
+              responsable: res.body.code ?? '',
+              dateLimite: '',
+              responsableName: res.body.nom ?? '',
+              commentaire: '',
+            };
+
+            this.tasks.push(taskData);
+
+            // console.log(this.tasks)
           } else {
             this.destinataire = '';
           }
@@ -241,6 +274,16 @@ export class CorrespUpdateComponent implements OnInit {
           if (res.body) {
             this.contactEmailCC = res.body.email || '';
             this.contactEmailCCLabel = res.body.nom || '';
+
+            const taskData = {
+              typeTask: 'lecture',
+              responsable: res.body.code ?? '',
+              dateLimite: '',
+              responsableName: res.body.nom ?? '',
+              commentaire: '',
+            };
+
+            this.tasks.push(taskData);
           } else {
             this.contactEmailCC = '';
             this.contactEmailCCLabel = '';
@@ -524,6 +567,7 @@ export class CorrespUpdateComponent implements OnInit {
       taskModel.responsible = t.responsable;
       taskModel.dueDate = dayjs(t.dateLimite);
       taskModel.taskType = t.typeTask;
+      taskModel.commentaire = t.commentaire;
 
       this.tasksToSave.push(taskModel);
     });
@@ -619,6 +663,7 @@ export class CorrespUpdateComponent implements OnInit {
       responsable: this.selectedDepartement,
       dateLimite: this.dateLimite,
       responsableName: this.selectedDepartementName,
+      commentaire: this.commentaire,
     };
 
     // this.tasksToSave.push(taskModel)
@@ -650,6 +695,9 @@ export class CorrespUpdateComponent implements OnInit {
     this.isEditMode = false;
     this.editingTaskIndex = null;
     this.selectedType = '';
+    this.commentaire = '';
+    // this.departements = [];
+    // this.selectedOrga = null;
   }
 
   editTask(index: number, modal: any): void {
@@ -668,6 +716,7 @@ export class CorrespUpdateComponent implements OnInit {
       responsableName: task.responsable,
       responsableDisplay: task.responsableName,
       dateLimite: task.dateLimite ? this.formatDate(task.dateLimite) : '',
+      commentaire: task.commentaire,
     };
   }
 
@@ -712,19 +761,70 @@ export class CorrespUpdateComponent implements OnInit {
 
   validationErrors: { [key: string]: string } = {};
 
+  // findSelectedDept(codeDept:string):void {
+  //   this.correspService.getOrgaCodeByDeptCode({ deptCode: codeDept }).subscribe(res => {
+  //     this.selectedOrga = this.orgaList.find(or => or.orgaCode === res.body)!;
+  //
+  //     this.onOrgaChange();
+  //
+  //     this.selectDepartmentByCodeInTree(codeDept,this.departements)
+  //
+  //     console.log(this.departements)
+  //
+  //   });
+  // }
+
+  findSelectedDept(codeDept: string): void {
+    this.correspService
+      .getOrgaCodeByDeptCode({ deptCode: codeDept })
+      .pipe(
+        tap(res => (this.selectedOrga = this.orgaList.find(o => o.orgaCode === res.body)!)),
+        switchMap(() => this.correspService.queryOrgaDeps({ orgaCode: this.selectedOrga!.orgaCode })),
+        tap(res => {
+          this.departements = res.body || [];
+          this.expandAllDepartments(this.departements);
+        })
+      )
+      .subscribe(() => {
+        this.selectDepartmentByCodeInTree(codeDept, this.departements);
+      });
+  }
+
+  private selectDepartmentByCodeInTree(code: string, tree: DepartementTreeFeignDTO[]): boolean {
+    const loop = (nodes: DepartementTreeFeignDTO[]): boolean => {
+      for (const node of nodes) {
+        if (node.code === code) {
+          node.selected = true; // mark directly in the array
+          this.selectedDepartement = node.code;
+          this.selectedDepartementName = node.nom;
+          return true; // stop recursion
+        }
+        if (node.children?.length) {
+          if (loop(node.children)) return true;
+        }
+      }
+      return false;
+    };
+
+    return loop(tree);
+  }
+
   openTasksModal(content: any, taskIndex?: number): void {
     if (taskIndex !== undefined && taskIndex !== null) {
       // Edit mode - populate form with existing task data
       this.isEditMode = true;
       this.editingTaskIndex = taskIndex;
       const task = this.tasks[taskIndex];
-
+      this.findSelectedDept(task.responsable);
       this.selectedType = task.typeTask;
-      this.selectedUser = Array.of(this.findUserByLogin(task.responsable, this.users));
+      this.commentaire = task.commentaire;
+      // this.selectedUser = Array.of(this.findUserByLogin(task.responsable, this.users));
       this.dateLimite = task.dateLimite;
     } else {
       // Add mode - reset for
-      this.selectedOrga = null;
+      // this.selectedOrga = null;
+      // this.commentaire = '';
+      // this.departements = [];
       this.selectedDepartement = '';
       this.selectedDepartementName = '';
       this.isEditMode = false;
@@ -772,6 +872,122 @@ export class CorrespUpdateComponent implements OnInit {
     console.log(event);
     this.selectedDepartement = event.itemData.code;
     this.selectedDepartementName = event.itemData.nom;
+  }
+
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
+
+  openAddDest(content: any): void {
+    this.modalService.open(content, { size: 'lg', centered: true });
+  }
+
+  openAddCC(content: any): void {
+    this.modalService.open(content, { size: 'lg', centered: true });
+  }
+
+  onOrgaChangeDest(): void {
+    if (!this.selectedOrgaDest) return;
+
+    const req = { orgaCode: this.selectedOrgaDest.orgaCode };
+
+    this.correspService.queryOrgaDeps(req).subscribe({
+      next: res => {
+        this.departementsDest = (res.body as DepartementTreeFeignDTO[]) || [];
+        this.expandAllDepartments(this.departementsDest);
+        // this.departements[0].selected = true;
+      },
+      error: err => console.error('Erreur lors du chargement des départements', err),
+    });
+  }
+
+  onOrgaChangeCC(): void {
+    if (!this.selectedOrgaCC) return;
+
+    const req = { orgaCode: this.selectedOrgaCC.orgaCode };
+
+    this.correspService.queryOrgaDeps(req).subscribe({
+      next: res => {
+        this.departementsCC = (res.body as DepartementTreeFeignDTO[]) || [];
+        this.expandAllDepartments(this.departementsCC);
+        // this.departements[0].selected = true;
+      },
+      error: err => console.error('Erreur lors du chargement des départements', err),
+    });
+  }
+
+  selectDepDest(e: any, modal: any): void {
+    // this.selectedDepartementDest = e.itemData;
+    // this.selectedDepartementDestNom = e.itemData.nom;
+    // this.editForm.get('defautdest')?.setValue(e.itemData.code);
+    // this.editForm.get('labelDD')?.setValue(e.itemData.nom);
+
+    this.tasks = this.tasks.filter(t => t.responsable !== this.destinataire);
+
+    this.destinataire = e.itemData.code;
+    this.destinataireLabel = e.itemData.nom;
+
+    // modal.close();
+  }
+
+  selectDepCopie(e: any, modalRef: any): void {
+    // this.selectedDepartement1 = e.itemData;
+    // this.selectedDepartementNom1 = e.itemData.nom;
+    // this.editForm.get('defaultencopie')?.setValue(e.itemData.code);
+    // this.editForm.get('labelDCC')?.setValue(e.itemData.nom);
+    // modalRef.close();
+
+    this.tasks = this.tasks.filter(t => t.responsable !== this.contactEmailCC);
+
+    this.contactEmailCC = e.itemData.code;
+    this.contactEmailCCLabel = e.itemData.nom;
+  }
+
+  dismissDest(): void {
+    const taskData = {
+      typeTask: 'traitement',
+      responsable: this.destinataire ?? '',
+      dateLimite: '',
+      responsableName: this.destinataireLabel ?? '',
+      commentaire: '',
+    };
+
+    this.tasks.push(taskData);
+
+    this.modalService.dismissAll();
+  }
+
+  dismissCC(): void {
+    const taskData = {
+      typeTask: 'lecture',
+      responsable: this.contactEmailCC ?? '',
+      dateLimite: '',
+      responsableName: this.contactEmailCCLabel ?? '',
+      commentaire: '',
+    };
+
+    this.tasks.push(taskData);
+
+    this.modalService.dismissAll();
   }
 
   // --------------------------------------------------------------------------------------------------------------------

@@ -17,6 +17,7 @@ export interface ITasks {
   updatedBy?: string | null;
   taskType?: string | null;
   responsableName?: string | null;
+  commentaire?: string | null;
   updatedDate?: dayjs.Dayjs | null;
   corresps?: Pick<ICorresp, 'id'>[] | null;
 }

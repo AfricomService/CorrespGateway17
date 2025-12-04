@@ -250,6 +250,11 @@
                       </span>
                     </div>
                   </div>
+                  <div *ngIf="task.commentaire">
+                    <p style="margin: 0; color: #212529; line-height: 1.4; font-size: 0.95em">
+                      {{ task.commentaire }}
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -431,131 +436,138 @@
 </div>
 
 <!-- Modal Template  -->
-<ng-template style="padding: 0 2em" #AddTaskModal class="modal-dialog modal-lg modal-dialog-centered" let-AddTaskModal>
+<ng-template #AddTaskModal let-AddTaskModal class="modal-dialog modal-lg modal-dialog-centered">
   <div class="modal-header">
     <h4 class="modal-title" style="color: #2c3e50; font-weight: bold; text-transform: uppercase; font-style: italic">
       Affectation d'une nouvelle tâche
     </h4>
   </div>
 
-  <div class="modal-body" style="height: 100%">
-    <form>
-      <div style="display: flex; flex-direction: column; gap: 1.5em; padding: 0">
-        <!-- TYPE DE TACHE + DATE LIMITE -->
-        <div style="display: flex; align-items: center; justify-content: space-between">
-          <div class="col-md-4">
-            <label class="form-label fw-semibold">Type De Tâche <span class="text-danger">*</span></label>
-            <div style="display: flex; align-items: center; gap: 1.5em">
-              <button
-                (click)="selectedType = 'lecture'"
-                [ngClass]="selectedType === 'lecture' ? 'btn-primary' : 'btn-outline-primary'"
-                class="btn"
-                style="font-weight: 700; text-transform: uppercase"
-                type="button"
-              >
-                Lecture
-              </button>
+  <div class="modal-body">
+    <form class="container-fluid">
+      <div class="row" style="padding: 1em 0">
+        <!-- ************************ LEFT SIDE ************************ -->
+        <div class="col-md-5">
+          <!-- Type de tâche -->
+          <label class="form-label fw-semibold">Type De Tâche <span class="text-danger">*</span></label>
+          <div class="mb-3" style="display: flex; flex-direction: column; gap: 1em">
+            <button
+              type="button"
+              class="btn"
+              style="font-weight: 700; text-transform: uppercase"
+              [ngClass]="selectedType === 'lecture' ? 'btn-primary' : 'btn-outline-primary'"
+              (click)="selectedType = 'lecture'"
+            >
+              Lecture
+            </button>
 
-              <button
-                (click)="selectedType = 'signature'"
-                [ngClass]="selectedType === 'signature' ? 'btn-primary' : 'btn-outline-primary'"
-                class="btn"
-                style="font-weight: 700; text-transform: uppercase"
-                type="button"
-              >
-                Signature
-              </button>
+            <button
+              type="button"
+              class="btn"
+              style="font-weight: 700; text-transform: uppercase"
+              [ngClass]="selectedType === 'signature' ? 'btn-primary' : 'btn-outline-primary'"
+              (click)="selectedType = 'signature'"
+            >
+              Signature
+            </button>
 
-              <button
-                (click)="selectedType = 'traitement'"
-                [ngClass]="selectedType === 'traitement' ? 'btn-primary' : 'btn-outline-primary'"
-                class="btn"
-                style="font-weight: 700; text-transform: uppercase"
-                type="button"
-              >
-                Traitement
-              </button>
+            <button
+              type="button"
+              class="btn"
+              style="font-weight: 700; text-transform: uppercase"
+              [ngClass]="selectedType === 'traitement' ? 'btn-primary' : 'btn-outline-primary'"
+              (click)="selectedType = 'traitement'"
+            >
+              Traitement
+            </button>
 
-              <button
-                (click)="selectedType = 'validation'"
-                [ngClass]="selectedType === 'validation' ? 'btn-primary' : 'btn-outline-primary'"
-                class="btn"
-                style="font-weight: 700; text-transform: uppercase"
-                type="button"
-              >
-                Validation
-              </button>
-            </div>
-            <div *ngIf="validationErrors['typeTask']" class="text-danger small mt-1">
-              {{ validationErrors['typeTask'] }}
-            </div>
+            <button
+              type="button"
+              class="btn"
+              style="font-weight: 700; text-transform: uppercase"
+              [ngClass]="selectedType === 'validation' ? 'btn-primary' : 'btn-outline-primary'"
+              (click)="selectedType = 'validation'"
+            >
+              Validation
+            </button>
           </div>
 
-          <div class="col-md-4">
-            <label class="form-label fw-semibold">Date limite</label>
-            <input [(ngModel)]="dateLimite" class="form-control" name="dateLimite" type="date" />
+          <div class="text-danger small" *ngIf="validationErrors['typeTask']">
+            {{ validationErrors['typeTask'] }}
           </div>
+
+          <!-- Date limite -->
+          <label class="form-label fw-semibold mt-3">Date limite</label>
+          <input type="date" class="form-control" [(ngModel)]="dateLimite" name="dateLimite" />
         </div>
 
-        <!-- ORGANIGRAMME -->
-        <div class="row mb-3">
-          <div class="col-md-12 mb-3 mb-md-0">
-            <label class="form-label fw-semibold">Organigramme <span class="text-danger">*</span></label>
-            <select
-              (change)="onOrgaChange()"
-              [(ngModel)]="selectedOrga"
-              [class.border-danger]="validationErrors['organigramme']"
-              class="form-select"
-              name="organigramme"
-            >
-              <option disabled selected value="">-- Sélectionner un organigramme --</option>
-              <option *ngFor="let orga of orgaList" [ngValue]="orga">
-                {{ orga.organigramme }}
-              </option>
-            </select>
-            <div *ngIf="validationErrors['organigramme']" class="text-danger small mt-1">
-              {{ validationErrors['organigramme'] }}
-            </div>
+        <!-- ************************ RIGHT SIDE ************************ -->
+        <div class="col-md-7">
+          <!-- Organigramme -->
+          <label class="form-label fw-semibold">Organigramme <span class="text-danger">*</span></label>
+          <select
+            class="form-select mb-3"
+            [(ngModel)]="selectedOrga"
+            name="organigramme"
+            (change)="onOrgaChange()"
+            [class.border-danger]="validationErrors['organigramme']"
+          >
+            <option value="" disabled selected>-- Sélectionner un organigramme --</option>
+            <option *ngFor="let orga of orgaList" [ngValue]="orga">
+              {{ orga.organigramme }}
+            </option>
+          </select>
+          <div class="text-danger small" *ngIf="validationErrors['organigramme']">
+            {{ validationErrors['organigramme'] }}
+          </div>
+
+          <!-- Département -->
+          <label class="form-label fw-semibold">Département <span class="text-danger">*</span></label>
+          <dx-tree-view
+            id="treeView"
+            [items]="departements"
+            [selectedExpr]="'selected'"
+            displayExpr="nom"
+            selectionMode="single"
+            [expandAllEnabled]="true"
+            [searchEnabled]="true"
+            searchMode="contains"
+            [height]="300"
+            [dataStructure]="'tree'"
+            [keyExpr]="'id'"
+            [parentIdExpr]="'parentId'"
+            [itemsExpr]="'children'"
+            [selectByClick]="true"
+            (onItemClick)="selectDep($event)"
+            class="border rounded"
+            [class.border-danger]="validationErrors['departement']"
+          >
+          </dx-tree-view>
+
+          <div class="text-danger small mt-1" *ngIf="validationErrors['departement']">
+            {{ validationErrors['departement'] }}
           </div>
         </div>
+      </div>
 
-        <!-- DÉPARTEMENTS -->
-        <div class="row mb-3">
-          <div class="col-md-12 mb-3 mb-md-0">
-            <label class="form-label fw-semibold">Département <span class="text-danger">*</span></label>
-
-            <dx-tree-view
-              (onItemClick)="selectDep($event)"
-              [class.border-danger]="validationErrors['departement']"
-              [dataStructure]="'tree'"
-              [expandAllEnabled]="true"
-              [height]="450"
-              [itemsExpr]="'children'"
-              [items]="departements"
-              [keyExpr]="'id'"
-              [parentIdExpr]="'parentId'"
-              [searchEnabled]="true"
-              [selectByClick]="true"
-              [selectedExpr]="'selected'"
-              class="border rounded"
-              displayExpr="nom"
-              id="treeView"
-              searchMode="contains"
-              selectionMode="single"
-            >
-            </dx-tree-view>
-
-            <div *ngIf="validationErrors['departement']" class="text-danger small mt-1">
-              {{ validationErrors['departement'] }}
-            </div>
-          </div>
+      <!-- ************************ COMMENTAIRE FULL WIDTH ************************ -->
+      <div class="row mt-4">
+        <div class="col-12">
+          <label class="form-label fw-semibold">Commentaire</label>
+          <textarea
+            class="form-control"
+            rows="4"
+            name="commentaire"
+            [(ngModel)]="commentaire"
+            placeholder="Saisir un commentaire..."
+          ></textarea>
         </div>
       </div>
     </form>
   </div>
 
   <div class="modal-footer">
-    <button (click)="AddTaskModal.close('Close click')" class="btn btn-light btn-model" type="button">Annuler</button>
-    <button (click)="saveTask()" class="btn btn-primary btn-model" type="button">Enregistrer</button>
+    <button type="button" class="btn btn-light btn-model" (click)="AddTaskModal.close('Close click')">Annuler</button>
+    <button type="button" class="btn btn-primary btn-model" (click)="saveTask()">Enregistrer</button>
   </div>
 </ng-template>
