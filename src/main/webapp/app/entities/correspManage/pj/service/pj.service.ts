@@ -173,4 +173,9 @@ export class PjService {
     const options = createRequestOption(req);
     return this.http.delete<{}>(this.resourceUrl, { params: options, observe: 'response' });
   }
+
+  deletePjWithCorresp(req?: any): Observable<HttpResponse<{}>> {
+    const options = createRequestOption(req);
+    return this.http.delete<{}>(`${this.resourceUrl}WithCorresp`, { params: options, observe: 'response' });
+  }
 }

@@ -144,3 +144,11 @@ strong {
     transform: translateY(0);
   }
 }
+
+.pj-action-btn {
+  border-radius: 20px !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}

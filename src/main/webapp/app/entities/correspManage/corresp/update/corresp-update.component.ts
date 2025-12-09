@@ -231,6 +231,10 @@ export class CorrespUpdateComponent implements OnInit {
 
     this.objet = this.selectedTypeDocument.defaultobject || '';
 
+    if (this.selectedTypeDocument.nom === 'Autre') {
+      this.tasks = [];
+    }
+
     if (this.selectedTypeDocument.defautdest) {
       this.tasks = [];
 
@@ -394,13 +398,6 @@ export class CorrespUpdateComponent implements OnInit {
 
       // Start upload with progress tracking
       this.uploadFileWithProgress(file, uniquePjName, pjModel);
-
-      // pjModel.path = this.finalPath;
-      // console.log('this.finalPath')
-      // console.log(this.finalPath)
-      //
-      // console.log('pjModel')
-      // console.log(pjModel)
 
       this.pjsToSave.push(pjModel);
 
@@ -1075,4 +1072,6 @@ export class CorrespUpdateComponent implements OnInit {
     this.accordionStates[section] = !this.accordionStates[section];
   }
   protected readonly console = console;
+  protected readonly CorrespType = CorrespType;
+  protected readonly CorrespStatus = CorrespStatus;
 }

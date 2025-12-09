@@ -213,6 +213,16 @@ export class CorrespService {
     return this.http.post(`${this.resourceUrl}AddTaskToCorresp`, formData);
   }
 
+  addPjToCorresp(pjDto: IPj, correspId: number) {
+    const formData = new FormData();
+
+    formData.append('correspId', correspId.toString());
+
+    formData.append('pjDTO', new Blob([JSON.stringify(pjDto)], { type: 'application/json' }));
+
+    return this.http.post(`${this.resourceUrl}AddPjToCorresp`, formData);
+  }
+
   changeTaskStatus(req?: any) {
     const options = createRequestOption(req);
 

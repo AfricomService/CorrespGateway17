@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import dayjs from 'dayjs/esm';
 import { ICorresp } from '../corresp.model';
@@ -16,6 +16,7 @@ import { ITypedocument } from '../../../configManage/typedocument/typedocument.m
 import { IDepartement } from '../../../orgacare/departement/departement.model';
 import { TypedocumentService } from '../../../configManage/typedocument/service/typedocument.service';
 import { switchMap } from 'rxjs';
+import { FilePreviewComponent } from '../../pj/file-preview/file-preview.component';
 
 // Mocking the Interfaces locally for this example (or import them from your shared models)
 export enum CorrespStatus {
@@ -103,6 +104,12 @@ export class CorrespDetailComponent implements OnInit {
   btnSaveTaskDisabled = false;
 
   selectedPj: IPj | null = null;
+
+  isUploading = false; // Prevents new uploads while one is in progress
+
+  uploadProgress: Map<string, number> = new Map(); // Per-file progress tracking
+
+  @ViewChild('filePreview') filePreview!: FilePreviewComponent;
 
   constructor(
     protected activatedRoute: ActivatedRoute,
@@ -583,5 +590,147 @@ export class CorrespDetailComponent implements OnInit {
       default:
         return { label: status, color: 'gray' };
     }
+  }
+
+  generateRandomId(length: number = 8): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  }
+
+  // onFileSelected(event: any): void {
+  //   const file = event.target.files[0];
+  //   if (file) {
+  //     // this.finalPath = '';
+  //
+  //     const uniquePjName = this.generateRandomId(10);
+  //
+  //     const pjModel: IPj = {} as IPj;
+  //     const parts = file.name.split('.');
+  //
+  //     pjModel.name = parts.slice(0, -1).join('.');
+  //     pjModel.fileType = parts[parts.length - 1];
+  //     pjModel.uniqueName = uniquePjName;
+  //
+  //
+  //     // Initialize progress at 0
+  //     this.uploadProgress.set(uniquePjName, 0);
+  //
+  //     // Start upload with progress tracking
+  //     this.uploadFileWithProgress(file, uniquePjName, pjModel);
+  //   }
+  //
+  //   event.target.value = ''; // reset input
+  // }
+
+  onFileSelected(event: any): void {
+    const files: FileList = event.target.files;
+
+    if (files && files.length > 0) {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+
+        const uniquePjName = this.generateRandomId(10);
+
+        const pjModel: IPj = {} as IPj;
+        const parts = file.name.split('.');
+
+        pjModel.name = parts.slice(0, -1).join('.');
+        pjModel.fileType = parts[parts.length - 1];
+        pjModel.uniqueName = uniquePjName;
+
+        // Initialize progress at 0
+        this.uploadProgress.set(uniquePjName, 0);
+
+        // Start upload with progress tracking
+        this.uploadFileWithProgress(file, uniquePjName, pjModel);
+      }
+    }
+
+    event.target.value = ''; // reset input
+  }
+
+  getProgressValue(): number {
+    // There will be only one upload at a time because of isUploading
+    const firstKey = Array.from(this.uploadProgress.keys())[0];
+    return firstKey ? this.uploadProgress.get(firstKey)! : 0;
+  }
+
+  uploadFileWithProgress(file: File, uniqueName: string, pjModel: IPj): void {
+    this.isUploading = true;
+
+    const req = { uniqueName }; // Pass uniqueName to backend
+
+    this.pjService.uploadPj(file, req).subscribe({
+      next: progressOrResponse => {
+        if (typeof progressOrResponse === 'number') {
+          // Update progress bar
+          this.uploadProgress.set(uniqueName, progressOrResponse);
+        } else {
+          // Upload complete - response is string
+          this.uploadProgress.set(uniqueName, 100);
+          console.log('Upload successful:', progressOrResponse);
+
+          if (!this.accordionStates['pieces']) {
+            this.accordionStates['pieces'] = true;
+          }
+
+          pjModel.path = progressOrResponse;
+          console.log('pjModel updated:', pjModel);
+          // console.log(progressOrResponse)
+          // this.finalPath = progressOrResponse
+          // console.log(this.finalPath)
+
+          this.correspService.addPjToCorresp(pjModel, this.correspLoaded.id).subscribe({
+            next: () => {
+              console.log('PJ added to corresp successfully');
+            },
+            error: err => {
+              console.error('Failed to assign PJ:', err);
+            },
+          });
+
+          // Keep progress at 100% briefly, then remove to show complete state
+          setTimeout(() => {
+            this.uploadProgress.delete(uniqueName);
+            this.isUploading = false;
+
+            window.location.reload();
+          }, 500);
+        }
+      },
+      error: error => {
+        console.error('Upload failed:', error);
+        this.uploadProgress.delete(uniqueName);
+        this.isUploading = false;
+
+        // Show error to user
+        alert('Échec du téléchargement du fichier');
+      },
+    });
+  }
+
+  downloadSelectedPj(): void {
+    if (this.filePreview) {
+      this.filePreview.downloadFile();
+    }
+  }
+
+  deletePjWithCorresp(): void {
+    const req = { uniqueName: this.selectedPj?.uniqueName, fileType: this.selectedPj?.fileType };
+
+    this.pjService.deletePjWithCorresp(req).subscribe({
+      next: () => {
+        console.log('File deleted successfully');
+        window.location.reload();
+      },
+      error: error => {
+        console.error('Delete failed:', error);
+        alert('Échec de la suppression du fichier');
+      },
+    });
   }
 }

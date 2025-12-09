@@ -36,13 +36,13 @@
         {{ correspType }}
       </h5>
       <div *ngIf="correspLoaded?.reference; else showButton">
-        <span style="font-weight: bold; font-size: 1.2em">
+        <span style="font-weight: bold; font-size: 1.2em; color: #2c3e50; font-style: italic">
           {{ correspLoaded.reference }}
         </span>
       </div>
 
       <ng-template #showButton>
-        <button class="btn btn-outline-secondary" (click)="generateReference()" style="font-weight: 600; text-transform: uppercase">
+        <button (click)="generateReference()" class="btn btn-outline-secondary" style="font-weight: 600; text-transform: uppercase">
           Identifier
         </button>
       </ng-template>
@@ -60,8 +60,8 @@
       <button class="btn btn-outline-primary" style="font-weight: 600; text-transform: uppercase">Imprimer</button>
       <button class="btn btn-outline-primary" style="font-weight: 600; text-transform: uppercase">Journal</button>
       <button
-        *ngIf="correspLoaded?.status === 'DRAFT'"
         (click)="saveDraft()"
+        *ngIf="correspLoaded?.status === 'DRAFT'"
         [disabled]="isSaving"
         class="btn btn-primary"
         style="font-weight: 600; text-transform: uppercase"
@@ -82,6 +82,7 @@
             <!-- HEADER ACCORDÉON -->
             <div
               (click)="toggleAccordion('infoGen')"
+              [style.background-color]="accordionStates['infoGen'] ? '#e9ecef' : '#f8f9fa'"
               style="
                 display: flex;
                 justify-content: space-between;
@@ -92,7 +93,6 @@
                 user-select: none;
                 transition: background-color 0.3s ease;
               "
-              [style.background-color]="accordionStates['infoGen'] ? '#e9ecef' : '#f8f9fa'"
             >
               <h5 style="font-weight: 600; margin: 0; color: #2c3e50">
                 Informations Générales -
@@ -103,13 +103,13 @@
 
               <svg
                 [style.transform]="accordionStates['infoGen'] ? 'rotate(180deg)' : 'rotate(0deg)'"
-                style="transition: transform 0.3s ease; width: 20px; height: 20px"
-                xmlns="http://www.w3.org/2000/svg"
                 fill="none"
-                viewBox="0 0 24 24"
                 stroke="currentColor"
+                style="transition: transform 0.3s ease; width: 20px; height: 20px"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
               >
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                <path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
               </svg>
             </div>
 
@@ -117,8 +117,8 @@
             <div
               *ngIf="correspLoaded?.status === 'DRAFT'; else lectureInfoGen"
               [style.max-height]="accordionStates['infoGen'] ? '2000px' : '0'"
-              style="overflow: hidden; transition: max-height 0.5s ease, padding 0.5s ease"
               [style.padding]="accordionStates['infoGen'] ? '16px' : '0 16px'"
+              style="overflow: hidden; transition: max-height 0.5s ease, padding 0.5s ease"
             >
               <!-- 🔽 FORMULAIRE EXACTEMENT TEL QUE FOURNI -->
               <form>
@@ -126,10 +126,10 @@
                   <div style="flex: 1">
                     <label class="form-label fw-semibold">Type de document <span class="text-danger">*</span></label>
                     <select
-                      class="form-select"
-                      [(ngModel)]="selectedTypeDocument"
-                      name="typeDocument"
                       (ngModelChange)="onTypeDocumentChange()"
+                      [(ngModel)]="selectedTypeDocument"
+                      class="form-select"
+                      name="typeDocument"
                     >
                       <option [ngValue]="undefined">-- Sélectionner un type --</option>
                       <option *ngFor="let type of typedocuments" [ngValue]="type">
@@ -141,15 +141,15 @@
                   <div style="flex: 1">
                     <label class="form-label fw-semibold"> Date <span class="text-danger">*</span> </label>
                     <input
-                      type="date"
-                      class="form-control"
-                      [class.is-invalid]="validationInfoGenErrors['date']"
                       [(ngModel)]="date"
-                      name="date"
-                      [attr.min]="minDate"
                       [attr.max]="maxDate"
+                      [attr.min]="minDate"
+                      [class.is-invalid]="validationInfoGenErrors['date']"
+                      class="form-control"
+                      name="date"
+                      type="date"
                     />
-                    <div class="invalid-feedback" *ngIf="validationInfoGenErrors['date']">
+                    <div *ngIf="validationInfoGenErrors['date']" class="invalid-feedback">
                       {{ validationInfoGenErrors['date'] }}
                     </div>
                   </div>
@@ -158,14 +158,14 @@
                 <div style="margin-bottom: 1.5em; padding-top: 15px">
                   <label class="form-label fw-semibold">Objet <span class="text-danger">*</span></label>
                   <input
-                    type="text"
-                    class="form-control"
-                    [class.is-invalid]="validationInfoGenErrors['objet']"
                     [(ngModel)]="objet"
+                    [class.is-invalid]="validationInfoGenErrors['objet']"
+                    class="form-control"
                     name="objet"
                     placeholder="Entrer l'objet de la correspondance"
+                    type="text"
                   />
-                  <div class="invalid-feedback" *ngIf="validationInfoGenErrors['objet']">
+                  <div *ngIf="validationInfoGenErrors['objet']" class="invalid-feedback">
                     {{ validationInfoGenErrors['objet'] }}
                   </div>
                 </div>
@@ -175,14 +175,14 @@
                   <div style="flex: 1">
                     <label class="form-label fw-semibold">Expéditeur <span class="text-danger">*</span></label>
                     <input
-                      type="text"
-                      class="form-control"
-                      [class.is-invalid]="validationInfoGenErrors['expediteur']"
                       [(ngModel)]="expediteur"
+                      [class.is-invalid]="validationInfoGenErrors['expediteur']"
+                      class="form-control"
                       name="expediteur"
                       placeholder="Entrer l'expéditeur"
+                      type="text"
                     />
-                    <div class="invalid-feedback" *ngIf="validationInfoGenErrors['expediteur']">
+                    <div *ngIf="validationInfoGenErrors['expediteur']" class="invalid-feedback">
                       {{ validationInfoGenErrors['expediteur'] }}
                     </div>
                   </div>
@@ -190,15 +190,15 @@
                   <div style="flex: 1">
                     <label class="form-label fw-semibold">Destinataire <span class="text-danger">*</span></label>
                     <input
-                      type="text"
-                      class="form-control"
-                      [class.is-invalid]="validationInfoGenErrors['destinataire']"
                       [(ngModel)]="destinataireLabel"
-                      name="destinataire"
+                      [class.is-invalid]="validationInfoGenErrors['destinataire']"
                       [readonly]="destinataireLabel"
+                      class="form-control"
+                      name="destinataire"
                       placeholder="Entrer le destinataire"
+                      type="text"
                     />
-                    <div class="invalid-feedback" *ngIf="validationInfoGenErrors['destinataire']">
+                    <div *ngIf="validationInfoGenErrors['destinataire']" class="invalid-feedback">
                       {{ validationInfoGenErrors['destinataire'] }}
                     </div>
                   </div>
@@ -209,24 +209,24 @@
                   <div style="flex: 1">
                     <label class="form-label fw-semibold">Contact <span class="text-danger">*</span></label>
                     <input
-                      type="text"
-                      class="form-control"
-                      [class.is-invalid]="validationInfoGenErrors['contactEmail']"
                       [(ngModel)]="contactEmail"
+                      [class.is-invalid]="validationInfoGenErrors['contactEmail']"
+                      class="form-control"
                       name="contactEmail"
                       placeholder="Entrer le contact"
+                      type="text"
                     />
                   </div>
 
                   <div style="flex: 1">
                     <label class="form-label fw-semibold">Contact En Copie</label>
                     <input
-                      type="text"
-                      class="form-control"
                       [(ngModel)]="contactEmailCCLabel"
                       [readonly]="contactEmailCCLabel"
+                      class="form-control"
                       name="contactEmailCC"
                       placeholder="Entrer le contact en copie"
+                      type="text"
                     />
                   </div>
                 </div>
@@ -236,28 +236,28 @@
                   <div style="flex: 1; display: flex; align-items: center; gap: 16px; padding-top: 30px">
                     <div style="flex: 1">
                       <label class="form-label fw-semibold">Reponse Sur</label>
-                      <input type="text" class="form-control" [(ngModel)]="reponseSur" name="reponseSur" />
+                      <input [(ngModel)]="reponseSur" class="form-control" name="reponseSur" type="text" />
                     </div>
 
                     <div style="flex: 1">
                       <label class="form-label fw-semibold">Confidentialité</label>
-                      <input type="text" class="form-control" placeholder="Entrer la Confidentialité" />
+                      <input class="form-control" placeholder="Entrer la Confidentialité" type="text" />
                     </div>
 
                     <div style="flex: 1">
                       <label class="form-label fw-semibold">Réference Emétteur</label>
-                      <input type="text" class="form-control" [(ngModel)]="referenceEmetteur" name="referenceEmetteur" />
+                      <input [(ngModel)]="referenceEmetteur" class="form-control" name="referenceEmetteur" type="text" />
                     </div>
 
                     <div style="flex: 0.1; display: flex; flex-direction: column; align-items: center; height: 70px">
                       <label class="form-label fw-semibold mb-0" style="padding-bottom: 15px">Important</label>
                       <input
-                        type="checkbox"
+                        [(ngModel)]="priorite"
                         class="form-check-input"
                         name="priority"
-                        [(ngModel)]="priorite"
-                        value="Prioritaire"
                         style="transform: scale(1.7); cursor: pointer"
+                        type="checkbox"
+                        value="Prioritaire"
                       />
                     </div>
                   </div>
@@ -304,10 +304,10 @@
               <div style="display: flex; align-items: center; gap: 12px">
                 <button
                   (click)="openTasksModal(AddTaskModal); $event.stopPropagation()"
+                  *ngIf="correspLoaded.status !== CorrespStatus.CLOSED"
                   [disabled]="btnSaveTaskDisabled"
                   class="btn btn-primary btn-sm"
                   style="font-weight: bold; font-size: 1.2em; padding: 0 0.5em"
-                  *ngIf="correspLoaded.status !== CorrespStatus.CLOSED"
                 >
                   +
                 </button>
@@ -463,6 +463,7 @@
             <!-- Titre avec toggle -->
             <div
               (click)="toggleAccordion('corps')"
+              [style.background-color]="accordionStates['corps'] ? '#e9ecef' : '#f8f9fa'"
               style="
                 display: flex;
                 justify-content: space-between;
@@ -473,18 +474,17 @@
                 user-select: none;
                 transition: background-color 0.3s ease;
               "
-              [style.background-color]="accordionStates['corps'] ? '#e9ecef' : '#f8f9fa'"
             >
               <h5 style="font-weight: 600; margin: 0; color: #2c3e50">Corps de la Correspondance</h5>
               <svg
                 [style.transform]="accordionStates['corps'] ? 'rotate(180deg)' : 'rotate(0deg)'"
-                style="transition: transform 0.3s ease; width: 20px; height: 20px"
-                xmlns="http://www.w3.org/2000/svg"
                 fill="none"
-                viewBox="0 0 24 24"
                 stroke="currentColor"
+                style="transition: transform 0.3s ease; width: 20px; height: 20px"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
               >
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                <path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
               </svg>
             </div>
 
@@ -544,16 +544,42 @@
               "
             >
               <h5 style="font-weight: 600; margin: 0; color: #2c3e50">Pièces Jointes</h5>
-              <svg
-                [style.transform]="accordionStates['pieces'] ? 'rotate(180deg)' : 'rotate(0deg)'"
-                fill="none"
-                stroke="currentColor"
-                style="transition: transform 0.3s ease; width: 20px; height: 20px"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
-              </svg>
+              <div style="display: flex; align-items: center; gap: 12px">
+                <button
+                  (click)="fileInput.click(); $event.stopPropagation()"
+                  *ngIf="correspLoaded.status === CorrespStatus.DRAFT"
+                  [disabled]="isUploading"
+                  [style.cursor]="isUploading ? 'not-allowed' : 'pointer'"
+                  [style.opacity]="isUploading ? '0.5' : '1'"
+                  class="btn btn-primary btn-sm"
+                  style="font-weight: bold; font-size: 1.2em; padding: 0 0.5em"
+                >
+                  +
+                </button>
+                <svg
+                  [style.transform]="accordionStates['pieces'] ? 'rotate(180deg)' : 'rotate(0deg)'"
+                  fill="none"
+                  stroke="currentColor"
+                  style="transition: transform 0.3s ease; width: 20px; height: 20px"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+                </svg>
+              </div>
+            </div>
+            <!--            <input #fileInput (change)="onFileSelected($event)" hidden type="file"/>-->
+            <input #fileInput (change)="onFileSelected($event)" hidden type="file" multiple />
+
+            <!-- Uploading indicator -->
+            <div *ngIf="isUploading" style="margin-top: 10px; width: 100%">
+              <div style="font-size: 14px; font-weight: 600; margin-bottom: 5px">Téléchargement en cours...</div>
+
+              <div style="width: 100%; height: 10px; background: #e9ecef; border-radius: 10px; overflow: hidden">
+                <div [style.width]="getProgressValue() + '%'" style="height: 100%; background: #0d6efd; transition: width 0.3s ease"></div>
+              </div>
+
+              <div style="font-size: 12px; margin-top: 3px; color: #555">{{ getProgressValue() }}%</div>
             </div>
 
             <div
@@ -561,38 +587,64 @@
               [style.padding]="accordionStates['pieces'] ? '16px' : '0 16px'"
               style="overflow: hidden; transition: max-height 0.5s ease, padding 0.5s ease"
             >
-              <div style="display: flex; flex-wrap: wrap; gap: 10px">
-                <button
-                  (click)="togglePreview(pj)"
-                  *ngFor="let pj of pjsLoaded"
-                  [class.active-file]="selectedPj?.id === pj.id"
-                  class="btn btn-outline-dark d-flex align-items-center gap-2 shadow-sm"
-                  style="border-radius: 20px; padding: 6px 16px"
-                >
-                  <i class="fa fa-paperclip"></i>
-                  <strong>{{ pj.name }}.{{ pj.fileType }}</strong>
-                </button>
+              <!--              <div style="display: flex; flex-wrap: wrap; gap: 10px">-->
+              <!--                <button-->
+              <!--                  (click)="togglePreview(pj)"-->
+              <!--                  *ngFor="let pj of pjsLoaded"-->
+              <!--                  [class.active-file]="selectedPj?.id === pj.id"-->
+              <!--                  class="btn btn-outline-dark d-flex align-items-center gap-2 shadow-sm"-->
+              <!--                  style="border-radius: 20px; padding: 6px 16px"-->
+              <!--                >-->
+              <!--                  <i class="fa fa-paperclip"></i>-->
+              <!--                  <strong>{{ pj.name }}.{{ pj.fileType }}</strong>-->
+              <!--                </button>-->
 
-                <span *ngIf="attachments.length === 0" style="color: #999; font-style: italic"> Aucune pièce jointe. </span>
+              <!--                <span *ngIf="attachments.length === 0"-->
+              <!--                      style="color: #999; font-style: italic"> Aucune pièce jointe. </span>-->
+              <!--              </div>-->
+
+              <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center">
+                <div *ngFor="let pj of pjsLoaded" style="display: flex; align-items: center; gap: 8px">
+                  <!-- Existing PJ Button -->
+                  <button
+                    (click)="togglePreview(pj)"
+                    [class.active-file]="selectedPj?.id === pj.id"
+                    class="btn btn-outline-dark d-flex align-items-center gap-2 shadow-sm"
+                    style="border-radius: 20px; padding: 6px 16px"
+                    [disabled]="isUploading"
+                  >
+                    <i class="fa fa-paperclip"></i>
+                    <strong>{{ pj.name }}.{{ pj.fileType }}</strong>
+                  </button>
+
+                  <div *ngIf="selectedPj?.id === pj.id" style="display: flex; gap: 6px">
+                    <dx-button
+                      icon="download"
+                      stylingMode="contained"
+                      type="success"
+                      class="pj-action-btn"
+                      (onClick)="downloadSelectedPj()"
+                    ></dx-button>
+
+                    <dx-button
+                      icon="trash"
+                      stylingMode="contained"
+                      type="danger"
+                      class="pj-action-btn"
+                      (onClick)="deletePjWithCorresp(); $event.stopPropagation()"
+                    ></dx-button>
+                  </div>
+                </div>
+
+                <span *ngIf="pjsLoaded.length === 0" style="color: #999; font-style: italic"> Aucune pièce jointe. </span>
               </div>
+
               <div *ngIf="selectedPj" class="inline-preview-box">
-                <app-file-preview [fileName]="selectedPj.name + '.' + selectedPj.fileType" [pjId]="selectedPj.id"> </app-file-preview>
-
-                <!--                <div class="preview-header">-->
-                <!--                 <span class="preview-title">-->
-                <!--                    Aperçu: <strong>{{ selectedPj.name }}.{{ selectedPj.fileType }}</strong>-->
-                <!--                    </span>-->
-                <!--                  <button class="btn btn-sm btn-danger" (click)="closePreview()">-->
-                <!--                    &times; Fermer-->
-                <!--                  </button>-->
-                <!--                </div>-->
-
-                <!--                <div class="preview-content">-->
-                <!--                  <app-file-preview-->
-                <!--                    [pjId]="selectedPj.id"-->
-                <!--                    [fileName]="selectedPj.name + '.' + selectedPj.fileType">-->
-                <!--                  </app-file-preview>-->
-                <!--                </div>-->
+                <app-file-preview
+                  #filePreview
+                  [fileName]="selectedPj.name + '.' + selectedPj.fileType"
+                  [pjId]="selectedPj.id"
+                ></app-file-preview>
               </div>
             </div>
           </div>
@@ -656,7 +708,7 @@
 </div>
 
 <!-- Modal Template  -->
-<ng-template #AddTaskModal let-AddTaskModal class="modal-dialog modal-lg modal-dialog-centered">
+<ng-template #AddTaskModal class="modal-dialog modal-lg modal-dialog-centered" let-AddTaskModal>
   <div class="modal-header">
     <h4 class="modal-title" style="color: #2c3e50; font-weight: bold; text-transform: uppercase; font-style: italic">
       Affectation d'une nouvelle tâche
@@ -672,53 +724,53 @@
           <label class="form-label fw-semibold">Type De Tâche <span class="text-danger">*</span></label>
           <div class="mb-3" style="display: flex; flex-direction: column; gap: 1em">
             <button
-              type="button"
+              (click)="selectedType = 'lecture'"
+              [ngClass]="selectedType === 'lecture' ? 'btn-primary' : 'btn-outline-primary'"
               class="btn"
               style="font-weight: 700; text-transform: uppercase"
-              [ngClass]="selectedType === 'lecture' ? 'btn-primary' : 'btn-outline-primary'"
-              (click)="selectedType = 'lecture'"
+              type="button"
             >
               Lecture
             </button>
 
             <button
-              type="button"
+              (click)="selectedType = 'signature'"
+              [ngClass]="selectedType === 'signature' ? 'btn-primary' : 'btn-outline-primary'"
               class="btn"
               style="font-weight: 700; text-transform: uppercase"
-              [ngClass]="selectedType === 'signature' ? 'btn-primary' : 'btn-outline-primary'"
-              (click)="selectedType = 'signature'"
+              type="button"
             >
               Signature
             </button>
 
             <button
-              type="button"
+              (click)="selectedType = 'traitement'"
+              [ngClass]="selectedType === 'traitement' ? 'btn-primary' : 'btn-outline-primary'"
               class="btn"
               style="font-weight: 700; text-transform: uppercase"
-              [ngClass]="selectedType === 'traitement' ? 'btn-primary' : 'btn-outline-primary'"
-              (click)="selectedType = 'traitement'"
+              type="button"
             >
               Traitement
             </button>
 
             <button
-              type="button"
+              (click)="selectedType = 'validation'"
+              [ngClass]="selectedType === 'validation' ? 'btn-primary' : 'btn-outline-primary'"
               class="btn"
               style="font-weight: 700; text-transform: uppercase"
-              [ngClass]="selectedType === 'validation' ? 'btn-primary' : 'btn-outline-primary'"
-              (click)="selectedType = 'validation'"
+              type="button"
             >
               Validation
             </button>
           </div>
 
-          <div class="text-danger small" *ngIf="validationErrors['typeTask']">
+          <div *ngIf="validationErrors['typeTask']" class="text-danger small">
             {{ validationErrors['typeTask'] }}
           </div>
 
           <!-- Date limite -->
           <label class="form-label fw-semibold mt-3">Date limite</label>
-          <input type="date" class="form-control" [(ngModel)]="dateLimite" name="dateLimite" />
+          <input [(ngModel)]="dateLimite" class="form-control" name="dateLimite" type="date" />
         </div>
 
         <!-- ************************ RIGHT SIDE ************************ -->
@@ -726,45 +778,45 @@
           <!-- Organigramme -->
           <label class="form-label fw-semibold">Organigramme <span class="text-danger">*</span></label>
           <select
-            class="form-select mb-3"
-            [(ngModel)]="selectedOrga"
-            name="organigramme"
             (change)="onOrgaChange()"
+            [(ngModel)]="selectedOrga"
             [class.border-danger]="validationErrors['organigramme']"
+            class="form-select mb-3"
+            name="organigramme"
           >
-            <option value="" disabled selected>-- Sélectionner un organigramme --</option>
+            <option disabled selected value="">-- Sélectionner un organigramme --</option>
             <option *ngFor="let orga of orgaList" [ngValue]="orga">
               {{ orga.organigramme }}
             </option>
           </select>
-          <div class="text-danger small" *ngIf="validationErrors['organigramme']">
+          <div *ngIf="validationErrors['organigramme']" class="text-danger small">
             {{ validationErrors['organigramme'] }}
           </div>
 
           <!-- Département -->
           <label class="form-label fw-semibold">Département <span class="text-danger">*</span></label>
           <dx-tree-view
-            id="treeView"
-            [items]="departements"
-            [selectedExpr]="'selected'"
-            displayExpr="nom"
-            selectionMode="single"
-            [expandAllEnabled]="true"
-            [searchEnabled]="true"
-            searchMode="contains"
-            [height]="300"
+            (onItemClick)="selectDep($event)"
+            [class.border-danger]="validationErrors['departement']"
             [dataStructure]="'tree'"
+            [expandAllEnabled]="true"
+            [height]="300"
+            [itemsExpr]="'children'"
+            [items]="departements"
             [keyExpr]="'id'"
             [parentIdExpr]="'parentId'"
-            [itemsExpr]="'children'"
+            [searchEnabled]="true"
             [selectByClick]="true"
-            (onItemClick)="selectDep($event)"
+            [selectedExpr]="'selected'"
             class="border rounded"
-            [class.border-danger]="validationErrors['departement']"
+            displayExpr="nom"
+            id="treeView"
+            searchMode="contains"
+            selectionMode="single"
           >
           </dx-tree-view>
 
-          <div class="text-danger small mt-1" *ngIf="validationErrors['departement']">
+          <div *ngIf="validationErrors['departement']" class="text-danger small mt-1">
             {{ validationErrors['departement'] }}
           </div>
         </div>
@@ -775,11 +827,11 @@
         <div class="col-12">
           <label class="form-label fw-semibold">Commentaire</label>
           <textarea
-            class="form-control"
-            rows="4"
-            name="commentaire"
             [(ngModel)]="commentaire"
+            class="form-control"
+            name="commentaire"
             placeholder="Saisir un commentaire..."
+            rows="4"
           ></textarea>
         </div>
       </div>
@@ -787,7 +839,7 @@
   </div>
 
   <div class="modal-footer">
-    <button type="button" class="btn btn-light btn-model" (click)="AddTaskModal.close('Close click')">Annuler</button>
-    <button type="button" class="btn btn-primary btn-model" (click)="saveTask()">Enregistrer</button>
+    <button (click)="AddTaskModal.close('Close click')" class="btn btn-light btn-model" type="button">Annuler</button>
+    <button (click)="saveTask()" class="btn btn-primary btn-model" type="button">Enregistrer</button>
   </div>
 </ng-template>
