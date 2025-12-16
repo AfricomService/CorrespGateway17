@@ -17,6 +17,7 @@ import { IDepartement } from '../../../orgacare/departement/departement.model';
 import { TypedocumentService } from '../../../configManage/typedocument/service/typedocument.service';
 import { switchMap } from 'rxjs';
 import { FilePreviewComponent } from '../../pj/file-preview/file-preview.component';
+import { saveAs } from 'file-saver';
 
 // Mocking the Interfaces locally for this example (or import them from your shared models)
 export enum CorrespStatus {
@@ -109,6 +110,10 @@ export class CorrespDetailComponent implements OnInit {
 
   uploadProgress: Map<string, number> = new Map(); // Per-file progress tracking
 
+  bodyHtmlContent = '';
+
+  selectedPjToDelete!: IPj;
+
   @ViewChild('filePreview') filePreview!: FilePreviewComponent;
 
   constructor(
@@ -127,7 +132,7 @@ export class CorrespDetailComponent implements OnInit {
 
     this.correspService.find(Number(id)).subscribe(res => {
       this.correspLoaded = res.body!;
-      this.htmlContent = this.correspLoaded.body || '';
+      // this.htmlContent = this.correspLoaded.body || '';
       // this.formattedDate = dayjs(this.correspLoaded.courrierDate).format('dddd DD MMMM YYYY').toUpperCase();
       // console.log(this.correspLoaded)
       this.objet = this.correspLoaded.subject || '';
@@ -139,6 +144,14 @@ export class CorrespDetailComponent implements OnInit {
       this.reponseSur = this.correspLoaded.responseTo || '';
       this.referenceEmetteur = this.correspLoaded.senderReference || '';
       this.priorite = this.correspLoaded.priority || false;
+
+      //TODO - GET MESSAGE BY CORRESP ID AND GET PATH AND PASS IT BELOW
+      //
+      this.correspService.loadBodyFromFile({ correspId: this.correspLoaded.id }).subscribe(res => {
+        console.log('res lazy body');
+        console.log(res);
+        this.htmlContent = res;
+      });
 
       this.typeDocumentService.query({ page: 0, size: 1000 }).subscribe(res => {
         this.typedocuments = res.body!;
@@ -283,7 +296,12 @@ export class CorrespDetailComponent implements OnInit {
       next: res => {
         this.isSaving = false;
         this.correspLoaded = res.body!;
-        this.htmlContent = this.correspLoaded.body || '';
+        // this.htmlContent = this.correspLoaded.body || '';
+        this.correspService.loadBodyFromFile({ correspId: this.correspLoaded.id }).subscribe(res => {
+          console.log('res lazy body');
+          console.log(res);
+          this.htmlContent = res;
+        });
         this.showNotification('Brouillon enregistré avec succès !', 'success');
       },
       error: err => {
@@ -503,6 +521,10 @@ export class CorrespDetailComponent implements OnInit {
     this.modalService.open(content, { size: 'xl' });
   }
 
+  openDeleteModal(content: any): void {
+    this.modalService.open(content, { centered: true, size: 'xl' });
+  }
+
   onOrgaChange(): void {
     if (!this.selectedOrga) return;
 
@@ -713,14 +735,31 @@ export class CorrespDetailComponent implements OnInit {
     });
   }
 
-  downloadSelectedPj(): void {
-    if (this.filePreview) {
-      this.filePreview.downloadFile();
-    }
+  // downloadSelectedPj(pjId:number): void {
+  //   // if (this.filePreview) {
+  //   //   this.filePreview.downloadPjWithoutSelecting(pjId);
+  //   // }
+  // }
+
+  public downloadSelectedPj(pj: IPj) {
+    this.pjService.getFile(pj.id).subscribe({
+      next: (blob: Blob) => {
+        saveAs(blob, pj.name + '.' + pj.fileType);
+      },
+      error: err => {
+        console.error('Download failed', err);
+      },
+    });
+  }
+
+  openDeletePjModal(content: any, pj: IPj) {
+    this.selectedPjToDelete = pj;
+
+    this.modalService.open(content, { centered: true, size: 'lg' });
   }
 
   deletePjWithCorresp(): void {
-    const req = { uniqueName: this.selectedPj?.uniqueName, fileType: this.selectedPj?.fileType };
+    const req = { uniqueName: this.selectedPjToDelete.uniqueName, fileType: this.selectedPjToDelete.fileType };
 
     this.pjService.deletePjWithCorresp(req).subscribe({
       next: () => {
@@ -731,6 +770,12 @@ export class CorrespDetailComponent implements OnInit {
         console.error('Delete failed:', error);
         alert('Échec de la suppression du fichier');
       },
+    });
+  }
+
+  deleteCorresp(): void {
+    this.correspService.delete(this.correspLoaded.id).subscribe(res => {
+      this.router.navigate(['/corresp']);
     });
   }
 }

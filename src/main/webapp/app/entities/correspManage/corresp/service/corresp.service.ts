@@ -117,7 +117,7 @@ export class CorrespService {
   }
 
   delete(id: number): Observable<HttpResponse<{}>> {
-    return this.http.delete(`${this.resourceUrl}/${id}`, { observe: 'response' });
+    return this.http.delete(`${this.resourceUrl}Delete/${id}`, { observe: 'response' });
   }
 
   getCorrespIdentifier(corresp: Pick<ICorresp, 'id'>): number {
@@ -242,5 +242,17 @@ export class CorrespService {
     const options = createRequestOption(req);
 
     return this.http.patch(`${this.resourceUrl}CloturerCorresp`, options);
+  }
+
+  loadBodyFromFile(req?: any) {
+    const options = createRequestOption(req);
+
+    return this.http.get(`${this.resourceUrl}/loadBodyFromFile`, { params: options, responseType: 'text' });
+  }
+
+  saveBodyToFile(req?: any) {
+    const options = createRequestOption(req);
+
+    return this.http.patch(`${this.resourceUrl}/saveBodyToFile`, options);
   }
 }

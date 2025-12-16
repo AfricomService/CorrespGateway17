@@ -56,6 +56,13 @@
     <!--      <button class="btn btn-outline-primary" style="font-weight: 600; text-transform: uppercase">Journal</button>-->
     <!--    </div>-->
     <div style="display: flex; gap: 1em; align-items: center">
+      <button
+        (click)="openDeleteModal(DeleteCorrespModal)"
+        class="btn btn-outline-danger"
+        style="font-weight: 600; text-transform: uppercase"
+      >
+        Supprimer
+      </button>
       <button class="btn btn-outline-primary" style="font-weight: 600; text-transform: uppercase">Réponse</button>
       <button class="btn btn-outline-primary" style="font-weight: 600; text-transform: uppercase">Imprimer</button>
       <button class="btn btn-outline-primary" style="font-weight: 600; text-transform: uppercase">Journal</button>
@@ -569,7 +576,7 @@
               </div>
             </div>
             <!--            <input #fileInput (change)="onFileSelected($event)" hidden type="file"/>-->
-            <input #fileInput (change)="onFileSelected($event)" hidden type="file" multiple />
+            <input #fileInput (change)="onFileSelected($event)" hidden multiple type="file" />
 
             <!-- Uploading indicator -->
             <div *ngIf="isUploading" style="margin-top: 10px; width: 100%">
@@ -587,56 +594,95 @@
               [style.padding]="accordionStates['pieces'] ? '16px' : '0 16px'"
               style="overflow: hidden; transition: max-height 0.5s ease, padding 0.5s ease"
             >
-              <!--              <div style="display: flex; flex-wrap: wrap; gap: 10px">-->
-              <!--                <button-->
-              <!--                  (click)="togglePreview(pj)"-->
-              <!--                  *ngFor="let pj of pjsLoaded"-->
-              <!--                  [class.active-file]="selectedPj?.id === pj.id"-->
-              <!--                  class="btn btn-outline-dark d-flex align-items-center gap-2 shadow-sm"-->
-              <!--                  style="border-radius: 20px; padding: 6px 16px"-->
-              <!--                >-->
-              <!--                  <i class="fa fa-paperclip"></i>-->
-              <!--                  <strong>{{ pj.name }}.{{ pj.fileType }}</strong>-->
-              <!--                </button>-->
+              <!--              <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center">-->
+              <!--                <div *ngFor="let pj of pjsLoaded" style="display: flex; align-items: center; gap: 8px">-->
+              <!--                  &lt;!&ndash; Existing PJ Button &ndash;&gt;-->
+              <!--                  <button-->
+              <!--                    (click)="togglePreview(pj)"-->
+              <!--                    [class.active-file]="selectedPj?.id === pj.id"-->
+              <!--                    class="btn btn-outline-dark d-flex align-items-center gap-2 shadow-sm"-->
+              <!--                    style="border-radius: 20px; padding: 6px 16px"-->
+              <!--                    [disabled]="isUploading"-->
+              <!--                  >-->
+              <!--                    <i class="fa fa-paperclip"></i>-->
+              <!--                    <strong>{{ pj.name }}.{{ pj.fileType }}</strong>-->
+              <!--                  </button>-->
 
-              <!--                <span *ngIf="attachments.length === 0"-->
-              <!--                      style="color: #999; font-style: italic"> Aucune pièce jointe. </span>-->
+              <!--                  <div *ngIf="selectedPj?.id === pj.id" style="display: flex; gap: 6px">-->
+              <!--                    <dx-button-->
+              <!--                      icon="download"-->
+              <!--                      stylingMode="contained"-->
+              <!--                      type="success"-->
+              <!--                      class="pj-action-btn"-->
+              <!--                      (onClick)="downloadSelectedPj()"-->
+              <!--                    ></dx-button>-->
+
+              <!--                    <dx-button-->
+              <!--                      icon="trash"-->
+              <!--                      stylingMode="contained"-->
+              <!--                      type="danger"-->
+              <!--                      class="pj-action-btn"-->
+              <!--                      (onClick)="deletePjWithCorresp(); $event.stopPropagation()"-->
+              <!--                    ></dx-button>-->
+              <!--                  </div>-->
+              <!--                </div>-->
+
+              <!--                <span *ngIf="pjsLoaded.length === 0" style="color: #999; font-style: italic"> Aucune pièce jointe. </span>-->
               <!--              </div>-->
 
-              <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center">
-                <div *ngFor="let pj of pjsLoaded" style="display: flex; align-items: center; gap: 8px">
-                  <!-- Existing PJ Button -->
-                  <button
-                    (click)="togglePreview(pj)"
-                    [class.active-file]="selectedPj?.id === pj.id"
-                    class="btn btn-outline-dark d-flex align-items-center gap-2 shadow-sm"
-                    style="border-radius: 20px; padding: 6px 16px"
-                    [disabled]="isUploading"
+              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; align-items: stretch">
+                <div
+                  (click)="togglePreview(pj)"
+                  *ngFor="let pj of pjsLoaded"
+                  [class.active-file]="selectedPj?.id === pj.id"
+                  style="
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 12px;
+                    padding: 8px 14px;
+                    border: 1px solid #ddd;
+                    border-radius: 40px;
+                    background: #fafafa;
+                    cursor: pointer;
+                  "
+                >
+                  <!-- File name (clickable) -->
+                  <div
+                    class="d-flex align-items-center gap-2"
+                    style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis; flex: 1"
+                    title="{{ pj.name }}.{{ pj.fileType }}"
                   >
                     <i class="fa fa-paperclip"></i>
                     <strong>{{ pj.name }}.{{ pj.fileType }}</strong>
-                  </button>
+                  </div>
 
-                  <div *ngIf="selectedPj?.id === pj.id" style="display: flex; gap: 6px">
+                  <!-- Actions (must NOT trigger preview) -->
+                  <div (click)="$event.stopPropagation()" class="d-flex align-items-center gap-2">
                     <dx-button
+                      (click)="downloadSelectedPj(pj)"
+                      [disabled]="isUploading"
+                      class="pj-action-btn"
                       icon="download"
                       stylingMode="contained"
                       type="success"
-                      class="pj-action-btn"
-                      (onClick)="downloadSelectedPj()"
                     ></dx-button>
 
                     <dx-button
+                      (click)="openDeletePjModal(DeletePjModal, pj)"
+                      [disabled]="isUploading"
+                      class="pj-action-btn"
                       icon="trash"
                       stylingMode="contained"
                       type="danger"
-                      class="pj-action-btn"
-                      (onClick)="deletePjWithCorresp(); $event.stopPropagation()"
                     ></dx-button>
                   </div>
                 </div>
 
-                <span *ngIf="pjsLoaded.length === 0" style="color: #999; font-style: italic"> Aucune pièce jointe. </span>
+                <!-- Empty state -->
+                <span *ngIf="pjsLoaded.length === 0" style="grid-column: span 2; color: #999; font-style: italic">
+                  Aucune pièce jointe.
+                </span>
               </div>
 
               <div *ngIf="selectedPj" class="inline-preview-box">
@@ -841,5 +887,48 @@
   <div class="modal-footer">
     <button (click)="AddTaskModal.close('Close click')" class="btn btn-light btn-model" type="button">Annuler</button>
     <button (click)="saveTask()" class="btn btn-primary btn-model" type="button">Enregistrer</button>
+  </div>
+</ng-template>
+
+<ng-template #DeleteCorrespModal class="modal-dialog modal-md modal-dialog-centered" let-DeleteCorrespModal>
+  <div class="modal-header">
+    <h5 class="modal-title text-danger" style="font-weight: 700">Confirmation de suppression</h5>
+  </div>
+
+  <div class="modal-body" style="font-size: 1.3em; background-color: white; text-transform: uppercase">
+    <p>Êtes-vous sûr de vouloir <strong>supprimer cette correspondance</strong> ?</p>
+
+    <p class="text-warning mb-0">Cette action entraînera également la suppression :</p>
+
+    <ul class="mt-2">
+      <li>de <strong>toutes les tâches associées</strong></li>
+      <li>de <strong>toutes les pièces jointes</strong></li>
+    </ul>
+
+    <p class="text-danger mt-3">⚠️ Cette action est <strong>irréversible</strong>.</p>
+  </div>
+
+  <div class="modal-footer">
+    <button (click)="DeleteCorrespModal.dismiss('cancel')" class="btn btn-secondary" type="button">ANNULER</button>
+
+    <button (click)="deleteCorresp(); DeleteCorrespModal.close('confirm')" class="btn btn-danger" type="button">SUPPRIMER</button>
+  </div>
+</ng-template>
+
+<ng-template #DeletePjModal class="modal-dialog modal-md modal-dialog-centered" let-DeletePjModal>
+  <div class="modal-header">
+    <h5 class="modal-title text-danger" style="font-weight: 700">Confirmation de suppression</h5>
+  </div>
+
+  <div class="modal-body" style="font-size: 1.3em; background-color: white; text-transform: uppercase">
+    <p>Êtes-vous sûr de vouloir <strong>supprimer cette piece jointe </strong> ?</p>
+
+    <p class="text-danger mt-3">⚠️ Cette action est <strong>irréversible</strong>.</p>
+  </div>
+
+  <div class="modal-footer">
+    <button (click)="DeletePjModal.dismiss('cancel')" class="btn btn-secondary" type="button">ANNULER</button>
+
+    <button (click)="deletePjWithCorresp(); DeletePjModal.close('confirm')" class="btn btn-danger" type="button">SUPPRIMER</button>
   </div>
 </ng-template>
