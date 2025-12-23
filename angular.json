@@ -20,6 +20,7 @@
         "build": {
           "builder": "@angular-builders/custom-webpack:browser",
           "options": {
+            "baseHref": "/corresp/",
             "customWebpackConfig": {
               "path": "./webpack/webpack.custom.js"
             },
@@ -44,6 +45,7 @@
           },
           "configurations": {
             "production": {
+              "baseHref": "/corresp/",
               "optimization": true,
               "outputHashing": "all",
               "sourceMap": false,
