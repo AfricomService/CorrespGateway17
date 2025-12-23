@@ -46,6 +46,9 @@
           },
           "configurations": {
             "production": {
+              "baseHref": "/corresp/",
+              "deployUrl": "/corresp/",
+              "outputPath": "dist/corresp",
               "optimization": true,
               "outputHashing": "all",
               "sourceMap": false,
