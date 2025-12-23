@@ -9,7 +9,6 @@ const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPl
 const WebpackNotifierPlugin = require('webpack-notifier');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const ESLintPlugin = require('eslint-webpack-plugin');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 const environment = require('./environment');
 const proxyConfig = require('./proxy.conf');
@@ -145,13 +144,6 @@ module.exports = async (config, options, targetOptions) => {
           // jhipster-needle-i18n-language-webpack - JHipster will add/remove languages in this array
         ],
       },
-    }),
-    new HtmlWebpackPlugin({
-      template: './src/main/webapp/index.html',
-      chunks: ['polyfills', 'main', 'global'],
-      chunksSortMode: 'manual',
-      inject: 'body',
-      base: '/corresp/',
     })
   );
 
