@@ -20,6 +20,8 @@
         "build": {
           "builder": "@angular-builders/custom-webpack:browser",
           "options": {
+            "baseHref": "/corresp/",
+            "deployUrl": "/corresp/",
             "customWebpackConfig": {
               "path": "./webpack/webpack.custom.js"
             },
