@@ -74,8 +74,13 @@ public class SecurityConfiguration {
         // @formatter:off
         http
             .securityMatcher(new NegatedServerWebExchangeMatcher(new OrServerWebExchangeMatcher(
-                pathMatchers("/app/**", "/_app/**", "/i18n/**", "/img/**", "/content/**", "/swagger-ui/**", "/v3/api-docs/**", "/test/**"),
-                pathMatchers(HttpMethod.OPTIONS, "/**")
+                pathMatchers("/app/**", "/_app/**", "/i18n/**", "/img/**", "/content/**", "/swagger-ui/**", "/v3/api-docs/**", "/test/**",
+                    "/*.js",
+                    "/*.css",
+                    "/*.ico",
+                    "/assets/**"),
+                pathMatchers(HttpMethod.OPTIONS, "/**"),
+                pathMatchers("/corresp/**")
             )))
             .csrf()
                 .disable()
