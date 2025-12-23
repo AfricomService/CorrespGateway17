@@ -36,7 +36,7 @@ public class SpaWebFilter implements WebFilter {
             !path.startsWith("/services") &&
             !path.startsWith("/v3/api-docs") &&
             !path.contains(".") &&
-            !path.isEmpty()
+            (path.equals("/") || path.length() != 1)
         ) {
             return chain.filter(
                 exchange.mutate().request(exchange.getRequest().mutate().path(contextPath + "/index.html").build()).build()

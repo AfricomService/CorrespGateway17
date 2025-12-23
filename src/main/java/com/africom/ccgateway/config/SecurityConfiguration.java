@@ -97,6 +97,7 @@ public class SecurityConfiguration {
                 .frameOptions().mode(Mode.DENY)
         .and()
             .authorizeExchange()
+            .pathMatchers("/").permitAll()
             .pathMatchers("/corresp/**").permitAll()
             .pathMatchers("/").permitAll()
             .pathMatchers("/*.*").permitAll()
