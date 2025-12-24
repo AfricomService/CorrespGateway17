@@ -138,11 +138,11 @@ spring:
           predicates:
             - name: Path
               args:
-                pattern: "'/corresp/services/'+serviceId.toLowerCase()+'/**'"
+                pattern: "'/services/'+serviceId.toLowerCase()+'/**'"
           filters:
             - name: RewritePath
               args:
-                regexp: "'/corresp/services/' + serviceId.toLowerCase() + '/(?<remaining>.*)'"
+                regexp: "'/services/' + serviceId.toLowerCase() + '/(?<remaining>.*)'"
                 replacement: "'/${remaining}'"
       httpclient:
         pool:
