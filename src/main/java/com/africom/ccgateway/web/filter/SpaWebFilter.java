@@ -24,24 +24,46 @@ public class SpaWebFilter implements WebFilter {
     //        }
     //        return chain.filter(exchange);
     //    }
+
+    //    @Override
+    //    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+    //        org.springframework.http.server.RequestPath requestPath = exchange.getRequest().getPath();
+    //        String contextPath = requestPath.contextPath().value();
+    //        String path = requestPath.pathWithinApplication().value();
+    //
+    //        if (
+    //            !path.startsWith("/api") &&
+    //            !path.startsWith("/management") &&
+    //            !path.startsWith("/services") &&
+    //            !path.startsWith("/v3/api-docs") &&
+    //            !path.contains(".") &&
+    //            (path.equals("/") || path.length() != 1)
+    //        ) {
+    //            return chain.filter(
+    //                exchange.mutate().request(exchange.getRequest().mutate().path(contextPath + "/index.html").build()).build()
+    //            );
+    //        }
+    //        return chain.filter(exchange);
+    //    }
+
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
-        org.springframework.http.server.RequestPath requestPath = exchange.getRequest().getPath();
+        var requestPath = exchange.getRequest().getPath();
         String contextPath = requestPath.contextPath().value();
         String path = requestPath.pathWithinApplication().value();
 
+        if (path.startsWith("/content/") || path.contains(".")) {
+            return chain.filter(exchange);
+        }
+
         if (
-            !path.startsWith("/api") &&
-            !path.startsWith("/management") &&
-            !path.startsWith("/services") &&
-            !path.startsWith("/v3/api-docs") &&
-            !path.contains(".") &&
-            (path.equals("/") || path.length() != 1)
+            !path.startsWith("/api") && !path.startsWith("/management") && !path.startsWith("/services") && !path.startsWith("/v3/api-docs")
         ) {
             return chain.filter(
                 exchange.mutate().request(exchange.getRequest().mutate().path(contextPath + "/index.html").build()).build()
             );
         }
+
         return chain.filter(exchange);
     }
 }
