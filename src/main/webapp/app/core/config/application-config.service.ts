@@ -4,7 +4,7 @@ import { Injectable } from '@angular/core';
   providedIn: 'root',
 })
 export class ApplicationConfigService {
-  private endpointPrefix = '/corresp/';
+  private endpointPrefix = '';
   private microfrontend = false;
 
   setEndpointPrefix(endpointPrefix: string): void {
