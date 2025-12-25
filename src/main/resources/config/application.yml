@@ -138,7 +138,7 @@ spring:
           predicates:
             - name: Path
               args:
-                pattern: "'/services/'+serviceId.toLowerCase()+'/**'"
+                pattern: "'/corresp/services/'+serviceId.toLowerCase()+'/**'"
           filters:
             - name: RewritePath
               args:
