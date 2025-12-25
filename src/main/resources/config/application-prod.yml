@@ -35,6 +35,8 @@ management:
         enabled: false
 
 spring:
+  webflux:
+    base-path: /corresp
   devtools:
     restart:
       enabled: false
