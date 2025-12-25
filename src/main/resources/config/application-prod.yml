@@ -18,6 +18,8 @@ logging:
     ROOT: DEBUG
     tech.jhipster: DEBUG
     com.africom.ccgateway: DEBUG
+    org.springframework.cloud.gateway: DEBUG
+    reactor.netty.http.client: DEBUG
 
 eureka:
   instance:
