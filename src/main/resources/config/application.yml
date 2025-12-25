@@ -142,7 +142,7 @@ spring:
           filters:
             - name: RewritePath
               args:
-                regexp: "'/services/' + serviceId.toLowerCase() + '/(?<remaining>.*)'"
+                regexp: "'/corresp/services/' + serviceId.toLowerCase() + '/(?<remaining>.*)'"
                 replacement: "'/${remaining}'"
       httpclient:
         pool:
