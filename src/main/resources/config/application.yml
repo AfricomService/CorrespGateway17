@@ -131,6 +131,7 @@ spring:
     gateway:
       default-filters:
         - JWTRelay
+        - RewritePath=/corresp/(?<segment>.*), /${segment}
       discovery:
         locator:
           enabled: true
