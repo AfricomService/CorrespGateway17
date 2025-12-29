@@ -184,7 +184,7 @@ spring:
 
 server:
   servlet:
-  context-path: /corresp
+    context-path: /corresp
     session:
       cookie:
         http-only: true
