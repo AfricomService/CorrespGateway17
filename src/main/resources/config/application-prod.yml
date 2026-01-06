@@ -15,40 +15,11 @@
 
 logging:
   level:
-    ROOT: TRACE
-
-    # Your gateway app
-    com.africom.ccgateway: TRACE
-
-    # Spring Cloud Gateway (routes, predicates, filters)
-    org.springframework.cloud.gateway: TRACE
-    org.springframework.cloud.gateway.route: TRACE
-    org.springframework.cloud.gateway.filter: TRACE
-    org.springframework.cloud.gateway.handler: TRACE
-
-    # Spring WebFlux (request handling)
-    org.springframework.web.reactive: TRACE
-    org.springframework.http.server.reactive: TRACE
-
-    # Reactor (important for async flow)
-    reactor.core: TRACE
-    reactor.netty: TRACE
-    reactor.netty.http.client: TRACE
-    reactor.netty.http.server: TRACE
-
-    # Netty low-level I/O (VERY noisy but useful)
-    io.netty: TRACE
-
-    # Spring Security (JWT, auth, filters)
-    org.springframework.security: TRACE
-
-    # JHipster Problem (404, 401, etc.)
-    org.zalando.problem: TRACE
-    org.zalando.problem.spring.web: TRACE
-
-    # Eureka / Discovery (route discovery)
-    com.netflix.discovery: TRACE
-    org.springframework.cloud.netflix.eureka: TRACE
+    ROOT: DEBUG
+    tech.jhipster: DEBUG
+    com.africom.ccgateway: DEBUG
+    org.springframework.cloud.gateway: DEBUG
+    reactor.netty.http.client: DEBUG
 
 eureka:
   instance:
