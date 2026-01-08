@@ -536,15 +536,15 @@ export class CorrespComponent implements OnInit {
     }
   }
 
-  // onRowDoubleClick(e: any): void {
-  //   const url = this.router.serializeUrl(this.router.createUrlTree([`/corresp/${e.data.id}/view`]));
-  //   window.open(url);
-  // }
-
   onRowDoubleClick(e: any): void {
-    const url = this.router.serializeUrl(this.router.createUrlTree([e.data.id, 'view']));
+    const url = this.router.serializeUrl(this.router.createUrlTree([`/corresp/${e.data.id}/view`]));
     window.open(url);
   }
+
+  // onRowDoubleClick(e: any): void {
+  //   const url = this.router.serializeUrl(this.router.createUrlTree([e.data.id, 'view']));
+  //   window.open(url);
+  // }
 
   // saveCustomFilters():void {
   //   this.customSearchService.saveCustomSearch({request:this.endpoint,entitySearching:"CORRESP"}).subscribe(res => {
