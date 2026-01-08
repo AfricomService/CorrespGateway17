@@ -20,7 +20,7 @@
         "build": {
           "builder": "@angular-builders/custom-webpack:browser",
           "options": {
-            "baseHref": "/",
+            "baseHref": "/cc/",
             "customWebpackConfig": {
               "path": "./webpack/webpack.custom.js"
             },
@@ -45,7 +45,7 @@
           },
           "configurations": {
             "production": {
-              "baseHref": "/",
+              "baseHref": "/cc/",
               "optimization": true,
               "outputHashing": "all",
               "sourceMap": false,
