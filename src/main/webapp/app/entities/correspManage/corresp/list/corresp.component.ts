@@ -538,7 +538,8 @@ export class CorrespComponent implements OnInit {
 
   onRowDoubleClick(e: any): void {
     const url = this.router.serializeUrl(this.router.createUrlTree([`/corresp/${e.data.id}/view`]));
-    window.open(url);
+    // window.open(url);
+    window.open('/cc' + url);
   }
 
   // onRowDoubleClick(e: any): void {
