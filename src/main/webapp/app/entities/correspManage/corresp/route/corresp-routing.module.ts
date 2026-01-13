@@ -18,7 +18,7 @@ const correspRoute: Routes = [
     canActivate: [UserRouteAccessService],
   },
   {
-    path: '/corresp/:id/view',
+    path: ':id/view',
     component: CorrespDetailComponent,
     resolve: {
       corresp: CorrespRoutingResolveService,
