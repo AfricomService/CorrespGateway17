@@ -46,3 +46,12 @@ Logo styles
   background: url('../../../content/images/logoCorresp.png') no-repeat center center;
   background-size: contain;
 }
+
+/* Add this inside your component's CSS or a global stylesheet */
+.logo-text {
+  font-family: 'Arial Black', sans-serif; /* Use a bold, clean font */
+  font-size: 28px; /* Adjust size as needed */
+  color: #ffffff; /* Main text color */
+  letter-spacing: 2px;
+  display: inline-block;
+}
