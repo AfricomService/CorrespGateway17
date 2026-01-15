@@ -55,3 +55,12 @@ Logo styles
   letter-spacing: 2px;
   display: inline-block;
 }
+
+.my-font {
+  font-family: 'Fjalla One', sans-serif; /* replace 'Inter' with your chosen font */
+  font-weight: 400; /* optional, depending on weights you imported */
+  color: white;
+  text-transform: uppercase;
+  padding-top: 0.3em;
+  letter-spacing: 0.05em;
+}
