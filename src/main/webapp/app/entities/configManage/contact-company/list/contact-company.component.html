@@ -1,169 +1,142 @@
-<div>
-  <h2 id="page-heading" data-cy="ContactCompanyHeading">
-    <span jhiTranslate="correspCareApp.configManageContactCompany.home.title">ContactCompanies</span>
-
-    <div class="d-flex justify-content-end">
-      <button class="btn btn-info me-2" (click)="load()" [disabled]="isLoading">
-        <fa-icon icon="sync" [spin]="isLoading"></fa-icon>
-        <span jhiTranslate="correspCareApp.configManageContactCompany.home.refreshListLabel">Actualiser la liste</span>
-      </button>
-
-      <button
-        id="jh-create-entity"
-        data-cy="entityCreateButton"
-        class="btn btn-primary jh-create-entity create-contact-company"
-        [routerLink]="['/contact-company/new']"
-      >
-        <fa-icon icon="plus"></fa-icon>
-        <span jhiTranslate="correspCareApp.configManageContactCompany.home.createLabel"> Créer un nouveau Contact Company </span>
-      </button>
+<div class="contact-list container mt-4">
+  <!-- En-tête -->
+  <div class="header d-flex align-items-center justify-content-between mb-3">
+    <div>
+      <h1 class="mb-0">Carnet d'Adresses</h1>
+      <small class="text-muted">Gestion des sociétés et contacts</small>
     </div>
-  </h2>
 
-  <jhi-alert-error></jhi-alert-error>
-
-  <jhi-alert></jhi-alert>
-
-  <div class="alert alert-warning" id="no-result" *ngIf="contactCompanies?.length === 0">
-    <span jhiTranslate="correspCareApp.configManageContactCompany.home.notFound">Aucun Contact Company trouvé</span>
+    <div class="d-flex align-items-center">
+      <input
+        type="search"
+        class="form-control me-2"
+        placeholder="Rechercher une société..."
+        [(ngModel)]="searchTerm"
+        (keyup.enter)="load()"
+        style="min-width: 260px"
+      />
+      <a class="btn btn-primary ms-2" [routerLink]="['/contact-company/new']"> <fa-icon icon="plus" class="me-1"></fa-icon> Ajouter </a>
+    </div>
   </div>
 
-  <div class="table-responsive table-entities" id="entities" *ngIf="contactCompanies && contactCompanies.length > 0">
-    <table class="table table-striped" aria-describedby="page-heading">
-      <thead>
-        <tr jhiSort [(predicate)]="predicate" [(ascending)]="ascending" (sortChange)="navigateToWithComponentValues()">
-          <th scope="col" jhiSortBy="id">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.configManageContactCompany.id">Id</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
+  <!-- Loader -->
+  <div *ngIf="isLoading" class="text-center my-4">
+    <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
+  </div>
+
+  <!-- Liste en cards -->
+  <div *ngIf="!isLoading && contactCompanies?.length" class="card-list">
+    <div *ngFor="let c of contactCompanies; trackBy: trackId" class="card company-card mb-3" [class.card-active]="c.expanded">
+      <div class="card-body d-flex align-items-start">
+        <div class="card-left me-3 flex-grow-1">
+          <div class="d-flex justify-content-between">
+            <div>
+              <h5 class="card-title mb-1">{{ c.nom }}</h5>
+
+              <!-- Toutes les infos affichées dès le départ -->
+              <div class="text-muted small">
+                <div *ngIf="c.nomabrege">Nom abrégé: {{ c.nomabrege }}</div>
+                <div *ngIf="c.matrne">Mat RNE: {{ c.matrne }}</div>
+                <div><fa-icon icon="map-marker-alt" class="me-1"></fa-icon> {{ c.adresse }}</div>
+                <div *ngIf="c.tel"><fa-icon icon="phone" class="me-1"></fa-icon> {{ c.tel }}</div>
+                <div *ngIf="c.fax"><fa-icon icon="fax" class="me-1"></fa-icon> {{ c.fax }}</div>
+                <div *ngIf="c.email"><fa-icon icon="envelope" class="me-1"></fa-icon> {{ c.email }}</div>
+                <div *ngIf="c.webpage"><fa-icon icon="globe" class="me-1"></fa-icon> {{ c.webpage }}</div>
+              </div>
             </div>
-          </th>
-          <th scope="col" jhiSortBy="nom">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.configManageContactCompany.nom">Nom</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="nomabrege">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.configManageContactCompany.nomabrege">Nomabrege</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="matrne">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.configManageContactCompany.matrne">Matrne</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="pays">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.configManageContactCompany.pays">Pays</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="adresse">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.configManageContactCompany.adresse">Adresse</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="tel">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.configManageContactCompany.tel">Tel</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="fax">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.configManageContactCompany.fax">Fax</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="email">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.configManageContactCompany.email">Email</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="webpage">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.configManageContactCompany.webpage">Webpage</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="etat">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.configManageContactCompany.etat">Etat</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col"></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let contactCompany of contactCompanies; trackBy: trackId" data-cy="entityTable">
-          <td>
-            <a [routerLink]="['/contact-company', contactCompany.id, 'view']">{{ contactCompany.id }}</a>
-          </td>
-          <td>{{ contactCompany.nom }}</td>
-          <td>{{ contactCompany.nomabrege }}</td>
-          <td>{{ contactCompany.matrne }}</td>
-          <td>{{ contactCompany.pays }}</td>
-          <td>{{ contactCompany.adresse }}</td>
-          <td>{{ contactCompany.tel }}</td>
-          <td>{{ contactCompany.fax }}</td>
-          <td>{{ contactCompany.email }}</td>
-          <td>{{ contactCompany.webpage }}</td>
-          <td jhiTranslate="{{ 'correspCareApp.UsualStatus.' + contactCompany.etat }}">{{ contactCompany.etat }}</td>
-          <td class="text-end">
-            <div class="btn-group">
-              <button
-                type="submit"
-                [routerLink]="['/contact-company', contactCompany.id, 'view']"
-                class="btn btn-info btn-sm"
-                data-cy="entityDetailsButton"
-              >
+
+            <!-- Actions (icônes prêtes) -->
+            <div class="text-end action-icons">
+              <button class="btn btn-link p-1" [routerLink]="['/contact-company', c.id, 'view']" title="Voir">
                 <fa-icon icon="eye"></fa-icon>
-                <span class="d-none d-md-inline" jhiTranslate="entity.action.view">Voir</span>
               </button>
 
-              <button
-                type="submit"
-                [routerLink]="['/contact-company', contactCompany.id, 'edit']"
-                class="btn btn-primary btn-sm"
-                data-cy="entityEditButton"
-              >
+              <button class="btn btn-link p-1" [routerLink]="['/contact-company', c.id, 'edit']" title="Modifier">
                 <fa-icon icon="pencil-alt"></fa-icon>
-                <span class="d-none d-md-inline" jhiTranslate="entity.action.edit">Editer</span>
               </button>
 
-              <button type="submit" (click)="delete(contactCompany)" class="btn btn-danger btn-sm" data-cy="entityDeleteButton">
-                <fa-icon icon="times"></fa-icon>
-                <span class="d-none d-md-inline" jhiTranslate="entity.action.delete">Supprimer</span>
+              <button class="btn btn-link p-1 text-danger" (click)="delete(c)" title="Supprimer">
+                <fa-icon icon="trash"></fa-icon>
               </button>
             </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+          </div>
+
+          <div class="mt-2 d-flex align-items-center">
+            <!-- Ceci déclenche l'affichage des personnes -->
+            <a class="me-3 toggle-persons" (click)="toggle(c)" style="cursor: pointer">
+              <fa-icon [icon]="c.expanded ? 'chevron-up' : 'chevron-down'"></fa-icon>
+              <span class="ms-1">{{ personCount(c) }} contact(s)</span>
+            </a>
+
+            <small class="badge bg-secondary text-white ms-2" *ngIf="c.pays">{{ c.pays }}</small>
+
+            <!-- AFFICHER L'ETAT : soit traduit si tu as la clé, soit brut -->
+            <!-- Si tu as les traductions : utilisez [jhiTranslate]="'correspCareApp.UsualStatus.' + c.etat" -->
+            <!-- Sinon, affiche juste la valeur brute pour obtenir "Actif" -->
+            <small class="badge bg-info text-white ms-2" *ngIf="c.etat">
+              {{ c.etat }}
+            </small>
+          </div>
+        </div>
+      </div>
+
+      <!-- zone qui s'affiche quand expand : personnes -->
+      <div *ngIf="c.expanded" class="card-footer persons-list">
+        <div *ngIf="c.personCompanies && c.personCompanies.length; else noPersonsBlock">
+          <ul class="list-unstyled mb-0">
+            <li *ngFor="let p of c.personCompanies" class="person-item d-flex align-items-center py-2">
+              <div class="avatar me-3">{{ p.nom ? p.nom.charAt(0) : '?' }}</div>
+              <div class="person-info">
+                <div class="fw-semibold">{{ p.nom }}</div>
+                <div class="small text-muted">
+                  <fa-icon icon="phone" class="me-1"></fa-icon>{{ p.tel }} &nbsp; • &nbsp; <fa-icon icon="envelope" class="me-1"></fa-icon
+                  >{{ p.email }}
+                </div>
+              </div>
+
+              <div class="ms-auto person-actions">
+                <button class="btn btn-sm btn-link" title="Voir la personne">
+                  <fa-icon icon="eye"></fa-icon>
+                </button>
+                <button class="btn btn-sm btn-link" title="Éditer la personne">
+                  <fa-icon icon="pencil-alt"></fa-icon>
+                </button>
+                <button class="btn btn-sm btn-link text-danger" title="Supprimer la personne">
+                  <fa-icon icon="trash"></fa-icon>
+                </button>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <ng-template #noPersonsBlock>
+          <div class="text-center text-muted py-2">Aucune personne associée.</div>
+        </ng-template>
+      </div>
+    </div>
   </div>
 
-  <div *ngIf="contactCompanies && contactCompanies.length > 0">
-    <div class="d-flex justify-content-center">
-      <jhi-item-count [params]="{ page: page, totalItems: totalItems, itemsPerPage: itemsPerPage }"></jhi-item-count>
-    </div>
+  <!-- Message si vide -->
+  <div *ngIf="!isLoading && !contactCompanies?.length" class="alert alert-info mt-3">Aucun Contact Company trouvé.</div>
 
-    <div class="d-flex justify-content-center">
-      <ngb-pagination
-        [collectionSize]="totalItems"
-        [page]="page"
-        [pageSize]="itemsPerPage"
-        [maxSize]="5"
-        [rotate]="true"
-        [boundaryLinks]="true"
-        (pageChange)="navigateToPage($event)"
-      ></ngb-pagination>
-    </div>
-  </div>
+  <!-- Pagination (inchangée) -->
+  <nav *ngIf="totalItems > itemsPerPage" class="mt-3">
+    <ul class="pagination justify-content-center">
+      <li class="page-item" [class.disabled]="page === 1">
+        <button class="page-link" (click)="navigateToPage(page - 1)">Précédent</button>
+      </li>
+
+      <li
+        class="page-item"
+        *ngFor="let p of [].constructor(Math.ceil(totalItems / itemsPerPage)); let i = index"
+        [class.active]="page === i + 1"
+      >
+        <button class="page-link" (click)="navigateToPage(i + 1)">{{ i + 1 }}</button>
+      </li>
+
+      <li class="page-item" [class.disabled]="page === Math.ceil(totalItems / itemsPerPage)">
+        <button class="page-link" (click)="navigateToPage(page + 1)">Suivant</button>
+      </li>
+    </ul>
+  </nav>
 </div>

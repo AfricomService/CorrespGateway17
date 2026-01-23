@@ -1,22 +1,27 @@
+// src/main/webapp/app/entities/configManage/contact-company/list/contact-company.component.ts
 import { Component, OnInit } from '@angular/core';
 import { HttpHeaders } from '@angular/common/http';
 import { ActivatedRoute, Data, ParamMap, Router } from '@angular/router';
 import { combineLatest, filter, Observable, switchMap, tap } from 'rxjs';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 
-import { IContactCompany } from '../contact-company.model';
+import { IContactCompany, IContactCompanyWithPersons } from 'app/entities/configManage/contact-company/contact-company.model';
+import { IPersonCompany } from 'app/entities/configManage/person-company/person-company.model';
 
 import { ITEMS_PER_PAGE, PAGE_HEADER, TOTAL_COUNT_RESPONSE_HEADER } from 'app/config/pagination.constants';
 import { ASC, DESC, SORT, ITEM_DELETED_EVENT, DEFAULT_SORT_DATA } from 'app/config/navigation.constants';
-import { EntityArrayResponseType, ContactCompanyService } from '../service/contact-company.service';
+import { EntityArrayWithPersonsResponseType, ContactCompanyService } from '../service/contact-company.service';
 import { ContactCompanyDeleteDialogComponent } from '../delete/contact-company-delete-dialog.component';
+
+type ContactWithState = IContactCompanyWithPersons & { expanded?: boolean };
 
 @Component({
   selector: 'jhi-contact-company',
   templateUrl: './contact-company.component.html',
+  styleUrls: ['./contact-company.component.scss'],
 })
 export class ContactCompanyComponent implements OnInit {
-  contactCompanies?: IContactCompany[];
+  contactCompanies?: ContactWithState[];
   isLoading = false;
 
   predicate = 'id';
@@ -26,6 +31,8 @@ export class ContactCompanyComponent implements OnInit {
   totalItems = 0;
   page = 1;
 
+  searchTerm = '';
+
   constructor(
     protected contactCompanyService: ContactCompanyService,
     protected activatedRoute: ActivatedRoute,
@@ -33,6 +40,7 @@ export class ContactCompanyComponent implements OnInit {
     protected modalService: NgbModal
   ) {}
 
+  // utilisé par *ngFor trackBy
   trackId = (_index: number, item: IContactCompany): number => this.contactCompanyService.getContactCompanyIdentifier(item);
 
   ngOnInit(): void {
@@ -42,14 +50,13 @@ export class ContactCompanyComponent implements OnInit {
   delete(contactCompany: IContactCompany): void {
     const modalRef = this.modalService.open(ContactCompanyDeleteDialogComponent, { size: 'lg', backdrop: 'static' });
     modalRef.componentInstance.contactCompany = contactCompany;
-    // unsubscribe not needed because closed completes on modal close
     modalRef.closed
       .pipe(
         filter(reason => reason === ITEM_DELETED_EVENT),
         switchMap(() => this.loadFromBackendWithRouteInformations())
       )
       .subscribe({
-        next: (res: EntityArrayResponseType) => {
+        next: (res: EntityArrayWithPersonsResponseType) => {
           this.onResponseSuccess(res);
         },
       });
@@ -57,21 +64,31 @@ export class ContactCompanyComponent implements OnInit {
 
   load(): void {
     this.loadFromBackendWithRouteInformations().subscribe({
-      next: (res: EntityArrayResponseType) => {
+      next: (res: EntityArrayWithPersonsResponseType) => {
         this.onResponseSuccess(res);
       },
     });
+  }
+
+  /** Ouvre / ferme l'affichage des personnes pour une société (appelé uniquement depuis le lien "X contact(s)") */
+  toggle(contact: ContactWithState): void {
+    contact.expanded = !contact.expanded;
+  }
+
+  personCount(contact: ContactWithState): number {
+    return (contact.personCompanies && contact.personCompanies.length) || 0;
   }
 
   navigateToWithComponentValues(): void {
     this.handleNavigation(this.page, this.predicate, this.ascending);
   }
 
+  // <-- méthode requise par le template : garde-la publique
   navigateToPage(page = this.page): void {
     this.handleNavigation(page, this.predicate, this.ascending);
   }
 
-  protected loadFromBackendWithRouteInformations(): Observable<EntityArrayResponseType> {
+  protected loadFromBackendWithRouteInformations(): Observable<EntityArrayWithPersonsResponseType> {
     return combineLatest([this.activatedRoute.queryParamMap, this.activatedRoute.data]).pipe(
       tap(([params, data]) => this.fillComponentAttributeFromRoute(params, data)),
       switchMap(() => this.queryBackend(this.page, this.predicate, this.ascending))
@@ -86,21 +103,24 @@ export class ContactCompanyComponent implements OnInit {
     this.ascending = sort[1] === ASC;
   }
 
-  protected onResponseSuccess(response: EntityArrayResponseType): void {
+  protected onResponseSuccess(response: EntityArrayWithPersonsResponseType): void {
     this.fillComponentAttributesFromResponseHeader(response.headers);
-    const dataFromBody = this.fillComponentAttributesFromResponseBody(response.body);
-    this.contactCompanies = dataFromBody;
-  }
-
-  protected fillComponentAttributesFromResponseBody(data: IContactCompany[] | null): IContactCompany[] {
-    return data ?? [];
+    const list = response.body ?? [];
+    this.contactCompanies = list.map(item => {
+      const c: ContactWithState = {
+        ...item,
+        personCompanies: item.personCompanies ?? [],
+        expanded: false,
+      };
+      return c;
+    });
   }
 
   protected fillComponentAttributesFromResponseHeader(headers: HttpHeaders): void {
     this.totalItems = Number(headers.get(TOTAL_COUNT_RESPONSE_HEADER));
   }
 
-  protected queryBackend(page?: number, predicate?: string, ascending?: boolean): Observable<EntityArrayResponseType> {
+  protected queryBackend(page?: number, predicate?: string, ascending?: boolean): Observable<EntityArrayWithPersonsResponseType> {
     this.isLoading = true;
     const pageToLoad: number = page ?? 1;
     const queryObject = {
@@ -108,7 +128,7 @@ export class ContactCompanyComponent implements OnInit {
       size: this.itemsPerPage,
       sort: this.getSortQueryParam(predicate, ascending),
     };
-    return this.contactCompanyService.query(queryObject).pipe(tap(() => (this.isLoading = false)));
+    return this.contactCompanyService.queryWithPersons(queryObject).pipe(tap(() => (this.isLoading = false)));
   }
 
   protected handleNavigation(page = this.page, predicate?: string, ascending?: boolean): void {
@@ -132,4 +152,6 @@ export class ContactCompanyComponent implements OnInit {
       return [predicate + ',' + ascendingQueryParam];
     }
   }
+
+  protected readonly Math = Math;
 }

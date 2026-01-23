@@ -1,3 +1,4 @@
+// src/main/webapp/app/entities/configManage/contact-company/service/contact-company.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -5,12 +6,18 @@ import { Observable } from 'rxjs';
 import { isPresent } from 'app/core/util/operators';
 import { ApplicationConfigService } from 'app/core/config/application-config.service';
 import { createRequestOption } from 'app/core/request/request-util';
-import { IContactCompany, NewContactCompany } from '../contact-company.model';
+import {
+  IContactCompany,
+  NewContactCompany,
+  IContactCompanyWithPersons,
+} from 'app/entities/configManage/contact-company/contact-company.model';
+import { IPersonCompany } from 'app/entities/configManage/person-company/person-company.model';
 
 export type PartialUpdateContactCompany = Partial<IContactCompany> & Pick<IContactCompany, 'id'>;
 
 export type EntityResponseType = HttpResponse<IContactCompany>;
 export type EntityArrayResponseType = HttpResponse<IContactCompany[]>;
+export type EntityArrayWithPersonsResponseType = HttpResponse<IContactCompanyWithPersons[]>;
 
 @Injectable({ providedIn: 'root' })
 export class ContactCompanyService {
@@ -45,6 +52,16 @@ export class ContactCompanyService {
 
   delete(id: number): Observable<HttpResponse<{}>> {
     return this.http.delete(`${this.resourceUrl}/${id}`, { observe: 'response' });
+  }
+
+  /**
+   * Récupère la liste des ContactCompany avec la clé `personCompanies` jointe.
+   * Le backend renvoie un tableau d'objets où chaque objet contient les champs du ContactCompany
+   * et la propriété personCompanies (liste).
+   */
+  queryWithPersons(req?: any): Observable<EntityArrayWithPersonsResponseType> {
+    const options = createRequestOption(req);
+    return this.http.get<IContactCompanyWithPersons[]>(this.resourceUrl, { params: options, observe: 'response' });
   }
 
   getContactCompanyIdentifier(contactCompany: Pick<IContactCompany, 'id'>): number {

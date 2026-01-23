@@ -10,6 +10,7 @@ export interface IPersonCompany {
   email?: string | null;
   whatsapp?: string | null;
   etat?: UsualStatus | null;
+  contactCompanyId?: number | null;
 }
 
 export type NewPersonCompany = Omit<IPersonCompany, 'id'> & { id: null };

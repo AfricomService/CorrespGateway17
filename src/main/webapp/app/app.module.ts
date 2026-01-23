@@ -1,10 +1,11 @@
+// src/main/webapp/app/app.module.ts
 import { NgModule, LOCALE_ID } from '@angular/core';
 import { registerLocaleData } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 import locale from '@angular/common/locales/fr';
 import { BrowserModule, Title } from '@angular/platform-browser';
 import { ServiceWorkerModule } from '@angular/service-worker';
-import { FaIconLibrary } from '@fortawesome/angular-fontawesome';
+import { FaIconLibrary, FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { NgxWebstorageModule } from 'ngx-webstorage';
 import dayjs from 'dayjs/esm';
 import { NgbDateAdapter, NgbDatepickerConfig } from '@ng-bootstrap/ng-bootstrap';
@@ -27,6 +28,24 @@ import { PageRibbonComponent } from './layouts/profiles/page-ribbon.component';
 import { ActiveMenuDirective } from './layouts/navbar/active-menu.directive';
 import { ErrorComponent } from './layouts/error/error.component';
 
+/**
+ * Import explicite des icônes utilisées dans ton template.
+ * Si l'une d'elles n'existe pas dans ta version de @fortawesome, remplace par l'équivalent (ex: faPen).
+ */
+import {
+  faMapMarkerAlt,
+  faPhone,
+  faFax,
+  faEnvelope,
+  faGlobe,
+  faPlus,
+  faEye,
+  faPencilAlt,
+  faTrash,
+  faChevronDown,
+  faChevronUp,
+} from '@fortawesome/free-solid-svg-icons';
+
 @NgModule({
   imports: [
     BrowserModule,
@@ -39,6 +58,7 @@ import { ErrorComponent } from './layouts/error/error.component';
     HttpClientModule,
     NgxWebstorageModule.forRoot({ prefix: 'jhi', separator: '-', caseSensitive: true }),
     TranslationModule,
+    FontAwesomeModule, // <-- ajouté
   ],
   providers: [
     Title,
@@ -54,7 +74,23 @@ export class AppModule {
   constructor(applicationConfigService: ApplicationConfigService, iconLibrary: FaIconLibrary, dpConfig: NgbDatepickerConfig) {
     applicationConfigService.setEndpointPrefix(SERVER_API_URL);
     registerLocaleData(locale);
-    iconLibrary.addIcons(...fontAwesomeIcons);
+
+    // Ajoute ton tableau d'icônes existant + icônes manquantes utilisées dans les templates
+    iconLibrary.addIcons(
+      ...fontAwesomeIcons,
+      faMapMarkerAlt,
+      faPhone,
+      faFax,
+      faEnvelope,
+      faGlobe,
+      faPlus,
+      faEye,
+      faPencilAlt,
+      faTrash,
+      faChevronDown,
+      faChevronUp
+    );
+
     dpConfig.minDate = { year: dayjs().subtract(100, 'year').year(), month: 1, day: 1 };
   }
 }
