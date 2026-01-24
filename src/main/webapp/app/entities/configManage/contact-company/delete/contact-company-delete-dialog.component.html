@@ -7,12 +7,8 @@
 
   <div class="modal-body">
     <jhi-alert-error></jhi-alert-error>
-    <p
-      id="jhi-delete-contactCompany-heading"
-      jhiTranslate="correspCareApp.configManageContactCompany.delete.question"
-      [translateValues]="{ id: contactCompany.id }"
-    >
-      Êtes-vous certain de vouloir supprimer le Contact Company {{ contactCompany.id }} ?
+    <p id="jhi-delete-contactCompany-heading">
+      Êtes-vous certain de vouloir supprimer la Société <strong>{{ contactCompany.nom }}</strong> ?
     </p>
   </div>
 

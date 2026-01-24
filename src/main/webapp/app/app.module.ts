@@ -28,9 +28,11 @@ import { PageRibbonComponent } from './layouts/profiles/page-ribbon.component';
 import { ActiveMenuDirective } from './layouts/navbar/active-menu.directive';
 import { ErrorComponent } from './layouts/error/error.component';
 
+declare const SERVER_API_URL: string;
+
 /**
  * Import explicite des icônes utilisées dans ton template.
- * Si l'une d'elles n'existe pas dans ta version de @fortawesome, remplace par l'équivalent (ex: faPen).
+ * Si l'une d'elles n'existe pas dans ta version de @fortawesome, remplace par l'équivalent.
  */
 import {
   faMapMarkerAlt,
@@ -44,6 +46,10 @@ import {
   faTrash,
   faChevronDown,
   faChevronUp,
+  faBuilding,
+  faArrowLeft,
+  faSave,
+  faBan,
 } from '@fortawesome/free-solid-svg-icons';
 
 @NgModule({
@@ -58,7 +64,7 @@ import {
     HttpClientModule,
     NgxWebstorageModule.forRoot({ prefix: 'jhi', separator: '-', caseSensitive: true }),
     TranslationModule,
-    FontAwesomeModule, // <-- ajouté
+    FontAwesomeModule, // <-- nécessaire pour <fa-icon>
   ],
   providers: [
     Title,
@@ -88,7 +94,11 @@ export class AppModule {
       faPencilAlt,
       faTrash,
       faChevronDown,
-      faChevronUp
+      faChevronUp,
+      faBuilding,
+      faArrowLeft,
+      faSave,
+      faBan
     );
 
     dpConfig.minDate = { year: dayjs().subtract(100, 'year').year(), month: 1, day: 1 };

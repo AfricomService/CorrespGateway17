@@ -1,142 +1,186 @@
 <div class="contact-list container mt-4">
-  <!-- En-tête -->
-  <div class="header d-flex align-items-center justify-content-between mb-3">
-    <div>
-      <h1 class="mb-0">Carnet d'Adresses</h1>
-      <small class="text-muted">Gestion des sociétés et contacts</small>
+  <!-- Carte principale -->
+  <div class="main-card card shadow-sm">
+    <!-- En-tête de la carte -->
+    <div
+      class="card-header bg-primary text-white d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-2"
+    >
+      <div class="title">
+        <h1 class="mb-0">Carnet d'Adresses</h1>
+        <small>Gestion des sociétés et contacts</small>
+      </div>
     </div>
 
-    <div class="d-flex align-items-center">
-      <input
-        type="search"
-        class="form-control me-2"
-        placeholder="Rechercher une société..."
-        [(ngModel)]="searchTerm"
-        (keyup.enter)="load()"
-        style="min-width: 260px"
-      />
-      <a class="btn btn-primary ms-2" [routerLink]="['/contact-company/new']"> <fa-icon icon="plus" class="me-1"></fa-icon> Ajouter </a>
-    </div>
-  </div>
-
-  <!-- Loader -->
-  <div *ngIf="isLoading" class="text-center my-4">
-    <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
-  </div>
-
-  <!-- Liste en cards -->
-  <div *ngIf="!isLoading && contactCompanies?.length" class="card-list">
-    <div *ngFor="let c of contactCompanies; trackBy: trackId" class="card company-card mb-3" [class.card-active]="c.expanded">
-      <div class="card-body d-flex align-items-start">
-        <div class="card-left me-3 flex-grow-1">
-          <div class="d-flex justify-content-between">
-            <div>
-              <h5 class="card-title mb-1">{{ c.nom }}</h5>
-
-              <!-- Toutes les infos affichées dès le départ -->
-              <div class="text-muted small">
-                <div *ngIf="c.nomabrege">Nom abrégé: {{ c.nomabrege }}</div>
-                <div *ngIf="c.matrne">Mat RNE: {{ c.matrne }}</div>
-                <div><fa-icon icon="map-marker-alt" class="me-1"></fa-icon> {{ c.adresse }}</div>
-                <div *ngIf="c.tel"><fa-icon icon="phone" class="me-1"></fa-icon> {{ c.tel }}</div>
-                <div *ngIf="c.fax"><fa-icon icon="fax" class="me-1"></fa-icon> {{ c.fax }}</div>
-                <div *ngIf="c.email"><fa-icon icon="envelope" class="me-1"></fa-icon> {{ c.email }}</div>
-                <div *ngIf="c.webpage"><fa-icon icon="globe" class="me-1"></fa-icon> {{ c.webpage }}</div>
-              </div>
-            </div>
-
-            <!-- Actions (icônes prêtes) -->
-            <div class="text-end action-icons">
-              <button class="btn btn-link p-1" [routerLink]="['/contact-company', c.id, 'view']" title="Voir">
-                <fa-icon icon="eye"></fa-icon>
-              </button>
-
-              <button class="btn btn-link p-1" [routerLink]="['/contact-company', c.id, 'edit']" title="Modifier">
-                <fa-icon icon="pencil-alt"></fa-icon>
-              </button>
-
-              <button class="btn btn-link p-1 text-danger" (click)="delete(c)" title="Supprimer">
-                <fa-icon icon="trash"></fa-icon>
-              </button>
-            </div>
-          </div>
-
-          <div class="mt-2 d-flex align-items-center">
-            <!-- Ceci déclenche l'affichage des personnes -->
-            <a class="me-3 toggle-persons" (click)="toggle(c)" style="cursor: pointer">
-              <fa-icon [icon]="c.expanded ? 'chevron-up' : 'chevron-down'"></fa-icon>
-              <span class="ms-1">{{ personCount(c) }} contact(s)</span>
-            </a>
-
-            <small class="badge bg-secondary text-white ms-2" *ngIf="c.pays">{{ c.pays }}</small>
-
-            <!-- AFFICHER L'ETAT : soit traduit si tu as la clé, soit brut -->
-            <!-- Si tu as les traductions : utilisez [jhiTranslate]="'correspCareApp.UsualStatus.' + c.etat" -->
-            <!-- Sinon, affiche juste la valeur brute pour obtenir "Actif" -->
-            <small class="badge bg-info text-white ms-2" *ngIf="c.etat">
-              {{ c.etat }}
-            </small>
-          </div>
+    <!-- ESPACE + CONTROLS: recherche + bouton ajouter (alignés sur md+) -->
+    <div class="controls d-flex flex-column flex-md-row align-items-start align-items-md-center gap-2">
+      <!-- Barre de recherche -->
+      <div class="search-wrapper w-100 w-md-auto me-md-3">
+        <div class="input-group">
+          <input
+            id="searchCompany"
+            type="search"
+            class="form-control"
+            placeholder="Rechercher une société..."
+            [(ngModel)]="searchTerm"
+            (keyup.enter)="load()"
+            aria-label="Rechercher une société"
+          />
+          <button class="btn btn-outline-light" type="button" (click)="load()" title="Rechercher">
+            <fa-icon icon="search"></fa-icon>
+          </button>
         </div>
       </div>
 
-      <!-- zone qui s'affiche quand expand : personnes -->
-      <div *ngIf="c.expanded" class="card-footer persons-list">
-        <div *ngIf="c.personCompanies && c.personCompanies.length; else noPersonsBlock">
-          <ul class="list-unstyled mb-0">
-            <li *ngFor="let p of c.personCompanies" class="person-item d-flex align-items-center py-2">
-              <div class="avatar me-3">{{ p.nom ? p.nom.charAt(0) : '?' }}</div>
-              <div class="person-info">
-                <div class="fw-semibold">{{ p.nom }}</div>
-                <div class="small text-muted">
-                  <fa-icon icon="phone" class="me-1"></fa-icon>{{ p.tel }} &nbsp; • &nbsp; <fa-icon icon="envelope" class="me-1"></fa-icon
-                  >{{ p.email }}
+      <!-- Bouton Ajouter -->
+      <div class="actions ms-md-auto">
+        <a class="btn btn-light btn-animated" [routerLink]="['/contact-company/new']" title="Ajouter une société">
+          <fa-icon icon="plus" class="me-1"></fa-icon> Ajouter
+        </a>
+      </div>
+    </div>
+
+    <!-- Corps de la carte -->
+    <div class="card-body">
+      <!-- Loader -->
+      <div *ngIf="isLoading" class="text-center my-4">
+        <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
+      </div>
+
+      <!-- HEADER des sociétés : logo + titre + nombre -->
+      <div *ngIf="!isLoading" class="companies-header d-flex align-items-center justify-content-between mb-3">
+        <div class="d-flex align-items-center">
+          <fa-icon icon="building" class="me-2 companies-icon" aria-hidden="true"></fa-icon>
+          <h5 class="mb-0 companies-title">
+            Sociétés
+            <small class="text-muted companies-count ms-2">({{ contactCompanies?.length || 0 }})</small>
+          </h5>
+        </div>
+
+        <div class="companies-controls d-flex align-items-center gap-2">
+          <!-- placeholder -->
+        </div>
+      </div>
+
+      <!-- Liste des sociétés -->
+      <div *ngIf="!isLoading && contactCompanies?.length" class="card-list">
+        <div *ngFor="let c of contactCompanies; trackBy: trackId" class="card company-card mb-3" [class.card-active]="c.expanded">
+          <div class="card-body d-flex align-items-start">
+            <div class="card-left me-3 flex-grow-1">
+              <div class="d-flex justify-content-between">
+                <div>
+                  <h5 class="card-title mb-1">{{ c.nom }}</h5>
+
+                  <div class="text-muted small">
+                    <div *ngIf="c.nomabrege">Nom abrégé: {{ c.nomabrege }}</div>
+                    <div *ngIf="c.matrne">Mat RNE: {{ c.matrne }}</div>
+                    <div *ngIf="c.adresse"><fa-icon icon="map-marker-alt" class="me-1"></fa-icon> {{ c.adresse }}</div>
+                    <div *ngIf="c.tel"><fa-icon icon="phone" class="me-1"></fa-icon> {{ c.tel }}</div>
+                    <div *ngIf="c.fax"><fa-icon icon="fax" class="me-1"></fa-icon> {{ c.fax }}</div>
+                    <div *ngIf="c.email"><fa-icon icon="envelope" class="me-1"></fa-icon> {{ c.email }}</div>
+                    <div *ngIf="c.webpage"><fa-icon icon="globe" class="me-1"></fa-icon> {{ c.webpage }}</div>
+                  </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="text-end action-icons">
+                  <button class="btn btn-link p-1 action-btn" [routerLink]="['/contact-company', c.id, 'edit']" title="Modifier">
+                    <fa-icon icon="pencil-alt"></fa-icon>
+                  </button>
+                  <button class="btn btn-link p-1 text-danger action-btn" (click)="delete(c)" title="Supprimer">
+                    <fa-icon icon="trash"></fa-icon>
+                  </button>
                 </div>
               </div>
 
-              <div class="ms-auto person-actions">
-                <button class="btn btn-sm btn-link" title="Voir la personne">
-                  <fa-icon icon="eye"></fa-icon>
-                </button>
-                <button class="btn btn-sm btn-link" title="Éditer la personne">
-                  <fa-icon icon="pencil-alt"></fa-icon>
-                </button>
-                <button class="btn btn-sm btn-link text-danger" title="Supprimer la personne">
-                  <fa-icon icon="trash"></fa-icon>
+              <div class="mt-2 d-flex align-items-center flex-wrap">
+                <a
+                  class="me-3 toggle-persons"
+                  (click)="toggle(c)"
+                  [class.expanded]="c.expanded"
+                  [attr.aria-expanded]="c.expanded"
+                  style="cursor: pointer"
+                >
+                  <fa-icon [icon]="c.expanded ? 'chevron-up' : 'chevron-down'"></fa-icon>
+                  <span class="ms-1">{{ personCount(c) }} contact(s)</span>
+                </a>
+                <small class="badge bg-secondary text-white ms-2" *ngIf="c.pays">{{ c.pays }}</small>
+                <small class="badge bg-info text-white ms-2" *ngIf="c.etat">{{ c.etat }}</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Personnes (affiché quand c.expanded) -->
+          <div *ngIf="c.expanded" class="card-footer persons-list">
+            <!-- HEADER au dessus de la liste des personnes -->
+            <div class="persons-header d-flex align-items-center justify-content-between mb-3">
+              <div class="persons-title">
+                <h6 class="mb-0">
+                  Contacts de <strong>{{ c.nom }}</strong>
+                </h6>
+              </div>
+
+              <!-- Bouton Ajouter (sans fonctionnalité) -->
+              <div>
+                <button type="button" class="btn btn-sm btn-primary btn-animated" title="Ajouter un contact (à implémenter)">
+                  <fa-icon icon="plus" class="me-1"></fa-icon> Ajouter
                 </button>
               </div>
-            </li>
-          </ul>
-        </div>
+            </div>
 
-        <ng-template #noPersonsBlock>
-          <div class="text-center text-muted py-2">Aucune personne associée.</div>
-        </ng-template>
+            <div *ngIf="c.personCompanies && c.personCompanies.length; else noPersonsBlock">
+              <ul class="list-unstyled mb-0">
+                <li *ngFor="let p of c.personCompanies" class="person-item d-flex align-items-center py-2">
+                  <div class="avatar me-3">{{ p.nom ? p.nom.charAt(0) : '?' }}</div>
+                  <div class="person-info">
+                    <div class="fw-semibold">{{ p.nom }}</div>
+                    <div class="small text-muted">
+                      <fa-icon icon="phone" class="me-1"></fa-icon>{{ p.tel }} &nbsp; • &nbsp;
+                      <fa-icon icon="envelope" class="me-1"></fa-icon>{{ p.email }}
+                    </div>
+                  </div>
+                  <div class="ms-auto person-actions">
+                    <button class="btn btn-sm btn-link action-btn" title="Voir la personne">
+                      <fa-icon icon="eye"></fa-icon>
+                    </button>
+                    <button class="btn btn-sm btn-link action-btn" title="Éditer la personne">
+                      <fa-icon icon="pencil-alt"></fa-icon>
+                    </button>
+                    <button class="btn btn-sm btn-link text-danger action-btn" title="Supprimer la personne">
+                      <fa-icon icon="trash"></fa-icon>
+                    </button>
+                  </div>
+                </li>
+              </ul>
+            </div>
+
+            <ng-template #noPersonsBlock>
+              <div class="text-center text-muted py-2">Aucune personne associée.</div>
+            </ng-template>
+          </div>
+        </div>
       </div>
+
+      <!-- Message si vide -->
+      <div *ngIf="!isLoading && !contactCompanies?.length" class="alert alert-info mt-3">Aucune société trouvée.</div>
+
+      <!-- Pagination -->
+      <nav *ngIf="totalItems > itemsPerPage" class="mt-3">
+        <ul class="pagination justify-content-center">
+          <li class="page-item" [class.disabled]="page === 1">
+            <button class="page-link" (click)="navigateToPage(page - 1)">Précédent</button>
+          </li>
+          <li
+            class="page-item"
+            *ngFor="let p of [].constructor(Math.ceil(totalItems / itemsPerPage)); let i = index"
+            [class.active]="page === i + 1"
+          >
+            <button class="page-link" (click)="navigateToPage(i + 1)">{{ i + 1 }}</button>
+          </li>
+          <li class="page-item" [class.disabled]="page === Math.ceil(totalItems / itemsPerPage)">
+            <button class="page-link" (click)="navigateToPage(page + 1)">Suivant</button>
+          </li>
+        </ul>
+      </nav>
     </div>
   </div>
-
-  <!-- Message si vide -->
-  <div *ngIf="!isLoading && !contactCompanies?.length" class="alert alert-info mt-3">Aucun Contact Company trouvé.</div>
-
-  <!-- Pagination (inchangée) -->
-  <nav *ngIf="totalItems > itemsPerPage" class="mt-3">
-    <ul class="pagination justify-content-center">
-      <li class="page-item" [class.disabled]="page === 1">
-        <button class="page-link" (click)="navigateToPage(page - 1)">Précédent</button>
-      </li>
-
-      <li
-        class="page-item"
-        *ngFor="let p of [].constructor(Math.ceil(totalItems / itemsPerPage)); let i = index"
-        [class.active]="page === i + 1"
-      >
-        <button class="page-link" (click)="navigateToPage(i + 1)">{{ i + 1 }}</button>
-      </li>
-
-      <li class="page-item" [class.disabled]="page === Math.ceil(totalItems / itemsPerPage)">
-        <button class="page-link" (click)="navigateToPage(page + 1)">Suivant</button>
-      </li>
-    </ul>
-  </nav>
 </div>
