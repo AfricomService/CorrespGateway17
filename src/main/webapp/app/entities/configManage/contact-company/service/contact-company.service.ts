@@ -54,6 +54,11 @@ export class ContactCompanyService {
     return this.http.delete(`${this.resourceUrl}/${id}`, { observe: 'response' });
   }
 
+  markAsDelated(id: number): Observable<EntityResponseType> {
+    // on n'envoie pas de body, backend retourne le ContactCompany mis à jour
+    return this.http.put<IContactCompany>(`${this.resourceUrl}/${id}/delate`, null, { observe: 'response' });
+  }
+
   /**
    * Récupère la liste des ContactCompany avec la clé `personCompanies` jointe.
    * Le backend renvoie un tableau d'objets où chaque objet contient les champs du ContactCompany

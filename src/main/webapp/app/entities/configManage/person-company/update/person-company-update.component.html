@@ -1,88 +1,236 @@
-<div class="d-flex justify-content-center">
-  <div class="col-8">
-    <form name="editForm" role="form" novalidate (ngSubmit)="save()" [formGroup]="editForm">
-      <h2
-        id="jhi-person-company-heading"
-        data-cy="PersonCompanyCreateUpdateHeading"
-        jhiTranslate="correspCareApp.configManagePersonCompany.home.createOrEditLabel"
-      >
-        Créer ou éditer un Person Company
-      </h2>
+<div class="person-company-page d-flex justify-content-center py-4">
+  <div class="person-company-card card shadow-sm w-100" style="max-width: 900px">
+    <!-- En-tête : design calqué sur contact-list (bg-primary, texte blanc, padding) -->
+    <div
+      class="card-header bg-primary text-white d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-2"
+    >
+      <div class="page-title">
+        <h1 class="mb-0">Créer / Éditer un contact</h1>
+        <small class="text-white-75">Informations du contact et liaison avec la société</small>
+      </div>
 
-      <div>
+      <!-- Header actions: bouton Retour -->
+      <div class="header-actions mt-2 mt-md-0">
+        <button type="button" class="btn btn-light btn-animated" (click)="previousState()" aria-label="Retour" title="Retour">
+          <fa-icon icon="arrow-left" class="me-1"></fa-icon> Retour
+        </button>
+      </div>
+    </div>
+
+    <div class="card-body">
+      <form id="personForm" name="editForm" role="form" novalidate (ngSubmit)="save()" [formGroup]="editForm">
         <jhi-alert-error></jhi-alert-error>
 
-        <div class="row mb-3" *ngIf="editForm.controls.id.value !== null">
-          <label class="form-label" jhiTranslate="correspCareApp.configManagePersonCompany.id" for="field_id">Id</label>
-          <input type="number" class="form-control" name="id" id="field_id" data-cy="id" formControlName="id" [readonly]="true" />
+        <div *ngIf="errorMessage" class="alert alert-danger" role="alert">
+          {{ errorMessage }}
         </div>
 
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.configManagePersonCompany.nom" for="field_nom">Nom</label>
-          <input type="text" class="form-control" name="nom" id="field_nom" data-cy="nom" formControlName="nom" />
-          <div *ngIf="editForm.get('nom')!.invalid && (editForm.get('nom')!.dirty || editForm.get('nom')!.touched)">
-            <small class="form-text text-danger" *ngIf="editForm.get('nom')?.errors?.required" jhiTranslate="entity.validation.required">
-              Ce champ est obligatoire.
-            </small>
+        <div class="row gx-3 gy-3">
+          <!-- Left column -->
+          <div class="col-12 col-md-6">
+            <div class="form-group">
+              <label class="form-label" jhiTranslate="correspCareApp.configManagePersonCompany.nom" for="field_nom">Nom *</label>
+              <input
+                type="text"
+                class="form-control form-control-lg"
+                name="nom"
+                id="field_nom"
+                data-cy="nom"
+                formControlName="nom"
+                placeholder="Nom du contact"
+                aria-required="true"
+                autofocus
+              />
+              <div
+                class="invalid-feedback d-block"
+                *ngIf="editForm.get('nom')!.invalid && (editForm.get('nom')!.dirty || editForm.get('nom')!.touched)"
+              >
+                <small *ngIf="editForm.get('nom')?.errors?.required" jhiTranslate="entity.validation.required"
+                  >Ce champ est obligatoire.</small
+                >
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" jhiTranslate="correspCareApp.configManagePersonCompany.pays" for="field_pays">Pays</label>
+              <input
+                type="text"
+                class="form-control"
+                name="pays"
+                id="field_pays"
+                data-cy="pays"
+                formControlName="pays"
+                placeholder="Ex: Tunisie"
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" jhiTranslate="correspCareApp.configManagePersonCompany.adresse" for="field_adresse">Adresse</label>
+              <input
+                type="text"
+                class="form-control"
+                name="adresse"
+                id="field_adresse"
+                data-cy="adresse"
+                formControlName="adresse"
+                placeholder="Adresse postale"
+              />
+            </div>
+          </div>
+
+          <!-- Right column -->
+          <div class="col-12 col-md-6">
+            <div class="form-group">
+              <label class="form-label" jhiTranslate="correspCareApp.configManagePersonCompany.tel" for="field_tel">Tel</label>
+              <input
+                type="text"
+                class="form-control"
+                name="tel"
+                id="field_tel"
+                data-cy="tel"
+                formControlName="tel"
+                placeholder="+216 99 999 999"
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" jhiTranslate="correspCareApp.configManagePersonCompany.fax" for="field_fax">Fax</label>
+              <input type="text" class="form-control" name="fax" id="field_fax" data-cy="fax" formControlName="fax" placeholder="Fax" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" jhiTranslate="correspCareApp.configManagePersonCompany.email" for="field_email">Email</label>
+              <input
+                type="email"
+                class="form-control"
+                name="email"
+                id="field_email"
+                data-cy="email"
+                formControlName="email"
+                placeholder="email@exemple.com"
+              />
+            </div>
+          </div>
+
+          <!-- Full width controls -->
+          <div class="col-12">
+            <div class="row gx-3">
+              <div class="col-12 col-md-6">
+                <div class="form-group">
+                  <label class="form-label" jhiTranslate="correspCareApp.configManagePersonCompany.whatsapp" for="field_whatsapp"
+                    >Whatsapp</label
+                  >
+                  <input
+                    type="text"
+                    class="form-control"
+                    name="whatsapp"
+                    id="field_whatsapp"
+                    data-cy="whatsapp"
+                    formControlName="whatsapp"
+                    placeholder="+216 99 999 999"
+                  />
+                </div>
+              </div>
+
+              <!-- Etat : bouton toggle group (sans traduction) -->
+              <div class="col-12 col-md-6">
+                <div class="form-group">
+                  <label class="form-label" for="field_etat">Etat</label>
+
+                  <div class="btn-group w-100" role="group" aria-label="Etat">
+                    <button
+                      type="button"
+                      class="btn btn-animated"
+                      *ngFor="let opt of usualStatusOptions"
+                      [ngClass]="{
+                        'btn-primary': editForm.get('etat')?.value === opt.value,
+                        'btn-outline-secondary': editForm.get('etat')?.value !== opt.value
+                      }"
+                      (click)="editForm.get('etat')?.setValue(opt.value)"
+                      [attr.aria-pressed]="editForm.get('etat')?.value === opt.value"
+                      [attr.aria-label]="'etat-' + opt.value"
+                    >
+                      {{ opt.label }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- contactCompanyId (inchangable) -->
+          <div class="col-12">
+            <div class="form-group readonly-field d-flex align-items-center justify-content-between">
+              <div>
+                <label class="form-label mb-1" for="field_contactCompanyId">Contact Company</label>
+                <div class="d-flex align-items-center gap-2">
+                  <input
+                    type="number"
+                    class="form-control form-control-plaintext readonly-input"
+                    id="field_contactCompanyId"
+                    data-cy="contactCompanyId"
+                    formControlName="contactCompanyId"
+                    readonly
+                    [disabled]="true"
+                    aria-readonly="true"
+                  />
+                  <span class="badge company-badge" *ngIf="editForm.get('contactCompanyId')?.value">
+                    <fa-icon icon="building" class="me-1"></fa-icon>
+                    {{ editForm.get('contactCompanyId')?.value }}
+                    <small class="ms-2 text-muted">Liaison</small>
+                  </span>
+                </div>
+                <small class="form-text text-muted">Le lien vers la société est verrouillé et ne peut pas être modifié ici.</small>
+              </div>
+
+              <div class="d-none d-md-block text-end">
+                <a
+                  *ngIf="editForm.get('contactCompanyId')?.value"
+                  class="btn btn-sm btn-outline-primary btn-animated"
+                  [routerLink]="['/contact-company', editForm.get('contactCompanyId')?.value, 'view']"
+                  title="Voir la société liée"
+                >
+                  <fa-icon icon="eye"></fa-icon>&nbsp;Voir la société
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- id (readonly) -->
+          <div class="col-12" *ngIf="editForm.controls.id.value !== null">
+            <div class="form-group">
+              <label class="form-label" jhiTranslate="correspCareApp.configManagePersonCompany.id" for="field_id">Id</label>
+              <input
+                type="number"
+                class="form-control form-control-sm"
+                name="id"
+                id="field_id"
+                data-cy="id"
+                formControlName="id"
+                readonly
+                [disabled]="true"
+              />
+            </div>
           </div>
         </div>
 
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.configManagePersonCompany.pays" for="field_pays">Pays</label>
-          <input type="text" class="form-control" name="pays" id="field_pays" data-cy="pays" formControlName="pays" />
+        <!-- Barre d'actions (bas) : Annuler + Sauvegarder côte à côte -->
+        <div class="actions-row mt-4 d-flex justify-content-end gap-2">
+          <button type="button" id="cancel-save" class="btn btn-outline-secondary btn-animated" (click)="previousState()">
+            <fa-icon icon="ban"></fa-icon>&nbsp;<span jhiTranslate="entity.action.cancel">Annuler</span>
+          </button>
+
+          <button
+            type="submit"
+            id="save-entity"
+            data-cy="entityCreateSaveButton"
+            [disabled]="editForm.invalid || isSaving"
+            class="btn btn-primary btn-animated"
+          >
+            <fa-icon icon="save"></fa-icon>&nbsp;<span jhiTranslate="entity.action.save">Sauvegarder</span>
+          </button>
         </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.configManagePersonCompany.adresse" for="field_adresse">Adresse</label>
-          <input type="text" class="form-control" name="adresse" id="field_adresse" data-cy="adresse" formControlName="adresse" />
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.configManagePersonCompany.tel" for="field_tel">Tel</label>
-          <input type="text" class="form-control" name="tel" id="field_tel" data-cy="tel" formControlName="tel" />
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.configManagePersonCompany.fax" for="field_fax">Fax</label>
-          <input type="text" class="form-control" name="fax" id="field_fax" data-cy="fax" formControlName="fax" />
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.configManagePersonCompany.email" for="field_email">Email</label>
-          <input type="text" class="form-control" name="email" id="field_email" data-cy="email" formControlName="email" />
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.configManagePersonCompany.whatsapp" for="field_whatsapp">Whatsapp</label>
-          <input type="text" class="form-control" name="whatsapp" id="field_whatsapp" data-cy="whatsapp" formControlName="whatsapp" />
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.configManagePersonCompany.etat" for="field_etat">Etat</label>
-          <select class="form-control" name="etat" formControlName="etat" id="field_etat" data-cy="etat">
-            <option [ngValue]="null">{{ 'correspCareApp.UsualStatus.null' | translate }}</option>
-            <option *ngFor="let usualStatus of usualStatusValues" [value]="usualStatus">
-              {{ 'correspCareApp.UsualStatus.' + usualStatus | translate }}
-            </option>
-          </select>
-        </div>
-      </div>
-
-      <div>
-        <button type="button" id="cancel-save" data-cy="entityCreateCancelButton" class="btn btn-secondary" (click)="previousState()">
-          <fa-icon icon="ban"></fa-icon>&nbsp;<span jhiTranslate="entity.action.cancel">Annuler</span>
-        </button>
-
-        <button
-          type="submit"
-          id="save-entity"
-          data-cy="entityCreateSaveButton"
-          [disabled]="editForm.invalid || isSaving"
-          class="btn btn-primary"
-        >
-          <fa-icon icon="save"></fa-icon>&nbsp;<span jhiTranslate="entity.action.save">Sauvegarder</span>
-        </button>
-      </div>
-    </form>
+      </form>
+    </div>
   </div>
 </div>

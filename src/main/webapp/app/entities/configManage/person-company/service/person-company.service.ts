@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpResponse } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
+import { switchMap, map, catchError } from 'rxjs/operators';
 
 import { isPresent } from 'app/core/util/operators';
 import { ApplicationConfigService } from 'app/core/config/application-config.service';
@@ -15,20 +16,108 @@ export type EntityArrayResponseType = HttpResponse<IPersonCompany[]>;
 @Injectable({ providedIn: 'root' })
 export class PersonCompanyService {
   protected resourceUrl = this.applicationConfigService.getEndpointFor('api/person-companies', 'configmanage');
+  // endpoint présumé pour les contact-companies (utilisé pour la validation côté client)
+  protected contactResourceUrl = this.applicationConfigService.getEndpointFor('api/contact-companies', 'configmanage');
 
   constructor(protected http: HttpClient, protected applicationConfigService: ApplicationConfigService) {}
 
+  /**
+   * -----------------------------------------
+   * Anciennes méthodes (gardées en commentaire)
+   * -----------------------------------------
+   */
+
+  // create(personCompany: NewPersonCompany): Observable<EntityResponseType> {
+  //   return this.http.post<IPersonCompany>(this.resourceUrl, personCompany, { observe: 'response' });
+  // }
+  //
+  // update(personCompany: IPersonCompany): Observable<EntityResponseType> {
+  //   return this.http.put<IPersonCompany>(`${this.resourceUrl}/${this.getPersonCompanyIdentifier(personCompany)}`, personCompany, {
+  //     observe: 'response',
+  //   });
+  // }
+  //
+  // partialUpdate(personCompany: PartialUpdatePersonCompany): Observable<EntityResponseType> {
+  //   return this.http.patch<IPersonCompany>(`${this.resourceUrl}/${this.getPersonCompanyIdentifier(personCompany)}`, personCompany, {
+  //     observe: 'response',
+  //   });
+  // }
+
+  /**
+   * -----------------------------------------
+   * Nouvelles méthodes (avec validation contactCompanyId)
+   * -----------------------------------------
+   */
+
+  /**
+   * Vérifie côté client l'existence d'un ContactCompany par son id.
+   * Retourne Observable<boolean> (true si existe, false si 404).
+   * Si l'erreur n'est pas un 404, la propage.
+   */
+  protected checkContactExists(contactCompanyId: number): Observable<boolean> {
+    if (contactCompanyId == null) {
+      return of(true);
+    }
+    return this.http.get<any>(`${this.contactResourceUrl}/${contactCompanyId}`, { observe: 'response' }).pipe(
+      map(() => true),
+      catchError(err => {
+        if (err && err.status === 404) {
+          return of(false);
+        }
+        return throwError(() => err);
+      })
+    );
+  }
+
   create(personCompany: NewPersonCompany): Observable<EntityResponseType> {
+    const ccId = (personCompany as any).contactCompanyId as number | undefined | null;
+    if (ccId != null) {
+      return this.checkContactExists(ccId).pipe(
+        switchMap(exists => {
+          if (!exists) {
+            return throwError(() => new Error('ContactCompany not found with id: ' + ccId));
+          }
+          return this.http.post<IPersonCompany>(this.resourceUrl, personCompany, { observe: 'response' });
+        })
+      );
+    }
+    // si pas de contactCompanyId, on envoie directement
     return this.http.post<IPersonCompany>(this.resourceUrl, personCompany, { observe: 'response' });
   }
 
   update(personCompany: IPersonCompany): Observable<EntityResponseType> {
+    const ccId = (personCompany as any).contactCompanyId as number | undefined | null;
+    if (ccId != null) {
+      return this.checkContactExists(ccId).pipe(
+        switchMap(exists => {
+          if (!exists) {
+            return throwError(() => new Error('ContactCompany not found with id: ' + ccId));
+          }
+          return this.http.put<IPersonCompany>(`${this.resourceUrl}/${this.getPersonCompanyIdentifier(personCompany)}`, personCompany, {
+            observe: 'response',
+          });
+        })
+      );
+    }
     return this.http.put<IPersonCompany>(`${this.resourceUrl}/${this.getPersonCompanyIdentifier(personCompany)}`, personCompany, {
       observe: 'response',
     });
   }
 
   partialUpdate(personCompany: PartialUpdatePersonCompany): Observable<EntityResponseType> {
+    const ccId = (personCompany as any).contactCompanyId as number | undefined | null;
+    if (ccId != null) {
+      return this.checkContactExists(ccId).pipe(
+        switchMap(exists => {
+          if (!exists) {
+            return throwError(() => new Error('ContactCompany not found with id: ' + ccId));
+          }
+          return this.http.patch<IPersonCompany>(`${this.resourceUrl}/${this.getPersonCompanyIdentifier(personCompany)}`, personCompany, {
+            observe: 'response',
+          });
+        })
+      );
+    }
     return this.http.patch<IPersonCompany>(`${this.resourceUrl}/${this.getPersonCompanyIdentifier(personCompany)}`, personCompany, {
       observe: 'response',
     });

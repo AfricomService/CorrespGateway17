@@ -86,6 +86,8 @@
                   <button class="btn btn-link p-1 action-btn" [routerLink]="['/contact-company', c.id, 'edit']" title="Modifier">
                     <fa-icon icon="pencil-alt"></fa-icon>
                   </button>
+
+                  <!-- Bouton : ouvre le modal de confirmation existant -->
                   <button class="btn btn-link p-1 text-danger action-btn" (click)="delete(c)" title="Supprimer">
                     <fa-icon icon="trash"></fa-icon>
                   </button>
@@ -119,11 +121,16 @@
                 </h6>
               </div>
 
-              <!-- Bouton Ajouter (sans fonctionnalité) -->
+              <!-- Bouton Ajouter -->
               <div>
-                <button type="button" class="btn btn-sm btn-primary btn-animated" title="Ajouter un contact (à implémenter)">
+                <a
+                  class="btn btn-sm btn-primary btn-animated"
+                  title="Ajouter un contact"
+                  [routerLink]="['/person-company', 'new']"
+                  [queryParams]="{ contactCompanyId: c.id }"
+                >
                   <fa-icon icon="plus" class="me-1"></fa-icon> Ajouter
-                </button>
+                </a>
               </div>
             </div>
 
@@ -139,13 +146,13 @@
                     </div>
                   </div>
                   <div class="ms-auto person-actions">
-                    <button class="btn btn-sm btn-link action-btn" title="Voir la personne">
+                    <a class="btn btn-sm btn-link action-btn" [routerLink]="['/person-company', p.id, 'view']" title="Voir la personne">
                       <fa-icon icon="eye"></fa-icon>
-                    </button>
-                    <button class="btn btn-sm btn-link action-btn" title="Éditer la personne">
+                    </a>
+                    <a class="btn btn-sm btn-link action-btn" [routerLink]="['/person-company', p.id, 'edit']" title="Éditer la personne">
                       <fa-icon icon="pencil-alt"></fa-icon>
-                    </button>
-                    <button class="btn btn-sm btn-link text-danger action-btn" title="Supprimer la personne">
+                    </a>
+                    <button class="btn btn-sm btn-link text-danger action-btn" (click)="deletePerson(p)" title="Supprimer la personne">
                       <fa-icon icon="trash"></fa-icon>
                     </button>
                   </div>

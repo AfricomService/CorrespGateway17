@@ -1,3 +1,5 @@
+// src/main/webapp/app/entities/configManage/contact-company/delete/contact-company-delete-dialog.component.ts
+
 import { Component } from '@angular/core';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 
@@ -17,9 +19,20 @@ export class ContactCompanyDeleteDialogComponent {
     this.activeModal.dismiss();
   }
 
+  /**
+   * ⚠️ IMPORTANT
+   * Ici on NE SUPPRIME PAS physiquement.
+   * On applique la logique métier : markAsDelated (soft delete)
+   */
   confirmDelete(id: number): void {
-    this.contactCompanyService.delete(id).subscribe(() => {
-      this.activeModal.close(ITEM_DELETED_EVENT);
+    this.contactCompanyService.markAsDelated(id).subscribe({
+      next: () => {
+        // On garde le même event pour recharger la liste
+        this.activeModal.close(ITEM_DELETED_EVENT);
+      },
+      error: err => {
+        console.error('Erreur lors du changement d’état (delated)', err);
+      },
     });
   }
 }
