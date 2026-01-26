@@ -8,13 +8,6 @@
         <h1 class="mb-0">Créer / Éditer un contact</h1>
         <small class="text-white-75">Informations du contact et liaison avec la société</small>
       </div>
-
-      <!-- Header actions: bouton Retour -->
-      <div class="header-actions mt-2 mt-md-0">
-        <button type="button" class="btn btn-light btn-animated" (click)="previousState()" aria-label="Retour" title="Retour">
-          <fa-icon icon="arrow-left" class="me-1"></fa-icon> Retour
-        </button>
-      </div>
     </div>
 
     <div class="card-body">
@@ -82,15 +75,7 @@
           <div class="col-12 col-md-6">
             <div class="form-group">
               <label class="form-label" jhiTranslate="correspCareApp.configManagePersonCompany.tel" for="field_tel">Tel</label>
-              <input
-                type="text"
-                class="form-control"
-                name="tel"
-                id="field_tel"
-                data-cy="tel"
-                formControlName="tel"
-                placeholder="+216 99 999 999"
-              />
+              <input type="text" class="form-control" name="tel" id="field_tel" data-cy="tel" formControlName="tel" placeholder="tel" />
             </div>
 
             <div class="form-group">
@@ -127,56 +112,38 @@
                     id="field_whatsapp"
                     data-cy="whatsapp"
                     formControlName="whatsapp"
-                    placeholder="+216 99 999 999"
+                    placeholder="whatsapp"
                   />
                 </div>
               </div>
 
-              <!-- Etat : bouton toggle group (sans traduction) -->
-              <div class="col-12 col-md-6">
-                <div class="form-group">
-                  <label class="form-label" for="field_etat">Etat</label>
-
-                  <div class="btn-group w-100" role="group" aria-label="Etat">
-                    <button
-                      type="button"
-                      class="btn btn-animated"
-                      *ngFor="let opt of usualStatusOptions"
-                      [ngClass]="{
-                        'btn-primary': editForm.get('etat')?.value === opt.value,
-                        'btn-outline-secondary': editForm.get('etat')?.value !== opt.value
-                      }"
-                      (click)="editForm.get('etat')?.setValue(opt.value)"
-                      [attr.aria-pressed]="editForm.get('etat')?.value === opt.value"
-                      [attr.aria-label]="'etat-' + opt.value"
-                    >
-                      {{ opt.label }}
-                    </button>
-                  </div>
-                </div>
-              </div>
+              <!-- NOTE: Le bloc 'Etat' a été retiré -->
             </div>
           </div>
 
-          <!-- contactCompanyId (inchangable) -->
+          <!-- contactCompanyId (inchangable) : on garde l'id caché dans le form, on affiche le NOM -->
           <div class="col-12">
             <div class="form-group readonly-field d-flex align-items-center justify-content-between">
               <div>
-                <label class="form-label mb-1" for="field_contactCompanyId">Contact Company</label>
+                <label class="form-label mb-1" for="field_contactCompanyId">Société</label>
+
+                <!-- hidden input pour garder contactCompanyId dans le form -->
+                <input type="hidden" id="field_contactCompanyId" formControlName="contactCompanyId" />
+
                 <div class="d-flex align-items-center gap-2">
+                  <!-- affichage du NOM (readonly) -->
                   <input
-                    type="number"
+                    type="text"
                     class="form-control form-control-plaintext readonly-input"
-                    id="field_contactCompanyId"
-                    data-cy="contactCompanyId"
-                    formControlName="contactCompanyId"
+                    id="field_contactCompanyName"
+                    data-cy="contactCompanyName"
+                    [value]="contactCompanyName || ''"
                     readonly
-                    [disabled]="true"
                     aria-readonly="true"
                   />
-                  <span class="badge company-badge" *ngIf="editForm.get('contactCompanyId')?.value">
+                  <span class="badge company-badge" *ngIf="contactCompanyName">
                     <fa-icon icon="building" class="me-1"></fa-icon>
-                    {{ editForm.get('contactCompanyId')?.value }}
+                    {{ contactCompanyName }}
                     <small class="ms-2 text-muted">Liaison</small>
                   </span>
                 </div>
@@ -196,22 +163,7 @@
             </div>
           </div>
 
-          <!-- id (readonly) -->
-          <div class="col-12" *ngIf="editForm.controls.id.value !== null">
-            <div class="form-group">
-              <label class="form-label" jhiTranslate="correspCareApp.configManagePersonCompany.id" for="field_id">Id</label>
-              <input
-                type="number"
-                class="form-control form-control-sm"
-                name="id"
-                id="field_id"
-                data-cy="id"
-                formControlName="id"
-                readonly
-                [disabled]="true"
-              />
-            </div>
-          </div>
+          <!-- NOTE: Le champ 'Id' n'est plus affiché dans l'UI -->
         </div>
 
         <!-- Barre d'actions (bas) : Annuler + Sauvegarder côte à côte -->

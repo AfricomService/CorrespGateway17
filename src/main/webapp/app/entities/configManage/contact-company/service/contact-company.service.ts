@@ -1,4 +1,3 @@
-// src/main/webapp/app/entities/configManage/contact-company/service/contact-company.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -60,6 +59,15 @@ export class ContactCompanyService {
   }
 
   /**
+   * Toggle activation for a ContactCompany (Actif <-> Desactivated).
+   * Backend endpoint: PUT /api/contact-companies/{id}/toggle-activation
+   * returns the updated ContactCompany DTO.
+   */
+  toggleActivation(id: number): Observable<EntityResponseType> {
+    return this.http.put<IContactCompany>(`${this.resourceUrl}/${id}/toggle-activation`, null, { observe: 'response' });
+  }
+
+  /**
    * Récupère la liste des ContactCompany avec la clé `personCompanies` jointe.
    * Le backend renvoie un tableau d'objets où chaque objet contient les champs du ContactCompany
    * et la propriété personCompanies (liste).
@@ -67,6 +75,29 @@ export class ContactCompanyService {
   queryWithPersons(req?: any): Observable<EntityArrayWithPersonsResponseType> {
     const options = createRequestOption(req);
     return this.http.get<IContactCompanyWithPersons[]>(this.resourceUrl, { params: options, observe: 'response' });
+  }
+
+  /**
+   * NOUVEAU : appelle l'endpoint de recherche backend :
+   * GET /api/contact-companies/search?query=...&includeDelated=... + pagination params
+   */
+  search(query: string, includeDelated = false, req?: any): Observable<EntityArrayResponseType> {
+    const options = createRequestOption(req);
+    // createRequestOption retourne HttpParams ; on y ajoute query et includeDelated
+    let params = options;
+    params = params.set('query', query);
+    params = params.set('includeDelated', String(includeDelated));
+    return this.http.get<IContactCompany[]>(`${this.resourceUrl}/search`, { params, observe: 'response' });
+  }
+
+  /**
+   * NOUVEAU : récupérer toutes les personnes (non paginées) d'une société
+   * GET /api/contact-companies/{id}/person-companies/all
+   */
+  getAllPersonCompanies(contactCompanyId: number): Observable<HttpResponse<IPersonCompany[]>> {
+    return this.http.get<IPersonCompany[]>(`${this.resourceUrl}/${contactCompanyId}/person-companies/all`, {
+      observe: 'response',
+    });
   }
 
   getContactCompanyIdentifier(contactCompany: Pick<IContactCompany, 'id'>): number {

@@ -7,6 +7,7 @@ import { isPresent } from 'app/core/util/operators';
 import { ApplicationConfigService } from 'app/core/config/application-config.service';
 import { createRequestOption } from 'app/core/request/request-util';
 import { IPersonCompany, NewPersonCompany } from '../person-company.model';
+import { IContactCompany } from 'app/entities/configManage/contact-company/contact-company.model';
 
 export type PartialUpdatePersonCompany = Partial<IPersonCompany> & Pick<IPersonCompany, 'id'>;
 
@@ -20,34 +21,6 @@ export class PersonCompanyService {
   protected contactResourceUrl = this.applicationConfigService.getEndpointFor('api/contact-companies', 'configmanage');
 
   constructor(protected http: HttpClient, protected applicationConfigService: ApplicationConfigService) {}
-
-  /**
-   * -----------------------------------------
-   * Anciennes méthodes (gardées en commentaire)
-   * -----------------------------------------
-   */
-
-  // create(personCompany: NewPersonCompany): Observable<EntityResponseType> {
-  //   return this.http.post<IPersonCompany>(this.resourceUrl, personCompany, { observe: 'response' });
-  // }
-  //
-  // update(personCompany: IPersonCompany): Observable<EntityResponseType> {
-  //   return this.http.put<IPersonCompany>(`${this.resourceUrl}/${this.getPersonCompanyIdentifier(personCompany)}`, personCompany, {
-  //     observe: 'response',
-  //   });
-  // }
-  //
-  // partialUpdate(personCompany: PartialUpdatePersonCompany): Observable<EntityResponseType> {
-  //   return this.http.patch<IPersonCompany>(`${this.resourceUrl}/${this.getPersonCompanyIdentifier(personCompany)}`, personCompany, {
-  //     observe: 'response',
-  //   });
-  // }
-
-  /**
-   * -----------------------------------------
-   * Nouvelles méthodes (avec validation contactCompanyId)
-   * -----------------------------------------
-   */
 
   /**
    * Vérifie côté client l'existence d'un ContactCompany par son id.
@@ -69,56 +42,79 @@ export class PersonCompanyService {
     );
   }
 
+  /**
+   * Récupère la ContactCompany complète par son id.
+   * Retourne une erreur si 404 (le caller gère l'affichage).
+   */
+  getContactCompany(contactCompanyId: number): Observable<IContactCompany> {
+    return this.http.get<IContactCompany>(`${this.contactResourceUrl}/${contactCompanyId}`);
+  }
+
+  /**
+   * Avant d'envoyer au back: retirer systématiquement la propriété 'etat'
+   * (le backend gère la valeur par défaut/soft-delete).
+   */
+  protected stripEtat<T extends object>(payload: T): T {
+    const copy: any = { ...payload };
+    if ('etat' in copy) {
+      delete copy.etat;
+    }
+    return copy as T;
+  }
+
   create(personCompany: NewPersonCompany): Observable<EntityResponseType> {
     const ccId = (personCompany as any).contactCompanyId as number | undefined | null;
+    const sendPayload = this.stripEtat(personCompany);
     if (ccId != null) {
       return this.checkContactExists(ccId).pipe(
         switchMap(exists => {
           if (!exists) {
             return throwError(() => new Error('ContactCompany not found with id: ' + ccId));
           }
-          return this.http.post<IPersonCompany>(this.resourceUrl, personCompany, { observe: 'response' });
+          return this.http.post<IPersonCompany>(this.resourceUrl, sendPayload, { observe: 'response' });
         })
       );
     }
     // si pas de contactCompanyId, on envoie directement
-    return this.http.post<IPersonCompany>(this.resourceUrl, personCompany, { observe: 'response' });
+    return this.http.post<IPersonCompany>(this.resourceUrl, sendPayload, { observe: 'response' });
   }
 
   update(personCompany: IPersonCompany): Observable<EntityResponseType> {
     const ccId = (personCompany as any).contactCompanyId as number | undefined | null;
+    const sendPayload = this.stripEtat(personCompany);
     if (ccId != null) {
       return this.checkContactExists(ccId).pipe(
         switchMap(exists => {
           if (!exists) {
             return throwError(() => new Error('ContactCompany not found with id: ' + ccId));
           }
-          return this.http.put<IPersonCompany>(`${this.resourceUrl}/${this.getPersonCompanyIdentifier(personCompany)}`, personCompany, {
+          return this.http.put<IPersonCompany>(`${this.resourceUrl}/${this.getPersonCompanyIdentifier(personCompany)}`, sendPayload, {
             observe: 'response',
           });
         })
       );
     }
-    return this.http.put<IPersonCompany>(`${this.resourceUrl}/${this.getPersonCompanyIdentifier(personCompany)}`, personCompany, {
+    return this.http.put<IPersonCompany>(`${this.resourceUrl}/${this.getPersonCompanyIdentifier(personCompany)}`, sendPayload, {
       observe: 'response',
     });
   }
 
   partialUpdate(personCompany: PartialUpdatePersonCompany): Observable<EntityResponseType> {
     const ccId = (personCompany as any).contactCompanyId as number | undefined | null;
+    const sendPayload = this.stripEtat(personCompany as object);
     if (ccId != null) {
       return this.checkContactExists(ccId).pipe(
         switchMap(exists => {
           if (!exists) {
             return throwError(() => new Error('ContactCompany not found with id: ' + ccId));
           }
-          return this.http.patch<IPersonCompany>(`${this.resourceUrl}/${this.getPersonCompanyIdentifier(personCompany)}`, personCompany, {
+          return this.http.patch<IPersonCompany>(`${this.resourceUrl}/${this.getPersonCompanyIdentifier(personCompany)}`, sendPayload, {
             observe: 'response',
           });
         })
       );
     }
-    return this.http.patch<IPersonCompany>(`${this.resourceUrl}/${this.getPersonCompanyIdentifier(personCompany)}`, personCompany, {
+    return this.http.patch<IPersonCompany>(`${this.resourceUrl}/${this.getPersonCompanyIdentifier(personCompany)}`, sendPayload, {
       observe: 'response',
     });
   }
@@ -134,6 +130,25 @@ export class PersonCompanyService {
 
   delete(id: number): Observable<HttpResponse<{}>> {
     return this.http.delete(`${this.resourceUrl}/${id}`, { observe: 'response' });
+  }
+
+  /**
+   * PATCH /api/person-companies/{id}/delate
+   * Marque la personne comme "Delated" (soft-delete via changement d'état).
+   * Retourne le PersonCompany mis à jour.
+   */
+  delate(id: number): Observable<EntityResponseType> {
+    // Envoi d'un body vide {} pour patch (le backend ne nécessite pas de payload)
+    return this.http.patch<IPersonCompany>(`${this.resourceUrl}/${id}/delate`, {}, { observe: 'response' });
+  }
+
+  /**
+   * PATCH /api/person-companies/{id}/toggle-etat
+   * Bascule l'état Actif <-> Desactivated pour la personne.
+   * Retourne le PersonCompany mis à jour.
+   */
+  toggleEtat(id: number): Observable<EntityResponseType> {
+    return this.http.patch<IPersonCompany>(`${this.resourceUrl}/${id}/toggle-etat`, {}, { observe: 'response' });
   }
 
   getPersonCompanyIdentifier(personCompany: Pick<IPersonCompany, 'id'>): number {

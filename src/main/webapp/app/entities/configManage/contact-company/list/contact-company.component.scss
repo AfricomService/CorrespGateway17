@@ -228,6 +228,15 @@
       .small {
         color: #6b7280;
       }
+
+      /* Badge d'état de la personne */
+      small.badge {
+        font-size: 0.65rem;
+        padding: 0.25rem 0.45rem;
+        line-height: 1;
+        border-radius: 0.45rem;
+        display: inline-block;
+      }
     }
 
     .person-actions button {
@@ -237,6 +246,18 @@
     .person-actions button:hover {
       transform: translateY(-2px);
       color: #111827;
+    }
+
+    /* style pour personne "Delated" (soft-deleted) */
+    .person-item.delated {
+      opacity: 0.6;
+      background: rgba(255, 245, 245, 0.6);
+    }
+
+    .person-item.delated .person-actions a,
+    .person-item.delated .person-actions button {
+      opacity: 0.6;
+      pointer-events: none;
     }
   }
 

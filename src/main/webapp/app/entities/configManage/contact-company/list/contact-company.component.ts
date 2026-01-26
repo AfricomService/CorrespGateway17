@@ -1,8 +1,8 @@
-// src/main/webapp/app/entities/configManage/contact-company/list/contact-company.component.ts
 import { Component, OnInit } from '@angular/core';
 import { HttpHeaders } from '@angular/common/http';
 import { ActivatedRoute, Data, ParamMap, Router } from '@angular/router';
-import { combineLatest, filter, Observable, switchMap, tap } from 'rxjs';
+import { combineLatest, Observable, forkJoin, of } from 'rxjs';
+import { filter, switchMap, tap, map, catchError } from 'rxjs/operators';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 
 import { IContactCompany, IContactCompanyWithPersons } from 'app/entities/configManage/contact-company/contact-company.model';
@@ -98,10 +98,10 @@ export class ContactCompanyComponent implements OnInit {
   }
 
   /**
-   * Supprimer une personne (PersonCompany)
-   * - confirme la suppression
-   * - appelle l'API via PersonCompanyService.delete(id)
-   * - met à jour l'affichage localement en retirant la personne du tableau
+   * Supprimer (soft-delete) une personne (PersonCompany) via l'API delate
+   * - confirme la suppression (soft)
+   * - appelle l'API via PersonCompanyService.delate(id)
+   * - met à jour localement la personne : etat = 'Delated'
    */
   deletePerson(person: IPersonCompany): void {
     if (!person || person.id == null) {
@@ -109,25 +109,184 @@ export class ContactCompanyComponent implements OnInit {
       return;
     }
 
-    if (!confirm('Confirmer la suppression du contact ?')) {
+    // si déjà delated, rien à faire
+    if (person.etat === 'Delated') {
+      alert('Ce contact est déjà supprimé.');
       return;
     }
 
-    this.personCompanyService.delete(person.id).subscribe({
-      next: () => {
-        // Supprimer la personne du tableau local pour un feedback instantané
+    const name = person.nom ?? '—';
+    // Message de confirmation qui affiche le nom de la personne
+    if (!confirm(`Confirmer la suppression du contact avec le nom "${name}" ?`)) {
+      return;
+    }
+
+    this.personCompanyService.delate(person.id).subscribe({
+      next: res => {
+        const updated = res.body;
+        if (updated && updated.id != null) {
+          // mettre à jour localement la personne trouvée
+          if (this.contactCompanies && this.contactCompanies.length) {
+            this.contactCompanies = this.contactCompanies.map(c => {
+              if (c.personCompanies && c.personCompanies.length) {
+                c.personCompanies = c.personCompanies.map(p => {
+                  if (p.id === updated.id) {
+                    return { ...p, etat: updated.etat } as IPersonCompany;
+                  }
+                  return p;
+                });
+              }
+              return c;
+            });
+          }
+        } else {
+          // fallback: si aucune réponse body, marquer localement
+          if (this.contactCompanies && this.contactCompanies.length) {
+            this.contactCompanies = this.contactCompanies.map(c => {
+              if (c.personCompanies && c.personCompanies.length) {
+                c.personCompanies = c.personCompanies.map(p => {
+                  if (p.id === person.id) {
+                    return { ...p, etat: 'Delated' } as IPersonCompany;
+                  }
+                  return p;
+                });
+              }
+              return c;
+            });
+          }
+        }
+      },
+      error: err => {
+        console.error('Erreur lors du soft-delete de la personne', err);
+        alert('Erreur lors de la suppression du contact.');
+      },
+    });
+  }
+
+  /**
+   * Bascule l'état (Actif <-> Desactivated) d'une société via l'API toggleActivation.
+   * Met à jour localement la société et ses personnes (conforme à la logique backend).
+   */
+  toggleActivation(contactCompany: ContactWithState): void {
+    if (!contactCompany || contactCompany.id == null) {
+      console.warn('toggleActivation: id manquant', contactCompany);
+      return;
+    }
+
+    // Ne pas permettre si Delated
+    if (contactCompany.etat === 'Delated') {
+      alert("Impossible de modifier l'état d'une société supprimée.");
+      return;
+    }
+
+    const wantTo = contactCompany.etat === 'Actif' ? 'désactiver' : 'activer';
+    if (!confirm(`Confirmer la ${wantTo} de la société "${contactCompany.nom}" ?`)) {
+      return;
+    }
+
+    this.contactCompanyService.toggleActivation(contactCompany.id).subscribe({
+      next: res => {
+        const updated = res.body;
+        if (!updated) {
+          // fallback: recharger la liste
+          this.load();
+          return;
+        }
+
+        // Mettre à jour localement la société (etat)
         if (this.contactCompanies && this.contactCompanies.length) {
           this.contactCompanies = this.contactCompanies.map(c => {
-            if (c.personCompanies && c.personCompanies.length) {
-              c.personCompanies = c.personCompanies.filter(p => p.id !== person.id);
+            if (c.id === updated.id) {
+              // update état
+              const newC: ContactWithState = {
+                ...c,
+                etat: updated.etat,
+              };
+
+              // mettre à jour les personnes locales : si personne non Delated => prendre le même état
+              if (newC.personCompanies && newC.personCompanies.length) {
+                newC.personCompanies = newC.personCompanies.map(p => {
+                  // si personne est Delated, on garde Delated
+                  if (p.etat === 'Delated') {
+                    return p;
+                  }
+                  return { ...p, etat: updated.etat } as IPersonCompany;
+                });
+              }
+
+              return newC;
             }
             return c;
           });
         }
       },
       error: err => {
-        console.error('Erreur suppression personne', err);
-        alert('Erreur lors de la suppression du contact.');
+        console.error("Erreur lors du changement d'état", err);
+        alert("Erreur lors du changement d'état de la société.");
+      },
+    });
+  }
+
+  /**
+   * Bascule l'état Actif <-> Desactivated d'une personne via l'API toggleEtat.
+   * Affiche confirmation et met à jour localement le contact dans la liste.
+   */
+  togglePersonActivation(person: IPersonCompany): void {
+    if (!person || person.id == null) {
+      console.warn('togglePersonActivation: id manquant', person);
+      return;
+    }
+
+    // Ne pas permettre si Delated
+    if (person.etat === 'Delated') {
+      alert("Impossible de modifier l'état d'un contact supprimé.");
+      return;
+    }
+
+    const wantTo = person.etat === 'Actif' ? 'désactiver' : 'activer';
+    if (!confirm(`Confirmer la ${wantTo} du contact "${person.nom ?? '—'}" ?`)) {
+      return;
+    }
+
+    this.personCompanyService.toggleEtat(person.id).subscribe({
+      next: res => {
+        const updated = res.body;
+        if (updated && updated.id != null) {
+          // mettre à jour la personne localement
+          if (this.contactCompanies && this.contactCompanies.length) {
+            this.contactCompanies = this.contactCompanies.map(c => {
+              if (c.personCompanies && c.personCompanies.length) {
+                c.personCompanies = c.personCompanies.map(p => {
+                  if (p.id === updated.id) {
+                    return { ...p, etat: updated.etat } as IPersonCompany;
+                  }
+                  return p;
+                });
+              }
+              return c;
+            });
+          }
+        } else {
+          // fallback: si pas de body, inverse localement Actif <-> Desactivated
+          if (this.contactCompanies && this.contactCompanies.length) {
+            this.contactCompanies = this.contactCompanies.map(c => {
+              if (c.personCompanies && c.personCompanies.length) {
+                c.personCompanies = c.personCompanies.map(p => {
+                  if (p.id === person.id) {
+                    const newEtat = p.etat === 'Actif' ? 'Desactivated' : 'Actif';
+                    return { ...p, etat: newEtat } as IPersonCompany;
+                  }
+                  return p;
+                });
+              }
+              return c;
+            });
+          }
+        }
+      },
+      error: err => {
+        console.error("Erreur lors du changement d'état de la personne", err);
+        alert("Erreur lors du changement d'état du contact.");
       },
     });
   }
@@ -164,6 +323,13 @@ export class ContactCompanyComponent implements OnInit {
     this.totalItems = Number(headers.get(TOTAL_COUNT_RESPONSE_HEADER));
   }
 
+  /**
+   * QUERY BACKEND
+   * - Si searchTerm présent : appelle /api/contact-companies/search, puis pour chaque résultat récupère
+   *   /api/contact-companies/{id}/person-companies/all et combine persons -> renvoie la même structure
+   *   attendue par onResponseSuccess (personCompanies inclus).
+   * - Sinon : comportement historique (queryWithPersons)
+   */
   protected queryBackend(page?: number, predicate?: string, ascending?: boolean): Observable<EntityArrayWithPersonsResponseType> {
     this.isLoading = true;
     const pageToLoad: number = page ?? 1;
@@ -172,6 +338,59 @@ export class ContactCompanyComponent implements OnInit {
       size: this.itemsPerPage,
       sort: this.getSortQueryParam(predicate, ascending),
     };
+
+    // Si searchTerm renseigné -> utiliser l'endpoint search
+    const trimmed = (this.searchTerm ?? '').trim();
+    if (trimmed.length > 0) {
+      // appelle search endpoint
+      return this.contactCompanyService.search(trimmed, false, queryObject).pipe(
+        switchMap(res => {
+          const companies = res.body ?? [];
+          // aucun company trouvé -> renvoyer réponse vide avec mêmes headers
+          if (!companies || companies.length === 0) {
+            return of(
+              new (Object.getPrototypeOf(res).constructor)({
+                body: [] as any[],
+                headers: res.headers,
+                status: res.status,
+              }) as EntityArrayWithPersonsResponseType
+            );
+          }
+
+          // pour chaque company, récupérer person-companies/all
+          const calls = companies.map(c =>
+            this.contactCompanyService.getAllPersonCompanies((c as any).id!).pipe(
+              map(personRes => {
+                const persons = personRes.body ?? [];
+                return { company: c, persons };
+              }),
+              catchError(() => of({ company: c, persons: [] }))
+            )
+          );
+
+          return forkJoin(calls).pipe(
+            map(results => {
+              const combined = results.map(r => {
+                // merge la company retournée avec personCompanies
+                return {
+                  ...(r.company as any),
+                  personCompanies: r.persons,
+                } as IContactCompanyWithPersons;
+              });
+              // retourner HttpResponse similaire pour onResponseSuccess
+              return new (Object.getPrototypeOf(res).constructor)({
+                body: combined,
+                headers: res.headers,
+                status: res.status,
+              }) as EntityArrayWithPersonsResponseType;
+            })
+          );
+        }),
+        tap(() => (this.isLoading = false))
+      );
+    }
+
+    // comportement par défaut (liste with persons fournie par backend)
     return this.contactCompanyService.queryWithPersons(queryObject).pipe(tap(() => (this.isLoading = false)));
   }
 
@@ -198,4 +417,25 @@ export class ContactCompanyComponent implements OnInit {
   }
 
   protected readonly Math = Math;
+
+  /**
+   * Retourne la classe CSS complète pour le badge d'une personne selon son état.
+   * Exemples retournés : 'badge ms-2 bg-success text-white', 'badge ms-2 bg-warning text-dark', 'badge ms-2 bg-danger text-white'
+   */
+  public getPersonBadgeClasses(etat?: string | null): string {
+    if (!etat) {
+      return 'badge ms-2 bg-secondary text-white';
+    }
+
+    switch (etat) {
+      case 'Actif':
+        return 'badge ms-2 bg-success text-white';
+      case 'Desactivated':
+        return 'badge ms-2 bg-warning text-dark';
+      case 'Delated':
+        return 'badge ms-2 bg-danger text-white';
+      default:
+        return 'badge ms-2 bg-secondary text-white';
+    }
+  }
 }

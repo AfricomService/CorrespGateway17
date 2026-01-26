@@ -87,6 +87,19 @@
                     <fa-icon icon="pencil-alt"></fa-icon>
                   </button>
 
+                  <!-- Toggle activation : affichage selon l'état, masqué si Delated -->
+                  <button
+                    *ngIf="c.etat !== 'Delated'"
+                    class="btn btn-sm me-1"
+                    [ngClass]="c.etat === 'Actif' ? 'btn-outline-warning' : 'btn-outline-success'"
+                    (click)="toggleActivation(c)"
+                    [title]="c.etat === 'Actif' ? 'Désactiver' : 'Activer'"
+                    style="margin-right: 6px"
+                  >
+                    <fa-icon icon="power-off" class="me-1"></fa-icon>
+                    <span>{{ c.etat === 'Actif' ? 'Désactiver' : 'Activer' }}</span>
+                  </button>
+
                   <!-- Bouton : ouvre le modal de confirmation existant -->
                   <button class="btn btn-link p-1 text-danger action-btn" (click)="delete(c)" title="Supprimer">
                     <fa-icon icon="trash"></fa-icon>
@@ -136,23 +149,68 @@
 
             <div *ngIf="c.personCompanies && c.personCompanies.length; else noPersonsBlock">
               <ul class="list-unstyled mb-0">
-                <li *ngFor="let p of c.personCompanies" class="person-item d-flex align-items-center py-2">
+                <li
+                  *ngFor="let p of c.personCompanies"
+                  class="person-item d-flex align-items-center py-2"
+                  [ngClass]="{ delated: p.etat === 'Delated' }"
+                >
                   <div class="avatar me-3">{{ p.nom ? p.nom.charAt(0) : '?' }}</div>
                   <div class="person-info">
-                    <div class="fw-semibold">{{ p.nom }}</div>
-                    <div class="small text-muted">
+                    <div class="d-flex align-items-center gap-2">
+                      <div class="fw-semibold">{{ p.nom }}</div>
+
+                      <!-- badge d'état de la personne -->
+                      <small
+                        [attr.aria-label]="'État : ' + (p.etat || '—')"
+                        [class]="getPersonBadgeClasses(p.etat)"
+                        *ngIf="p.etat !== undefined"
+                        >{{ p.etat }}</small
+                      >
+                    </div>
+
+                    <div class="small text-muted mt-1">
                       <fa-icon icon="phone" class="me-1"></fa-icon>{{ p.tel }} &nbsp; • &nbsp;
                       <fa-icon icon="envelope" class="me-1"></fa-icon>{{ p.email }}
                     </div>
                   </div>
-                  <div class="ms-auto person-actions">
-                    <a class="btn btn-sm btn-link action-btn" [routerLink]="['/person-company', p.id, 'view']" title="Voir la personne">
+                  <div class="ms-auto person-actions d-flex align-items-center gap-2">
+                    <a
+                      class="btn btn-sm btn-link action-btn"
+                      [routerLink]="['/person-company', p.id, 'view']"
+                      title="Voir la personne"
+                      [attr.aria-disabled]="p.etat === 'Delated'"
+                    >
                       <fa-icon icon="eye"></fa-icon>
                     </a>
-                    <a class="btn btn-sm btn-link action-btn" [routerLink]="['/person-company', p.id, 'edit']" title="Éditer la personne">
+
+                    <a
+                      class="btn btn-sm btn-link action-btn"
+                      [routerLink]="['/person-company', p.id, 'edit']"
+                      title="Éditer la personne"
+                      [class.disabled]="p.etat === 'Delated'"
+                      [attr.aria-disabled]="p.etat === 'Delated'"
+                    >
                       <fa-icon icon="pencil-alt"></fa-icon>
                     </a>
-                    <button class="btn btn-sm btn-link text-danger action-btn" (click)="deletePerson(p)" title="Supprimer la personne">
+
+                    <!-- Toggle person activation: affiche Activer / Désactiver selon p.etat, masqué si Delated -->
+                    <button
+                      *ngIf="p.etat !== 'Delated'"
+                      class="btn btn-sm"
+                      [ngClass]="p.etat === 'Actif' ? 'btn-outline-warning' : 'btn-outline-success'"
+                      (click)="togglePersonActivation(p)"
+                      [title]="p.etat === 'Actif' ? 'Désactiver' : 'Activer'"
+                    >
+                      <fa-icon icon="power-off" class="me-1"></fa-icon>
+                      <span>{{ p.etat === 'Actif' ? 'Désactiver' : 'Activer' }}</span>
+                    </button>
+
+                    <button
+                      class="btn btn-sm btn-link text-danger action-btn"
+                      (click)="deletePerson(p)"
+                      title="Supprimer la personne (soft-delete)"
+                      [disabled]="p.etat === 'Delated'"
+                    >
                       <fa-icon icon="trash"></fa-icon>
                     </button>
                   </div>

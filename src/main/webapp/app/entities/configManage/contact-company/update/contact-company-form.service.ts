@@ -14,6 +14,7 @@ type PartialWithRequiredKeyOf<T extends { id: unknown }> = Partial<Omit<T, 'id'>
  */
 type ContactCompanyFormGroupInput = IContactCompany | PartialWithRequiredKeyOf<NewContactCompany>;
 
+// Defaults: only id (etat removed)
 type ContactCompanyFormDefaults = Pick<NewContactCompany, 'id'>;
 
 type ContactCompanyFormGroupContent = {
@@ -27,7 +28,7 @@ type ContactCompanyFormGroupContent = {
   fax: FormControl<IContactCompany['fax']>;
   email: FormControl<IContactCompany['email']>;
   webpage: FormControl<IContactCompany['webpage']>;
-  etat: FormControl<IContactCompany['etat']>;
+  // etat removed
 };
 
 export type ContactCompanyFormGroup = FormGroup<ContactCompanyFormGroupContent>;
@@ -58,7 +59,6 @@ export class ContactCompanyFormService {
       fax: new FormControl(contactCompanyRawValue.fax),
       email: new FormControl(contactCompanyRawValue.email),
       webpage: new FormControl(contactCompanyRawValue.webpage),
-      etat: new FormControl(contactCompanyRawValue.etat),
     });
   }
 

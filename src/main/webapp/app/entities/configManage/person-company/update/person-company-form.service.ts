@@ -2,7 +2,6 @@ import { Injectable } from '@angular/core';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 
 import { IPersonCompany, NewPersonCompany } from '../person-company.model';
-import { UsualStatus } from 'app/entities/enumerations/usual-status.model';
 
 /**
  * A partial Type with required key is used as form input.
@@ -15,8 +14,8 @@ type PartialWithRequiredKeyOf<T extends { id: unknown }> = Partial<Omit<T, 'id'>
  */
 type PersonCompanyFormGroupInput = IPersonCompany | PartialWithRequiredKeyOf<NewPersonCompany>;
 
-// Ajouter contactCompanyId et etat aux defaults
-type PersonCompanyFormDefaults = Pick<NewPersonCompany, 'id' | 'contactCompanyId' | 'etat'>;
+// Ajouter contactCompanyId aux defaults (Retiré 'etat')
+type PersonCompanyFormDefaults = Pick<NewPersonCompany, 'id' | 'contactCompanyId'>;
 
 type PersonCompanyFormGroupContent = {
   id: FormControl<IPersonCompany['id'] | NewPersonCompany['id']>;
@@ -27,8 +26,7 @@ type PersonCompanyFormGroupContent = {
   fax: FormControl<IPersonCompany['fax']>;
   email: FormControl<IPersonCompany['email']>;
   whatsapp: FormControl<IPersonCompany['whatsapp']>;
-  etat: FormControl<IPersonCompany['etat']>;
-  // nouveau contrôle typé
+  // contactCompanyId présent mais inchangable dans l'UI
   contactCompanyId: FormControl<IPersonCompany['contactCompanyId'] | NewPersonCompany['contactCompanyId']>;
 };
 
@@ -58,8 +56,7 @@ export class PersonCompanyFormService {
       fax: new FormControl(personCompanyRawValue.fax),
       email: new FormControl(personCompanyRawValue.email),
       whatsapp: new FormControl(personCompanyRawValue.whatsapp),
-      etat: new FormControl(personCompanyRawValue.etat),
-      // ajout du contrôle contactCompanyId
+      // ajout du contrôle contactCompanyId (readonly dans le template)
       contactCompanyId: new FormControl(personCompanyRawValue.contactCompanyId),
     });
   }
@@ -82,8 +79,6 @@ export class PersonCompanyFormService {
     return {
       id: null,
       contactCompanyId: null,
-      // Utiliser la valeur existante dans l'enum
-      etat: UsualStatus.Actif,
     };
   }
 }

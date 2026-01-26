@@ -8,25 +8,12 @@
         </h4>
         <small class="text-muted">Remplissez les informations de la société</small>
       </div>
-
-      <div>
-        <button class="btn btn-outline-secondary me-2" type="button" (click)="previousState()" title="Annuler">
-          <fa-icon icon="arrow-left"></fa-icon>
-          <span class="d-none d-md-inline ms-1" jhiTranslate="entity.action.back">Retour</span>
-        </button>
-      </div>
     </div>
 
     <form [formGroup]="editForm" novalidate class="card-body" (ngSubmit)="save()">
       <jhi-alert-error></jhi-alert-error>
 
       <div class="row g-3">
-        <!-- ID (read-only) -->
-        <div class="col-12" *ngIf="editForm.get('id')?.value !== null">
-          <label for="field_id" class="form-label">ID</label>
-          <input id="field_id" type="text" class="form-control" formControlName="id" readonly />
-        </div>
-
         <!-- Row: Nom + Nom abrégé -->
         <div class="col-md-8">
           <label for="field_nom" class="form-label" jhiTranslate="correspCareApp.configManageContactCompany.nom">Nom</label>
@@ -47,6 +34,7 @@
             *ngIf="editForm.get('nom')?.invalid && (editForm.get('nom')?.touched || editForm.get('nom')?.dirty)"
           >
             <span *ngIf="editForm.get('nom')?.errors?.required" jhiTranslate="entity.validation.required">Ce champ est requis.</span>
+            <span *ngIf="editForm.get('nom')?.errors?.nameExists">Une société avec ce nom existe déjà.</span>
           </div>
         </div>
 
@@ -61,6 +49,12 @@
         <div class="col-md-6">
           <label for="field_matrne" class="form-label" jhiTranslate="correspCareApp.configManageContactCompany.matrne">Matrne</label>
           <input id="field_matrne" type="text" class="form-control" formControlName="matrne" placeholder="Référence RNE" />
+          <div
+            class="form-text text-danger"
+            *ngIf="editForm.get('matrne')?.invalid && (editForm.get('matrne')?.touched || editForm.get('matrne')?.dirty)"
+          >
+            <span *ngIf="editForm.get('matrne')?.errors?.matrneExists">Une société avec ce matricule fiscale existe déjà.</span>
+          </div>
         </div>
 
         <div class="col-md-6">
@@ -79,7 +73,7 @@
           <label for="field_tel" class="form-label" jhiTranslate="correspCareApp.configManageContactCompany.tel">Téléphone</label>
           <div class="input-group">
             <span class="input-group-text">📞</span>
-            <input id="field_tel" type="tel" class="form-control" formControlName="tel" placeholder="+216 9xx xxx xxx" />
+            <input id="field_tel" type="tel" class="form-control" formControlName="tel" placeholder="Tel" />
           </div>
         </div>
 
@@ -102,40 +96,10 @@
           </div>
         </div>
 
-        <!-- Webpage + Etat (etat traité comme bouton avec menu) -->
-        <div class="col-md-8">
+        <!-- Webpage (full width now that Etat is removed) -->
+        <div class="col-md-12">
           <label for="field_webpage" class="form-label" jhiTranslate="correspCareApp.configManageContactCompany.webpage">Site web</label>
           <input id="field_webpage" type="url" class="form-control" formControlName="webpage" placeholder="https://www.example.com" />
-        </div>
-
-        <div class="col-md-4">
-          <label class="form-label d-block" jhiTranslate="correspCareApp.configManageContactCompany.etat">État</label>
-
-          <div class="etat-dropdown position-relative">
-            <button
-              type="button"
-              class="btn etat-btn w-100 d-flex justify-content-between align-items-center"
-              (click)="toggleEtatMenu()"
-              [attr.aria-expanded]="etatMenuOpen"
-              aria-haspopup="true"
-            >
-              <span class="etat-label">{{ editForm.get('etat')?.value || 'Actif' }}</span>
-              <fa-icon icon="caret-down" class="ms-2"></fa-icon>
-            </button>
-
-            <div *ngIf="etatMenuOpen" class="etat-menu card shadow-sm">
-              <button type="button" class="dropdown-item" *ngFor="let s of usualStatusValues" (click)="setEtat(s)">
-                {{ s }}
-              </button>
-            </div>
-          </div>
-
-          <div
-            class="form-text text-danger"
-            *ngIf="editForm.get('etat')?.invalid && (editForm.get('etat')?.touched || editForm.get('etat')?.dirty)"
-          >
-            <span *ngIf="editForm.get('etat')?.errors?.required">Ce champ est requis.</span>
-          </div>
         </div>
       </div>
 

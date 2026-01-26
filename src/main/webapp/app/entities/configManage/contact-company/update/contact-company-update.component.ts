@@ -1,13 +1,12 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { HttpResponse } from '@angular/common/http';
+import { HttpResponse, HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
-import { Observable } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 import { finalize } from 'rxjs/operators';
 
 import { ContactCompanyFormService, ContactCompanyFormGroup } from './contact-company-form.service';
 import { IContactCompany } from '../contact-company.model';
 import { ContactCompanyService } from '../service/contact-company.service';
-import { UsualStatus } from 'app/entities/enumerations/usual-status.model';
 
 @Component({
   selector: 'jhi-contact-company-update',
@@ -18,13 +17,10 @@ export class ContactCompanyUpdateComponent implements OnInit, OnDestroy {
   isSaving = false;
   contactCompany: IContactCompany | null = null;
 
-  // enum values (correctly typed)
-  usualStatusValues: UsualStatus[] = Object.values(UsualStatus);
-
   editForm: ContactCompanyFormGroup = this.contactCompanyFormService.createContactCompanyFormGroup();
 
-  // Etat dropdown
-  etatMenuOpen = false;
+  private nomValueSub?: Subscription;
+  private matrneValueSub?: Subscription;
 
   constructor(
     protected contactCompanyService: ContactCompanyService,
@@ -38,30 +34,46 @@ export class ContactCompanyUpdateComponent implements OnInit, OnDestroy {
 
       if (contactCompany) {
         this.updateForm(contactCompany);
-      } else {
-        this.setDefaultEtatIfEmpty();
       }
     });
 
-    document.addEventListener('click', this.outsideClickListener);
+    // enlever l'erreur nameExists si l'utilisateur modifie le nom
+    const nomControl = this.editForm.get('nom');
+    if (nomControl) {
+      this.nomValueSub = nomControl.valueChanges.subscribe(() => {
+        const errors = nomControl.errors;
+        if (errors && errors['nameExists']) {
+          const newErrors = { ...errors };
+          delete newErrors['nameExists'];
+          const keys = Object.keys(newErrors);
+          nomControl.setErrors(keys.length ? newErrors : null);
+        }
+      });
+    }
+
+    // enlever l'erreur matrneExists si l'utilisateur modifie le matrne
+    const matrneControl = this.editForm.get('matrne');
+    if (matrneControl) {
+      this.matrneValueSub = matrneControl.valueChanges.subscribe(() => {
+        const errors = matrneControl.errors;
+        if (errors && errors['matrneExists']) {
+          const newErrors = { ...errors };
+          delete newErrors['matrneExists'];
+          const keys = Object.keys(newErrors);
+          matrneControl.setErrors(keys.length ? newErrors : null);
+        }
+      });
+    }
   }
 
   ngOnDestroy(): void {
-    document.removeEventListener('click', this.outsideClickListener);
+    if (this.nomValueSub) {
+      this.nomValueSub.unsubscribe();
+    }
+    if (this.matrneValueSub) {
+      this.matrneValueSub.unsubscribe();
+    }
   }
-
-  private outsideClickListener = (event: Event): void => {
-    if (!this.etatMenuOpen) {
-      return;
-    }
-
-    const path = (event as any).composedPath?.() || [];
-    const clickedInside = path.some((el: any) => el?.classList?.contains?.('etat-dropdown'));
-
-    if (!clickedInside) {
-      this.etatMenuOpen = false;
-    }
-  };
 
   previousState(): void {
     window.history.back();
@@ -85,41 +97,78 @@ export class ContactCompanyUpdateComponent implements OnInit, OnDestroy {
   protected subscribeToSaveResponse(result: Observable<HttpResponse<IContactCompany>>): void {
     result.pipe(finalize(() => (this.isSaving = false))).subscribe({
       next: () => this.previousState(),
-      error: () => {},
+      error: (err: HttpErrorResponse) => this.handleSaveError(err),
     });
+  }
+
+  protected handleSaveError(error: HttpErrorResponse): void {
+    // Gérer le cas où le backend renvoie une erreur "nameexists" ou "matrneexists"
+    if (error.status === 400) {
+      const body = error.error || {};
+      let isNameExists = false;
+      let isMatrneExists = false;
+
+      // Plusieurs possibilités selon la forme de la réponse (depend de ton backend / JHipster)
+      if (typeof body === 'object') {
+        if (body.message && String(body.message).toLowerCase().includes('nameexists')) {
+          isNameExists = true;
+        }
+        if ((body.errorKey && body.errorKey === 'nameexists') || (body.code && body.code === 'nameexists')) {
+          isNameExists = true;
+        }
+
+        if (body.message && String(body.message).toLowerCase().includes('matrneexists')) {
+          isMatrneExists = true;
+        }
+        if ((body.errorKey && body.errorKey === 'matrneexists') || (body.code && body.code === 'matrneexists')) {
+          isMatrneExists = true;
+        }
+      }
+
+      // vérifier aussi les headers (au cas où HeaderUtil mettrait l'info dans un header)
+      if ((!isNameExists || !isMatrneExists) && error.headers) {
+        try {
+          for (const key of error.headers.keys()) {
+            const v = error.headers.get(key);
+            if (v) {
+              const lower = v.toLowerCase();
+              if (!isNameExists && lower.includes('nameexists')) {
+                isNameExists = true;
+              }
+              if (!isMatrneExists && lower.includes('matrneexists')) {
+                isMatrneExists = true;
+              }
+            }
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+
+      if (isNameExists) {
+        const nomControl2 = this.editForm.get('nom');
+        if (nomControl2) {
+          nomControl2.setErrors({ ...(nomControl2.errors || {}), nameExists: true });
+          nomControl2.markAsTouched();
+        }
+        return;
+      }
+
+      if (isMatrneExists) {
+        const matrneControl2 = this.editForm.get('matrne');
+        if (matrneControl2) {
+          matrneControl2.setErrors({ ...(matrneControl2.errors || {}), matrneExists: true });
+          matrneControl2.markAsTouched();
+        }
+        return;
+      }
+    }
+
+    // erreur par défaut (tu peux ajouter un jhi-alert global si besoin)
+    console.error('Erreur lors de la sauvegarde ContactCompany:', error);
   }
 
   protected updateForm(contactCompany: IContactCompany): void {
     this.contactCompanyFormService.resetForm(this.editForm, contactCompany);
-    this.setDefaultEtatIfEmpty();
-  }
-
-  /**
-   * Définit Actif par défaut si etat est null
-   */
-  protected setDefaultEtatIfEmpty(): void {
-    const etatControl = this.editForm.get('etat');
-
-    if (!etatControl || etatControl.value !== null) {
-      return;
-    }
-
-    const defaultEtat: UsualStatus = this.usualStatusValues.includes(UsualStatus.Actif) ? UsualStatus.Actif : this.usualStatusValues[0];
-
-    etatControl.setValue(defaultEtat);
-  }
-
-  // ===== Etat button menu =====
-  toggleEtatMenu(): void {
-    this.etatMenuOpen = !this.etatMenuOpen;
-  }
-
-  setEtat(newEtat: UsualStatus): void {
-    this.editForm.get('etat')?.setValue(newEtat);
-    this.etatMenuOpen = false;
-  }
-
-  trackByUsualStatus(_: number, item: UsualStatus): UsualStatus {
-    return item;
   }
 }

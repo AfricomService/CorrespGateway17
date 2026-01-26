@@ -7,9 +7,7 @@ import { finalize } from 'rxjs/operators';
 import { PersonCompanyFormService, PersonCompanyFormGroup } from './person-company-form.service';
 import { IPersonCompany } from '../person-company.model';
 import { PersonCompanyService } from '../service/person-company.service';
-import { UsualStatus } from 'app/entities/enumerations/usual-status.model';
-
-type UsualStatusOption = { value: UsualStatus; label: string };
+import { IContactCompany } from 'app/entities/configManage/contact-company/contact-company.model';
 
 @Component({
   selector: 'jhi-person-company-update',
@@ -20,8 +18,8 @@ export class PersonCompanyUpdateComponent implements OnInit {
   isSaving = false;
   personCompany: IPersonCompany | null = null;
 
-  // options sans traduction : label humanisé directement
-  usualStatusOptions: UsualStatusOption[] = [];
+  // Nom de la société liée (affiché dans l'UI)
+  contactCompanyName: string | null = null;
 
   // message d'erreur utilisateur (affiché dans le template)
   errorMessage: string | null = null;
@@ -35,17 +33,11 @@ export class PersonCompanyUpdateComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // build human-readable options for Etat (sans traduction)
-    this.buildUsualStatusOptions();
-
     // 1) si la route résolvait un personCompany (édition), on met à jour le formulaire
     this.activatedRoute.data.subscribe(({ personCompany }) => {
       this.personCompany = personCompany;
       if (personCompany) {
         this.updateForm(personCompany);
-      } else {
-        // création : si aucun état défini, initialiser au premier choix disponible
-        this.ensureDefaultEtat();
       }
     });
 
@@ -55,35 +47,11 @@ export class PersonCompanyUpdateComponent implements OnInit {
       if (ccId && !this.personCompany) {
         const numeric = Number(ccId);
         this.editForm.get('contactCompanyId')?.setValue(Number.isNaN(numeric) ? null : numeric);
+        if (!Number.isNaN(numeric)) {
+          this.loadContactCompanyName(numeric);
+        }
       }
     });
-  }
-
-  private buildUsualStatusOptions(): void {
-    const values = Object.values(UsualStatus) as UsualStatus[];
-    this.usualStatusOptions = values.map(v => ({
-      value: v,
-      label: this.humanizeStatus(v),
-    }));
-  }
-
-  // transforme une valeur d'enum en label lisible (ex: 'Actif' -> 'Actif', 'Desactivated' -> 'Desactivated')
-  private humanizeStatus(v: string): string {
-    if (!v) return '';
-    const lower = String(v).toLowerCase();
-    const withSpaces = lower.replace(/[_-]/g, ' ');
-    return withSpaces.replace(/\b\w/g, ch => ch.toUpperCase());
-  }
-
-  // Si aucune valeur d'état n'est définie, assigner la première option si disponible
-  private ensureDefaultEtat(): void {
-    const control = this.editForm.get('etat');
-    if (control && (control.value === null || control.value === undefined)) {
-      const first = this.usualStatusOptions[0];
-      if (first) {
-        control.setValue(first.value);
-      }
-    }
   }
 
   previousState(): void {
@@ -96,9 +64,9 @@ export class PersonCompanyUpdateComponent implements OnInit {
 
     const personCompany = this.personCompanyFormService.getPersonCompany(this.editForm);
     if (personCompany.id !== null) {
-      this.subscribeToSaveResponse(this.personCompanyService.update(personCompany));
+      this.subscribeToSaveResponse(this.personCompanyService.update(personCompany as IPersonCompany));
     } else {
-      this.subscribeToSaveResponse(this.personCompanyService.create(personCompany));
+      this.subscribeToSaveResponse(this.personCompanyService.create(personCompany as any));
     }
   }
 
@@ -155,7 +123,27 @@ export class PersonCompanyUpdateComponent implements OnInit {
   protected updateForm(personCompany: IPersonCompany): void {
     this.personCompany = personCompany;
     this.personCompanyFormService.resetForm(this.editForm, personCompany);
-    // si après reset l'état est toujours null, forcer le défaut
-    this.ensureDefaultEtat();
+
+    // si la personne a un contactCompanyId, charger le nom de la société pour l'affichage
+    const ccId = personCompany.contactCompanyId;
+    if (ccId != null) {
+      this.loadContactCompanyName(ccId);
+    } else {
+      this.contactCompanyName = null;
+    }
+  }
+
+  protected loadContactCompanyName(contactCompanyId: number): void {
+    this.contactCompanyName = null;
+    this.personCompanyService.getContactCompany(contactCompanyId).subscribe({
+      next: (contact: IContactCompany) => {
+        // préférer nom (puis nomabrege) puis fallback sur l'id si vide
+        this.contactCompanyName = contact.nom ?? contact.nomabrege ?? String(contact.id);
+      },
+      error: (err: unknown) => {
+        // si 404 ou autre erreur -> on laisse le nom null et on ne bloque pas l'édition
+        this.contactCompanyName = null;
+      },
+    });
   }
 }
