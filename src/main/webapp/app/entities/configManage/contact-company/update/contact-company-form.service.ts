@@ -1,20 +1,10 @@
 import { Injectable } from '@angular/core';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
-
 import { IContactCompany, NewContactCompany } from '../contact-company.model';
+import { TranslateService } from '@ngx-translate/core'; // Importez TranslateService
 
-/**
- * A partial Type with required key is used as form input.
- */
 type PartialWithRequiredKeyOf<T extends { id: unknown }> = Partial<Omit<T, 'id'>> & { id: T['id'] };
-
-/**
- * Type for createFormGroup and resetForm argument.
- * It accepts IContactCompany for edit and NewContactCompanyFormGroupInput for create.
- */
 type ContactCompanyFormGroupInput = IContactCompany | PartialWithRequiredKeyOf<NewContactCompany>;
-
-// Defaults: only id (etat removed)
 type ContactCompanyFormDefaults = Pick<NewContactCompany, 'id'>;
 
 type ContactCompanyFormGroupContent = {
@@ -28,13 +18,14 @@ type ContactCompanyFormGroupContent = {
   fax: FormControl<IContactCompany['fax']>;
   email: FormControl<IContactCompany['email']>;
   webpage: FormControl<IContactCompany['webpage']>;
-  // etat removed
 };
 
 export type ContactCompanyFormGroup = FormGroup<ContactCompanyFormGroupContent>;
 
 @Injectable({ providedIn: 'root' })
 export class ContactCompanyFormService {
+  constructor(private translate: TranslateService) {} // Injectez TranslateService
+
   createContactCompanyFormGroup(contactCompany: ContactCompanyFormGroupInput = { id: null }): ContactCompanyFormGroup {
     const contactCompanyRawValue = {
       ...this.getFormDefaults(),
@@ -62,18 +53,25 @@ export class ContactCompanyFormService {
     });
   }
 
+  // Exemple de gestion des messages d'erreur traduits pour les champs obligatoires
+  getValidationMessage(formControl: FormControl, controlName: string): string {
+    if (formControl.hasError('required')) {
+      return this.translate.instant('entity.validation.required', { name: controlName });
+    }
+    // Vous pouvez ajouter d'autres validations comme email, unique, etc.
+    return '';
+  }
+
   getContactCompany(form: ContactCompanyFormGroup): IContactCompany | NewContactCompany {
     return form.getRawValue() as IContactCompany | NewContactCompany;
   }
 
   resetForm(form: ContactCompanyFormGroup, contactCompany: ContactCompanyFormGroupInput): void {
     const contactCompanyRawValue = { ...this.getFormDefaults(), ...contactCompany };
-    form.reset(
-      {
-        ...contactCompanyRawValue,
-        id: { value: contactCompanyRawValue.id, disabled: true },
-      } as any /* cast to workaround https://github.com/angular/angular/issues/46458 */
-    );
+    form.reset({
+      ...contactCompanyRawValue,
+      id: { value: contactCompanyRawValue.id, disabled: true },
+    } as any);
   }
 
   private getFormDefaults(): ContactCompanyFormDefaults {

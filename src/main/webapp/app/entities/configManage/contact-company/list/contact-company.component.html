@@ -7,8 +7,8 @@
       class="card-header bg-primary text-white d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-2"
     >
       <div class="title">
-        <h1 class="mb-0">Carnet d'Adresses</h1>
-        <small>Gestion des sociétés et contacts</small>
+        <h1 class="mb-0">{{ 'correspCareApp.configManageContactCompany.home.title' | translate }}</h1>
+        <small>{{ 'correspCareApp.configManageContactCompany.home.subtitle' | translate }}</small>
       </div>
     </div>
 
@@ -21,12 +21,17 @@
             id="searchCompany"
             type="search"
             class="form-control"
-            placeholder="Rechercher une société..."
+            [placeholder]="'correspCareApp.configManageContactCompany.search.placeholder' | translate"
             [(ngModel)]="searchTerm"
             (keyup.enter)="load()"
-            aria-label="Rechercher une société"
+            [attr.aria-label]="'correspCareApp.configManageContactCompany.search.aria' | translate"
           />
-          <button class="btn btn-outline-light" type="button" (click)="load()" title="Rechercher">
+          <button
+            class="btn btn-outline-light"
+            type="button"
+            (click)="load()"
+            [title]="'correspCareApp.configManageContactCompany.action.search.tooltip' | translate"
+          >
             <fa-icon icon="search"></fa-icon>
           </button>
         </div>
@@ -37,11 +42,11 @@
             class="btn btn-light btn-animated ms-2"
             type="button"
             (click)="exportExcel()"
-            title="Exporter en Excel"
+            [title]="'correspCareApp.configManageContactCompany.action.export.tooltip' | translate"
             [disabled]="isLoading"
           >
             <fa-icon icon="file-excel"></fa-icon>
-            <span class="ms-1 d-none d-md-inline">Exporter</span>
+            <span class="ms-1 d-none d-md-inline">{{ 'correspCareApp.configManageContactCompany.action.export' | translate }}</span>
           </button>
         </ng-container>
       </div>
@@ -49,8 +54,13 @@
       <!-- Bouton Ajouter (restreint aux ADMIN) -->
       <div class="actions ms-md-auto">
         <ng-container *jhiHasAnyAuthority="[Authority.ADMIN]">
-          <a class="btn btn-light btn-animated" [routerLink]="['/contact-company/new']" title="Ajouter une société">
-            <fa-icon icon="plus" class="me-1"></fa-icon> Ajouter
+          <a
+            class="btn btn-light btn-animated"
+            [routerLink]="['/contact-company/new']"
+            [title]="'correspCareApp.configManageContactCompany.action.add.tooltip' | translate"
+          >
+            <fa-icon icon="plus" class="me-1"></fa-icon>
+            {{ 'correspCareApp.configManageContactCompany.action.add' | translate }}
           </a>
         </ng-container>
       </div>
@@ -61,35 +71,54 @@
       <!-- Modal interne pour confirmation d'activation/désactivation -->
       <ng-template #etatModal let-modal>
         <div class="modal-header">
-          <h5 class="modal-title">Confirmation</h5>
-          <button type="button" class="btn-close" aria-label="Close" (click)="cancelModal()"></button>
+          <h5 class="modal-title">{{ 'correspCareApp.configManageContactCompany.modal.title' | translate }}</h5>
+          <button
+            type="button"
+            class="btn-close"
+            [attr.aria-label]="'correspCareApp.configManageContactCompany.modal.closeAria' | translate"
+            (click)="cancelModal()"
+          ></button>
         </div>
 
         <div class="modal-body">
           <p *ngIf="modalContext">
             <ng-container *ngIf="modalContext.type === 'company'">
-              Confirmer la
-              <strong>{{ modalContext.action === 'activate' ? 'activation' : 'désactivation' }}</strong>
-              de la société « <strong>{{ modalContext.name }}</strong> » ?
+              {{ 'correspCareApp.configManageContactCompany.modal.confirm.companyPrefix' | translate }}
+              <strong>{{
+                modalContext.action === 'activate'
+                  ? ('correspCareApp.configManageContactCompany.action.activate' | translate)
+                  : ('correspCareApp.configManageContactCompany.action.deactivate' | translate)
+              }}</strong>
+              {{ 'correspCareApp.configManageContactCompany.modal.confirm.companySuffix' | translate: { name: modalContext.name } }}
             </ng-container>
 
             <ng-container *ngIf="modalContext.type === 'person'">
-              Confirmer la
-              <strong>{{ modalContext.action === 'activate' ? 'activation' : 'désactivation' }}</strong>
-              du contact « <strong>{{ modalContext.name }}</strong> » ?
+              {{ 'correspCareApp.configManageContactCompany.modal.confirm.personPrefix' | translate }}
+              <strong>{{
+                modalContext.action === 'activate'
+                  ? ('correspCareApp.configManageContactCompany.action.activate' | translate)
+                  : ('correspCareApp.configManageContactCompany.action.deactivate' | translate)
+              }}</strong>
+              {{ 'correspCareApp.configManageContactCompany.modal.confirm.personSuffix' | translate: { name: modalContext.name } }}
             </ng-container>
           </p>
         </div>
 
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" (click)="cancelModal()">Annuler</button>
-          <button type="button" class="btn btn-primary" (click)="confirmToggle()">Confirmer</button>
+          <button type="button" class="btn btn-secondary" (click)="cancelModal()">
+            {{ 'correspCareApp.configManageContactCompany.modal.buttons.cancel' | translate }}
+          </button>
+          <button type="button" class="btn btn-primary" (click)="confirmToggle()">
+            {{ 'correspCareApp.configManageContactCompany.modal.buttons.confirm' | translate }}
+          </button>
         </div>
       </ng-template>
 
       <!-- Loader -->
       <div *ngIf="isLoading" class="text-center my-4">
-        <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">{{ 'correspCareApp.loading' | translate }}</span>
+        </div>
       </div>
 
       <!-- HEADER des sociétés : logo + titre + nombre -->
@@ -97,7 +126,7 @@
         <div class="d-flex align-items-center">
           <fa-icon icon="building" class="me-2 companies-icon" aria-hidden="true"></fa-icon>
           <h5 class="mb-0 companies-title">
-            Sociétés
+            {{ 'correspCareApp.configManageContactCompany.list.title' | translate }}
             <small class="text-muted companies-count ms-2">({{ contactCompanies?.length || 0 }})</small>
           </h5>
         </div>
@@ -117,8 +146,10 @@
                   <h5 class="card-title mb-1">{{ c.nom }}</h5>
 
                   <div class="text-muted small">
-                    <div *ngIf="c.nomabrege">Nom abrégé: {{ c.nomabrege }}</div>
-                    <div *ngIf="c.matrne">Mat RNE: {{ c.matrne }}</div>
+                    <div *ngIf="c.nomabrege">
+                      {{ 'correspCareApp.configManageContactCompany.nomabrege_label' | translate }} {{ c.nomabrege }}
+                    </div>
+                    <div *ngIf="c.matrne">{{ 'correspCareApp.configManageContactCompany.matrne_label' | translate }} {{ c.matrne }}</div>
                     <div *ngIf="c.adresse"><fa-icon icon="map-marker-alt" class="me-1"></fa-icon> {{ c.adresse }}</div>
                     <div *ngIf="c.tel"><fa-icon icon="phone" class="me-1"></fa-icon> {{ c.tel }}</div>
                     <div *ngIf="c.fax"><fa-icon icon="fax" class="me-1"></fa-icon> {{ c.fax }}</div>
@@ -131,7 +162,11 @@
                 <div class="text-end action-icons">
                   <!-- EDIT (ADMIN only) -->
                   <ng-container *jhiHasAnyAuthority="[Authority.ADMIN]">
-                    <button class="btn btn-link p-1 action-btn" [routerLink]="['/contact-company', c.id, 'edit']" title="Modifier">
+                    <button
+                      class="btn btn-link p-1 action-btn"
+                      [routerLink]="['/contact-company', c.id, 'edit']"
+                      [title]="'correspCareApp.configManageContactCompany.action.edit.tooltip' | translate"
+                    >
                       <fa-icon icon="pencil-alt"></fa-icon>
                     </button>
                   </ng-container>
@@ -143,17 +178,29 @@
                       class="btn btn-sm me-1"
                       [ngClass]="c.etat === 'Actif' ? 'btn-outline-warning' : 'btn-outline-success'"
                       (click)="openEtatModalForCompany(c)"
-                      [title]="c.etat === 'Actif' ? 'Désactiver' : 'Activer'"
+                      [title]="
+                        c.etat === 'Actif'
+                          ? ('correspCareApp.configManageContactCompany.action.deactivate.tooltip' | translate)
+                          : ('correspCareApp.configManageContactCompany.action.activate.tooltip' | translate)
+                      "
                       style="margin-right: 6px"
                     >
                       <fa-icon icon="power-off" class="me-1"></fa-icon>
-                      <span>{{ c.etat === 'Actif' ? 'Désactiver' : 'Activer' }}</span>
+                      <span>{{
+                        c.etat === 'Actif'
+                          ? ('correspCareApp.configManageContactCompany.action.deactivate' | translate)
+                          : ('correspCareApp.configManageContactCompany.action.activate' | translate)
+                      }}</span>
                     </button>
                   </ng-container>
 
                   <!-- DELETE (ADMIN only) -->
                   <ng-container *jhiHasAnyAuthority="[Authority.ADMIN]">
-                    <button class="btn btn-link p-1 text-danger action-btn" (click)="delete(c)" title="Supprimer">
+                    <button
+                      class="btn btn-link p-1 text-danger action-btn"
+                      (click)="delete(c)"
+                      [title]="'correspCareApp.configManageContactCompany.action.delete.tooltip' | translate"
+                    >
                       <fa-icon icon="trash"></fa-icon>
                     </button>
                   </ng-container>
@@ -169,10 +216,12 @@
                   style="cursor: pointer"
                 >
                   <fa-icon [icon]="c.expanded ? 'chevron-up' : 'chevron-down'"></fa-icon>
-                  <span class="ms-1">{{ personCount(c) }} contact(s)</span>
+                  <span class="ms-1"
+                    >{{ personCount(c) }} {{ 'correspCareApp.configManageContactCompany.list.contactsLabel' | translate }}</span
+                  >
                 </a>
                 <small class="badge bg-secondary text-white ms-2" *ngIf="c.pays">{{ c.pays }}</small>
-                <small class="badge bg-info text-white ms-2" *ngIf="c.etat">{{ c.etat }}</small>
+                <small class="badge bg-info text-white ms-2" *ngIf="c.etat">{{ 'correspCareApp.UsualStatus.' + c.etat | translate }}</small>
               </div>
             </div>
           </div>
@@ -183,7 +232,7 @@
             <div class="persons-header d-flex align-items-center justify-content-between mb-3">
               <div class="persons-title">
                 <h6 class="mb-0">
-                  Contacts de <strong>{{ c.nom }}</strong>
+                  {{ 'correspCareApp.configManageContactCompany.list.contactsOf' | translate: { name: c.nom } }}
                 </h6>
               </div>
 
@@ -192,11 +241,12 @@
                 <ng-container *jhiHasAnyAuthority="[Authority.ADMIN]">
                   <a
                     class="btn btn-sm btn-primary btn-animated"
-                    title="Ajouter un contact"
+                    [title]="'correspCareApp.configManageContactCompany.action.addPerson.tooltip' | translate"
                     [routerLink]="['/person-company', 'new']"
                     [queryParams]="{ contactCompanyId: c.id }"
                   >
-                    <fa-icon icon="plus" class="me-1"></fa-icon> Ajouter
+                    <fa-icon icon="plus" class="me-1"></fa-icon>
+                    {{ 'correspCareApp.configManageContactCompany.action.addPerson' | translate }}
                   </a>
                 </ng-container>
               </div>
@@ -214,12 +264,12 @@
                     <div class="d-flex align-items-center gap-2">
                       <div class="fw-semibold">{{ p.nom }}</div>
 
-                      <!-- badge d'état de la personne -->
+                      <!-- badge d'état de la personne (affiché via traduction) -->
                       <small
                         [attr.aria-label]="'État : ' + (p.etat || '—')"
                         [class]="getPersonBadgeClasses(p.etat)"
                         *ngIf="p.etat !== undefined"
-                        >{{ p.etat }}</small
+                        >{{ 'correspCareApp.UsualStatus.' + p.etat | translate }}</small
                       >
                     </div>
 
@@ -233,7 +283,7 @@
                     <a
                       class="btn btn-sm btn-link action-btn"
                       [routerLink]="['/person-company', p.id, 'view']"
-                      title="Voir la personne"
+                      [title]="'correspCareApp.configManageContactCompany.action.viewPerson.tooltip' | translate"
                       [attr.aria-disabled]="p.etat === 'Delated'"
                     >
                       <fa-icon icon="eye"></fa-icon>
@@ -244,7 +294,7 @@
                       <a
                         class="btn btn-sm btn-link action-btn"
                         [routerLink]="['/person-company', p.id, 'edit']"
-                        title="Éditer la personne"
+                        [title]="'correspCareApp.configManageContactCompany.action.editPerson.tooltip' | translate"
                         [class.disabled]="p.etat === 'Delated'"
                         [attr.aria-disabled]="p.etat === 'Delated'"
                       >
@@ -259,10 +309,18 @@
                         class="btn btn-sm"
                         [ngClass]="p.etat === 'Actif' ? 'btn-outline-warning' : 'btn-outline-success'"
                         (click)="openEtatModalForPerson(p)"
-                        [title]="p.etat === 'Actif' ? 'Désactiver' : 'Activer'"
+                        [title]="
+                          p.etat === 'Actif'
+                            ? ('correspCareApp.configManageContactCompany.action.deactivate.tooltip' | translate)
+                            : ('correspCareApp.configManageContactCompany.action.activate.tooltip' | translate)
+                        "
                       >
                         <fa-icon icon="power-off" class="me-1"></fa-icon>
-                        <span>{{ p.etat === 'Actif' ? 'Désactiver' : 'Activer' }}</span>
+                        <span>{{
+                          p.etat === 'Actif'
+                            ? ('correspCareApp.configManageContactCompany.action.deactivate' | translate)
+                            : ('correspCareApp.configManageContactCompany.action.activate' | translate)
+                        }}</span>
                       </button>
                     </ng-container>
 
@@ -271,7 +329,7 @@
                       <button
                         class="btn btn-sm btn-link text-danger action-btn"
                         (click)="deletePerson(p)"
-                        title="Supprimer la personne (soft-delete)"
+                        [title]="'correspCareApp.configManageContactCompany.action.deletePerson.tooltip' | translate"
                         [disabled]="p.etat === 'Delated'"
                       >
                         <fa-icon icon="trash"></fa-icon>
@@ -283,20 +341,22 @@
             </div>
 
             <ng-template #noPersonsBlock>
-              <div class="text-center text-muted py-2">Aucune personne associée.</div>
+              <div class="text-center text-muted py-2">{{ 'correspCareApp.configManageContactCompany.list.noPersons' | translate }}</div>
             </ng-template>
           </div>
         </div>
       </div>
 
       <!-- Message si vide -->
-      <div *ngIf="!isLoading && !contactCompanies?.length" class="alert alert-info mt-3">Aucune société trouvée.</div>
+      <div *ngIf="!isLoading && !contactCompanies?.length" class="alert alert-info mt-3">
+        {{ 'correspCareApp.configManageContactCompany.list.empty' | translate }}
+      </div>
 
       <!-- Pagination -->
       <nav *ngIf="totalItems > itemsPerPage" class="mt-3">
         <ul class="pagination justify-content-center">
           <li class="page-item" [class.disabled]="page === 1">
-            <button class="page-link" (click)="navigateToPage(page - 1)">Précédent</button>
+            <button class="page-link" (click)="navigateToPage(page - 1)">{{ 'pagination.previous' | translate }}</button>
           </li>
           <li
             class="page-item"
@@ -306,7 +366,7 @@
             <button class="page-link" (click)="navigateToPage(i + 1)">{{ i + 1 }}</button>
           </li>
           <li class="page-item" [class.disabled]="page === Math.ceil(totalItems / itemsPerPage)">
-            <button class="page-link" (click)="navigateToPage(page + 1)">Suivant</button>
+            <button class="page-link" (click)="navigateToPage(page + 1)">{{ 'pagination.next' | translate }}</button>
           </li>
         </ul>
       </nav>

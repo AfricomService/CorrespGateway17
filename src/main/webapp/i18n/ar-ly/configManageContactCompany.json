@@ -1,37 +1,129 @@
 {
   "correspCareApp": {
+    "UsualStatus": {
+      "null": "",
+      "Actif": "نشط",
+      "Delated": "محذوف",
+      "Desactivated": "معطل",
+      "ACTIVE": "نشط",
+      "DELETED": "محذوف",
+      "DISABLED": "معطل"
+    },
     "configManageContactCompany": {
       "home": {
-        "title": "Contact Companies",
-        "refreshListLabel": "Refresh list",
-        "createLabel": "Create a new Contact Company",
-        "createOrEditLabel": "Create or edit a Contact Company",
-        "notFound": "No Contact Companies found"
+        "title": "دليل الشركات",
+        "subtitle": "إدارة الشركات وجهات الاتصال",
+        "refreshListLabel": "تحديث القائمة",
+        "createLabel": "إنشاء شركة جديدة",
+        "createOrEditLabel": "إنشاء أو تعديل شركة",
+        "notFound": "لم يتم العثور على شركة"
       },
-      "delete": {
-        "question": "Are you sure you want to delete Contact Company {{ id }}?"
+      "search": {
+        "placeholder": "ابحث عن شركة...",
+        "aria": "حقل بحث الشركات"
       },
-      "detail": {
-        "title": "Contact Company"
+      "action": {
+        "search": {
+          "tooltip": "بحث"
+        },
+        "export": "تصدير",
+        "export.tooltip": "تصدير القائمة إلى ملف Excel",
+        "add": "إضافة",
+        "add.tooltip": "إنشاء شركة جديدة",
+        "addPerson": "إضافة جهة اتصال",
+        "addPerson.tooltip": "إضافة جهة اتصال إلى هذه الشركة",
+        "viewPerson": {
+          "tooltip": "عرض جهة الاتصال"
+        },
+        "editPerson": {
+          "tooltip": "تعديل جهة الاتصال"
+        },
+        "delete": {
+          "tooltip": "حذف الشركة"
+        },
+        "deletePerson": {
+          "tooltip": "حذف جهة الاتصال"
+        },
+        "activate": "تنشيط",
+        "activate.tooltip": "تنشيط",
+        "deactivate": "تعطيل",
+        "deactivate.tooltip": "تعطيل",
+        "edit": {
+          "tooltip": "تعديل الشركة"
+        }
       },
-      "id": "Id",
-      "nom": "Nom",
-      "nomabrege": "Nomabrege",
-      "matrne": "Matrne",
-      "pays": "Pays",
-      "adresse": "Adresse",
-      "tel": "Tel",
-      "fax": "Fax",
-      "email": "Email",
-      "webpage": "Webpage",
-      "etat": "Etat"
+      "modal": {
+        "title": "تأكيد",
+        "closeAria": "إغلاق",
+        "confirm": {
+          "companyPrefix": "تأكيد",
+          "companySuffix": "الشركة « {{ name }} » ؟",
+          "personPrefix": "تأكيد",
+          "personSuffix": "جهة الاتصال « {{ name }} » ؟"
+        },
+        "buttons": {
+          "cancel": "إلغاء",
+          "confirm": "تأكيد"
+        }
+      },
+      "list": {
+        "title": "الشركات",
+        "contactsLabel": "جهة الاتصال",
+        "contactsOf": "جهات الاتصال الخاصة بـ {{ name }}",
+        "noPersons": "لا توجد أي جهة اتصال مرتبطة.",
+        "empty": "لم يتم العثور على شركات."
+      },
+      "nom": "الاسم",
+      "nomabrege": "الاسم المختصر",
+      "matrne": "رقم السجل التجاري",
+      "pays": "البلد",
+      "adresse": "العنوان",
+      "tel": "الهاتف",
+      "fax": "الفاكس",
+      "email": "البريد الإلكتروني",
+      "webpage": "موقع الويب",
+      "nomabrege_label": "الاسم المختصر :",
+      "matrne_label": "رقم السجل التجاري :",
+      "loading": "جاري التحميل...",
+      "form": {
+        "subtitle": "املأ معلومات الشركة",
+        "placeholder": {
+          "nom": "اسم الشركة",
+          "nomabrege": "مثل: ACME",
+          "matrne": "مرجع السجل التجاري",
+          "pays": "البلد",
+          "adresse": "العنوان الكامل",
+          "tel": "الهاتف",
+          "fax": "الفاكس",
+          "email": "contact@example.com",
+          "webpage": "https://www.example.com"
+        },
+        "saving": "جارِ الحفظ...",
+        "saveFailed": "خطأ أثناء الحفظ."
+      },
+      "errors": {
+        "nameExists": "هناك شركة تحمل هذا الاسم بالفعل.",
+        "matrneExists": "هناك شركة تحمل هذا الرقم الضريبي بالفعل.",
+        "cannotChangeDelated": "لا يمكن تعديل الكيان المحذوف."
+      },
+      "export": {
+        "noFile": "لم يتم تلقي أي ملف.",
+        "failed": "حدث خطأ أثناء تصدير Excel."
+      }
     }
   },
-  "configManageApp": {
-    "configManageContactCompany": {
-      "created": "A new Contact Company is created with identifier {{ param }}",
-      "updated": "A Contact Company is updated with identifier {{ param }}",
-      "deleted": "A Contact Company is deleted with identifier {{ param }}"
+  "pagination": {
+    "previous": "السابق",
+    "next": "التالي"
+  },
+  "entity": {
+    "validation": {
+      "required": "هذا الحقل مطلوب.",
+      "email": "البريد الإلكتروني غير صالح."
+    },
+    "action": {
+      "cancel": "إلغاء",
+      "save": "حفظ"
     }
   }
 }

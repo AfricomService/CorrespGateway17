@@ -8,6 +8,9 @@ import { ContactCompanyFormService, ContactCompanyFormGroup } from './contact-co
 import { IContactCompany } from '../contact-company.model';
 import { ContactCompanyService } from '../service/contact-company.service';
 
+// ajouter TranslateService
+import { TranslateService } from '@ngx-translate/core';
+
 @Component({
   selector: 'jhi-contact-company-update',
   templateUrl: './contact-company-update.component.html',
@@ -25,7 +28,8 @@ export class ContactCompanyUpdateComponent implements OnInit, OnDestroy {
   constructor(
     protected contactCompanyService: ContactCompanyService,
     protected contactCompanyFormService: ContactCompanyFormService,
-    protected activatedRoute: ActivatedRoute
+    protected activatedRoute: ActivatedRoute,
+    protected translate: TranslateService // injecté pour usage futur/alertes traduites
   ) {}
 
   ngOnInit(): void {
@@ -164,8 +168,10 @@ export class ContactCompanyUpdateComponent implements OnInit, OnDestroy {
       }
     }
 
-    // erreur par défaut (tu peux ajouter un jhi-alert global si besoin)
+    // erreur par défaut (tu peux afficher une alerte traduite si tu veux)
     console.error('Erreur lors de la sauvegarde ContactCompany:', error);
+    // exemple d'alerte traduite (décoment si tu veux) :
+    // alert(this.translate.instant('correspCareApp.configManageContactCompany.form.saveFailed') || 'Erreur lors de la sauvegarde.');
   }
 
   protected updateForm(contactCompany: IContactCompany): void {

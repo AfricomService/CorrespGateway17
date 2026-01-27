@@ -1,4 +1,3 @@
-// src/main/webapp/app/entities/configManage/contact-company/list/contact-company.component.ts
 import { Component, OnInit, ViewChild, TemplateRef } from '@angular/core';
 import { HttpHeaders, HttpResponse } from '@angular/common/http';
 import { ActivatedRoute, Data, ParamMap, Router } from '@angular/router';
@@ -14,12 +13,11 @@ import { ITEMS_PER_PAGE, PAGE_HEADER, TOTAL_COUNT_RESPONSE_HEADER } from 'app/co
 import { ASC, DESC, SORT, ITEM_DELETED_EVENT, DEFAULT_SORT_DATA } from 'app/config/navigation.constants';
 import { EntityArrayWithPersonsResponseType, ContactCompanyService } from '../service/contact-company.service';
 import { ContactCompanyDeleteDialogComponent } from '../delete/contact-company-delete-dialog.component';
-
-// Import du dialog de suppression de person
 import { PersonCompanyDeleteDialogComponent } from 'app/entities/configManage/person-company/delete/person-company-delete-dialog.component';
-
-// JHipster Authority constants (adapte le chemin si besoin)
 import { Authority } from 'app/config/authority.constants';
+
+// TranslateService
+import { TranslateService } from '@ngx-translate/core';
 
 type ContactWithState = IContactCompanyWithPersons & { expanded?: boolean };
 
@@ -51,6 +49,7 @@ export class ContactCompanyComponent implements OnInit {
     id: number;
     name: string;
     action: 'activate' | 'deactivate';
+    actionLabel?: string;
   } | null = null;
 
   constructor(
@@ -58,7 +57,8 @@ export class ContactCompanyComponent implements OnInit {
     protected activatedRoute: ActivatedRoute,
     public router: Router,
     protected modalService: NgbModal,
-    protected personCompanyService: PersonCompanyService
+    protected personCompanyService: PersonCompanyService,
+    protected translate: TranslateService
   ) {}
 
   trackId = (_index: number, item: IContactCompany): number => this.contactCompanyService.getContactCompanyIdentifier(item);
@@ -125,14 +125,11 @@ export class ContactCompanyComponent implements OnInit {
 
     modalRef.closed
       .pipe(
-        // reason peut être { event, id } — on vérifie event
         filter((reason: any) => reason && reason.event === ITEM_DELETED_EVENT),
-        // après fermeture on recharge depuis le backend (même méthode que pour delete(contactCompany))
         switchMap(() => this.loadFromBackendWithRouteInformations())
       )
       .subscribe({
         next: (res: EntityArrayWithPersonsResponseType) => {
-          // utiliser la même routine que lors du chargement initial
           this.onResponseSuccess(res);
         },
         error: err => {
@@ -164,16 +161,19 @@ export class ContactCompanyComponent implements OnInit {
       return;
     }
     if (contact.etat === 'Delated') {
-      alert("Impossible de modifier l'état d'une société supprimée.");
+      alert(this.translate.instant('correspCareApp.contactCompany.errors.cannotChangeDelated'));
       return;
     }
 
     const action: 'activate' | 'deactivate' = contact.etat === 'Actif' ? 'deactivate' : 'activate';
+    const actionLabel = this.translate.instant('correspCareApp.contactCompany.action.' + action);
+
     this.modalContext = {
       type: 'company',
       id: contact.id,
       name: contact.nom ?? '—',
       action,
+      actionLabel,
     };
     this.currentModalRef = this.modalService.open(this.etatModal, { centered: true, backdrop: 'static' });
   }
@@ -184,16 +184,19 @@ export class ContactCompanyComponent implements OnInit {
       return;
     }
     if (person.etat === 'Delated') {
-      alert("Impossible de modifier l'état d'un contact supprimé.");
+      alert(this.translate.instant('correspCareApp.contactCompany.errors.cannotChangeDelated'));
       return;
     }
 
     const action: 'activate' | 'deactivate' = person.etat === 'Actif' ? 'deactivate' : 'activate';
+    const actionLabel = this.translate.instant('correspCareApp.contactCompany.action.' + action);
+
     this.modalContext = {
       type: 'person',
       id: person.id,
       name: person.nom ?? '—',
       action,
+      actionLabel,
     };
     this.currentModalRef = this.modalService.open(this.etatModal, { centered: true, backdrop: 'static' });
   }
@@ -218,7 +221,9 @@ export class ContactCompanyComponent implements OnInit {
         },
         error: err => {
           console.error('Erreur lors du toggleActivation (company)', err);
-          alert("Erreur lors du changement d'état de la société.");
+          alert(
+            this.translate.instant('correspCareApp.contactCompany.errors.toggleFailed') || "Erreur lors du changement d'état de la société."
+          );
           this.currentModalRef?.dismiss(err);
         },
       });
@@ -238,7 +243,9 @@ export class ContactCompanyComponent implements OnInit {
       },
       error: err => {
         console.error('Erreur lors du toggleEtat (person)', err);
-        alert("Erreur lors du changement d'état du contact.");
+        alert(
+          this.translate.instant('correspCareApp.contactCompany.errors.toggleFailed') || "Erreur lors du changement d'état du contact."
+        );
         this.currentModalRef?.dismiss(err);
       },
     });
@@ -247,7 +254,6 @@ export class ContactCompanyComponent implements OnInit {
   cancelModal(): void {
     this.currentModalRef?.dismiss();
   }
-
   // ============================
   // End modal-based activation
   // ============================
@@ -260,12 +266,16 @@ export class ContactCompanyComponent implements OnInit {
     }
 
     if (contactCompany.etat === 'Delated') {
-      alert("Impossible de modifier l'état d'une société supprimée.");
+      alert(this.translate.instant('correspCareApp.contactCompany.errors.cannotChangeDelated'));
       return;
     }
 
     const wantTo = contactCompany.etat === 'Actif' ? 'désactiver' : 'activer';
-    if (!confirm(`Confirmer la ${wantTo} de la société "${contactCompany.nom}" ?`)) {
+    if (
+      !confirm(
+        this.translate.instant('correspCareApp.contactCompany.modal.confirm.company', { action: wantTo, name: contactCompany.nom ?? '—' })
+      )
+    ) {
       return;
     }
 
@@ -302,7 +312,9 @@ export class ContactCompanyComponent implements OnInit {
       },
       error: err => {
         console.error("Erreur lors du changement d'état", err);
-        alert("Erreur lors du changement d'état de la société.");
+        alert(
+          this.translate.instant('correspCareApp.contactCompany.errors.toggleFailed') || "Erreur lors du changement d'état de la société."
+        );
       },
     });
   }
@@ -315,12 +327,14 @@ export class ContactCompanyComponent implements OnInit {
     }
 
     if (person.etat === 'Delated') {
-      alert("Impossible de modifier l'état d'un contact supprimé.");
+      alert(this.translate.instant('correspCareApp.contactCompany.errors.cannotChangeDelated'));
       return;
     }
 
     const wantTo = person.etat === 'Actif' ? 'désactiver' : 'activer';
-    if (!confirm(`Confirmer la ${wantTo} du contact "${person.nom ?? '—'}" ?`)) {
+    if (
+      !confirm(this.translate.instant('correspCareApp.contactCompany.modal.confirm.person', { action: wantTo, name: person.nom ?? '—' }))
+    ) {
       return;
     }
 
@@ -360,7 +374,9 @@ export class ContactCompanyComponent implements OnInit {
       },
       error: err => {
         console.error("Erreur lors du changement d'état de la personne", err);
-        alert("Erreur lors du changement d'état du contact.");
+        alert(
+          this.translate.instant('correspCareApp.contactCompany.errors.toggleFailed') || "Erreur lors du changement d'état du contact."
+        );
       },
     });
   }
@@ -374,7 +390,7 @@ export class ContactCompanyComponent implements OnInit {
       next: (res: HttpResponse<Blob>) => {
         const blob = res.body;
         if (!blob) {
-          alert('Aucun fichier reçu.');
+          alert(this.translate.instant('correspCareApp.contactCompany.export.noFile') || 'Aucun fichier reçu.');
           this.isLoading = false;
           return;
         }
@@ -393,7 +409,7 @@ export class ContactCompanyComponent implements OnInit {
       },
       error: err => {
         console.error("Erreur lors de l'export Excel", err);
-        alert("Erreur lors de l'export Excel.");
+        alert(this.translate.instant('correspCareApp.contactCompany.export.failed') || "Erreur lors de l'export Excel.");
         this.isLoading = false;
       },
     });

@@ -1,37 +1,129 @@
 {
   "correspCareApp": {
+    "UsualStatus": {
+      "null": "",
+      "Actif": "Active",
+      "Delated": "Deleted",
+      "Desactivated": "Disabled",
+      "ACTIVE": "Active",
+      "DELETED": "Deleted",
+      "DISABLED": "Disabled"
+    },
     "configManageContactCompany": {
       "home": {
-        "title": "Contact Companies",
+        "title": "Address Book",
+        "subtitle": "Manage companies and contacts",
         "refreshListLabel": "Refresh list",
         "createLabel": "Create a new Contact Company",
-        "createOrEditLabel": "Create or edit a Contact Company",
-        "notFound": "No Contact Companies found"
+        "createOrEditLabel": "Create / Edit a Contact Company",
+        "notFound": "No Contact Company found"
       },
-      "delete": {
-        "question": "Are you sure you want to delete Contact Company {{ id }}?"
+      "search": {
+        "placeholder": "Search a company...",
+        "aria": "Company search field"
       },
-      "detail": {
-        "title": "Contact Company"
+      "action": {
+        "search": {
+          "tooltip": "Search"
+        },
+        "export": "Export",
+        "export.tooltip": "Export list to Excel file",
+        "add": "Add",
+        "add.tooltip": "Create a new company",
+        "addPerson": "Add contact",
+        "addPerson.tooltip": "Add a contact to this company",
+        "viewPerson": {
+          "tooltip": "View contact"
+        },
+        "editPerson": {
+          "tooltip": "Edit contact"
+        },
+        "delete": {
+          "tooltip": "Delete company"
+        },
+        "deletePerson": {
+          "tooltip": "Delete contact"
+        },
+        "activate": "Activate",
+        "activate.tooltip": "Activate",
+        "deactivate": "Deactivate",
+        "deactivate.tooltip": "Deactivate",
+        "edit": {
+          "tooltip": "Edit company"
+        }
       },
-      "id": "Id",
-      "nom": "Nom",
-      "nomabrege": "Nomabrege",
-      "matrne": "Matrne",
-      "pays": "Pays",
-      "adresse": "Adresse",
-      "tel": "Tel",
+      "modal": {
+        "title": "Confirmation",
+        "closeAria": "Close",
+        "confirm": {
+          "companyPrefix": "Confirm",
+          "companySuffix": "for the company « {{ name }} »?",
+          "personPrefix": "Confirm",
+          "personSuffix": "for the contact « {{ name }} »?"
+        },
+        "buttons": {
+          "cancel": "Cancel",
+          "confirm": "Confirm"
+        }
+      },
+      "list": {
+        "title": "Companies",
+        "contactsLabel": "contact(s)",
+        "contactsOf": "Contacts of {{ name }}",
+        "noPersons": "No associated persons.",
+        "empty": "No companies found."
+      },
+      "nom": "Name",
+      "nomabrege": "Short name",
+      "matrne": "Tax ID",
+      "pays": "Country",
+      "adresse": "Address",
+      "tel": "Phone",
       "fax": "Fax",
       "email": "Email",
-      "webpage": "Webpage",
-      "etat": "Etat"
+      "webpage": "Website",
+      "nomabrege_label": "Short name:",
+      "matrne_label": "Tax ID:",
+      "loading": "Loading...",
+      "form": {
+        "subtitle": "Fill in the company information",
+        "placeholder": {
+          "nom": "Company name",
+          "nomabrege": "Ex: ACME",
+          "matrne": "RNE reference",
+          "pays": "Country",
+          "adresse": "Full address",
+          "tel": "Phone",
+          "fax": "Fax",
+          "email": "contact@example.com",
+          "webpage": "https://www.example.com"
+        },
+        "saving": "Saving...",
+        "saveFailed": "Error while saving."
+      },
+      "errors": {
+        "nameExists": "A company with this name already exists.",
+        "matrneExists": "A company with this tax ID already exists.",
+        "cannotChangeDelated": "Cannot modify a deleted entity."
+      },
+      "export": {
+        "noFile": "No file received.",
+        "failed": "Error during Excel export."
+      }
     }
   },
-  "configManageApp": {
-    "configManageContactCompany": {
-      "created": "A new Contact Company is created with identifier {{ param }}",
-      "updated": "A Contact Company is updated with identifier {{ param }}",
-      "deleted": "A Contact Company is deleted with identifier {{ param }}"
+  "pagination": {
+    "previous": "Previous",
+    "next": "Next"
+  },
+  "entity": {
+    "validation": {
+      "required": "This field is required.",
+      "email": "Invalid email."
+    },
+    "action": {
+      "cancel": "Cancel",
+      "save": "Save"
     }
   }
 }

@@ -2,9 +2,12 @@
   "correspCareApp": {
     "UsualStatus": {
       "null": "",
-      "ACTIVE": "ACTIVE",
-      "DELETED": "DELETED",
-      "DISABLED": "DISABLED"
+      "Actif": "Active",
+      "Delated": "Deleted",
+      "Desactivated": "Disabled",
+      "ACTIVE": "Active",
+      "DELETED": "Deleted",
+      "DISABLED": "Disabled"
     }
   }
 }
