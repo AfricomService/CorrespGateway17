@@ -1,5 +1,6 @@
+// src/main/webapp/app/entities/configManage/contact-company/list/contact-company.component.ts
 import { Component, OnInit } from '@angular/core';
-import { HttpHeaders } from '@angular/common/http';
+import { HttpHeaders, HttpResponse } from '@angular/common/http';
 import { ActivatedRoute, Data, ParamMap, Router } from '@angular/router';
 import { combineLatest, Observable, forkJoin, of } from 'rxjs';
 import { filter, switchMap, tap, map, catchError } from 'rxjs/operators';
@@ -14,6 +15,9 @@ import { ASC, DESC, SORT, ITEM_DELETED_EVENT, DEFAULT_SORT_DATA } from 'app/conf
 import { EntityArrayWithPersonsResponseType, ContactCompanyService } from '../service/contact-company.service';
 import { ContactCompanyDeleteDialogComponent } from '../delete/contact-company-delete-dialog.component';
 
+// JHipster Authority constants (adapte le chemin si besoin)
+import { Authority } from 'app/config/authority.constants';
+
 type ContactWithState = IContactCompanyWithPersons & { expanded?: boolean };
 
 @Component({
@@ -22,6 +26,9 @@ type ContactWithState = IContactCompanyWithPersons & { expanded?: boolean };
   styleUrls: ['./contact-company.component.scss'],
 })
 export class ContactCompanyComponent implements OnInit {
+  // exposer Authority pour le template
+  public readonly Authority = Authority;
+
   contactCompanies?: ContactWithState[];
   isLoading = false;
 
@@ -297,9 +304,13 @@ export class ContactCompanyComponent implements OnInit {
    * On recherche un filename dans Content-Disposition, sinon fallback.
    */
   exportExcel(): void {
+    if (this.isLoading) {
+      // éviter appels multiples
+      return;
+    }
     this.isLoading = true;
     this.contactCompanyService.exportExcel().subscribe({
-      next: res => {
+      next: (res: HttpResponse<Blob>) => {
         const blob = res.body;
         if (!blob) {
           alert('Aucun fichier reçu.');
@@ -307,7 +318,7 @@ export class ContactCompanyComponent implements OnInit {
           return;
         }
 
-        const filename = this.extractFilename(res.headers) ?? 'contact_companies_no_ids.xlsx';
+        const filename = this.extractFilename(res.headers) ?? `contact_companies_${new Date().toISOString().replace(/[:.]/g, '-')}.xlsx`;
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -335,10 +346,14 @@ export class ContactCompanyComponent implements OnInit {
     if (!contentDisposition) {
       return null;
     }
-    // pattern robust pour filename="..." ou filename=...
+    // pattern robuste pour filename="..." ou filename=... et filename*=UTF-8''
     const result = /filename\*?=(?:UTF-8'')?["']?([^;"']+)["']?/.exec(contentDisposition);
     if (result && result[1]) {
-      return decodeURIComponent(result[1].replace(/['"]/g, ''));
+      try {
+        return decodeURIComponent(result[1].replace(/['"]/g, ''));
+      } catch (e) {
+        return result[1].replace(/['"]/g, '');
+      }
     }
     return null;
   }
@@ -400,13 +415,10 @@ export class ContactCompanyComponent implements OnInit {
           const companies = res.body ?? [];
           // aucun company trouvé -> renvoyer réponse vide avec mêmes headers
           if (!companies || companies.length === 0) {
+            // on crée un HttpResponse vide et on caste pour correspondre au type attendu
             return of(
-              new (Object.getPrototypeOf(res).constructor)({
-                body: [] as any[],
-                headers: res.headers,
-                status: res.status,
-              }) as EntityArrayWithPersonsResponseType
-            );
+              new HttpResponse({ body: [], headers: res.headers, status: res.status })
+            ) as unknown as Observable<EntityArrayWithPersonsResponseType>;
           }
 
           // pour chaque company, récupérer person-companies/all
@@ -430,11 +442,11 @@ export class ContactCompanyComponent implements OnInit {
                 } as IContactCompanyWithPersons;
               });
               // retourner HttpResponse similaire pour onResponseSuccess
-              return new (Object.getPrototypeOf(res).constructor)({
+              return new HttpResponse({
                 body: combined,
                 headers: res.headers,
                 status: res.status,
-              }) as EntityArrayWithPersonsResponseType;
+              }) as unknown as EntityArrayWithPersonsResponseType;
             })
           );
         }),

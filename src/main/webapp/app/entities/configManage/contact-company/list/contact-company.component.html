@@ -31,24 +31,28 @@
         </div>
 
         <!-- BOUTON EXPORT (à côté immédiat de la recherche) -->
-        <!-- Ajout de la classe btn-animated pour réutiliser l'animation "Ajouter" -->
-        <button
-          class="btn btn-light btn-animated ms-2"
-          type="button"
-          (click)="exportExcel()"
-          title="Exporter en Excel"
-          [disabled]="isLoading"
-        >
-          <fa-icon icon="file-excel"></fa-icon>
-          <span class="ms-1 d-none d-md-inline">Exporter</span>
-        </button>
+        <!-- restreint aux ADMIN via ng-container (évite multiples structural directives) -->
+        <ng-container *jhiHasAnyAuthority="[Authority.ADMIN]">
+          <button
+            class="btn btn-light btn-animated ms-2"
+            type="button"
+            (click)="exportExcel()"
+            title="Exporter en Excel"
+            [disabled]="isLoading"
+          >
+            <fa-icon icon="file-excel"></fa-icon>
+            <span class="ms-1 d-none d-md-inline">Exporter</span>
+          </button>
+        </ng-container>
       </div>
 
-      <!-- Bouton Ajouter -->
+      <!-- Bouton Ajouter (restreint aux ADMIN) -->
       <div class="actions ms-md-auto">
-        <a class="btn btn-light btn-animated" [routerLink]="['/contact-company/new']" title="Ajouter une société">
-          <fa-icon icon="plus" class="me-1"></fa-icon> Ajouter
-        </a>
+        <ng-container *jhiHasAnyAuthority="[Authority.ADMIN]">
+          <a class="btn btn-light btn-animated" [routerLink]="['/contact-company/new']" title="Ajouter une société">
+            <fa-icon icon="plus" class="me-1"></fa-icon> Ajouter
+          </a>
+        </ng-container>
       </div>
     </div>
 
@@ -94,29 +98,36 @@
                   </div>
                 </div>
 
-                <!-- Actions -->
+                <!-- Actions (Modifier, Toggle, Supprimer) -->
                 <div class="text-end action-icons">
-                  <button class="btn btn-link p-1 action-btn" [routerLink]="['/contact-company', c.id, 'edit']" title="Modifier">
-                    <fa-icon icon="pencil-alt"></fa-icon>
-                  </button>
+                  <!-- EDIT (ADMIN only) -->
+                  <ng-container *jhiHasAnyAuthority="[Authority.ADMIN]">
+                    <button class="btn btn-link p-1 action-btn" [routerLink]="['/contact-company', c.id, 'edit']" title="Modifier">
+                      <fa-icon icon="pencil-alt"></fa-icon>
+                    </button>
+                  </ng-container>
 
-                  <!-- Toggle activation : affichage selon l'état, masqué si Delated -->
-                  <button
-                    *ngIf="c.etat !== 'Delated'"
-                    class="btn btn-sm me-1"
-                    [ngClass]="c.etat === 'Actif' ? 'btn-outline-warning' : 'btn-outline-success'"
-                    (click)="toggleActivation(c)"
-                    [title]="c.etat === 'Actif' ? 'Désactiver' : 'Activer'"
-                    style="margin-right: 6px"
-                  >
-                    <fa-icon icon="power-off" class="me-1"></fa-icon>
-                    <span>{{ c.etat === 'Actif' ? 'Désactiver' : 'Activer' }}</span>
-                  </button>
+                  <!-- Toggle activation : affichage selon l'état, masqué si Delated - restreint ADMIN -->
+                  <ng-container *jhiHasAnyAuthority="[Authority.ADMIN]">
+                    <button
+                      *ngIf="c.etat !== 'Delated'"
+                      class="btn btn-sm me-1"
+                      [ngClass]="c.etat === 'Actif' ? 'btn-outline-warning' : 'btn-outline-success'"
+                      (click)="toggleActivation(c)"
+                      [title]="c.etat === 'Actif' ? 'Désactiver' : 'Activer'"
+                      style="margin-right: 6px"
+                    >
+                      <fa-icon icon="power-off" class="me-1"></fa-icon>
+                      <span>{{ c.etat === 'Actif' ? 'Désactiver' : 'Activer' }}</span>
+                    </button>
+                  </ng-container>
 
-                  <!-- Bouton : ouvre le modal de confirmation existant -->
-                  <button class="btn btn-link p-1 text-danger action-btn" (click)="delete(c)" title="Supprimer">
-                    <fa-icon icon="trash"></fa-icon>
-                  </button>
+                  <!-- DELETE (ADMIN only) -->
+                  <ng-container *jhiHasAnyAuthority="[Authority.ADMIN]">
+                    <button class="btn btn-link p-1 text-danger action-btn" (click)="delete(c)" title="Supprimer">
+                      <fa-icon icon="trash"></fa-icon>
+                    </button>
+                  </ng-container>
                 </div>
               </div>
 
@@ -147,16 +158,18 @@
                 </h6>
               </div>
 
-              <!-- Bouton Ajouter -->
+              <!-- Bouton Ajouter (ADMIN only) -->
               <div>
-                <a
-                  class="btn btn-sm btn-primary btn-animated"
-                  title="Ajouter un contact"
-                  [routerLink]="['/person-company', 'new']"
-                  [queryParams]="{ contactCompanyId: c.id }"
-                >
-                  <fa-icon icon="plus" class="me-1"></fa-icon> Ajouter
-                </a>
+                <ng-container *jhiHasAnyAuthority="[Authority.ADMIN]">
+                  <a
+                    class="btn btn-sm btn-primary btn-animated"
+                    title="Ajouter un contact"
+                    [routerLink]="['/person-company', 'new']"
+                    [queryParams]="{ contactCompanyId: c.id }"
+                  >
+                    <fa-icon icon="plus" class="me-1"></fa-icon> Ajouter
+                  </a>
+                </ng-container>
               </div>
             </div>
 
@@ -187,6 +200,7 @@
                     </div>
                   </div>
                   <div class="ms-auto person-actions d-flex align-items-center gap-2">
+                    <!-- Voir (accessible à tous) -->
                     <a
                       class="btn btn-sm btn-link action-btn"
                       [routerLink]="['/person-company', p.id, 'view']"
@@ -196,36 +210,44 @@
                       <fa-icon icon="eye"></fa-icon>
                     </a>
 
-                    <a
-                      class="btn btn-sm btn-link action-btn"
-                      [routerLink]="['/person-company', p.id, 'edit']"
-                      title="Éditer la personne"
-                      [class.disabled]="p.etat === 'Delated'"
-                      [attr.aria-disabled]="p.etat === 'Delated'"
-                    >
-                      <fa-icon icon="pencil-alt"></fa-icon>
-                    </a>
+                    <!-- Éditer (ADMIN only) -->
+                    <ng-container *jhiHasAnyAuthority="[Authority.ADMIN]">
+                      <a
+                        class="btn btn-sm btn-link action-btn"
+                        [routerLink]="['/person-company', p.id, 'edit']"
+                        title="Éditer la personne"
+                        [class.disabled]="p.etat === 'Delated'"
+                        [attr.aria-disabled]="p.etat === 'Delated'"
+                      >
+                        <fa-icon icon="pencil-alt"></fa-icon>
+                      </a>
+                    </ng-container>
 
-                    <!-- Toggle person activation: affiche Activer / Désactiver selon p.etat, masqué si Delated -->
-                    <button
-                      *ngIf="p.etat !== 'Delated'"
-                      class="btn btn-sm"
-                      [ngClass]="p.etat === 'Actif' ? 'btn-outline-warning' : 'btn-outline-success'"
-                      (click)="togglePersonActivation(p)"
-                      [title]="p.etat === 'Actif' ? 'Désactiver' : 'Activer'"
-                    >
-                      <fa-icon icon="power-off" class="me-1"></fa-icon>
-                      <span>{{ p.etat === 'Actif' ? 'Désactiver' : 'Activer' }}</span>
-                    </button>
+                    <!-- Toggle person activation (ADMIN only, masqué si Delated) -->
+                    <ng-container *jhiHasAnyAuthority="[Authority.ADMIN]">
+                      <button
+                        *ngIf="p.etat !== 'Delated'"
+                        class="btn btn-sm"
+                        [ngClass]="p.etat === 'Actif' ? 'btn-outline-warning' : 'btn-outline-success'"
+                        (click)="togglePersonActivation(p)"
+                        [title]="p.etat === 'Actif' ? 'Désactiver' : 'Activer'"
+                      >
+                        <fa-icon icon="power-off" class="me-1"></fa-icon>
+                        <span>{{ p.etat === 'Actif' ? 'Désactiver' : 'Activer' }}</span>
+                      </button>
+                    </ng-container>
 
-                    <button
-                      class="btn btn-sm btn-link text-danger action-btn"
-                      (click)="deletePerson(p)"
-                      title="Supprimer la personne (soft-delete)"
-                      [disabled]="p.etat === 'Delated'"
-                    >
-                      <fa-icon icon="trash"></fa-icon>
-                    </button>
+                    <!-- Supprimer personne (ADMIN only) -->
+                    <ng-container *jhiHasAnyAuthority="[Authority.ADMIN]">
+                      <button
+                        class="btn btn-sm btn-link text-danger action-btn"
+                        (click)="deletePerson(p)"
+                        title="Supprimer la personne (soft-delete)"
+                        [disabled]="p.etat === 'Delated'"
+                      >
+                        <fa-icon icon="trash"></fa-icon>
+                      </button>
+                    </ng-container>
                   </div>
                 </li>
               </ul>

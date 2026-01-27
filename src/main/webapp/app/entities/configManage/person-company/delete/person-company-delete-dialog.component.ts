@@ -18,7 +18,7 @@ export class PersonCompanyDeleteDialogComponent {
   }
 
   confirmDelete(id: number): void {
-    this.personCompanyService.delete(id).subscribe(() => {
+    this.personCompanyService.delate(id).subscribe(() => {
       this.activeModal.close(ITEM_DELETED_EVENT);
     });
   }

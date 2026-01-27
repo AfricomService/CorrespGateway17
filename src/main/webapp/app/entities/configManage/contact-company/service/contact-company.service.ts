@@ -1,6 +1,8 @@
+// src/main/webapp/app/entities/configManage/contact-company/service/contact-company.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 import { isPresent } from 'app/core/util/operators';
 import { ApplicationConfigService } from 'app/core/config/application-config.service';
@@ -104,6 +106,9 @@ export class ContactCompanyService {
   /**
    * NOUVEAU : appeler l'endpoint d'export Excel (backend renvoie un blob)
    * GET /api/contact-companies/export/excel
+   *
+   * Renvoie la HttpResponse<Blob> (observe: 'response') pour permettre de lire les headers
+   * (Content-Disposition) côté composant et déclencher le téléchargement.
    */
   exportExcel(): Observable<BlobResponseType> {
     // -> observe: 'response' pour pouvoir lire les headers (Content-Disposition)
@@ -112,6 +117,46 @@ export class ContactCompanyService {
       observe: 'response',
       responseType: 'blob' as 'json',
     }) as Observable<BlobResponseType>;
+  }
+
+  /**
+   * Méthode utilitaire : appelle l'export et extrait également le nom de fichier depuis le header
+   * Content-Disposition si disponible. Utile pour le composant qui veut lancer le téléchargement
+   * avec le nom correct.
+   *
+   * Retourne un objet { blob, filename }.
+   */
+  exportExcelWithFilename(): Observable<{ blob: Blob; filename: string | null }> {
+    return this.exportExcel().pipe(
+      map(res => {
+        const blob = res.body as Blob;
+        let filename: string | null = null;
+        const cd = (res.headers && (res.headers.get('content-disposition') || res.headers.get('Content-Disposition'))) || '';
+
+        if (cd) {
+          // Try RFC5987 (filename*=UTF-8'') first
+          const fnStarMatch = /filename\*\s*=\s*UTF-8''([^;]+)/i.exec(cd);
+          if (fnStarMatch && fnStarMatch[1]) {
+            try {
+              filename = decodeURIComponent(fnStarMatch[1]);
+            } catch (e) {
+              filename = fnStarMatch[1];
+            }
+          } else {
+            // fallback to filename="..."
+            const fnMatch = /filename[^;=\n]*=(?:\"([^\"\n]*)\"|([^;\n]*))/i.exec(cd);
+            if (fnMatch) {
+              filename = fnMatch[1] || fnMatch[2] || null;
+              if (filename) {
+                filename = filename.replace(/^"(.*)"$/, '$1'); // strip quotes
+              }
+            }
+          }
+        }
+
+        return { blob, filename };
+      })
+    );
   }
 
   getContactCompanyIdentifier(contactCompany: Pick<IContactCompany, 'id'>): number {
