@@ -18,8 +18,16 @@ export class PersonCompanyDeleteDialogComponent {
   }
 
   confirmDelete(id: number): void {
-    this.personCompanyService.delate(id).subscribe(() => {
-      this.activeModal.close(ITEM_DELETED_EVENT);
+    console.log('PersonCompanyDeleteDialogComponent.confirmDelete id=', id);
+    this.personCompanyService.delate(id).subscribe({
+      next: () => {
+        // ferme le modal et renvoie un payload contenant l'event + l'id supprimé
+        this.activeModal.close({ event: ITEM_DELETED_EVENT, id });
+      },
+      error: err => {
+        console.error('Erreur lors de la suppression personCompany', err);
+        this.activeModal.dismiss(err);
+      },
     });
   }
 }

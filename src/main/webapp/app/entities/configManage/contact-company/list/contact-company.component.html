@@ -1,3 +1,4 @@
+<!-- src/main/webapp/app/entities/configManage/contact-company/list/contact-company.component.html -->
 <div class="contact-list container mt-4">
   <!-- Carte principale -->
   <div class="main-card card shadow-sm">
@@ -31,7 +32,6 @@
         </div>
 
         <!-- BOUTON EXPORT (à côté immédiat de la recherche) -->
-        <!-- restreint aux ADMIN via ng-container (évite multiples structural directives) -->
         <ng-container *jhiHasAnyAuthority="[Authority.ADMIN]">
           <button
             class="btn btn-light btn-animated ms-2"
@@ -58,6 +58,35 @@
 
     <!-- Corps de la carte -->
     <div class="card-body">
+      <!-- Modal interne pour confirmation d'activation/désactivation -->
+      <ng-template #etatModal let-modal>
+        <div class="modal-header">
+          <h5 class="modal-title">Confirmation</h5>
+          <button type="button" class="btn-close" aria-label="Close" (click)="cancelModal()"></button>
+        </div>
+
+        <div class="modal-body">
+          <p *ngIf="modalContext">
+            <ng-container *ngIf="modalContext.type === 'company'">
+              Confirmer la
+              <strong>{{ modalContext.action === 'activate' ? 'activation' : 'désactivation' }}</strong>
+              de la société « <strong>{{ modalContext.name }}</strong> » ?
+            </ng-container>
+
+            <ng-container *ngIf="modalContext.type === 'person'">
+              Confirmer la
+              <strong>{{ modalContext.action === 'activate' ? 'activation' : 'désactivation' }}</strong>
+              du contact « <strong>{{ modalContext.name }}</strong> » ?
+            </ng-container>
+          </p>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="cancelModal()">Annuler</button>
+          <button type="button" class="btn btn-primary" (click)="confirmToggle()">Confirmer</button>
+        </div>
+      </ng-template>
+
       <!-- Loader -->
       <div *ngIf="isLoading" class="text-center my-4">
         <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
@@ -107,13 +136,13 @@
                     </button>
                   </ng-container>
 
-                  <!-- Toggle activation : affichage selon l'état, masqué si Delated - restreint ADMIN -->
+                  <!-- Toggle activation : utilise le modal (masqué si Delated) -->
                   <ng-container *jhiHasAnyAuthority="[Authority.ADMIN]">
                     <button
                       *ngIf="c.etat !== 'Delated'"
                       class="btn btn-sm me-1"
                       [ngClass]="c.etat === 'Actif' ? 'btn-outline-warning' : 'btn-outline-success'"
-                      (click)="toggleActivation(c)"
+                      (click)="openEtatModalForCompany(c)"
                       [title]="c.etat === 'Actif' ? 'Désactiver' : 'Activer'"
                       style="margin-right: 6px"
                     >
@@ -223,13 +252,13 @@
                       </a>
                     </ng-container>
 
-                    <!-- Toggle person activation (ADMIN only, masqué si Delated) -->
+                    <!-- Toggle person activation : utilise le modal -->
                     <ng-container *jhiHasAnyAuthority="[Authority.ADMIN]">
                       <button
                         *ngIf="p.etat !== 'Delated'"
                         class="btn btn-sm"
                         [ngClass]="p.etat === 'Actif' ? 'btn-outline-warning' : 'btn-outline-success'"
-                        (click)="togglePersonActivation(p)"
+                        (click)="openEtatModalForPerson(p)"
                         [title]="p.etat === 'Actif' ? 'Désactiver' : 'Activer'"
                       >
                         <fa-icon icon="power-off" class="me-1"></fa-icon>

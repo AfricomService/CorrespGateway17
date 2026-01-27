@@ -7,12 +7,17 @@
 
   <div class="modal-body">
     <jhi-alert-error></jhi-alert-error>
+
+    <!--
+      On fournit id et name pour être compatible avec les anciennes clés ({{ id }})
+      et avec la clé plus claire ({{ name }}). Le texte intérieur sert de fallback si la clé i18n manque.
+    -->
     <p
       id="jhi-delete-personCompany-heading"
       jhiTranslate="correspCareApp.configManagePersonCompany.delete.question"
-      [translateValues]="{ id: personCompany.id }"
+      [translateValues]="{ id: personCompany.nom, name: personCompany.nom }"
     >
-      Êtes-vous certain de vouloir supprimer le Person Company {{ personCompany.id }} ?
+      Êtes-vous certain de vouloir supprimer le contact « {{ personCompany.nom || '—' }} » ?
     </p>
   </div>
 

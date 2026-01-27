@@ -1,10 +1,10 @@
 // src/main/webapp/app/entities/configManage/contact-company/list/contact-company.component.ts
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild, TemplateRef } from '@angular/core';
 import { HttpHeaders, HttpResponse } from '@angular/common/http';
 import { ActivatedRoute, Data, ParamMap, Router } from '@angular/router';
 import { combineLatest, Observable, forkJoin, of } from 'rxjs';
 import { filter, switchMap, tap, map, catchError } from 'rxjs/operators';
-import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
 
 import { IContactCompany, IContactCompanyWithPersons } from 'app/entities/configManage/contact-company/contact-company.model';
 import { IPersonCompany } from 'app/entities/configManage/person-company/person-company.model';
@@ -14,6 +14,9 @@ import { ITEMS_PER_PAGE, PAGE_HEADER, TOTAL_COUNT_RESPONSE_HEADER } from 'app/co
 import { ASC, DESC, SORT, ITEM_DELETED_EVENT, DEFAULT_SORT_DATA } from 'app/config/navigation.constants';
 import { EntityArrayWithPersonsResponseType, ContactCompanyService } from '../service/contact-company.service';
 import { ContactCompanyDeleteDialogComponent } from '../delete/contact-company-delete-dialog.component';
+
+// Import du dialog de suppression de person
+import { PersonCompanyDeleteDialogComponent } from 'app/entities/configManage/person-company/delete/person-company-delete-dialog.component';
 
 // JHipster Authority constants (adapte le chemin si besoin)
 import { Authority } from 'app/config/authority.constants';
@@ -26,7 +29,6 @@ type ContactWithState = IContactCompanyWithPersons & { expanded?: boolean };
   styleUrls: ['./contact-company.component.scss'],
 })
 export class ContactCompanyComponent implements OnInit {
-  // exposer Authority pour le template
   public readonly Authority = Authority;
 
   contactCompanies?: ContactWithState[];
@@ -41,6 +43,16 @@ export class ContactCompanyComponent implements OnInit {
 
   searchTerm = '';
 
+  // modal template reference for etat change
+  @ViewChild('etatModal') etatModal!: TemplateRef<any>;
+  protected currentModalRef?: NgbModalRef;
+  protected modalContext: {
+    type: 'company' | 'person';
+    id: number;
+    name: string;
+    action: 'activate' | 'deactivate';
+  } | null = null;
+
   constructor(
     protected contactCompanyService: ContactCompanyService,
     protected activatedRoute: ActivatedRoute,
@@ -49,17 +61,12 @@ export class ContactCompanyComponent implements OnInit {
     protected personCompanyService: PersonCompanyService
   ) {}
 
-  // utilisé par *ngFor trackBy
   trackId = (_index: number, item: IContactCompany): number => this.contactCompanyService.getContactCompanyIdentifier(item);
 
   ngOnInit(): void {
     this.load();
   }
 
-  /**
-   * Ouvre le modal de confirmation existant (ContactCompanyDeleteDialogComponent).
-   * Le modal appelle contactCompanyService.delete(id) — et nous écoutons ITEM_DELETED_EVENT pour recharger.
-   */
   delete(contactCompany: IContactCompany): void {
     const modalRef = this.modalService.open(ContactCompanyDeleteDialogComponent, { size: 'lg', backdrop: 'static' });
     modalRef.componentInstance.contactCompany = contactCompany;
@@ -86,7 +93,6 @@ export class ContactCompanyComponent implements OnInit {
     });
   }
 
-  /** Ouvre / ferme l'affichage des personnes pour une société (appelé uniquement depuis le lien "X contact(s)") */
   toggle(contact: ContactWithState): void {
     contact.expanded = !contact.expanded;
   }
@@ -99,16 +105,14 @@ export class ContactCompanyComponent implements OnInit {
     this.handleNavigation(this.page, this.predicate, this.ascending);
   }
 
-  // <-- méthode requise par le template : garde-la publique
   navigateToPage(page = this.page): void {
     this.handleNavigation(page, this.predicate, this.ascending);
   }
 
   /**
-   * Supprimer (soft-delete) une personne (PersonCompany) via l'API delate
-   * - confirme la suppression (soft)
-   * - appelle l'API via PersonCompanyService.delate(id)
-   * - met à jour localement la personne : etat = 'Delated'
+   * Supprimer (soft-delete) une personne (PersonCompany)
+   * Ouvre le modal PersonCompanyDeleteDialogComponent.
+   * Si modal renvoie ITEM_DELETED_EVENT, on recharge la liste depuis le backend (pour garder la cohérence).
    */
   deletePerson(person: IPersonCompany): void {
     if (!person || person.id == null) {
@@ -116,38 +120,24 @@ export class ContactCompanyComponent implements OnInit {
       return;
     }
 
-    // si déjà delated, rien à faire
-    if (person.etat === 'Delated') {
-      alert('Ce contact est déjà supprimé.');
-      return;
-    }
+    const modalRef = this.modalService.open(PersonCompanyDeleteDialogComponent, { size: 'lg', backdrop: 'static' });
+    modalRef.componentInstance.personCompany = person;
 
-    const name = person.nom ?? '—';
-    // Message de confirmation qui affiche le nom de la personne
-    if (!confirm(`Confirmer la suppression du contact avec le nom "${name}" ?`)) {
-      return;
-    }
-
-    this.personCompanyService.delate(person.id).subscribe({
-      next: res => {
-        const updated = res.body;
-        if (updated && updated.id != null) {
-          // mettre à jour localement la personne trouvée
-          if (this.contactCompanies && this.contactCompanies.length) {
-            this.contactCompanies = this.contactCompanies.map(c => {
-              if (c.personCompanies && c.personCompanies.length) {
-                c.personCompanies = c.personCompanies.map(p => {
-                  if (p.id === updated.id) {
-                    return { ...p, etat: updated.etat } as IPersonCompany;
-                  }
-                  return p;
-                });
-              }
-              return c;
-            });
-          }
-        } else {
-          // fallback: si aucune réponse body, marquer localement
+    modalRef.closed
+      .pipe(
+        // reason peut être { event, id } — on vérifie event
+        filter((reason: any) => reason && reason.event === ITEM_DELETED_EVENT),
+        // après fermeture on recharge depuis le backend (même méthode que pour delete(contactCompany))
+        switchMap(() => this.loadFromBackendWithRouteInformations())
+      )
+      .subscribe({
+        next: (res: EntityArrayWithPersonsResponseType) => {
+          // utiliser la même routine que lors du chargement initial
+          this.onResponseSuccess(res);
+        },
+        error: err => {
+          console.error('Erreur lors du rechargement après suppression de la personne', err);
+          // fallback local
           if (this.contactCompanies && this.contactCompanies.length) {
             this.contactCompanies = this.contactCompanies.map(c => {
               if (c.personCompanies && c.personCompanies.length) {
@@ -161,26 +151,114 @@ export class ContactCompanyComponent implements OnInit {
               return c;
             });
           }
-        }
+        },
+      });
+  }
+
+  // ============================
+  // Modal-based activation flow
+  // ============================
+  openEtatModalForCompany(contact: ContactWithState): void {
+    if (!contact || contact.id == null) {
+      console.warn('openEtatModalForCompany: contact manquant', contact);
+      return;
+    }
+    if (contact.etat === 'Delated') {
+      alert("Impossible de modifier l'état d'une société supprimée.");
+      return;
+    }
+
+    const action: 'activate' | 'deactivate' = contact.etat === 'Actif' ? 'deactivate' : 'activate';
+    this.modalContext = {
+      type: 'company',
+      id: contact.id,
+      name: contact.nom ?? '—',
+      action,
+    };
+    this.currentModalRef = this.modalService.open(this.etatModal, { centered: true, backdrop: 'static' });
+  }
+
+  openEtatModalForPerson(person: IPersonCompany): void {
+    if (!person || person.id == null) {
+      console.warn('openEtatModalForPerson: person manquant', person);
+      return;
+    }
+    if (person.etat === 'Delated') {
+      alert("Impossible de modifier l'état d'un contact supprimé.");
+      return;
+    }
+
+    const action: 'activate' | 'deactivate' = person.etat === 'Actif' ? 'deactivate' : 'activate';
+    this.modalContext = {
+      type: 'person',
+      id: person.id,
+      name: person.nom ?? '—',
+      action,
+    };
+    this.currentModalRef = this.modalService.open(this.etatModal, { centered: true, backdrop: 'static' });
+  }
+
+  confirmToggle(): void {
+    if (!this.modalContext) {
+      return;
+    }
+    const ctx = this.modalContext;
+
+    if (ctx.type === 'company') {
+      this.contactCompanyService.toggleActivation(ctx.id).subscribe({
+        next: res => {
+          this.currentModalRef?.close();
+          // reload list to keep consistency
+          this.loadFromBackendWithRouteInformations().subscribe({
+            next: (resp: EntityArrayWithPersonsResponseType) => this.onResponseSuccess(resp),
+            error: err => {
+              console.error('Erreur rechargement après toggle company', err);
+            },
+          });
+        },
+        error: err => {
+          console.error('Erreur lors du toggleActivation (company)', err);
+          alert("Erreur lors du changement d'état de la société.");
+          this.currentModalRef?.dismiss(err);
+        },
+      });
+      return;
+    }
+
+    // person
+    this.personCompanyService.toggleEtat(ctx.id).subscribe({
+      next: res => {
+        this.currentModalRef?.close();
+        this.loadFromBackendWithRouteInformations().subscribe({
+          next: (resp: EntityArrayWithPersonsResponseType) => this.onResponseSuccess(resp),
+          error: err => {
+            console.error('Erreur rechargement après toggle person', err);
+          },
+        });
       },
       error: err => {
-        console.error('Erreur lors du soft-delete de la personne', err);
-        alert('Erreur lors de la suppression du contact.');
+        console.error('Erreur lors du toggleEtat (person)', err);
+        alert("Erreur lors du changement d'état du contact.");
+        this.currentModalRef?.dismiss(err);
       },
     });
   }
 
-  /**
-   * Bascule l'état (Actif <-> Desactivated) d'une société via l'API toggleActivation.
-   * Met à jour localement la société et ses personnes (conforme à la logique backend).
-   */
+  cancelModal(): void {
+    this.currentModalRef?.dismiss();
+  }
+
+  // ============================
+  // End modal-based activation
+  // ============================
+
   toggleActivation(contactCompany: ContactWithState): void {
+    // kept for compatibility (not used by template when using modal)
     if (!contactCompany || contactCompany.id == null) {
       console.warn('toggleActivation: id manquant', contactCompany);
       return;
     }
 
-    // Ne pas permettre si Delated
     if (contactCompany.etat === 'Delated') {
       alert("Impossible de modifier l'état d'une société supprimée.");
       return;
@@ -195,25 +273,20 @@ export class ContactCompanyComponent implements OnInit {
       next: res => {
         const updated = res.body;
         if (!updated) {
-          // fallback: recharger la liste
           this.load();
           return;
         }
 
-        // Mettre à jour localement la société (etat)
         if (this.contactCompanies && this.contactCompanies.length) {
           this.contactCompanies = this.contactCompanies.map(c => {
             if (c.id === updated.id) {
-              // update état
               const newC: ContactWithState = {
                 ...c,
                 etat: updated.etat,
               };
 
-              // mettre à jour les personnes locales : si personne non Delated => prendre le même état
               if (newC.personCompanies && newC.personCompanies.length) {
                 newC.personCompanies = newC.personCompanies.map(p => {
-                  // si personne est Delated, on garde Delated
                   if (p.etat === 'Delated') {
                     return p;
                   }
@@ -234,17 +307,13 @@ export class ContactCompanyComponent implements OnInit {
     });
   }
 
-  /**
-   * Bascule l'état Actif <-> Desactivated d'une personne via l'API toggleEtat.
-   * Affiche confirmation et met à jour localement le contact dans la liste.
-   */
   togglePersonActivation(person: IPersonCompany): void {
+    // kept for compatibility (not used by template when using modal)
     if (!person || person.id == null) {
       console.warn('togglePersonActivation: id manquant', person);
       return;
     }
 
-    // Ne pas permettre si Delated
     if (person.etat === 'Delated') {
       alert("Impossible de modifier l'état d'un contact supprimé.");
       return;
@@ -259,7 +328,6 @@ export class ContactCompanyComponent implements OnInit {
       next: res => {
         const updated = res.body;
         if (updated && updated.id != null) {
-          // mettre à jour la personne localement
           if (this.contactCompanies && this.contactCompanies.length) {
             this.contactCompanies = this.contactCompanies.map(c => {
               if (c.personCompanies && c.personCompanies.length) {
@@ -274,7 +342,6 @@ export class ContactCompanyComponent implements OnInit {
             });
           }
         } else {
-          // fallback: si pas de body, inverse localement Actif <-> Desactivated
           if (this.contactCompanies && this.contactCompanies.length) {
             this.contactCompanies = this.contactCompanies.map(c => {
               if (c.personCompanies && c.personCompanies.length) {
@@ -298,14 +365,8 @@ export class ContactCompanyComponent implements OnInit {
     });
   }
 
-  /**
-   * Export Excel
-   * Appelle le service exportExcel() qui renvoie un Blob + headers.
-   * On recherche un filename dans Content-Disposition, sinon fallback.
-   */
   exportExcel(): void {
     if (this.isLoading) {
-      // éviter appels multiples
       return;
     }
     this.isLoading = true;
@@ -338,15 +399,11 @@ export class ContactCompanyComponent implements OnInit {
     });
   }
 
-  /**
-   * Extrait le filename depuis l'en-tête Content-Disposition si présent.
-   */
   protected extractFilename(headers: HttpHeaders): string | null {
     const contentDisposition = headers.get('content-disposition') || headers.get('Content-Disposition');
     if (!contentDisposition) {
       return null;
     }
-    // pattern robuste pour filename="..." ou filename=... et filename*=UTF-8''
     const result = /filename\*?=(?:UTF-8'')?["']?([^;"']+)["']?/.exec(contentDisposition);
     if (result && result[1]) {
       try {
@@ -390,13 +447,6 @@ export class ContactCompanyComponent implements OnInit {
     this.totalItems = Number(headers.get(TOTAL_COUNT_RESPONSE_HEADER));
   }
 
-  /**
-   * QUERY BACKEND
-   * - Si searchTerm présent : appelle /api/contact-companies/search, puis pour chaque résultat récupère
-   *   /api/contact-companies/{id}/person-companies/all et combine persons -> renvoie la même structure
-   *   attendue par onResponseSuccess (personCompanies inclus).
-   * - Sinon : comportement historique (queryWithPersons)
-   */
   protected queryBackend(page?: number, predicate?: string, ascending?: boolean): Observable<EntityArrayWithPersonsResponseType> {
     this.isLoading = true;
     const pageToLoad: number = page ?? 1;
@@ -406,22 +456,16 @@ export class ContactCompanyComponent implements OnInit {
       sort: this.getSortQueryParam(predicate, ascending),
     };
 
-    // Si searchTerm renseigné -> utiliser l'endpoint search
     const trimmed = (this.searchTerm ?? '').trim();
     if (trimmed.length > 0) {
-      // appelle search endpoint
       return this.contactCompanyService.search(trimmed, false, queryObject).pipe(
         switchMap(res => {
           const companies = res.body ?? [];
-          // aucun company trouvé -> renvoyer réponse vide avec mêmes headers
           if (!companies || companies.length === 0) {
-            // on crée un HttpResponse vide et on caste pour correspondre au type attendu
             return of(
               new HttpResponse({ body: [], headers: res.headers, status: res.status })
             ) as unknown as Observable<EntityArrayWithPersonsResponseType>;
           }
-
-          // pour chaque company, récupérer person-companies/all
           const calls = companies.map(c =>
             this.contactCompanyService.getAllPersonCompanies((c as any).id!).pipe(
               map(personRes => {
@@ -431,17 +475,14 @@ export class ContactCompanyComponent implements OnInit {
               catchError(() => of({ company: c, persons: [] }))
             )
           );
-
           return forkJoin(calls).pipe(
             map(results => {
               const combined = results.map(r => {
-                // merge la company retournée avec personCompanies
                 return {
                   ...(r.company as any),
                   personCompanies: r.persons,
                 } as IContactCompanyWithPersons;
               });
-              // retourner HttpResponse similaire pour onResponseSuccess
               return new HttpResponse({
                 body: combined,
                 headers: res.headers,
@@ -454,7 +495,6 @@ export class ContactCompanyComponent implements OnInit {
       );
     }
 
-    // comportement par défaut (liste with persons fournie par backend)
     return this.contactCompanyService.queryWithPersons(queryObject).pipe(tap(() => (this.isLoading = false)));
   }
 
@@ -482,10 +522,6 @@ export class ContactCompanyComponent implements OnInit {
 
   protected readonly Math = Math;
 
-  /**
-   * Retourne la classe CSS complète pour le badge d'une personne selon son état.
-   * Exemples retournés : 'badge ms-2 bg-success text-white', 'badge ms-2 bg-warning text-dark', 'badge ms-2 bg-danger text-white'
-   */
   public getPersonBadgeClasses(etat?: string | null): string {
     if (!etat) {
       return 'badge ms-2 bg-secondary text-white';
