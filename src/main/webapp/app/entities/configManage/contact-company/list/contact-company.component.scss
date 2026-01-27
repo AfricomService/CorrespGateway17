@@ -51,6 +51,16 @@
             transition: transform 120ms ease, box-shadow 120ms ease;
           }
         }
+
+        /* style spécifique du bouton export (conserve alignement et padding) */
+        > .btn.btn-light {
+          min-height: 42px;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding-left: 0.75rem;
+          padding-right: 0.75rem;
+        }
       }
 
       .actions {
@@ -66,18 +76,35 @@
           gap: 0.5rem;
           transition: transform 140ms ease, box-shadow 140ms ease;
         }
-
-        /* animated btn style helper */
-        .btn-animated:hover {
-          transform: translateY(-3px) scale(1.02);
-          box-shadow: 0 6px 18px rgba(43, 109, 246, 0.12);
-        }
       }
     }
 
     .card-body {
       padding: 1rem 1.25rem;
     }
+  }
+
+  /* Shared animated button style */
+  /* applique la même animation à tous les éléments qui utilisent .btn-animated */
+  .btn-animated {
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-left: 0.65rem;
+    padding-right: 0.65rem;
+    transition: transform 140ms ease, box-shadow 140ms ease;
+    /* optional: légère bordure arrondie cohérente */
+    border-radius: 0.4rem;
+  }
+
+  /* Hover / focus effect partagé */
+  .btn-animated:hover,
+  .btn-animated:focus {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 6px 18px rgba(43, 109, 246, 0.12);
+    text-decoration: none;
+    outline: none;
   }
 
   /* ----- NOUVEAU: header au dessus de la liste des sociétés ----- */
@@ -210,10 +237,9 @@
         transition: transform 140ms ease, box-shadow 140ms ease;
       }
 
-      /* hover effect for the small add button */
+      /* hover effect for the small add button (uses same .btn-animated style) */
       button.btn-animated:hover {
-        transform: translateY(-3px) scale(1.02);
-        box-shadow: 0 6px 14px rgba(17, 24, 39, 0.08);
+        /* inherited from .btn-animated:hover */
       }
     }
 

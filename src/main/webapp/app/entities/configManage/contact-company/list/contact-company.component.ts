@@ -291,6 +291,58 @@ export class ContactCompanyComponent implements OnInit {
     });
   }
 
+  /**
+   * Export Excel
+   * Appelle le service exportExcel() qui renvoie un Blob + headers.
+   * On recherche un filename dans Content-Disposition, sinon fallback.
+   */
+  exportExcel(): void {
+    this.isLoading = true;
+    this.contactCompanyService.exportExcel().subscribe({
+      next: res => {
+        const blob = res.body;
+        if (!blob) {
+          alert('Aucun fichier reçu.');
+          this.isLoading = false;
+          return;
+        }
+
+        const filename = this.extractFilename(res.headers) ?? 'contact_companies_no_ids.xlsx';
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+
+        this.isLoading = false;
+      },
+      error: err => {
+        console.error("Erreur lors de l'export Excel", err);
+        alert("Erreur lors de l'export Excel.");
+        this.isLoading = false;
+      },
+    });
+  }
+
+  /**
+   * Extrait le filename depuis l'en-tête Content-Disposition si présent.
+   */
+  protected extractFilename(headers: HttpHeaders): string | null {
+    const contentDisposition = headers.get('content-disposition') || headers.get('Content-Disposition');
+    if (!contentDisposition) {
+      return null;
+    }
+    // pattern robust pour filename="..." ou filename=...
+    const result = /filename\*?=(?:UTF-8'')?["']?([^;"']+)["']?/.exec(contentDisposition);
+    if (result && result[1]) {
+      return decodeURIComponent(result[1].replace(/['"]/g, ''));
+    }
+    return null;
+  }
+
   protected loadFromBackendWithRouteInformations(): Observable<EntityArrayWithPersonsResponseType> {
     return combineLatest([this.activatedRoute.queryParamMap, this.activatedRoute.data]).pipe(
       tap(([params, data]) => this.fillComponentAttributeFromRoute(params, data)),

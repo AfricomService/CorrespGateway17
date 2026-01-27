@@ -17,6 +17,7 @@ export type PartialUpdateContactCompany = Partial<IContactCompany> & Pick<IConta
 export type EntityResponseType = HttpResponse<IContactCompany>;
 export type EntityArrayResponseType = HttpResponse<IContactCompany[]>;
 export type EntityArrayWithPersonsResponseType = HttpResponse<IContactCompanyWithPersons[]>;
+export type BlobResponseType = HttpResponse<Blob>;
 
 @Injectable({ providedIn: 'root' })
 export class ContactCompanyService {
@@ -98,6 +99,19 @@ export class ContactCompanyService {
     return this.http.get<IPersonCompany[]>(`${this.resourceUrl}/${contactCompanyId}/person-companies/all`, {
       observe: 'response',
     });
+  }
+
+  /**
+   * NOUVEAU : appeler l'endpoint d'export Excel (backend renvoie un blob)
+   * GET /api/contact-companies/export/excel
+   */
+  exportExcel(): Observable<BlobResponseType> {
+    // -> observe: 'response' pour pouvoir lire les headers (Content-Disposition)
+    // TypeScript typing quirk : on cast en HttpResponse<Blob>
+    return this.http.get(`${this.resourceUrl}/export/excel`, {
+      observe: 'response',
+      responseType: 'blob' as 'json',
+    }) as Observable<BlobResponseType>;
   }
 
   getContactCompanyIdentifier(contactCompany: Pick<IContactCompany, 'id'>): number {

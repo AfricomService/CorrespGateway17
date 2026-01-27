@@ -14,7 +14,7 @@
     <!-- ESPACE + CONTROLS: recherche + bouton ajouter (alignés sur md+) -->
     <div class="controls d-flex flex-column flex-md-row align-items-start align-items-md-center gap-2">
       <!-- Barre de recherche -->
-      <div class="search-wrapper w-100 w-md-auto me-md-3">
+      <div class="search-wrapper w-100 w-md-auto me-md-3 d-flex align-items-center">
         <div class="input-group">
           <input
             id="searchCompany"
@@ -29,6 +29,19 @@
             <fa-icon icon="search"></fa-icon>
           </button>
         </div>
+
+        <!-- BOUTON EXPORT (à côté immédiat de la recherche) -->
+        <!-- Ajout de la classe btn-animated pour réutiliser l'animation "Ajouter" -->
+        <button
+          class="btn btn-light btn-animated ms-2"
+          type="button"
+          (click)="exportExcel()"
+          title="Exporter en Excel"
+          [disabled]="isLoading"
+        >
+          <fa-icon icon="file-excel"></fa-icon>
+          <span class="ms-1 d-none d-md-inline">Exporter</span>
+        </button>
       </div>
 
       <!-- Bouton Ajouter -->

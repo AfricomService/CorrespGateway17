@@ -32,7 +32,7 @@ declare const SERVER_API_URL: string;
 
 /**
  * Import explicite des icônes utilisées dans ton template.
- * Si l'une d'elles n'existe pas dans ta version de @fortawesome, remplace par l'équivalent.
+ * Ajouté : faFileExcel, faPowerOff, faSearch
  */
 import {
   faMapMarkerAlt,
@@ -50,6 +50,9 @@ import {
   faArrowLeft,
   faSave,
   faBan,
+  faFileExcel,
+  faPowerOff,
+  faSearch,
 } from '@fortawesome/free-solid-svg-icons';
 
 @NgModule({
@@ -98,7 +101,10 @@ export class AppModule {
       faBuilding,
       faArrowLeft,
       faSave,
-      faBan
+      faBan,
+      faFileExcel,
+      faPowerOff,
+      faSearch
     );
 
     dpConfig.minDate = { year: dayjs().subtract(100, 'year').year(), month: 1, day: 1 };
