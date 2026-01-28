@@ -2,19 +2,10 @@ import { Injectable } from '@angular/core';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 
 import { IPersonCompany, NewPersonCompany } from '../person-company.model';
+import { TranslateService } from '@ngx-translate/core';
 
-/**
- * A partial Type with required key is used as form input.
- */
 type PartialWithRequiredKeyOf<T extends { id: unknown }> = Partial<Omit<T, 'id'>> & { id: T['id'] };
-
-/**
- * Type for createFormGroup and resetForm argument.
- * It accepts IPersonCompany for edit and NewPersonCompanyFormGroupInput for create.
- */
 type PersonCompanyFormGroupInput = IPersonCompany | PartialWithRequiredKeyOf<NewPersonCompany>;
-
-// Ajouter contactCompanyId aux defaults (Retiré 'etat')
 type PersonCompanyFormDefaults = Pick<NewPersonCompany, 'id' | 'contactCompanyId'>;
 
 type PersonCompanyFormGroupContent = {
@@ -26,7 +17,6 @@ type PersonCompanyFormGroupContent = {
   fax: FormControl<IPersonCompany['fax']>;
   email: FormControl<IPersonCompany['email']>;
   whatsapp: FormControl<IPersonCompany['whatsapp']>;
-  // contactCompanyId présent mais inchangable dans l'UI
   contactCompanyId: FormControl<IPersonCompany['contactCompanyId'] | NewPersonCompany['contactCompanyId']>;
 };
 
@@ -34,6 +24,8 @@ export type PersonCompanyFormGroup = FormGroup<PersonCompanyFormGroupContent>;
 
 @Injectable({ providedIn: 'root' })
 export class PersonCompanyFormService {
+  constructor(private translate: TranslateService) {}
+
   createPersonCompanyFormGroup(personCompany: PersonCompanyFormGroupInput = { id: null }): PersonCompanyFormGroup {
     const personCompanyRawValue = {
       ...this.getFormDefaults(),
@@ -54,11 +46,31 @@ export class PersonCompanyFormService {
       adresse: new FormControl(personCompanyRawValue.adresse),
       tel: new FormControl(personCompanyRawValue.tel),
       fax: new FormControl(personCompanyRawValue.fax),
-      email: new FormControl(personCompanyRawValue.email),
+      email: new FormControl(personCompanyRawValue.email, {
+        validators: [],
+      }),
       whatsapp: new FormControl(personCompanyRawValue.whatsapp),
-      // ajout du contrôle contactCompanyId (readonly dans le template)
       contactCompanyId: new FormControl(personCompanyRawValue.contactCompanyId),
     });
+  }
+
+  // Méthode utilitaire pour obtenir le message d'erreur traduit pour un contrôle
+  getValidationMessage(formControl: FormControl, controlName: string): string {
+    if (!formControl) {
+      return '';
+    }
+    if (formControl.hasError('required')) {
+      // clé générique (entity.validation.required) est utilisée dans tes templates
+      return this.translate.instant('entity.validation.required', { name: controlName });
+    }
+    if (formControl.hasError('email')) {
+      return this.translate.instant('entity.validation.email');
+    }
+    if (formControl.hasError('nameExists')) {
+      // clé spécifique à ajouter dans ton i18n si nécessaire
+      return this.translate.instant('correspCareApp.configManagePersonCompany.messages.nameExists');
+    }
+    return '';
   }
 
   getPersonCompany(form: PersonCompanyFormGroup): IPersonCompany | NewPersonCompany {
@@ -67,12 +79,10 @@ export class PersonCompanyFormService {
 
   resetForm(form: PersonCompanyFormGroup, personCompany: PersonCompanyFormGroupInput): void {
     const personCompanyRawValue = { ...this.getFormDefaults(), ...personCompany };
-    form.reset(
-      {
-        ...personCompanyRawValue,
-        id: { value: personCompanyRawValue.id, disabled: true },
-      } as any /* cast to workaround https://github.com/angular/angular/issues/46458 */
-    );
+    form.reset({
+      ...personCompanyRawValue,
+      id: { value: personCompanyRawValue.id, disabled: true },
+    } as any);
   }
 
   private getFormDefaults(): PersonCompanyFormDefaults {

@@ -1,5 +1,6 @@
 {
   "correspCareApp": {
+    "loading": "Chargement...",
     "UsualStatus": {
       "null": "",
       "Actif": "Actif",
@@ -58,6 +59,7 @@
         "confirm": {
           "companyPrefix": "Confirmer la",
           "companySuffix": "de la société « {{ name }} » ?",
+          "companyFull": "Confirmer la suppression de la société « {{ name }} » ?",
           "personPrefix": "Confirmer la",
           "personSuffix": "du contact « {{ name }} » ?"
         },
@@ -75,7 +77,7 @@
       },
       "nom": "Nom",
       "nomabrege": "Nom abrégé",
-      "matrne": "Matrne",
+      "matrne": "Mat RNE",
       "pays": "Pays",
       "adresse": "Adresse",
       "tel": "Tel",
@@ -89,7 +91,7 @@
         "subtitle": "Remplissez les informations de la société",
         "placeholder": {
           "nom": "Nom de la société",
-          "nomabrege": "Ex: ACME",
+          "nomabrege": "Ex : ACME",
           "matrne": "Référence RNE",
           "pays": "Pays",
           "adresse": "Adresse complète",
@@ -103,27 +105,98 @@
       },
       "errors": {
         "nameExists": "Une société avec ce nom existe déjà.",
-        "matrneExists": "Une société avec ce matricule fiscal existe déjà.",
-        "cannotChangeDelated": "Impossible de modifier l'entité supprimée."
+        "matrneExists": "Une société avec ce matricule existe déjà.",
+        "cannotChangeDelated": "Impossible de modifier une entité supprimée."
       },
       "export": {
         "noFile": "Aucun fichier reçu.",
         "failed": "Erreur lors de l'export Excel."
       }
-    }
-  },
-  "pagination": {
-    "previous": "Précédent",
-    "next": "Suivant"
-  },
-  "entity": {
-    "validation": {
-      "required": "Ce champ est requis.",
-      "email": "Email invalide."
     },
-    "action": {
-      "cancel": "Annuler",
-      "save": "Sauvegarder"
+    "configManagePersonCompany": {
+      "home": {
+        "title": "Contacts",
+        "subtitle": "Informations du contact et lien avec la société",
+        "createOrEditLabel": "Créer / Éditer un contact"
+      },
+      "nom": "Nom",
+      "pays": "Pays",
+      "adresse": "Adresse",
+      "tel": "Tel",
+      "fax": "Fax",
+      "email": "Email",
+      "whatsapp": "Whatsapp",
+      "placeholders": {
+        "nom": "Nom du contact",
+        "pays": "Ex : Tunisie",
+        "adresse": "Adresse postale",
+        "tel": "Téléphone",
+        "fax": "Fax",
+        "email": "email@exemple.com",
+        "whatsapp": "Whatsapp"
+      },
+      "labels": {
+        "contactCompany": "Société",
+        "contactCompanyReadonlyNote": "Le lien vers la société est verrouillé et ne peut pas être modifié ici."
+      },
+      "buttons": {
+        "viewCompany": "Voir la société"
+      },
+      "form": {
+        "saving": "Enregistrement..."
+      },
+      "messages": {
+        "contactCompanyNotFound": "Société liée introuvable (ID fourni invalide).",
+        "unknownSaveError": "Erreur serveur lors de l'enregistrement.",
+        "processingError": "Une erreur est survenue lors du traitement.",
+        "nameExists": "Un contact avec ce nom existe déjà."
+      },
+      "fields": {
+        "nom": "Nom",
+        "pays": "Pays",
+        "adresse": "Adresse",
+        "tel": "Tel",
+        "fax": "Fax",
+        "email": "Email",
+        "whatsapp": "Whatsapp"
+      },
+      "validation": {
+        "required": "Ce champ est obligatoire."
+      }
+    },
+    "pagination": {
+      "previous": "Précédent",
+      "next": "Suivant"
+    },
+    "entity": {
+      "validation": {
+        "required": "Ce champ est requis.",
+        "email": "Email invalide."
+      },
+      "action": {
+        "cancel": "Annuler",
+        "save": "Sauvegarder"
+      }
+    },
+    "contactCompany": {
+      "action": {
+        "activate": "Activer",
+        "deactivate": "Désactiver"
+      },
+      "modal": {
+        "confirm": {
+          "company": "Confirmer la {{ action }} de la société \"{{ name }}\" ?",
+          "person": "Confirmer la {{ action }} du contact \"{{ name }}\" ?"
+        }
+      },
+      "errors": {
+        "cannotChangeDelated": "Impossible de modifier une entité supprimée.",
+        "toggleFailed": "Erreur lors du changement d'état."
+      },
+      "export": {
+        "noFile": "Aucun fichier reçu.",
+        "failed": "Erreur lors de l'export Excel."
+      }
     }
   }
 }

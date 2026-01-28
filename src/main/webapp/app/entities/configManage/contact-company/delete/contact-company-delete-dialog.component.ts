@@ -1,7 +1,6 @@
-// src/main/webapp/app/entities/configManage/contact-company/delete/contact-company-delete-dialog.component.ts
-
 import { Component } from '@angular/core';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
+import { TranslateService } from '@ngx-translate/core';
 
 import { IContactCompany } from '../contact-company.model';
 import { ContactCompanyService } from '../service/contact-company.service';
@@ -13,7 +12,11 @@ import { ITEM_DELETED_EVENT } from 'app/config/navigation.constants';
 export class ContactCompanyDeleteDialogComponent {
   contactCompany?: IContactCompany;
 
-  constructor(protected contactCompanyService: ContactCompanyService, protected activeModal: NgbActiveModal) {}
+  constructor(
+    protected contactCompanyService: ContactCompanyService,
+    protected activeModal: NgbActiveModal,
+    protected translate: TranslateService
+  ) {}
 
   cancel(): void {
     this.activeModal.dismiss();
@@ -32,6 +35,12 @@ export class ContactCompanyDeleteDialogComponent {
       },
       error: err => {
         console.error('Erreur lors du changement d’état (delated)', err);
+        const msg =
+          this.translate.instant('correspCareApp.configManageContactCompany.errors.cannotChangeDelated') ||
+          this.translate.instant('correspCareApp.contactCompany.errors.cannotChangeDelated') ||
+          "Erreur lors du changement d'état.";
+        // message utilisateur simple (remplace par toast/snackbar si tu utilises un utilitaire)
+        alert(msg);
       },
     });
   }

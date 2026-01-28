@@ -28,6 +28,9 @@ import { PageRibbonComponent } from './layouts/profiles/page-ribbon.component';
 import { ActiveMenuDirective } from './layouts/navbar/active-menu.directive';
 import { ErrorComponent } from './layouts/error/error.component';
 
+// TranslateService
+import { TranslateService } from '@ngx-translate/core';
+
 declare const SERVER_API_URL: string;
 
 /**
@@ -80,7 +83,12 @@ import {
   bootstrap: [MainComponent],
 })
 export class AppModule {
-  constructor(applicationConfigService: ApplicationConfigService, iconLibrary: FaIconLibrary, dpConfig: NgbDatepickerConfig) {
+  constructor(
+    applicationConfigService: ApplicationConfigService,
+    iconLibrary: FaIconLibrary,
+    dpConfig: NgbDatepickerConfig,
+    private translate: TranslateService // injection ajoutée pour initialisation i18n
+  ) {
     applicationConfigService.setEndpointPrefix(SERVER_API_URL);
     registerLocaleData(locale);
 
@@ -108,5 +116,38 @@ export class AppModule {
     );
 
     dpConfig.minDate = { year: dayjs().subtract(100, 'year').year(), month: 1, day: 1 };
+
+    // --------- Initialisation de la traduction (ngx-translate) ----------
+    // Langues supportées
+    this.translate.addLangs(['fr', 'en', 'ar']);
+    // Langue par défaut
+    this.translate.setDefaultLang('fr');
+
+    // Choix de la langue : priorise la sauvegardée, sinon le navigateur, sinon 'fr'
+    const savedLang = localStorage.getItem('lang');
+    const browserLang = this.translate.getBrowserLang();
+    const useLang =
+      savedLang && ['fr', 'en', 'ar'].includes(savedLang)
+        ? savedLang
+        : browserLang && ['fr', 'en', 'ar'].includes(browserLang)
+        ? browserLang
+        : 'fr';
+
+    // Utilise la langue choisie (charge i18n/{lang}.json via TranslateHttpLoader)
+    this.translate.use(useLang);
+
+    // Ajuste l'attribut dir/lang du document lors du changement de langue (RTL pour ar)
+    this.translate.onLangChange.subscribe(event => {
+      const lang = event.lang;
+      document.documentElement.lang = lang;
+      document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+      // Sauvegarde le choix
+      try {
+        localStorage.setItem('lang', lang);
+      } catch (e) {
+        // ignore si stockage non disponible
+      }
+    });
+    // ------------------------------------------------------------------
   }
 }

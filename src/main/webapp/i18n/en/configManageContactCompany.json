@@ -1,5 +1,6 @@
 {
   "correspCareApp": {
+    "loading": "Loading...",
     "UsualStatus": {
       "null": "",
       "Actif": "Active",
@@ -14,9 +15,9 @@
         "title": "Address Book",
         "subtitle": "Manage companies and contacts",
         "refreshListLabel": "Refresh list",
-        "createLabel": "Create a new Contact Company",
-        "createOrEditLabel": "Create / Edit a Contact Company",
-        "notFound": "No Contact Company found"
+        "createLabel": "Create a new company",
+        "createOrEditLabel": "Create / Edit a company",
+        "notFound": "No company found"
       },
       "search": {
         "placeholder": "Search a company...",
@@ -56,10 +57,11 @@
         "title": "Confirmation",
         "closeAria": "Close",
         "confirm": {
-          "companyPrefix": "Confirm",
-          "companySuffix": "for the company « {{ name }} »?",
-          "personPrefix": "Confirm",
-          "personSuffix": "for the contact « {{ name }} »?"
+          "companyPrefix": "Confirm the",
+          "companySuffix": "of the company « {{ name }} »?",
+          "companyFull": "Confirm deletion of the company « {{ name }} »?",
+          "personPrefix": "Confirm the",
+          "personSuffix": "of the contact « {{ name }} »?"
         },
         "buttons": {
           "cancel": "Cancel",
@@ -75,7 +77,7 @@
       },
       "nom": "Name",
       "nomabrege": "Short name",
-      "matrne": "Tax ID",
+      "matrne": "Mat RNE",
       "pays": "Country",
       "adresse": "Address",
       "tel": "Phone",
@@ -83,7 +85,7 @@
       "email": "Email",
       "webpage": "Website",
       "nomabrege_label": "Short name:",
-      "matrne_label": "Tax ID:",
+      "matrne_label": "Mat RNE:",
       "loading": "Loading...",
       "form": {
         "subtitle": "Fill in the company information",
@@ -103,27 +105,98 @@
       },
       "errors": {
         "nameExists": "A company with this name already exists.",
-        "matrneExists": "A company with this tax ID already exists.",
+        "matrneExists": "A company with this registration number already exists.",
         "cannotChangeDelated": "Cannot modify a deleted entity."
       },
       "export": {
         "noFile": "No file received.",
         "failed": "Error during Excel export."
       }
-    }
-  },
-  "pagination": {
-    "previous": "Previous",
-    "next": "Next"
-  },
-  "entity": {
-    "validation": {
-      "required": "This field is required.",
-      "email": "Invalid email."
     },
-    "action": {
-      "cancel": "Cancel",
-      "save": "Save"
+    "configManagePersonCompany": {
+      "home": {
+        "title": "Contacts",
+        "subtitle": "Contact information and link to company",
+        "createOrEditLabel": "Create / Edit a contact"
+      },
+      "nom": "Name",
+      "pays": "Country",
+      "adresse": "Address",
+      "tel": "Phone",
+      "fax": "Fax",
+      "email": "Email",
+      "whatsapp": "Whatsapp",
+      "placeholders": {
+        "nom": "Contact name",
+        "pays": "Ex: Tunisia",
+        "adresse": "Postal address",
+        "tel": "Phone",
+        "fax": "Fax",
+        "email": "email@example.com",
+        "whatsapp": "Whatsapp"
+      },
+      "labels": {
+        "contactCompany": "Company",
+        "contactCompanyReadonlyNote": "The link to the company is locked and cannot be changed here."
+      },
+      "buttons": {
+        "viewCompany": "View company"
+      },
+      "form": {
+        "saving": "Saving..."
+      },
+      "messages": {
+        "contactCompanyNotFound": "Linked company not found (provided id invalid).",
+        "unknownSaveError": "Server error during save.",
+        "processingError": "An error occurred while processing the request.",
+        "nameExists": "A contact with this name already exists."
+      },
+      "fields": {
+        "nom": "Name",
+        "pays": "Country",
+        "adresse": "Address",
+        "tel": "Phone",
+        "fax": "Fax",
+        "email": "Email",
+        "whatsapp": "Whatsapp"
+      },
+      "validation": {
+        "required": "This field is required."
+      }
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "entity": {
+      "validation": {
+        "required": "This field is required.",
+        "email": "Invalid email."
+      },
+      "action": {
+        "cancel": "Cancel",
+        "save": "Save"
+      }
+    },
+    "contactCompany": {
+      "action": {
+        "activate": "Activate",
+        "deactivate": "Deactivate"
+      },
+      "modal": {
+        "confirm": {
+          "company": "Confirm {{ action }} for company \"{{ name }}\"?",
+          "person": "Confirm {{ action }} for contact \"{{ name }}\"?"
+        }
+      },
+      "errors": {
+        "cannotChangeDelated": "Cannot modify a deleted entity.",
+        "toggleFailed": "Error while changing state."
+      },
+      "export": {
+        "noFile": "No file received.",
+        "failed": "Error during Excel export."
+      }
     }
   }
 }

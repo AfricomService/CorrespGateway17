@@ -1,12 +1,12 @@
+<!-- src/main/webapp/app/entities/configManage/person-company/update/person-company-update.component.html -->
 <div class="person-company-page d-flex justify-content-center py-4">
   <div class="person-company-card card shadow-sm w-100" style="max-width: 900px">
-    <!-- En-tête : design calqué sur contact-list (bg-primary, texte blanc, padding) -->
     <div
       class="card-header bg-primary text-white d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-2"
     >
       <div class="page-title">
-        <h1 class="mb-0">Créer / Éditer un contact</h1>
-        <small class="text-white-75">Informations du contact et liaison avec la société</small>
+        <h1 class="mb-0">{{ 'correspCareApp.configManagePersonCompany.home.createOrEditLabel' | translate }}</h1>
+        <small class="text-white-75">{{ 'correspCareApp.configManagePersonCompany.home.subtitle' | translate }}</small>
       </div>
     </div>
 
@@ -22,7 +22,9 @@
           <!-- Left column -->
           <div class="col-12 col-md-6">
             <div class="form-group">
-              <label class="form-label" jhiTranslate="correspCareApp.configManagePersonCompany.nom" for="field_nom">Nom *</label>
+              <label class="form-label" for="field_nom">
+                {{ 'correspCareApp.configManagePersonCompany.nom' | translate }}
+              </label>
               <input
                 type="text"
                 class="form-control form-control-lg"
@@ -30,7 +32,7 @@
                 id="field_nom"
                 data-cy="nom"
                 formControlName="nom"
-                placeholder="Nom du contact"
+                [placeholder]="'correspCareApp.configManagePersonCompany.placeholders.nom' | translate"
                 aria-required="true"
                 autofocus
               />
@@ -38,14 +40,15 @@
                 class="invalid-feedback d-block"
                 *ngIf="editForm.get('nom')!.invalid && (editForm.get('nom')!.dirty || editForm.get('nom')!.touched)"
               >
-                <small *ngIf="editForm.get('nom')?.errors?.required" jhiTranslate="entity.validation.required"
-                  >Ce champ est obligatoire.</small
-                >
+                <small *ngIf="editForm.get('nom')?.errors?.required">{{ 'entity.validation.required' | translate }}</small>
+                <small *ngIf="editForm.get('nom')?.errors?.nameExists">{{
+                  'correspCareApp.configManagePersonCompany.messages.nameExists' | translate
+                }}</small>
               </div>
             </div>
 
             <div class="form-group">
-              <label class="form-label" jhiTranslate="correspCareApp.configManagePersonCompany.pays" for="field_pays">Pays</label>
+              <label class="form-label" for="field_pays">{{ 'correspCareApp.configManagePersonCompany.pays' | translate }}</label>
               <input
                 type="text"
                 class="form-control"
@@ -53,12 +56,12 @@
                 id="field_pays"
                 data-cy="pays"
                 formControlName="pays"
-                placeholder="Ex: Tunisie"
+                [placeholder]="'correspCareApp.configManagePersonCompany.placeholders.pays' | translate"
               />
             </div>
 
             <div class="form-group">
-              <label class="form-label" jhiTranslate="correspCareApp.configManagePersonCompany.adresse" for="field_adresse">Adresse</label>
+              <label class="form-label" for="field_adresse">{{ 'correspCareApp.configManagePersonCompany.adresse' | translate }}</label>
               <input
                 type="text"
                 class="form-control"
@@ -66,7 +69,7 @@
                 id="field_adresse"
                 data-cy="adresse"
                 formControlName="adresse"
-                placeholder="Adresse postale"
+                [placeholder]="'correspCareApp.configManagePersonCompany.placeholders.adresse' | translate"
               />
             </div>
           </div>
@@ -74,26 +77,54 @@
           <!-- Right column -->
           <div class="col-12 col-md-6">
             <div class="form-group">
-              <label class="form-label" jhiTranslate="correspCareApp.configManagePersonCompany.tel" for="field_tel">Tel</label>
-              <input type="text" class="form-control" name="tel" id="field_tel" data-cy="tel" formControlName="tel" placeholder="tel" />
+              <label class="form-label" for="field_tel">{{ 'correspCareApp.configManagePersonCompany.tel' | translate }}</label>
+              <div class="input-group">
+                <span class="input-group-text" aria-hidden="true">📞</span>
+                <input
+                  type="text"
+                  class="form-control"
+                  name="tel"
+                  id="field_tel"
+                  data-cy="tel"
+                  formControlName="tel"
+                  [placeholder]="'correspCareApp.configManagePersonCompany.placeholders.tel' | translate"
+                />
+              </div>
             </div>
 
             <div class="form-group">
-              <label class="form-label" jhiTranslate="correspCareApp.configManagePersonCompany.fax" for="field_fax">Fax</label>
-              <input type="text" class="form-control" name="fax" id="field_fax" data-cy="fax" formControlName="fax" placeholder="Fax" />
-            </div>
-
-            <div class="form-group">
-              <label class="form-label" jhiTranslate="correspCareApp.configManagePersonCompany.email" for="field_email">Email</label>
+              <label class="form-label" for="field_fax">{{ 'correspCareApp.configManagePersonCompany.fax' | translate }}</label>
               <input
-                type="email"
+                type="text"
                 class="form-control"
-                name="email"
-                id="field_email"
-                data-cy="email"
-                formControlName="email"
-                placeholder="email@exemple.com"
+                name="fax"
+                id="field_fax"
+                data-cy="fax"
+                formControlName="fax"
+                [placeholder]="'correspCareApp.configManagePersonCompany.placeholders.fax' | translate"
               />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="field_email">{{ 'correspCareApp.configManagePersonCompany.email' | translate }}</label>
+              <div class="input-group">
+                <span class="input-group-text" aria-hidden="true">@</span>
+                <input
+                  type="email"
+                  class="form-control"
+                  name="email"
+                  id="field_email"
+                  data-cy="email"
+                  formControlName="email"
+                  [placeholder]="'correspCareApp.configManagePersonCompany.placeholders.email' | translate"
+                />
+              </div>
+              <div
+                class="form-text text-danger"
+                *ngIf="editForm.get('email')?.invalid && (editForm.get('email')?.touched || editForm.get('email')?.dirty)"
+              >
+                <span *ngIf="editForm.get('email')?.errors?.email">{{ 'entity.validation.email' | translate }}</span>
+              </div>
             </div>
           </div>
 
@@ -102,9 +133,9 @@
             <div class="row gx-3">
               <div class="col-12 col-md-6">
                 <div class="form-group">
-                  <label class="form-label" jhiTranslate="correspCareApp.configManagePersonCompany.whatsapp" for="field_whatsapp"
-                    >Whatsapp</label
-                  >
+                  <label class="form-label" for="field_whatsapp">{{
+                    'correspCareApp.configManagePersonCompany.whatsapp' | translate
+                  }}</label>
                   <input
                     type="text"
                     class="form-control"
@@ -112,26 +143,22 @@
                     id="field_whatsapp"
                     data-cy="whatsapp"
                     formControlName="whatsapp"
-                    placeholder="whatsapp"
+                    [placeholder]="'correspCareApp.configManagePersonCompany.placeholders.whatsapp' | translate"
                   />
                 </div>
               </div>
-
-              <!-- NOTE: Le bloc 'Etat' a été retiré -->
             </div>
           </div>
 
-          <!-- contactCompanyId (inchangable) : on garde l'id caché dans le form, on affiche le NOM -->
+          <!-- contactCompanyId (inchangeable) -->
           <div class="col-12">
             <div class="form-group readonly-field d-flex align-items-center justify-content-between">
               <div>
-                <label class="form-label mb-1" for="field_contactCompanyId">Société</label>
-
-                <!-- hidden input pour garder contactCompanyId dans le form -->
+                <label class="form-label mb-1" for="field_contactCompanyId">{{
+                  'correspCareApp.configManagePersonCompany.labels.contactCompany' | translate
+                }}</label>
                 <input type="hidden" id="field_contactCompanyId" formControlName="contactCompanyId" />
-
                 <div class="d-flex align-items-center gap-2">
-                  <!-- affichage du NOM (readonly) -->
                   <input
                     type="text"
                     class="form-control form-control-plaintext readonly-input"
@@ -142,12 +169,16 @@
                     aria-readonly="true"
                   />
                   <span class="badge company-badge" *ngIf="contactCompanyName">
-                    <fa-icon icon="building" class="me-1"></fa-icon>
+                    <fa-icon icon="building" class="me-1" aria-hidden="true"></fa-icon>
                     {{ contactCompanyName }}
-                    <small class="ms-2 text-muted">Liaison</small>
+                    <small class="ms-2 text-muted">{{
+                      'correspCareApp.configManagePersonCompany.labels.contactCompany' | translate
+                    }}</small>
                   </span>
                 </div>
-                <small class="form-text text-muted">Le lien vers la société est verrouillé et ne peut pas être modifié ici.</small>
+                <small class="form-text text-muted">{{
+                  'correspCareApp.configManagePersonCompany.labels.contactCompanyReadonlyNote' | translate
+                }}</small>
               </div>
 
               <div class="d-none d-md-block text-end">
@@ -155,21 +186,19 @@
                   *ngIf="editForm.get('contactCompanyId')?.value"
                   class="btn btn-sm btn-outline-primary btn-animated"
                   [routerLink]="['/contact-company', editForm.get('contactCompanyId')?.value, 'view']"
-                  title="Voir la société liée"
+                  title="{{ 'correspCareApp.configManagePersonCompany.buttons.viewCompany' | translate }}"
                 >
-                  <fa-icon icon="eye"></fa-icon>&nbsp;Voir la société
+                  <fa-icon icon="eye"></fa-icon>&nbsp;{{ 'correspCareApp.configManagePersonCompany.buttons.viewCompany' | translate }}
                 </a>
               </div>
             </div>
           </div>
-
-          <!-- NOTE: Le champ 'Id' n'est plus affiché dans l'UI -->
         </div>
 
-        <!-- Barre d'actions (bas) : Annuler + Sauvegarder côte à côte -->
+        <!-- actions -->
         <div class="actions-row mt-4 d-flex justify-content-end gap-2">
           <button type="button" id="cancel-save" class="btn btn-outline-secondary btn-animated" (click)="previousState()">
-            <fa-icon icon="ban"></fa-icon>&nbsp;<span jhiTranslate="entity.action.cancel">Annuler</span>
+            <fa-icon icon="ban"></fa-icon>&nbsp;<span>{{ 'entity.action.cancel' | translate }}</span>
           </button>
 
           <button
@@ -179,7 +208,14 @@
             [disabled]="editForm.invalid || isSaving"
             class="btn btn-primary btn-animated"
           >
-            <fa-icon icon="save"></fa-icon>&nbsp;<span jhiTranslate="entity.action.save">Sauvegarder</span>
+            <span *ngIf="!isSaving">
+              <fa-icon icon="save"></fa-icon>&nbsp;<span>{{ 'entity.action.save' | translate }}</span>
+            </span>
+            <span *ngIf="isSaving">
+              <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>&nbsp;{{
+                'correspCareApp.configManagePersonCompany.form.saving' | translate
+              }}
+            </span>
           </button>
         </div>
       </form>

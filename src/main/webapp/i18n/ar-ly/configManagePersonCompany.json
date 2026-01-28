@@ -2,34 +2,82 @@
   "correspCareApp": {
     "configManagePersonCompany": {
       "home": {
-        "title": "Person Companies",
-        "refreshListLabel": "Refresh list",
-        "createLabel": "Create a new Person Company",
-        "createOrEditLabel": "Create or edit a Person Company",
-        "notFound": "No Person Companies found"
+        "title": "جهات الاتصال",
+        "refreshListLabel": "تحديث القائمة",
+        "createLabel": "إنشاء جهة اتصال جديدة",
+        "createOrEditLabel": "إنشاء / تعديل جهة اتصال",
+        "notFound": "لم يتم العثور على جهات اتصال",
+        "subtitle": "معلومات جهة الاتصال والربط مع الشركة"
       },
       "delete": {
-        "question": "Are you sure you want to delete Person Company {{ id }}?"
+        "question": "هل أنت متأكد أنك تريد حذف جهة الاتصال « {{ name }} »؟"
       },
       "detail": {
-        "title": "Person Company"
+        "title": "جهة الاتصال"
       },
-      "id": "Id",
-      "nom": "Nom",
-      "pays": "Pays",
-      "adresse": "Adresse",
-      "tel": "Tel",
-      "fax": "Fax",
-      "email": "Email",
-      "whatsapp": "Whatsapp",
-      "etat": "Etat"
-    }
-  },
-  "configManageApp": {
-    "configManagePersonCompany": {
-      "created": "A new Person Company is created with identifier {{ param }}",
-      "updated": "A Person Company is updated with identifier {{ param }}",
-      "deleted": "A Person Company is deleted with identifier {{ param }}"
+      "id": "المعرّف",
+      "nom": "الاسم",
+      "pays": "البلد",
+      "adresse": "العنوان",
+      "tel": "الهاتف",
+      "fax": "الفاكس",
+      "email": "البريد الإلكتروني",
+      "whatsapp": "واتس آب",
+      "etat": "الحالة",
+      "placeholders": {
+        "nom": "اسم جهة الاتصال",
+        "pays": "مثال: تونس",
+        "adresse": "العنوان البريدي",
+        "tel": "الهاتف",
+        "fax": "الفاكس",
+        "email": "email@example.com",
+        "whatsapp": "واتس آب"
+      },
+      "labels": {
+        "contactCompany": "الشركة",
+        "contactCompanyReadonlyNote": "رابط الشركة مقفل ولا يمكن تغييره هنا."
+      },
+      "buttons": {
+        "viewCompany": "عرض الشركة"
+      },
+      "form": {
+        "saving": "جارِ الحفظ..."
+      },
+      "messages": {
+        "contactCompanyNotFound": "الشركة المرتبطة غير موجودة (المعرّف المزوّد غير صالح).",
+        "unknownSaveError": "خطأ في الخادم أثناء الحفظ.",
+        "processingError": "حدث خطأ أثناء تنفيذ العملية.",
+        "nameExists": "جهة اتصال بهذا الاسم موجودة بالفعل."
+      },
+      "fields": {
+        "nom": "الاسم",
+        "pays": "البلد",
+        "adresse": "العنوان",
+        "tel": "الهاتف",
+        "fax": "الفاكس",
+        "email": "البريد الإلكتروني",
+        "whatsapp": "واتس آب"
+      },
+      "validation": {
+        "required": "هذا الحقل مطلوب."
+      }
+    },
+    "configManageApp": {
+      "configManagePersonCompany": {
+        "created": "تم إنشاء جهة اتصال جديدة بالمعرّف {{ param }}",
+        "updated": "تم تحديث جهة الاتصال بالمعرّف {{ param }}",
+        "deleted": "تم حذف جهة الاتصال بالمعرّف {{ param }}"
+      }
+    },
+    "entity": {
+      "action": {
+        "cancel": "إلغاء",
+        "delete": "حذف",
+        "save": "حفظ"
+      },
+      "delete": {
+        "title": "تأكيد الحذف"
+      }
     }
   }
 }
