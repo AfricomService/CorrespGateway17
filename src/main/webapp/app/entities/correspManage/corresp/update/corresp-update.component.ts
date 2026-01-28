@@ -33,6 +33,10 @@ import { IOrga } from '../orga';
 import { DepartementTreeFeignDTO } from './DepartementTreeFeignDTO';
 import { IDepartement } from '../../../orgacare/departement/departement.model';
 
+import { ContactCompanyService } from 'app/entities/configManage/contact-company/service/contact-company.service';
+import { IContactCompany } from 'app/entities/configManage/contact-company/contact-company.model';
+import { IPersonCompany } from 'app/entities/configManage/person-company/person-company.model';
+
 // ============================================================================
 // 🟠 INTERFACE: FileIndexLink
 // ----------------------------------------------------------------------------
@@ -159,6 +163,16 @@ export class CorrespUpdateComponent implements OnInit {
   selectedDepartement = '';
   selectedDepartementName = '';
 
+  companies: IContactCompany[] = [];
+  personsForSelectedCompany: IPersonCompany[] = [];
+  selectedCompanyId: number | null = null;
+  selectedPersonId: number | null = null;
+  loadingCompanies = false;
+  loadingPersons = false;
+  contactEmailLabel: string = '';
+
+  showManualExpediteur = false;
+
   constructor(
     protected dataUtils: DataUtils,
     protected eventManager: EventManager,
@@ -173,7 +187,8 @@ export class CorrespUpdateComponent implements OnInit {
     protected userService: UserService,
     protected route: ActivatedRoute,
     protected typeDocumentService: TypedocumentService,
-    public router: Router
+    public router: Router,
+    protected contactCompanyService: ContactCompanyService
   ) {}
 
   // ==========================================================================
@@ -216,6 +231,111 @@ export class CorrespUpdateComponent implements OnInit {
     });
 
     this.loadUsers();
+    this.loadActiveCompanies();
+  }
+
+  loadActiveCompanies(): void {
+    this.loadingCompanies = true;
+    this.contactCompanyService.getActiveContactCompanies().subscribe({
+      next: (res: HttpResponse<IContactCompany[]>) => {
+        console.log('loadActiveCompanies response:', res);
+        this.companies = res.body || [];
+        this.loadingCompanies = false;
+      },
+      error: err => {
+        console.error('Failed to load companies', err);
+        this.companies = [];
+        this.loadingCompanies = false;
+      },
+    });
+  }
+
+  onExpediteurChange(companyId: number | null | string): void {
+    const id = companyId !== null && companyId !== undefined && companyId !== '' ? Number(companyId) : null;
+
+    console.log('onExpediteurChange raw:', companyId, 'parsed id:', id);
+
+    this.selectedCompanyId = id;
+    this.personsForSelectedCompany = [];
+    this.selectedPersonId = null;
+    this.contactEmail = '';
+    this.contactEmailLabel = '';
+
+    // Si id présent, retrouver le nom de la société pour l'afficher comme expediteur
+    if (id) {
+      const company = this.companies.find(c => c.id === id);
+      this.expediteur = company ? company.nom || '' : '';
+    } else {
+      // si aucune sélection -> on vide expediteur (sauf si on est en mode manuel)
+      if (!this.showManualExpediteur) {
+        this.expediteur = '';
+      }
+    }
+
+    if (!id) {
+      this.loadingPersons = false;
+      return;
+    }
+
+    this.loadingPersons = true;
+    this.contactCompanyService.getActivePersonsByCompany(id).subscribe({
+      next: (res: HttpResponse<IPersonCompany[]>) => {
+        console.log('persons response for company', id, res);
+        this.personsForSelectedCompany = res.body || [];
+        this.loadingPersons = false;
+      },
+      error: err => {
+        console.error('Erreur load persons', err);
+        this.personsForSelectedCompany = [];
+        this.loadingPersons = false;
+      },
+    });
+  }
+
+  onSelectContactPerson(personId: number | null): void {
+    this.selectedPersonId = personId;
+
+    // Si aucun contact n'est sélectionné, réinitialiser les champs
+    if (!personId) {
+      this.contactEmail = '';
+      this.contactEmailLabel = '';
+      return;
+    }
+
+    // Trouver la personne par son ID dans la liste des contacts
+    const p = this.personsForSelectedCompany.find(x => x.id === personId);
+
+    if (p) {
+      // Priorité : email > whatsapp > téléphone > nom
+      this.contactEmail = p.email || p.whatsapp || p.tel || p.nom || '';
+      this.contactEmailLabel = p.nom || '';
+    } else {
+      // Si la personne n'est pas trouvée, réinitialiser les champs
+      this.contactEmail = '';
+      this.contactEmailLabel = '';
+    }
+  }
+
+  toggleManualExpediteur(to?: boolean): void {
+    const next = typeof to === 'boolean' ? to : !this.showManualExpediteur;
+
+    if (next) {
+      // Passage en mode manuel : on annule la sélection de société
+      this.selectedCompanyId = null;
+      this.personsForSelectedCompany = [];
+      this.selectedPersonId = null;
+      this.loadingPersons = false;
+      // (on laisse this.expediteur tel quel pour pouvoir saisir)
+    } else {
+      // Retour au select : on peut vider la valeur manuelle si souhaité
+      this.expediteur = '';
+      // si la liste n'est pas encore chargée, la recharger
+      if (!this.companies || this.companies.length === 0) {
+        this.loadActiveCompanies();
+      }
+    }
+
+    this.showManualExpediteur = next;
   }
 
   onTypeDocumentChange(): void {
@@ -598,45 +718,27 @@ export class CorrespUpdateComponent implements OnInit {
       this.validationInfoGenErrors['objet'] = "L'objet est obligatoire";
       isValid = false;
     }
-    if (!this.expediteur?.trim()) {
+
+    // accepte soit une société sélectionnée (selectedCompanyId) soit un expéditeur saisi manuellement (expediteur)
+    if (!this.selectedCompanyId && !this.expediteur?.trim()) {
       this.validationInfoGenErrors['expediteur'] = "L'expéditeur est obligatoire";
       isValid = false;
     }
+
     if (!this.date) {
       this.validationInfoGenErrors['date'] = 'La date est obligatoire';
       isValid = false;
     }
-    // if (!this.courrier?.trim()) {
-    //   this.validationInfoGenErrors['courrier'] = 'Le courrier est obligatoire';
-    //   isValid = false;
-    // }
-    // if (!this.etape?.trim()) {
-    //   this.validationInfoGenErrors['etape'] = "L'étape est obligatoire";
-    //   isValid = false;
-    // }
+
     if (!this.destinataireLabel?.trim()) {
       this.validationInfoGenErrors['destinataire'] = 'Le destinataire est obligatoire';
       isValid = false;
     }
-    // if (!this.dispatchType?.trim()) {
-    //   this.validationInfoGenErrors['dispatchType'] = "Le type d'envoi est obligatoire";
-    //   isValid = false;
-    // }
 
     if (!this.contactEmail?.trim()) {
       this.validationInfoGenErrors['contactEmail'] = 'Le contact est obligatoire';
       isValid = false;
     }
-
-    // if (!this.referenceEmetteur?.trim()) {
-    //   this.validationInfoGenErrors['referenceEmetteur'] = "Le contact est obligatoire";
-    //   isValid = false;
-    // }
-
-    // if (!this.contactEmailCC?.trim()) {
-    //   this.validationInfoGenErrors['contactEmailCC'] = "Le contactEmailCC est obligatoire";
-    //   isValid = false;
-    // }
 
     return isValid;
   }

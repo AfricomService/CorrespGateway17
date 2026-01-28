@@ -27,6 +27,7 @@ import { FooterComponent } from './layouts/footer/footer.component';
 import { PageRibbonComponent } from './layouts/profiles/page-ribbon.component';
 import { ActiveMenuDirective } from './layouts/navbar/active-menu.directive';
 import { ErrorComponent } from './layouts/error/error.component';
+import { FormsModule } from '@angular/forms';
 
 // TranslateService
 import { TranslateService } from '@ngx-translate/core';
@@ -68,6 +69,7 @@ import {
     // Set this to true to enable service worker (PWA)
     ServiceWorkerModule.register('ngsw-worker.js', { enabled: false }),
     HttpClientModule,
+    FormsModule,
     NgxWebstorageModule.forRoot({ prefix: 'jhi', separator: '-', caseSensitive: true }),
     TranslationModule,
     FontAwesomeModule, // <-- nécessaire pour <fa-icon>

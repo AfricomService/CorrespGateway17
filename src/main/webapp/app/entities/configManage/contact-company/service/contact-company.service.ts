@@ -167,6 +167,14 @@ export class ContactCompanyService {
     return o1 && o2 ? this.getContactCompanyIdentifier(o1) === this.getContactCompanyIdentifier(o2) : o1 === o2;
   }
 
+  getActiveContactCompanies(): Observable<EntityArrayResponseType> {
+    return this.http.get<IContactCompany[]>(`${this.resourceUrl}/actives`, { observe: 'response' });
+  }
+
+  getActivePersonsByCompany(companyId: number): Observable<HttpResponse<IPersonCompany[]>> {
+    return this.http.get<IPersonCompany[]>(`${this.resourceUrl}/${companyId}/person-companies/actives`, { observe: 'response' });
+  }
+
   addContactCompanyToCollectionIfMissing<Type extends Pick<IContactCompany, 'id'>>(
     contactCompanyCollection: Type[],
     ...contactCompaniesToCheck: (Type | null | undefined)[]
