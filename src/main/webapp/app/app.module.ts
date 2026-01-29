@@ -31,6 +31,7 @@ import { FormsModule } from '@angular/forms';
 
 // TranslateService
 import { TranslateService } from '@ngx-translate/core';
+import { DxSelectBoxModule } from 'devextreme-angular';
 
 declare const SERVER_API_URL: string;
 
@@ -73,6 +74,7 @@ import {
     NgxWebstorageModule.forRoot({ prefix: 'jhi', separator: '-', caseSensitive: true }),
     TranslationModule,
     FontAwesomeModule, // <-- nécessaire pour <fa-icon>
+    DxSelectBoxModule,
   ],
   providers: [
     Title,

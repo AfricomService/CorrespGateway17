@@ -235,6 +235,16 @@ export class CorrespUpdateComponent implements OnInit {
     this.loadActiveCompanies();
   }
 
+  // Add near other searchExpr definitions
+  companySearchExpr = function (dataItem: IContactCompany): string {
+    return dataItem.nom || '';
+  };
+
+  personSearchExpr = function (dataItem: IPersonCompany): string {
+    // tu peux chercher par nom, email, tel
+    return (dataItem.nom ? dataItem.nom + ' ' : '') + (dataItem.email ? dataItem.email + ' ' : '') + (dataItem.tel ? dataItem.tel : '');
+  };
+
   loadActiveCompanies(): void {
     this.loadingCompanies = true;
     this.contactCompanyService.getActiveContactCompanies().subscribe({
