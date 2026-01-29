@@ -138,13 +138,12 @@
                   </div>
                 </div>
 
-                <!-- Expéditeur / Destinataire -->
                 <!-- Expéditeur / Destinataire (REMPLACEMENT) -->
                 <div style="display: flex; gap: 12px; margin-bottom: 1.5em">
                   <!-- EXPÉDITEUR: select sociétés actives OR champ manuel -->
                   <div style="flex: 1; display: flex; gap: 8px; align-items: flex-start">
                     <div style="flex: 1">
-                      <label class="form-label fw-semibold">Expéditeur (Sociétés) <span class="text-danger">*</span></label>
+                      <label class="form-label fw-semibold">Expéditeur <span class="text-danger">*</span></label>
 
                       <!-- ===== MODE SELECT (par défaut) ===== -->
                       <div *ngIf="!showManualExpediteur" style="display: flex; gap: 8px; align-items: center">
@@ -164,7 +163,7 @@
                         <button
                           type="button"
                           class="btn btn-outline-secondary"
-                          aria-label="Entrer manuellement l'expéditeur"
+                          aria-label="Entrer manuellement "
                           (click)="toggleManualExpediteur(true)"
                           title="Entrer manuellement"
                           style="padding: 6px 8px; display: inline-flex; align-items: center; justify-content: center"
@@ -218,7 +217,7 @@
                   <!-- DESTINATAIRE (inchangé: readonly + bouton Ajouter si Autre) -->
                   <div style="display: flex; gap: 10px; align-items: end; flex: 1">
                     <div style="flex: 1">
-                      <label class="form-label fw-semibold"> Destinataire <span class="text-danger">*</span> </label>
+                      <label class="form-label fw-semibold">Destinataire <span class="text-danger">*</span> </label>
                       <input
                         type="text"
                         class="form-control"
@@ -243,39 +242,75 @@
                     </button>
                   </div>
                 </div>
-                <!-- / Expéditeur / Destinataire (REMPLACEMENT) -->
 
-                <!-- Réponse sur / Étape / Priorité -->
-                <!-- Réponse sur / Étape / Priorité -->
+                <!-- CONTACT: personnes actives pour la société sélectionnée -->
                 <div style="display: flex; gap: 12px; margin-bottom: 1.5em">
-                  <!-- CONTACT : personnes actives pour la société sélectionnée -->
                   <div style="flex: 1">
                     <label class="form-label fw-semibold">Contact <span class="text-danger">*</span></label>
 
-                    <!-- Select personnes chargées par onExpediteurChange(companyId) -->
-                    <select
-                      class="form-select"
-                      [(ngModel)]="selectedPersonId"
-                      name="selectedPersonId"
-                      (ngModelChange)="onSelectContactPerson($event)"
-                      [disabled]="!selectedCompanyId || loadingPersons"
-                      [class.is-invalid]="validationInfoGenErrors['contactEmail']"
-                    >
-                      <option [ngValue]="null">-- Choisir un contact --</option>
-                      <option *ngFor="let p of personsForSelectedCompany" [ngValue]="p.id">
-                        {{ p.nom }}{{ p.email ? ' (' + p.email + ')' : p.tel ? ' (' + p.tel + ')' : '' }}
-                      </option>
-                    </select>
+                    <!-- ===== MODE SELECT (par défaut) ===== -->
+                    <div *ngIf="!showManualContact" style="display: flex; gap: 8px; align-items: center">
+                      <select
+                        class="form-select"
+                        [(ngModel)]="selectedPersonId"
+                        name="selectedPersonId"
+                        (ngModelChange)="onSelectContactPerson($event)"
+                        [disabled]="!selectedCompanyId || loadingPersons"
+                        [class.is-invalid]="validationInfoGenErrors['contactEmail']"
+                      >
+                        <option [ngValue]="null">-- Choisir un contact --</option>
+                        <option *ngFor="let p of personsForSelectedCompany" [ngValue]="p.id">
+                          {{ p.nom }}{{ p.email ? ' (' + p.email + ')' : p.tel ? ' (' + p.tel + ')' : '' }}
+                        </option>
+                      </select>
 
-                    <!-- Fallback : saisie manuelle si aucune société sélectionnée -->
-                    <input
-                      *ngIf="!selectedCompanyId"
-                      type="text"
-                      class="form-control mt-2"
-                      [(ngModel)]="contactEmail"
-                      name="contactEmailFallback"
-                      placeholder="Ou entrer manuellement le contact (email / tel)"
-                    />
+                      <!-- petit bouton + pour passer en mode manuel -->
+                      <button
+                        type="button"
+                        class="btn btn-outline-secondary"
+                        aria-label="Entrer manuellement le contact"
+                        (click)="toggleManualContact(true)"
+                        title="Entrer manuellement"
+                        style="padding: 6px 8px; display: inline-flex; align-items: center; justify-content: center"
+                      >
+                        <!-- icône plus (SVG) -->
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                          <path
+                            d="M8 1a.5.5 0 0 1 .5.5V7.5H14a.5.5 0 0 1 0 1H8.5V14a.5.5 0 0 1-1 0V8.5H2a.5.5 0 0 1 0-1h5.5V1.5A.5.5 0 0 1 8 1z"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+
+                    <!-- ===== MODE MANUEL (champ text) ===== -->
+                    <div *ngIf="showManualContact" style="display: flex; gap: 8px; align-items: center">
+                      <input
+                        type="text"
+                        class="form-control"
+                        [(ngModel)]="contactEmail"
+                        name="contactEmailFallback"
+                        placeholder="Entrer manuellement"
+                        [class.is-invalid]="validationInfoGenErrors['contactEmail']"
+                        style="flex: 1"
+                      />
+
+                      <!-- bouton retour (flèche) pour revenir à la liste -->
+                      <button
+                        type="button"
+                        class="btn btn-outline-secondary"
+                        aria-label="Choisir dans la liste"
+                        (click)="toggleManualContact(false)"
+                        title="Choisir dans la liste"
+                        style="padding: 6px 8px; display: inline-flex; align-items: center; justify-content: center"
+                      >
+                        <!-- icône retour (left arrow) -->
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                          <path
+                            d="M11.354 1.646a.5.5 0 0 1 0 .708L6.707 7l4.647 4.646a.5.5 0 0 1-.708.708l-5-5a.5.5 0 0 1 0-.708l5-5a.5.5 0 0 1 .708 0z"
+                          />
+                        </svg>
+                      </button>
+                    </div>
 
                     <div class="invalid-feedback" *ngIf="validationInfoGenErrors['contactEmail']">
                       {{ validationInfoGenErrors['contactEmail'] }}

@@ -172,6 +172,7 @@ export class CorrespUpdateComponent implements OnInit {
   contactEmailLabel: string = '';
 
   showManualExpediteur = false;
+  showManualContact: boolean = false;
 
   constructor(
     protected dataUtils: DataUtils,
@@ -336,6 +337,16 @@ export class CorrespUpdateComponent implements OnInit {
     }
 
     this.showManualExpediteur = next;
+  }
+
+  toggleManualContact(to?: boolean): void {
+    const next = typeof to === 'boolean' ? to : !this.showManualContact;
+    this.showManualContact = next;
+    if (!next) {
+      // Clear selected person if reverting to the list mode
+      this.selectedPersonId = null;
+      this.contactEmail = '';
+    }
   }
 
   onTypeDocumentChange(): void {
