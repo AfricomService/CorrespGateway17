@@ -1,8 +1,9 @@
 /* ==========================================================================
    src/main/webapp/app/home/home.component.scss
-   Modernized styles pour le dashboard (Tâches & Dossiers)
-   - Styles prêts à coller
-   - Cible DevExtreme via ::ng-deep pour override
+   Style revu — rendu plus pro, centré, responsive
+   - Layout 2 colonnes centré
+   - Nouveau Courrier : carrés adaptatifs (aspect-ratio)
+   - Tâches : panel large, lisible, espacements harmonisés
    ========================================================================== */
 
 $radius: 14px;
@@ -13,159 +14,373 @@ $accent-start: #3b82f6;
 $accent-end: #1e40af;
 $container-max: 1200px;
 
+/* Base host */
 :host {
   display: block;
   background-color: #f5f7fb;
-  padding: 20px 0 60px;
+  padding: 0 0 64px;
   box-sizing: border-box;
   color: $text-dark;
   font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
+/* Page container (most content) */
 :host .container {
   max-width: $container-max;
   margin: 0 auto;
-  padding: 0 32px;
+  padding: 0 24px; /* comfortable horizontal padding */
   box-sizing: border-box;
   background: transparent;
 }
 
-/* HERO / HEADER */
+/* HERO — full width band with centered inner content */
 :host .hero {
   width: 100%;
-  padding: 28px 0;
   background: linear-gradient(90deg, $accent-start 0%, $accent-end 100%) !important;
   color: #fff !important;
   border-bottom-left-radius: $radius;
   border-bottom-right-radius: $radius;
-  box-shadow: 0 6px 16px rgba(30, 41, 59, 0.08);
+  box-shadow: 0 8px 28px rgba(30, 41, 59, 0.08);
   position: relative;
   z-index: 2;
+  padding: 10px 0; /* compact vertical padding */
 }
 
-:host .hero-inner {
-  display: flex;
-  align-items: center;
-  gap: 18px;
+/* remove container paddings inside hero so band feels full-bleed but content stays centered */
+:host .hero > .container {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  max-width: 100%;
 }
+
+/* inner hero content — constrained and centered */
+:host .hero-inner {
+  max-width: $container-max;
+  margin: 0 auto;
+  padding: 10px 20px;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+/* Welcome block */
 :host .welcome {
   display: flex;
-  gap: 18px;
+  gap: 14px;
   align-items: center;
 }
+
+/* emoji */
 :host .welcome-emoji {
-  font-size: 38px;
+  font-size: 36px;
   line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* welcome text */
+:host .welcome-text {
+  display: flex;
+  flex-direction: column;
 }
 :host .welcome-title {
   margin: 0;
-  font-size: 28px;
+  font-size: 20px;
   font-weight: 800 !important;
+  line-height: 1.05;
 }
 :host .welcome-sub {
-  margin: 6px 0 0 0;
-  color: rgba(255, 255, 255, 0.9) !important;
-  font-size: 14px;
+  margin: 4px 0 0 0;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.92) !important;
 }
 
-/* MAIN AREA spacing */
+/* MAIN area */
 :host .main-area {
-  margin-top: -12px;
-  margin-bottom: 36px;
+  margin-top: 18px;
   position: relative;
   z-index: 1;
 }
 
-/* Card global */
+/* ================================
+   Columns layout (centered & balanced)
+   ================================ */
+/* Grid wrapper around left and right */
+.home-columns {
+  width: 100%;
+  max-width: 1200px;
+  margin: 18px auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Les deux colonnes auront la même largeur */
+  gap: 28px;
+  align-items: start;
+  padding: 0 16px; /* Reduced padding for smaller gaps */
+  box-sizing: border-box;
+}
+
+/* Left column card adjustments */
+.left-column .mail-card {
+  margin: 0;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+}
+
+/* Right column */
+.right-column {
+  display: block;
+}
+
+/* When viewport is narrower — stack */
+@media (max-width: 980px) {
+  .home-columns {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 0 12px;
+  }
+  :host .hero-inner {
+    padding: 10px 12px;
+  }
+}
+
+/* CARD (generic) */
 :host .card {
   background: $card-bg !important;
   border-radius: $radius;
-  padding: 22px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(11, 19, 43, 0.06);
   border: 1px solid rgba(29, 53, 87, 0.06);
 }
 
+/* headings */
 :host h1,
 :host h2,
 :host h3,
 :host h4 {
-  font-weight: 700 !important;
   color: $text-dark !important;
+  margin: 0;
+  line-height: 1.15;
 }
 
-/* Nouveau Courrier */
+/* ------------------------
+   Nouveau Courrier (left)
+   - cards stacked vertically
+   - each button is adaptive square (aspect-ratio)
+   ------------------------ */
 :host .mail-card {
-  margin-top: 12px;
-  margin-bottom: 18px;
+  background: linear-gradient(180deg, #ffffff, #fbfdff);
+  padding: 18px;
 }
+
+:host .mail-card .card-header {
+  margin-bottom: 8px;
+}
+:host #nouveau-courrier-title {
+  font-size: 18px;
+  font-weight: 800;
+}
+
 :host .mail-options {
+  width: 100%;
   display: flex;
-  gap: 18px;
-  justify-content: space-between;
-  align-items: stretch;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 8px 0;
+  box-sizing: border-box;
 }
+
 :host .mail-option {
-  flex: 1 1 0;
-  min-width: 220px;
+  width: 100%;
+  max-width: 420px; /* caps the square on large screens */
+  aspect-ratio: 1 / 1; /* keeps a perfect square */
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 22px;
-  border-radius: 12px;
-  border: 1.5px solid rgba(29, 53, 87, 0.08);
-  min-height: 160px;
-  background: linear-gradient(180deg, #fafafc 0%, #f6f7fa 100%);
-  text-align: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px;
+  border-radius: 14px;
+  border: 1px solid rgba(29, 53, 87, 0.08);
+  background: linear-gradient(180deg, #fff, #f6f9ff);
+  box-shadow: 0 12px 30px rgba(11, 19, 43, 0.06);
   cursor: pointer;
-  transition: transform 180ms, box-shadow 180ms, border-color 180ms;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+  text-align: center;
 }
-:host .mail-option:hover {
+
+/* hover/focus for tactile feedback */
+:host .mail-option:hover,
+:host .mail-option:focus {
   transform: translateY(-6px);
-  box-shadow: 0 12px 30px rgba(29, 53, 87, 0.12);
-  border-color: rgba(29, 53, 87, 0.14);
+  box-shadow: 0 22px 44px rgba(11, 19, 43, 0.09);
+  border-color: rgba(30, 64, 175, 0.12);
+  outline: none;
 }
+
+/* icon — consistent circular plate */
 :host .option-icon {
-  width: 84px !important;
-  height: 84px !important;
-  margin-bottom: 12px;
-  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.08));
+  width: 96px !important;
+  height: 96px !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 8px 20px rgba(30, 64, 175, 0.06);
+  flex-shrink: 0;
 }
+
+/* option text */
 :host .option-title {
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 800 !important;
   text-transform: uppercase;
-  margin-bottom: 6px;
+  color: $text-dark;
+  letter-spacing: 0.4px;
 }
 :host .option-sub {
   font-size: 13px;
   color: $muted;
-  max-width: 220px;
+  max-width: 86%;
+  line-height: 1.3;
 }
 
-/* Two columns */
-:host .two-columns {
-  display: flex;
-  gap: 18px;
-  justify-content: space-between;
-  margin-top: 6px;
-  flex-wrap: wrap;
+/* small screens — make options full width and row-like */
+@media (max-width: 640px) {
+  :host .mail-options {
+    gap: 12px;
+  }
+  :host .mail-option {
+    aspect-ratio: auto;
+    height: auto;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 12px;
+    border-radius: 12px;
+  }
+  :host .option-icon {
+    width: 56px !important;
+    height: 56px !important;
+    font-size: 26px;
+    margin-right: 12px;
+  }
+  :host .option-title {
+    font-size: 15px;
+  }
+  :host .option-sub {
+    font-size: 12px;
+    max-width: none;
+  }
 }
-:host .panel {
-  flex: 1 1 0;
-  min-width: 300px;
+
+/* ------------------------
+   Header actions row (exports + search)
+   ------------------------ */
+:host .header-actions-row {
   display: flex;
-  flex-direction: column;
   gap: 12px;
-  position: relative;
+  align-items: center;
+  margin-top: 12px;
+}
+
+/* export icons (round subtle) */
+:host .export-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, $accent-start 0%, $accent-end 100%);
+  border: none;
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(30, 64, 175, 0.08);
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+:host .export-icon-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 28px rgba(30, 64, 175, 0.12);
+}
+:host .export-icon-btn.ghost {
+  background: transparent;
+  color: $accent-end;
+  border: 1px solid rgba(30, 64, 175, 0.08);
+  box-shadow: none;
+}
+
+/* Search box styling — compact + elevated */
+:host .header-search {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+:host .search-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 6px 8px;
+  border: 1px solid rgba(226, 230, 235, 1);
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.04);
+}
+:host .header-search--large {
+  width: 420px;
+  max-width: 100%;
+}
+
+/* search input/button */
+:host .search-input {
+  border: none;
+  padding: 8px 10px;
+  font-size: 14px;
+  color: $text-dark;
+  background: transparent;
+  outline: none;
+  width: 100%;
+}
+:host .search-btn {
+  height: 40px;
+  width: 44px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, $accent-start 0%, $accent-end 100%);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(30, 64, 175, 0.12);
+}
+:host .search-clear-btn {
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  padding: 6px 8px;
+  color: $muted;
+}
+
+/* ------------------------
+   Panel / Tasks area (right)
+   ------------------------ */
+:host .panel {
   padding: 18px;
   border-radius: $radius;
   background: $card-bg !important;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 10px 30px rgba(11, 19, 43, 0.04);
   border: 1px solid rgba(29, 53, 87, 0.04);
+  position: relative;
 }
-
-/* top accent bar on panels */
 :host .panel::before {
   content: '';
   position: absolute;
@@ -177,402 +392,146 @@ $container-max: 1200px;
   border-top-right-radius: $radius;
   background: linear-gradient(90deg, $accent-start 0%, $accent-end 100%);
 }
-
-/* ensure the panel content is pushed down so accent is visible */
 :host .panel {
   padding-top: 28px;
 }
-
-/* panel title + body */
 :host .panel-title {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 800 !important;
+  font-size: 15px;
+  font-weight: 800;
   text-transform: uppercase;
-  color: $text-dark !important;
+  color: $text-dark;
 }
 
-/* Panel body fixed height */
+/* panel body — allow it to be flexible, but reasonably tall on desktop */
 :host .panel-body {
-  height: 380px;
-  min-height: 220px;
+  min-height: 320px;
+  max-height: 66vh;
+  overflow: auto;
+  padding-right: 6px;
 }
 
-/* DevExtreme grids full height */
-:host .panel-body ::ng-deep .dx-datagrid,
-:host .panel-body ::ng-deep .dx-datagrid-rowsview {
-  height: 100% !important;
-}
-
-/* header top layout */
-:host .panel-header {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-/* header-top: left title and right actions */
-:host .header-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-/* tasks-left */
-:host .tasks-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-}
-
-/* Title ellipsis */
-:host .panel-title {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: inline-block;
-  max-width: calc(100% - 120px);
-}
-
-/* Badge */
+/* tasks header badges */
 :host .task-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   background: linear-gradient(135deg, $accent-start 0%, $accent-end 100%);
-  color: white;
+  color: #fff;
   padding: 6px 12px;
   border-radius: 18px;
   font-size: 13px;
   font-weight: 700;
-  white-space: nowrap;
-  flex-shrink: 0;
-  box-shadow: 0 6px 16px rgba(30, 64, 175, 0.12);
+  box-shadow: 0 8px 22px rgba(30, 64, 175, 0.1);
 }
 
-/* header actions (exports + search) */
-:host .header-actions {
+/* task cards list */
+:host .task-cards {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 8px;
 }
 
-/* ---------------------------
-   Export buttons
-   --------------------------- */
-:host .export-group {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-:host .export-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  height: 40px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, $accent-start 0%, $accent-end 100%);
-  color: #fff;
-  border: none;
-  cursor: pointer;
-  font-weight: 700;
-  box-shadow: 0 8px 20px rgba(30, 64, 175, 0.12);
-  transition: transform 120ms ease, opacity 120ms ease, box-shadow 120ms ease;
-}
-:host .export-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 26px rgba(30, 64, 175, 0.16);
-}
-:host .export-btn.ghost {
-  background: transparent;
-  color: $accent-end;
-  border: 1px solid rgba(30, 64, 175, 0.08);
-  box-shadow: none;
-}
-:host .export-icon {
-  width: 16px;
-  height: 16px;
-  display: block;
-}
-:host .export-label {
-  font-size: 13px;
-}
-
-/* ---------------------------
-   Search bars (styled)
-   --------------------------- */
-:host .header-search {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  justify-content: flex-end;
-}
-
-/* Search container */
-:host .search-container {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  background: #fff;
+/* each task card */
+:host .task-card {
+  padding: 14px;
   border-radius: 12px;
-  border: 1.2px solid rgba(226, 230, 235, 1);
-  box-shadow: 0 6px 18px rgba(99, 102, 241, 0.03);
-  padding: 6px;
+  background: $card-bg;
+  border: 1px solid rgba(29, 53, 87, 0.04);
+  box-shadow: 0 8px 20px rgba(11, 19, 43, 0.04);
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+:host .task-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 36px rgba(11, 19, 43, 0.08);
 }
 
-/* size variants */
-:host .header-search--large {
-  width: 360px;
-  max-width: 100%;
-}
-:host .header-search--small {
-  width: 240px;
-  max-width: 100%;
-}
-
-/* input */
-:host .search-input {
-  border: none;
-  padding: 10px 12px;
-  padding-right: 52px;
-  font-size: 14px;
-  color: $text-dark;
-  background: transparent;
-  outline: none;
-  width: 100%;
-  border-radius: 8px;
-  font-weight: 500;
-}
-
-/* search button (icon on right) */
-:host .search-btn {
-  height: 40px;
-  width: 44px;
-  border-radius: 10px;
-  border: none;
-  margin-right: 0;
-  margin-left: -6px;
-  background: linear-gradient(135deg, $accent-start 0%, $accent-end 100%);
-  color: #ffffff;
-  display: inline-flex;
+:host .task-card-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
   align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 8px 20px rgba(30, 64, 175, 0.12);
-  transition: transform 120ms ease, opacity 120ms ease, box-shadow 120ms ease;
-  flex-shrink: 0;
 }
-:host .search-btn:hover {
-  transform: translateY(-2px);
-  opacity: 0.98;
-  box-shadow: 0 12px 26px rgba(30, 64, 175, 0.14);
+:host .task-title {
+  font-weight: 800;
+  font-size: 15px;
+  color: $text-dark;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-
-/* svg icon sizing */
-:host .search-icon {
-  width: 20px;
-  height: 20px;
-  display: block;
-  stroke: currentColor;
-}
-
-/* clear button */
-:host .search-clear-btn {
-  border: none;
-  background: transparent;
-  font-size: 13px;
+:host .task-status-pill {
+  font-size: 12px;
   padding: 6px 8px;
-  margin-left: 6px;
-  cursor: pointer;
-  color: $muted;
-  border-radius: 8px;
-  transition: background 120ms ease, color 120ms ease;
-}
-:host .search-clear-btn:hover {
-  background: rgba(29, 53, 87, 0.04);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.06);
   color: $text-dark;
 }
 
-/* focus state */
-:host .search-container:focus-within {
-  border-color: rgba(102, 126, 234, 0.28);
-  box-shadow: 0 12px 30px rgba(102, 126, 234, 0.1);
+/* fields inside card */
+:host .task-card-body {
+  display: flex;
+  gap: 14px 24px;
+  flex-wrap: wrap;
+  margin-top: 8px;
 }
-
-/* responsive tweaks */
-@media (max-width: 900px) {
-  :host .panel-header {
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  :host .header-bottom,
-  :host .header-search {
-    justify-content: flex-start;
-  }
-
-  :host .header-search--large {
-    width: 100%;
-  }
-  :host .header-search--small {
-    width: 100%;
-    margin-top: 8px;
-  }
-
-  :host .tasks-left {
-    justify-content: space-between;
-  }
-  :host .panel-title {
-    max-width: 100%;
-  }
+:host .task-field {
+  flex: 1 1 30%;
+  min-width: 140px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
-
-/* fallback inputs styling */
-:host input,
-:host textarea,
-:host select,
-:host .form-control {
-  background-color: #fff !important;
-  color: $text-dark !important;
-  opacity: 1 !important;
-}
-
-/* ---------------------------
-   DevExtreme specific overrides
-   - rendre la grille plus aérée, cartes de lignes et badges d'état
-   --------------------------- */
-
-/* remove heavy grid background/borders and make headers lighter */
-:host ::ng-deep .dx-datagrid {
-  background: transparent !important;
-  border: none !important;
-}
-
-/* header row subtle divider */
-:host ::ng-deep .dx-datagrid .dx-header-row {
-  background: transparent !important;
-  border-bottom: 1px solid rgba(29, 53, 87, 0.06) !important;
-}
-
-/* header titles style */
-:host ::ng-deep .dx-datagrid .dx-header-row .dx-column-header {
-  padding: 14px 12px !important;
-  text-transform: uppercase !important;
-  font-size: 12px !important;
-  letter-spacing: 0.6px;
-  color: rgba(29, 53, 87, 0.9) !important;
-}
-
-/* Data rows: give each row a card-like feeling while keeping table behaviour */
-:host ::ng-deep .dx-datagrid-rowsview .dx-row {
-  transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
-}
-
-:host ::ng-deep .dx-data-row {
-  background: #fff !important;
-  border-radius: 10px;
-  margin: 8px 6px !important;
-  box-shadow: 0 6px 18px rgba(11, 19, 43, 0.04);
-  overflow: hidden;
-  display: table-row; /* conserve structure */
-}
-
-/* Make first cell (object/title) more prominent */
-:host ::ng-deep .dx-data-row td:first-child {
+:host .task-field-label {
   font-weight: 700;
-  font-size: 14px;
-  padding: 12px 14px !important;
+  font-size: 12px;
+  color: rgba(29, 53, 87, 0.7);
 }
-
-/* other cells spacing */
-:host ::ng-deep .dx-data-row td {
-  padding: 10px 12px !important;
-  vertical-align: middle !important;
-  color: rgba(29, 53, 87, 0.85) !important;
+:host .task-field-value {
   font-size: 13px;
+  color: rgba(29, 53, 87, 0.9);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* Hover lift */
-:host ::ng-deep .dx-data-row:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 30px rgba(11, 19, 43, 0.06);
+/* empty list message */
+:host .no-tasks {
+  text-align: center;
+  color: $muted;
+  padding: 18px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.02);
 }
 
-/* Status classes applied from onRowPrepared() */
-:host ::ng-deep .dx-data-row.status-actif {
-  border-left: 4px solid #8fbf3b !important;
+/* status classes (applied dynamically in TS) */
+:host .status-actif {
+  border-left: 4px solid #8fbf3b;
 }
-:host ::ng-deep .dx-data-row.status-desactivated {
-  border-left: 4px solid #ff6f7a !important;
-  opacity: 0.98;
+:host .status-desactivated {
+  border-left: 4px solid #ff6f7a;
 }
-:host ::ng-deep .dx-data-row.status-delated {
-  border-left: 4px solid #d6c39a !important;
-  opacity: 0.95;
+:host .status-delated {
+  border-left: 4px solid #d6c39a;
 }
 
-/* Small status pill in the status/etat cell for readability */
-:host ::ng-deep .dx-data-row .dx-cell[data-field='status'],
-:host ::ng-deep .dx-data-row .dx-cell[data-field='etat'] {
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px;
-}
-
-/* before pseudo to show a colored dot */
-:host ::ng-deep .dx-data-row .dx-cell[data-field='status']::before,
-:host ::ng-deep .dx-data-row .dx-cell[data-field='etat']::before {
-  content: '';
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  display: inline-block;
-}
-
-/* color mapping for the dot (inherits from row status class) */
-:host ::ng-deep .dx-data-row.status-actif .dx-cell[data-field='status']::before,
-:host ::ng-deep .dx-data-row.status-actif .dx-cell[data-field='etat']::before {
-  background: #8fbf3b;
-}
-:host ::ng-deep .dx-data-row.status-desactivated .dx-cell[data-field='status']::before,
-:host ::ng-deep .dx-data-row.status-desactivated .dx-cell[data-field='etat']::before {
-  background: #ff6f7a;
-}
-:host ::ng-deep .dx-data-row.status-delated .dx-cell[data-field='status']::before,
-:host ::ng-deep .dx-data-row.status-delated .dx-cell[data-field='etat']::before {
-  background: #d6c39a;
-}
-
-/* ensure grid takes full height inside panel-body */
-:host ::ng-deep .dx-datagrid-rowsview,
-:host ::ng-deep .dx-widget-content {
-  height: 100% !important;
-}
-
-/* responsive tweaks for smaller screens */
-@media (max-width: 900px) {
-  :host .panel-header {
-    flex-direction: column;
-    gap: 8px;
+/* General responsive refinements */
+@media (max-width: 980px) {
+  :host .panel-body {
+    max-height: 60vh;
   }
-  :host .header-search--large {
-    width: 100%;
-  }
-  :host ::ng-deep .dx-data-row {
-    margin: 10px 2px !important;
-  }
-  :host ::ng-deep .dx-datagrid .dx-header-row .dx-column-header {
-    padding: 10px 8px !important;
-    font-size: 11px !important;
+  :host .task-field {
+    min-width: 120px;
+    flex-basis: 48%;
   }
 }
-
-/* small polish for DX grid rows on hover (non intrusive) */
-:host ::ng-deep .dx-data-row:hover {
-  background: #fff !important;
+@media (max-width: 640px) {
+  :host .task-field {
+    flex-basis: 100%;
+  }
+  :host .panel-body {
+    max-height: 50vh;
+  }
 }
 
 /* End of file */

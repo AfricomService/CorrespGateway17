@@ -1,8 +1,9 @@
 // src/main/webapp/app/home/home.component.ts
-// Modernized HomeComponent — tâches & dossiers (styles moved to home.component.scss)
-// Ajout : enregistrement programmatique des traductions locales (FR/EN) pour éviter les "translation-not-found".
+// Modernized HomeComponent — tâches affichées en cartes (dossiers supprimés)
+// Corrigé : conversion dates + utilisation de status / dueDate
+// Ajout : export Excel (.xlsx) via import dynamique de sheetjs (xlsx)
 
-import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subject, Subscription } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -10,10 +11,7 @@ import { takeUntil } from 'rxjs/operators';
 import { AccountService } from 'app/core/auth/account.service';
 import { Account } from 'app/core/auth/account.model';
 import { ITasks } from '../entities/correspManage/tasks/tasks.model';
-import { IDossier } from '../entities/correspManage/dossier/dossier.model';
-import { DxDataGridComponent } from 'devextreme-angular';
 import { HttpResponse } from '@angular/common/http';
-import { DossierService } from '../entities/correspManage/dossier/service/dossier.service';
 import { TasksService } from '../entities/correspManage/tasks/service/tasks.service';
 
 import { TranslateService } from '@ngx-translate/core';
@@ -26,52 +24,25 @@ import { TranslateService } from '@ngx-translate/core';
 export class HomeComponent implements OnInit, OnDestroy {
   account: Account | null = null;
   tasks?: ITasks[];
-  dossiers?: IDossier[];
   authSubscription?: Subscription;
   private destroy$ = new Subject<void>();
 
-  selection = {
-    deferred: false,
-    mode: 'single',
-  };
+  // recherche simple côté client
+  searchTerm = '';
 
-  searchPanel = {
-    visible: true,
-  };
-
-  loadPanel = {
-    enabled: true,
-  };
-
-  filterRow = {
-    visible: true,
-    showOperationChooser: false,
-  };
-
-  // NOTE: export natif désactivé pour supprimer les boutons intégrés de la grille
-  export = {
-    enabled: false,
-  };
-
-  sorting = {
-    mode: 'none',
-  };
-
-  // ViewChilds pour chaque grille (références template #tasksGrid et #dossiersGrid)
-  @ViewChild('tasksGrid', { static: false }) tasksGrid?: DxDataGridComponent;
-  @ViewChild('dossiersGrid', { static: false }) dossiersGrid?: DxDataGridComponent;
+  // petits réglages visuels/restants
+  loadPanel = { enabled: true };
+  sorting = { mode: 'none' };
 
   constructor(
     private accountService: AccountService,
     private router: Router,
     private tasksService: TasksService,
-    private dossierService: DossierService,
     private translate: TranslateService
   ) {}
 
   ngOnInit(): void {
     // --- Merge local translations to prevent translation-not-found ---
-    // We merge so we don't overwrite any already loaded translations.
     const fr = {
       home: {
         title: 'Bienvenue, {{firstName}}',
@@ -83,26 +54,19 @@ export class HomeComponent implements OnInit, OnDestroy {
         outgoingSub: 'Créer un courrier sortant',
         internal: 'INTERNE',
         internalSub: 'Communication interne',
-        panelsTitle: 'Tâches et dossiers',
+        panelsTitle: 'Tâches',
         tasksTitle: 'Tâches en cours',
-        dossiersTitle: 'Dossiers',
         searchTasksLabel: 'Rechercher tâches',
         searchTasks: 'Rechercher une tâche',
-        searchDossiersLabel: 'Rechercher dossiers',
-        searchDossiers: 'Rechercher un dossier',
         search: 'Rechercher',
         clearSearch: 'Effacer la recherche',
         exportExcel: 'Excel',
         exportCsv: 'CSV',
         objet: 'Objet',
         creation: 'Création',
-        debut: 'Début',
         limite: 'Limite',
-        cloture: 'Clôture',
         responsable: 'Responsable',
         etat: 'État',
-        nom: 'Nom',
-        publique: 'Publique',
       },
     };
 
@@ -110,37 +74,22 @@ export class HomeComponent implements OnInit, OnDestroy {
       home: {
         title: 'Welcome, {{firstName}}',
         subtitle: 'Manage your mail and tasks with ease',
-        newMail: '✨ New Mail',
-        arrival: 'INCOMING',
-        arrivalSub: 'Register an incoming mail',
-        outgoing: 'OUTGOING',
-        outgoingSub: 'Create an outgoing mail',
-        internal: 'INTERNAL',
-        internalSub: 'Internal communication',
-        panelsTitle: 'Tasks & folders',
+        panelsTitle: 'Tasks',
         tasksTitle: 'Active Tasks',
-        dossiersTitle: 'Folders',
         searchTasksLabel: 'Search tasks',
         searchTasks: 'Search a task',
-        searchDossiersLabel: 'Search folders',
-        searchDossiers: 'Search a folder',
         search: 'Search',
         clearSearch: 'Clear search',
         exportExcel: 'Excel',
         exportCsv: 'CSV',
         objet: 'Object',
         creation: 'Creation',
-        debut: 'Start',
         limite: 'Deadline',
-        cloture: 'Close',
         responsable: 'Responsible',
         etat: 'Status',
-        nom: 'Name',
-        publique: 'Public',
       },
     };
 
-    // Merge translations (true => merge)
     try {
       this.translate.setTranslation('fr', fr, true);
       this.translate.setTranslation('en', en, true);
@@ -155,15 +104,7 @@ export class HomeComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(account => (this.account = account));
 
-    this.tasksService
-      .getAllTasksByEtat({ etat: 'IN_PROGRESS' })
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((res: HttpResponse<ITasks[]>) => (this.tasks = res.body || []));
-
-    this.dossierService
-      .query()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((res: HttpResponse<IDossier[]>) => (this.dossiers = res.body || []));
+    this.loadTasks();
   }
 
   ngOnDestroy(): void {
@@ -174,158 +115,155 @@ export class HomeComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ----------------------
-  // Getters utilitaires
-  // ----------------------
-  // compteurs dynamiques affichés dans l'UI
+  // --------- Data ----------
+  loadTasks(): void {
+    this.tasksService
+      .getAllTasksByEtat({ etat: 'IN_PROGRESS' })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((res: HttpResponse<ITasks[]>) => {
+        const raw = res.body || [];
+        // convertit les champs de date (Dayjs, string, Date, ...) en Date natif ou undefined
+        this.tasks = raw.map(t => {
+          const copy: any = { ...t };
+          const dateFields = ['creationDate', 'startDate', 'dueDate', 'closeDate', 'updatedDate'];
+          dateFields.forEach(f => {
+            const v = (copy as any)[f];
+            if (v == null) {
+              (copy as any)[f] = undefined;
+              return;
+            }
+            // si c'est un objet qui a toDate (ex: dayjs)
+            if (typeof (v as any).toDate === 'function') {
+              try {
+                (copy as any)[f] = (v as any).toDate();
+              } catch {
+                (copy as any)[f] = undefined;
+              }
+            } else if (typeof v === 'string' || typeof v === 'number') {
+              const d = new Date(v);
+              (copy as any)[f] = isNaN(d.getTime()) ? undefined : d;
+            } else if (v instanceof Date) {
+              (copy as any)[f] = v;
+            } else {
+              // fallback: undefined to être safe pour pipe date
+              (copy as any)[f] = undefined;
+            }
+          });
+          return copy as ITasks;
+        });
+      });
+  }
+
+  refresh(): void {
+    this.loadTasks();
+  }
+
   get tasksCount(): number {
     return this.tasks ? this.tasks.length : 0;
   }
 
-  get dossiersCount(): number {
-    return this.dossiers ? this.dossiers.length : 0;
-  }
-
-  // refresh : rafraîchit les deux grilles si présentes
-  refresh(): any {
-    try {
-      this.tasksGrid?.instance?.refresh();
-      this.dossiersGrid?.instance?.refresh();
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.warn('refresh() : impossible de rafraîchir les instances des grilles', err);
+  // recherche simple côté client : filtre object / responsible / status
+  get displayedTasks(): ITasks[] {
+    if (!this.tasks) {
+      return [];
     }
-  }
-
-  onRowDblClick(e: any): void {
-    console.log(e); // eslint-disable-line no-console
-    if (e && e.data && e.data.id != null) {
-      this.router.navigate([`/tasks/${e.data.id}/view`]);
+    const q = (this.searchTerm || '').trim().toLowerCase();
+    if (!q) {
+      return this.tasks;
     }
+    return this.tasks.filter(t => {
+      const obj = ((t as any).object || '').toString().toLowerCase();
+      const resp = ((t as any).responsible || '').toString().toLowerCase();
+      const status = String((t as any).status || '').toLowerCase();
+      return obj.includes(q) || resp.includes(q) || status.includes(q);
+    });
   }
 
-  onRowDblClickDossier(e: any): void {
-    console.log(e); // eslint-disable-line no-console
-    if (e && e.data && e.data.id != null) {
-      this.router.navigate([`/dossier/${e.data.id}/view`]);
-    }
-  }
-
-  login(): void {
-    this.router.navigate(['/login']);
-  }
-
-  /**
-   * onRowPrepared : applique/retire des classes de statut plutôt que d'injecter du style inline.
-   * Les classes (status-actif, status-desactivated, status-delated) sont stylées dans le SCSS.
-   */
-  onRowPrepared(e: any): void {
-    if (!e || e.rowType !== 'data' || !e.rowElement) {
-      return;
-    }
-
-    // retire classes de statut et ticket pré-existantes
-    e.rowElement.classList.remove('ticket', 'status-actif', 'status-desactivated', 'status-delated');
-
-    // ajoute la classe ticket pour appliquer le style ticket
-    e.rowElement.classList.add('ticket');
-
-    // récupérer l'état depuis différents champs possibles
-    const rawEtat = (e.data && (e.data.etat || e.data.status)) || '';
-    const etat = String(rawEtat).trim().toLowerCase();
-
-    if (etat === 'desactivated' || etat === 'desactivé' || etat === 'desactive') {
-      e.rowElement.classList.add('status-desactivated');
-      e.rowElement.classList.remove('dx-row-alt');
-    } else if (etat === 'actif' || etat === 'active') {
-      e.rowElement.classList.add('status-actif');
-      e.rowElement.classList.remove('dx-row-alt');
-    } else if (etat === 'delated' || etat === 'deleted' || etat === 'supprimé') {
-      e.rowElement.classList.add('status-delated');
-      e.rowElement.classList.remove('dx-row-alt');
-    }
-  }
-
+  // --------- Navigation / interactions ----------
   onTypeClicked(type: string): void {
     this.router.navigate(['/corresp/new'], { queryParams: { type } });
   }
 
-  // ----------------------
-  // Recherche (sécurisées côté TS)
-  // ----------------------
-  onTasksSearchInput(value: string): void {
-    try {
-      this.tasksGrid?.instance.searchByText(value || '');
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.warn('searchByText non disponible sur tasksGrid.instance', err);
+  openTask(task: ITasks): void {
+    if (task && (task as any).id != null) {
+      this.router.navigate([`/tasks/${(task as any).id}/view`]);
     }
   }
+
+  // handlers recherche
+  onTasksSearchInput(value: string): void {
+    this.searchTerm = value || '';
+  }
   onTasksSearchClick(value: string): void {
-    try {
-      this.tasksGrid?.instance.searchByText(value || '');
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.warn('searchByText non disponible sur tasksGrid.instance', err);
-    }
+    this.searchTerm = value || '';
   }
   clearTasksSearch(input: HTMLInputElement): void {
     if (input) {
       input.value = '';
     }
-    try {
-      this.tasksGrid?.instance.searchByText('');
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.warn('searchByText non disponible sur tasksGrid.instance', err);
-    }
+    this.searchTerm = '';
   }
 
-  onDossiersSearchInput(value: string): void {
-    try {
-      this.dossiersGrid?.instance.searchByText(value || '');
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.warn('searchByText non disponible sur dossiersGrid.instance', err);
-    }
-  }
-  onDossiersSearchClick(value: string): void {
-    try {
-      this.dossiersGrid?.instance.searchByText(value || '');
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.warn('searchByText non disponible sur dossiersGrid.instance', err);
-    }
-  }
-  clearDossiersSearch(input: HTMLInputElement): void {
-    if (input) {
-      input.value = '';
-    }
-    try {
-      this.dossiersGrid?.instance.searchByText('');
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.warn('searchByText non disponible sur dossiersGrid.instance', err);
-    }
-  }
-
-  /* ============================
-     Export helpers (custom)
-     ============================ */
-
+  // --------- Export helpers ----------
+  // Export Excel (.xlsx) — utilise import dynamique de 'xlsx' (sheetjs)
   exportTasksToExcel(): void {
-    const inst: any = this.tasksGrid?.instance;
-    try {
-      if (inst && typeof inst.exportToExcel === 'function') {
-        inst.exportToExcel();
-        return;
-      }
-      this.exportTasksToCsv();
-      console.warn('exportToExcel() non disponible. Fallback CSV exécuté.');
-    } catch (err) {
+    if (!this.tasks || this.tasks.length === 0) {
       // eslint-disable-next-line no-console
-      console.error("Erreur lors de l'export des tâches vers Excel :", err);
+      console.warn('Aucune tâche à exporter.');
+      return;
     }
+
+    // Prépare les données: transforme dates en ISO et objets en JSON pour éviter erreurs
+    const headers = this.guessHeadersFromArray(this.tasks);
+    const rows = this.tasks.map(r => {
+      const out: any = {};
+      headers.forEach(h => {
+        const v = (r as any)[h];
+        if (v == null) {
+          out[h] = '';
+        } else if (v instanceof Date) {
+          out[h] = v.toISOString();
+        } else if (typeof v === 'object') {
+          try {
+            out[h] = JSON.stringify(v);
+          } catch {
+            out[h] = String(v);
+          }
+        } else {
+          out[h] = v;
+        }
+      });
+      return out;
+    });
+
+    // import dynamique pour éviter erreur de build si la lib n'est pas installée
+    import('xlsx')
+      .then(XLSX => {
+        try {
+          const ws = XLSX.utils.json_to_sheet(rows, { header: headers });
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, 'Tasks');
+          const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+          const blob = new Blob([wbout], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          });
+          const fileName = `tasks_export_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.xlsx`;
+          this.downloadBlobFromFile(blob, fileName);
+        } catch (err) {
+          // fallback: si erreur sheetjs, on force CSV fallback
+          // eslint-disable-next-line no-console
+          console.warn('Erreur lors de la génération XLSX, fallback CSV', err);
+          this.exportTasksToCsv();
+        }
+      })
+      .catch(err => {
+        // eslint-disable-next-line no-console
+        console.warn(
+          "Impossible d'importer la librairie xlsx. Exécutez `npm install xlsx` pour activer l'export Excel. Fallback CSV.",
+          err
+        );
+        this.exportTasksToCsv();
+      });
   }
 
   exportTasksToCsv(): void {
@@ -337,34 +275,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     const rows = this.tasks;
     const headers = this.guessHeadersFromArray(rows);
     const csvContent = this.buildCsvFromRows(rows, headers);
-    this.downloadBlob(csvContent, 'tasks_export', 'text/csv;charset=utf-8;');
-  }
-
-  exportDossiersToExcel(): void {
-    const inst: any = this.dossiersGrid?.instance;
-    try {
-      if (inst && typeof inst.exportToExcel === 'function') {
-        inst.exportToExcel();
-        return;
-      }
-      this.exportDossiersToCsv();
-      console.warn('exportToExcel() non disponible sur dossiersGrid.instance. Fallback CSV exécuté.');
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error('Erreur exportDossiersToExcel :', err);
-    }
-  }
-
-  exportDossiersToCsv(): void {
-    if (!this.dossiers || this.dossiers.length === 0) {
-      // eslint-disable-next-line no-console
-      console.warn('Aucun dossier à exporter.');
-      return;
-    }
-    const rows = this.dossiers;
-    const headers = this.guessHeadersFromArray(rows);
-    const csvContent = this.buildCsvFromRows(rows, headers);
-    this.downloadBlob(csvContent, 'dossiers_export', 'text/csv;charset=utf-8;');
+    const fileName = `tasks_export_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.csv`;
+    this.downloadBlob(csvContent, fileName, 'text/csv;charset=utf-8;');
   }
 
   // ---------- helpers ----------
@@ -372,7 +284,12 @@ export class HomeComponent implements OnInit, OnDestroy {
     if (!arr || arr.length === 0) {
       return [];
     }
-    return Object.keys(arr[0]);
+    // on veut une liste stable d'en-têtes :
+    const keys = new Set<string>();
+    arr.forEach(item => {
+      Object.keys(item || {}).forEach(k => keys.add(k));
+    });
+    return Array.from(keys);
   }
 
   private buildCsvFromRows(rows: any[], headers: string[]): string {
@@ -394,9 +311,14 @@ export class HomeComponent implements OnInit, OnDestroy {
     return lines.join('\r\n');
   }
 
-  private downloadBlob(content: string, baseName = 'export', mimeType = 'text/csv;charset=utf-8;'): void {
-    const blob = new Blob([content], { type: mimeType });
-    const fileName = `${baseName}_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.csv`;
+  private downloadBlob(content: string | Blob, fileName = 'export.csv', mimeType = 'text/csv;charset=utf-8;'): void {
+    let blob: Blob;
+    if (typeof content === 'string') {
+      blob = new Blob([content], { type: mimeType });
+    } else {
+      blob = content;
+    }
+
     if ((navigator as any).msSaveBlob) {
       (navigator as any).msSaveBlob(blob, fileName);
     } else {
@@ -410,5 +332,63 @@ export class HomeComponent implements OnInit, OnDestroy {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     }
+  }
+
+  private downloadBlobFromFile(blob: Blob, fileName: string): void {
+    if ((navigator as any).msSaveBlob) {
+      (navigator as any).msSaveBlob(blob, fileName);
+    } else {
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', fileName);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+  }
+
+  // util pour classes status en CSS
+  getStatusClass(raw: any): string {
+    const s = String(raw || '')
+      .toString()
+      .trim()
+      .toLowerCase();
+    if (s === 'desactivated' || s === 'desactivé' || s === 'desactive' || s === 'disabled') {
+      return 'status-desactivated';
+    } else if (s === 'actif' || s === 'active') {
+      return 'status-actif';
+    } else if (s === 'delated' || s === 'deleted' || s === 'supprimé') {
+      return 'status-delated';
+    }
+    return '';
+  }
+
+  /**
+   * Convertit value (Dayjs | string | Date | number | null | undefined)
+   * en Date | null — utilisable en toute sécurité par le date pipe.
+   */
+  formatToDate(value: any): Date | null {
+    if (value == null) {
+      return null;
+    }
+    // dayjs-like
+    if (typeof (value as any).toDate === 'function') {
+      try {
+        return (value as any).toDate();
+      } catch {
+        return null;
+      }
+    }
+    if (value instanceof Date) {
+      return value;
+    }
+    if (typeof value === 'string' || typeof value === 'number') {
+      const d = new Date(value);
+      return isNaN(d.getTime()) ? null : d;
+    }
+    return null;
   }
 }
