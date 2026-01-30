@@ -756,10 +756,7 @@ export class CorrespUpdateComponent implements OnInit {
       isValid = false;
     }
 
-    if (!this.contactEmail?.trim()) {
-      this.validationInfoGenErrors['contactEmail'] = 'Le contact est obligatoire';
-      isValid = false;
-    }
+    // NOTE: contactEmail n'est plus obligatoire — on ne vérifie plus sa présence ici
 
     return isValid;
   }

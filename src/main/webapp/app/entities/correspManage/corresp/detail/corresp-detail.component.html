@@ -466,6 +466,7 @@
         <div
           style="padding: 16px; border: 1px solid #ccc; border-radius: 12px; height: 100%; display: flex; flex-direction: column; gap: 16px"
         >
+          <!-- =================== BLOC : Corps de la Correspondance (REMPLACER ICI) =================== -->
           <div style="border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden">
             <!-- Titre avec toggle -->
             <div
@@ -501,8 +502,26 @@
               [style.padding]="accordionStates['corps'] ? '16px' : '0 16px'"
               style="overflow: hidden; transition: max-height 0.5s ease, padding 0.5s ease"
             >
-              <!-- Si DRAFT -->
+              <!-- --- DRAFT MODE --- -->
               <ng-container *ngIf="correspLoaded?.status === 'DRAFT'; else readOnlyBody">
+                <!-- --- En-tête rapide (DRAFT) : De / À / CC - horizontal + responsive --- -->
+                <div class="header-quick" role="group" aria-label="En-tête rapide">
+                  <div class="hq-item" title="{{ expediteur || correspLoaded?.sender || '-' }}">
+                    <strong>De :</strong> {{ expediteur || correspLoaded?.sender || '-' }}
+                  </div>
+
+                  <div class="hq-item" title="{{ destinataireLabel || 'Destinataire principal (à remplacer)' }}">
+                    <strong>À :</strong>
+                    {{ destinataireLabel || 'Destinataire principal (à remplacer)' }}
+                  </div>
+
+                  <div class="hq-item" title="{{ contactEmailCCLabel || 'Contact en copie (à remplacer)' }}">
+                    <strong>CC :</strong>
+                    {{ contactEmailCCLabel || 'Contact en copie (à remplacer)' }}
+                  </div>
+                </div>
+
+                <!-- Éditeur -->
                 <dx-html-editor [(value)]="htmlContent" [height]="365" [placeholder]="'Tapez votre contenu ici...'">
                   <dxo-toolbar [multiline]="true">
                     <dxi-item name="undo"></dxi-item>
@@ -527,14 +546,27 @@
                   </dxo-toolbar>
                 </dx-html-editor>
               </ng-container>
-              <!-- Si autre status : lecture seule -->
+
+              <!-- --- READONLY MODE --- -->
               <ng-template #readOnlyBody>
+                <!-- En-tête rapide (readonly) : De / À / CC (vertical) -->
+                <div style="margin-bottom: 12px; background: #fafafa; padding: 10px; border-radius: 6px; border: 1px solid #eee">
+                  <div style="display: flex; flex-direction: column; gap: 6px">
+                    <div style="font-size: 0.95em"><strong>De :</strong> {{ correspLoaded?.sender || '-' }}</div>
+                    <div style="font-size: 0.95em"><strong>À :</strong> Destinataire principal (hard-coded)</div>
+                    <div style="font-size: 0.95em">
+                      <strong>CC :</strong> {{ correspLoaded?.labelContactCC || 'Contact en copie (hard-coded)' }}
+                    </div>
+                  </div>
+                </div>
+
                 <div style="background: #fff; padding: 10px; border: 1px solid #eee; border-radius: 4px; min-height: 100px">
                   <div [innerHTML]="correspLoaded?.body"></div>
                 </div>
               </ng-template>
             </div>
           </div>
+          <!-- =================== FIN BLOC Corps =================== -->
 
           <div style="border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden">
             <div

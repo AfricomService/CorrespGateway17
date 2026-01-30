@@ -143,7 +143,7 @@
                   <!-- EXPÉDITEUR: select sociétés actives OR champ manuel -->
                   <div style="flex: 1; display: flex; gap: 8px; align-items: flex-start">
                     <div style="flex: 1">
-                      <label class="form-label fw-semibold">Expéditeur (Sociétés) <span class="text-danger">*</span></label>
+                      <label class="form-label fw-semibold">Expéditeur <span class="text-danger">*</span></label>
 
                       <!-- MODE SELECT with search -->
                       <div *ngIf="!showManualExpediteur" style="display: flex; gap: 8px; align-items: center">
@@ -248,7 +248,7 @@
                 <!-- ================= CONTACT ================= -->
                 <div style="display: flex; gap: 12px; margin-bottom: 1.5em">
                   <div style="flex: 1">
-                    <label class="form-label fw-semibold">Contact <span class="text-danger">*</span></label>
+                    <label class="form-label fw-semibold">Contact</label>
 
                     <!-- MODE SELECT with search for persons -->
                     <div *ngIf="!showManualContact" style="display: flex; gap: 8px; align-items: center">
@@ -297,7 +297,7 @@
                         class="form-control"
                         [(ngModel)]="contactEmail"
                         name="contactEmailFallback"
-                        placeholder="Entrer manuellement"
+                        placeholder="Entrer manuellement le contact"
                         [class.is-invalid]="validationInfoGenErrors['contactEmail']"
                         style="flex: 1"
                       />

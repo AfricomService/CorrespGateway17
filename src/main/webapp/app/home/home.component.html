@@ -1,106 +1,262 @@
-<div *ngIf="account">
-  <!--<div style="display: flex;flex-direction: column;justify-content: space-between;align-items: center;width: 100%">-->
-
-  <div class="row" style="display: flex; flex-direction: column; justify-content: space-between; gap: 2em; align-items: center">
-    <div style="width: 100%; padding-bottom: 2em">
-      <h3 style="padding-left: 0px; font-weight: bold; font-style: italic; text-transform: uppercase; padding-bottom: 1em; color: #c1121f">
-        Bienvenue, {{ account.firstName }} !
-      </h3>
-      <h4 style="font-weight: bold; font-style: italic; text-transform: uppercase; padding-bottom: 1em">ajouter un Courrier</h4>
-      <div
-        style="display: flex; flex-direction: row; justify-content: space-between; padding-left: 0px; padding-right: 0px"
-        class="col-md-12"
-      >
-        <div class="col-md-2 button_slide slide_right" (click)="onTypeClicked('Arrivée')">Arrivée</div>
-        <div class="col-md-2 button_slide slide_right" (click)="onTypeClicked('Sortant')">Sortant</div>
-        <div class="col-md-2 button_slide slide_right" (click)="onTypeClicked('Interne')">Interne</div>
-      </div>
-    </div>
-
-    <div style="padding-left: 0px; padding-right: 0px; display: flex; flex-direction: row; justify-content: space-between; width: 100%">
-      <div style="width: 45%">
-        <h4 style="font-weight: bold; font-style: italic; text-transform: uppercase">Taches En Cours</h4>
-        <div style="padding-left: 0px; padding-right: 0px">
-          <dx-data-grid
-            [dataSource]="tasks!"
-            (onDataErrorOccurred)="refresh()"
-            [errorRowEnabled]="false"
-            [showBorders]="true"
-            [height]="'100%'"
-            (onRowDblClick)="onRowDblClick($event)"
-            [selection]="selection"
-            [loadPanel]="loadPanel"
-            [export]="export"
-            [sorting]="sorting"
-            [columnAutoWidth]="true"
-            [searchPanel]="searchPanel"
-          >
-            <dxi-column dataField="object" caption="Object" dataType="string" alignment="alignment"></dxi-column>
-
-            <dxi-column
-              dataField="creationDate"
-              caption="Date De Creation"
-              dataType="date"
-              format="yyyy-MM-dd HH:mm"
-              alignment="alignment"
-            ></dxi-column>
-
-            <dxi-column
-              dataField="startDate"
-              caption="Date De Début"
-              dataType="date"
-              format="yyyy-MM-dd HH:mm"
-              alignment="alignment"
-            ></dxi-column>
-
-            <dxi-column
-              dataField="duedate"
-              caption="Date Limite"
-              dataType="date"
-              format="yyyy-MM-dd HH:mm"
-              alignment="alignment"
-            ></dxi-column>
-
-            <dxi-column
-              dataField="closeDate"
-              caption="Date De Cloture"
-              dataType="date"
-              format="yyyy-MM-dd HH:mm"
-              alignment="alignment"
-            ></dxi-column>
-
-            <dxi-column dataField="responsible" caption="Résponsable" dataType="string" alignment="alignment"></dxi-column>
-          </dx-data-grid>
-        </div>
-      </div>
-      <div style="width: 45%">
-        <h4 style="font-weight: bold; font-style: italic; text-transform: uppercase">Dossiers</h4>
-        <div style="padding-left: 0px; padding-right: 0px">
-          <dx-data-grid
-            [dataSource]="dossiers!"
-            (onDataErrorOccurred)="refresh()"
-            [errorRowEnabled]="false"
-            [showBorders]="true"
-            [height]="'100%'"
-            (onRowDblClick)="onRowDblClickDossier($event)"
-            [selection]="selection"
-            [loadPanel]="loadPanel"
-            [searchPanel]="searchPanel"
-            [export]="export"
-            [sorting]="sorting"
-            [columnAutoWidth]="true"
-            (onRowPrepared)="onRowPrepared($event)"
-          >
-            <dxi-column dataField="name" caption="Nom" dataType="string" alignment="alignment"></dxi-column>
-
-            <dxi-column dataField="isPublic" caption="Publique" dataType="boolean" alignment="alignment"></dxi-column>
-
-            <dxi-column dataField="responsible" caption="Responsable" dataType="string" alignment="alignment"></dxi-column>
-
-            <dxi-column dataField="status" caption="Etat" dataType="string" alignment="alignment"></dxi-column>
-          </dx-data-grid>
+<!-- src/main/webapp/app/home/home.component.html -->
+<div *ngIf="account" class="corresp-dashboard">
+  <!-- HERO / HEADER -->
+  <header class="hero">
+    <div class="container hero-inner">
+      <div class="welcome">
+        <div class="welcome-emoji" aria-hidden="true">👋</div>
+        <div class="welcome-text">
+          <h1 class="welcome-title">Bienvenue, {{ account.firstName }}</h1>
+          <p class="welcome-sub">Gérez vos courriers et tâches en toute simplicité</p>
         </div>
       </div>
     </div>
-  </div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-area">
+    <div class="container">
+      <!-- NOUVEAU COURRIER CARD -->
+      <section class="card mail-card" aria-labelledby="nouveau-courrier-title">
+        <div class="card-header">
+          <h2 id="nouveau-courrier-title">✨ Nouveau Courrier</h2>
+        </div>
+
+        <div class="mail-options" role="list">
+          <!-- ARRIVEE -->
+          <div
+            class="mail-option"
+            role="button"
+            tabindex="0"
+            aria-label="Arrivée"
+            (click)="onTypeClicked('Arrivée')"
+            (keydown.enter)="onTypeClicked('Arrivée')"
+            (keydown.space)="onTypeClicked('Arrivée')"
+          >
+            <span class="option-icon" aria-hidden="true" style="font-size: 84px; display: inline-block; line-height: 1; text-align: center"
+              >📥</span
+            >
+            <div class="option-title">ARRIVÉE</div>
+            <div class="option-sub">Enregistrer un courrier entrant</div>
+          </div>
+
+          <!-- SORTANT -->
+          <div
+            class="mail-option"
+            role="button"
+            tabindex="0"
+            aria-label="Sortant"
+            (click)="onTypeClicked('Sortant')"
+            (keydown.enter)="onTypeClicked('Sortant')"
+            (keydown.space)="onTypeClicked('Sortant')"
+          >
+            <span class="option-icon" aria-hidden="true" style="font-size: 84px; display: inline-block; line-height: 1; text-align: center"
+              >📤</span
+            >
+            <div class="option-title">SORTANT</div>
+            <div class="option-sub">Créer un courrier sortant</div>
+          </div>
+
+          <!-- INTERNE -->
+          <div
+            class="mail-option"
+            role="button"
+            tabindex="0"
+            aria-label="Interne"
+            (click)="onTypeClicked('Interne')"
+            (keydown.enter)="onTypeClicked('Interne')"
+            (keydown.space)="onTypeClicked('Interne')"
+          >
+            <span class="option-icon" aria-hidden="true" style="font-size: 84px; display: inline-block; line-height: 1; text-align: center"
+              >📋</span
+            >
+            <div class="option-title">INTERNE</div>
+            <div class="option-sub">Communication interne</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TWO COLUMNS: TACHES + DOSSIERS -->
+      <section class="two-columns" aria-labelledby="panels-title">
+        <h3 id="panels-title" class="sr-only">Tâches et dossiers</h3>
+
+        <!-- PANEL: TÂCHES -->
+        <div class="panel tasks-panel" role="region" aria-labelledby="taches-title">
+          <div class="panel-header tasks-header">
+            <div class="header-top">
+              <div class="tasks-left">
+                <h4 id="taches-title" class="panel-title">Tâches en cours</h4>
+                <div class="task-count" aria-hidden="true">{{ tasksCount }}</div>
+              </div>
+
+              <div class="header-actions">
+                <!-- Export buttons group -->
+                <div class="export-group" role="group" aria-label="Exports">
+                  <button class="export-btn" type="button" aria-label="Exporter vers Excel" (click)="exportTasksToExcel()">
+                    <svg class="export-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      <path d="M3 3h18v18H3z" fill="none" stroke="currentColor" stroke-width="1.2"></path>
+                      <path d="M7 7v10M17 7v10" stroke="currentColor" stroke-width="1.6"></path>
+                      <path d="M7 11h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
+                    </svg>
+                    <span class="export-label">Excel</span>
+                  </button>
+
+                  <button class="export-btn ghost" type="button" aria-label="Exporter vers CSV" (click)="exportTasksToCsv()">
+                    <svg class="export-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      <path d="M3 3h18v18H3z" fill="none" stroke="currentColor" stroke-width="1.2"></path>
+                      <path d="M6 8h12M6 12h12M6 16h12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"></path>
+                    </svg>
+                    <span class="export-label">CSV</span>
+                  </button>
+                </div>
+
+                <!-- Barre de recherche stylée (visuelle). -->
+                <div class="header-search">
+                  <label class="sr-only" for="tasksSearch">Rechercher tâches</label>
+                  <div class="search-container header-search--large">
+                    <input
+                      id="tasksSearch"
+                      #tasksSearch
+                      class="search-input"
+                      placeholder="Rechercher une tâche"
+                      (input)="onTasksSearchInput($any($event.target).value)"
+                    />
+                    <button class="search-btn" type="button" aria-label="Rechercher" (click)="onTasksSearchClick(tasksSearch.value)">
+                      <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path
+                          d="M21 21l-4.35-4.35"
+                          stroke="currentColor"
+                          stroke-width="1.8"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          fill="none"
+                        ></path>
+                        <circle cx="11" cy="11" r="5" stroke="currentColor" stroke-width="1.8" fill="none"></circle>
+                      </svg>
+                    </button>
+
+                    <button
+                      class="search-clear-btn"
+                      type="button"
+                      aria-label="Effacer la recherche"
+                      (click)="clearTasksSearch(tasksSearch)"
+                    >
+                      ✖
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Data grid -->
+          <div class="panel-body">
+            <dx-data-grid
+              #tasksGrid
+              [dataSource]="tasks!"
+              (onDataErrorOccurred)="refresh()"
+              [errorRowEnabled]="false"
+              [showBorders]="true"
+              [height]="'100%'"
+              (onRowDblClick)="onRowDblClick($event)"
+              (onRowPrepared)="onRowPrepared($event)"
+              [selection]="selection"
+              [loadPanel]="loadPanel"
+              [sorting]="sorting"
+              [columnAutoWidth]="true"
+            >
+              <dxi-column dataField="object" caption="Objet" dataType="string"></dxi-column>
+              <dxi-column dataField="creationDate" caption="Création" dataType="date" format="yyyy-MM-dd HH:mm"></dxi-column>
+              <dxi-column dataField="startDate" caption="Début" dataType="date" format="yyyy-MM-dd HH:mm"></dxi-column>
+              <dxi-column dataField="duedate" caption="Limite" dataType="date" format="yyyy-MM-dd HH:mm"></dxi-column>
+              <dxi-column dataField="closeDate" caption="Clôture" dataType="date" format="yyyy-MM-dd HH:mm"></dxi-column>
+              <dxi-column dataField="responsible" caption="Responsable" dataType="string"></dxi-column>
+              <dxi-column dataField="etat" caption="État" dataType="string"></dxi-column>
+            </dx-data-grid>
+          </div>
+        </div>
+
+        <!-- PANEL: DOSSIERS -->
+        <div class="panel dossiers-panel" role="region" aria-labelledby="dossiers-title">
+          <div class="panel-header dossiers-header">
+            <div class="header-top">
+              <div>
+                <h4 id="dossiers-title" class="panel-title">Dossiers</h4>
+              </div>
+
+              <div class="header-actions">
+                <div class="export-group" role="group" aria-label="Exports Dossiers">
+                  <button class="export-btn" type="button" aria-label="Exporter dossiers Excel" (click)="exportDossiersToExcel()">
+                    <svg class="export-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M3 3h18v18H3z" fill="none" stroke="currentColor" stroke-width="1.2"></path>
+                      <path d="M7 7v10M17 7v10" stroke="currentColor" stroke-width="1.6"></path>
+                      <path d="M7 11h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
+                    </svg>
+                    <span class="export-label">Excel</span>
+                  </button>
+                </div>
+
+                <!-- NOTE: same size as tasks search -->
+                <div class="header-search">
+                  <label class="sr-only" for="dossiersSearch">Rechercher dossiers</label>
+                  <div class="search-container header-search--large">
+                    <input
+                      id="dossiersSearch"
+                      #dossiersSearch
+                      class="search-input"
+                      placeholder="Rechercher un dossier"
+                      (input)="onDossiersSearchInput($any($event.target).value)"
+                    />
+                    <button class="search-btn" type="button" aria-label="Rechercher" (click)="onDossiersSearchClick(dossiersSearch.value)">
+                      <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path
+                          d="M21 21l-4.35-4.35"
+                          stroke="currentColor"
+                          stroke-width="1.8"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          fill="none"
+                        ></path>
+                        <circle cx="11" cy="11" r="5" stroke="currentColor" stroke-width="1.8" fill="none"></circle>
+                      </svg>
+                    </button>
+                    <button
+                      class="search-clear-btn"
+                      type="button"
+                      aria-label="Effacer la recherche"
+                      (click)="clearDossiersSearch(dossiersSearch)"
+                    >
+                      ✖
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel-body">
+            <dx-data-grid
+              #dossiersGrid
+              [dataSource]="dossiers!"
+              (onDataErrorOccurred)="refresh()"
+              [errorRowEnabled]="false"
+              [showBorders]="true"
+              [height]="'100%'"
+              (onRowDblClick)="onRowDblClickDossier($event)"
+              (onRowPrepared)="onRowPrepared($event)"
+              [selection]="selection"
+              [loadPanel]="loadPanel"
+              [sorting]="sorting"
+              [columnAutoWidth]="true"
+            >
+              <dxi-column dataField="name" caption="Nom" dataType="string"></dxi-column>
+              <dxi-column dataField="isPublic" caption="Publique" dataType="boolean"></dxi-column>
+              <dxi-column dataField="responsible" caption="Responsable" dataType="string"></dxi-column>
+              <dxi-column dataField="status" caption="État" dataType="string"></dxi-column>
+            </dx-data-grid>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
 </div>
