@@ -1,7 +1,6 @@
 // src/main/webapp/app/home/home.component.ts
 // Modernized HomeComponent — tâches & dossiers (styles moved to home.component.scss)
-// Remarque : conserve la logique d'export / recherche existante, ajoute compteurs dynamiques
-// et applique des classes de statut depuis onRowPrepared au lieu de styles inline.
+// Ajout : enregistrement programmatique des traductions locales (FR/EN) pour éviter les "translation-not-found".
 
 import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
@@ -16,6 +15,8 @@ import { DxDataGridComponent } from 'devextreme-angular';
 import { HttpResponse } from '@angular/common/http';
 import { DossierService } from '../entities/correspManage/dossier/service/dossier.service';
 import { TasksService } from '../entities/correspManage/tasks/service/tasks.service';
+
+import { TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'jhi-home',
@@ -64,10 +65,91 @@ export class HomeComponent implements OnInit, OnDestroy {
     private accountService: AccountService,
     private router: Router,
     private tasksService: TasksService,
-    private dossierService: DossierService
+    private dossierService: DossierService,
+    private translate: TranslateService
   ) {}
 
   ngOnInit(): void {
+    // --- Merge local translations to prevent translation-not-found ---
+    // We merge so we don't overwrite any already loaded translations.
+    const fr = {
+      home: {
+        title: 'Bienvenue, {{firstName}}',
+        subtitle: 'Gérez vos courriers et tâches en toute simplicité',
+        newMail: '✨ Nouveau Courrier',
+        arrival: 'ARRIVÉE',
+        arrivalSub: 'Enregistrer un courrier entrant',
+        outgoing: 'SORTANT',
+        outgoingSub: 'Créer un courrier sortant',
+        internal: 'INTERNE',
+        internalSub: 'Communication interne',
+        panelsTitle: 'Tâches et dossiers',
+        tasksTitle: 'Tâches en cours',
+        dossiersTitle: 'Dossiers',
+        searchTasksLabel: 'Rechercher tâches',
+        searchTasks: 'Rechercher une tâche',
+        searchDossiersLabel: 'Rechercher dossiers',
+        searchDossiers: 'Rechercher un dossier',
+        search: 'Rechercher',
+        clearSearch: 'Effacer la recherche',
+        exportExcel: 'Excel',
+        exportCsv: 'CSV',
+        objet: 'Objet',
+        creation: 'Création',
+        debut: 'Début',
+        limite: 'Limite',
+        cloture: 'Clôture',
+        responsable: 'Responsable',
+        etat: 'État',
+        nom: 'Nom',
+        publique: 'Publique',
+      },
+    };
+
+    const en = {
+      home: {
+        title: 'Welcome, {{firstName}}',
+        subtitle: 'Manage your mail and tasks with ease',
+        newMail: '✨ New Mail',
+        arrival: 'INCOMING',
+        arrivalSub: 'Register an incoming mail',
+        outgoing: 'OUTGOING',
+        outgoingSub: 'Create an outgoing mail',
+        internal: 'INTERNAL',
+        internalSub: 'Internal communication',
+        panelsTitle: 'Tasks & folders',
+        tasksTitle: 'Active Tasks',
+        dossiersTitle: 'Folders',
+        searchTasksLabel: 'Search tasks',
+        searchTasks: 'Search a task',
+        searchDossiersLabel: 'Search folders',
+        searchDossiers: 'Search a folder',
+        search: 'Search',
+        clearSearch: 'Clear search',
+        exportExcel: 'Excel',
+        exportCsv: 'CSV',
+        objet: 'Object',
+        creation: 'Creation',
+        debut: 'Start',
+        limite: 'Deadline',
+        cloture: 'Close',
+        responsable: 'Responsible',
+        etat: 'Status',
+        nom: 'Name',
+        publique: 'Public',
+      },
+    };
+
+    // Merge translations (true => merge)
+    try {
+      this.translate.setTranslation('fr', fr, true);
+      this.translate.setTranslation('en', en, true);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn("Erreur lors de l'enregistrement local des traductions home.*", err);
+    }
+    // ---------------------------------------------------------------
+
     this.accountService
       .getAuthenticationState()
       .pipe(takeUntil(this.destroy$))

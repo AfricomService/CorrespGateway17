@@ -1,19 +1,31 @@
 {
   "home": {
-    "title": "أهلا وسهلا بك، جافا هبستر!",
-    "subtitle": "هذه صفحتك الرئيسية",
-    "logged": {
-      "message": "قمت بتسجيل الدخول كمستخدم \"{{username}}\"."
-    },
-    "question": "إذا كان لديك أي سؤال حول JHipster:",
-    "link": {
-      "homepage": "JHipster homepage",
-      "stackoverflow": "JHipster on Stack Overflow",
-      "bugtracker": "JHipster bug tracker",
-      "chat": "JHipster public chat room",
-      "follow": "follow @jhipster on Twitter"
-    },
-    "like": "إذا كنت تحب JHipster، لا تنسى أن تعطي لنا نجم على",
-    "github": "GitHub"
+    "title": "مرحبًا، {{firstName}}",
+    "subtitle": "إدارة المراسلات والمهام بكل سهولة",
+    "newMail": "✨ مراسلة جديدة",
+    "arrival": "وارد",
+    "arrivalSub": "تسجيل مراسلة واردة",
+    "outgoing": "صادر",
+    "outgoingSub": "إنشاء مراسلة صادرة",
+    "internal": "داخلي",
+    "internalSub": "مراسلة داخلية",
+    "panelsTitle": "المهام والملفات",
+    "tasksTitle": "المهام الجارية",
+    "dossiersTitle": "الملفات",
+    "searchTasks": "البحث عن مهمة",
+    "searchDossiers": "البحث عن ملف",
+    "search": "بحث",
+    "clearSearch": "مسح البحث",
+    "exportExcel": "إكسل",
+    "exportCsv": "CSV",
+    "objet": "الموضوع",
+    "creation": "تاريخ الإنشاء",
+    "debut": "تاريخ البداية",
+    "limite": "تاريخ الاستحقاق",
+    "cloture": "تاريخ الإغلاق",
+    "responsable": "المسؤول",
+    "etat": "الحالة",
+    "nom": "الاسم",
+    "publique": "عمومي"
   }
 }
