@@ -13,6 +13,7 @@ import { FindLanguageFromKeyPipe } from 'app/shared/language/find-language-from-
 })
 export class MainComponent implements OnInit {
   private renderer: Renderer2;
+  isHomePage = false;
 
   constructor(
     private accountService: AccountService,
@@ -29,9 +30,13 @@ export class MainComponent implements OnInit {
     // try to log in automatically
     this.accountService.identity().subscribe();
 
+    // Initialize isHomePage
+    this.isHomePage = this.router.url === '/' || this.router.url.startsWith('/?');
+
     this.router.events.subscribe(event => {
       if (event instanceof NavigationEnd) {
         this.updateTitle();
+        this.isHomePage = this.router.url === '/' || this.router.url.startsWith('/?');
       }
     });
 
