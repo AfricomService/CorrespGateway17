@@ -252,9 +252,50 @@ $container-max: 1800px; // largeur raisonnable
 :host .mail-option:active {
   transform: translateY(-6px);
   box-shadow: 0 28px 50px rgba(11, 19, 43, 0.12);
+  /* Default blueish background for unknown types or base */
   background: linear-gradient(135deg, rgba($accent-start, 0.1), rgba($accent-end, 0.08));
   border-color: rgba($accent-end, 0.14);
 }
+
+/* === Custom Hover Colors per Type === */
+
+/* Arrivée: Green Gradient */
+:host .mail-option[data-type='arrivee']:hover,
+:host .mail-option[data-type='arrivee']:active {
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.15), rgba(46, 125, 50, 0.12));
+  border-color: rgba(46, 125, 50, 0.2);
+}
+:host .mail-option[data-type='arrivee']:hover .option-icon,
+:host .mail-option[data-type='arrivee']:focus-visible .option-icon {
+  background: linear-gradient(135deg, #66bb6a, #2e7d32); /* Green gradient */
+  box-shadow: 0 18px 36px rgba(46, 125, 50, 0.25);
+}
+
+/* Sortant: Orange Gradient */
+:host .mail-option[data-type='sortant']:hover,
+:host .mail-option[data-type='sortant']:active {
+  background: linear-gradient(135deg, rgba(255, 152, 0, 0.15), rgba(230, 81, 0, 0.12));
+  border-color: rgba(230, 81, 0, 0.2);
+}
+:host .mail-option[data-type='sortant']:hover .option-icon,
+:host .mail-option[data-type='sortant']:focus-visible .option-icon {
+  background: linear-gradient(135deg, #ffa726, #e65100); /* Orange gradient */
+  box-shadow: 0 18px 36px rgba(230, 81, 0, 0.25);
+}
+
+/* Interne: Blue Gradient (explicit) */
+:host .mail-option[data-type='interne']:hover,
+:host .mail-option[data-type='interne']:active {
+  background: linear-gradient(135deg, rgba($accent-start, 0.15), rgba($accent-end, 0.12));
+  border-color: rgba($accent-end, 0.2);
+}
+:host .mail-option[data-type='interne']:hover .option-icon,
+:host .mail-option[data-type='interne']:focus-visible .option-icon {
+  background: linear-gradient(135deg, $accent-start, $accent-end); /* Blue gradient */
+  box-shadow: 0 18px 36px rgba(30, 64, 175, 0.25);
+}
+/* ==================================== */
+
 :host .mail-option:hover .option-title,
 :host .mail-option:focus-visible .option-title {
   color: #fff;
@@ -288,6 +329,15 @@ $container-max: 1800px; // largeur raisonnable
   box-shadow: 0 18px 36px rgba(30, 64, 175, 0.18);
 }
 
+/* Wrapper for title and sub to handle layout */
+:host .option-text-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
 :host .option-title {
   font-size: 16px;
   font-weight: 800 !important;
@@ -303,27 +353,59 @@ $container-max: 1800px; // largeur raisonnable
 }
 
 @media (max-width: 640px) {
+  /* Force vertical stacking on small mobile screens */
+  .left-column .mail-card .mail-options {
+    flex-direction: column;
+    gap: 16px;
+  }
+
   :host .mail-option {
     aspect-ratio: auto;
     height: auto;
+    width: 100%;
     display: flex;
     flex-direction: row;
     align-items: center;
-    padding: 12px;
+    padding: 16px;
     border-radius: 12px;
+    /* Reset flex items */
+    flex: 0 0 auto;
   }
   :host .option-icon {
     width: 56px !important;
     height: 56px !important;
     font-size: 26px;
-    margin-right: 12px;
+    margin-right: 16px;
   }
   :host .option-title {
-    font-size: 15px;
+    font-size: 16px;
+    text-align: left;
   }
   :host .option-sub {
-    font-size: 12px;
+    font-size: 13px;
     max-width: none;
+    text-align: left;
+    margin-top: 2px;
+  }
+  /* Arrange text nicely */
+  :host .mail-option > div {
+    text-align: left;
+    align-items: flex-start;
+  }
+
+  /* Header Actions responsiveness */
+  :host .header-actions-row {
+    flex-wrap: wrap;
+  }
+  :host .header-search {
+    width: 100%;
+    margin-left: 0;
+    margin-top: 8px;
+    order: 3; /* Push search below buttons */
+  }
+  :host .search-container,
+  :host .header-search--large {
+    width: 100%;
   }
 }
 
