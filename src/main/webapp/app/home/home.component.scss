@@ -1,9 +1,10 @@
 /* ==========================================================================
    src/main/webapp/app/home/home.component.scss
    Style revu — rendu plus pro, centré, responsive
-   - Layout 2 colonnes centré
+   - Layout 2 colonnes centré (gauche fixe, droite flexible)
+   - Réduction des marges latérales, colonnes même hauteur
    - Nouveau Courrier : carrés adaptatifs (aspect-ratio)
-   - Tâches : panel large, lisible, espacements harmonisés
+   - Tâches : panel flexible + body scrollable
    ========================================================================== */
 
 $radius: 14px;
@@ -12,13 +13,14 @@ $text-dark: #1d3557;
 $muted: #6b7280;
 $accent-start: #3b82f6;
 $accent-end: #1e40af;
-$container-max: 1200px;
+/* Augmenter si vous voulez des pages plus larges / moins de marges */
+$container-max: 2000px;
 
 /* Base host */
 :host {
   display: block;
   background-color: #f5f7fb;
-  padding: 0 0 64px;
+  padding: 0 0 56px;
   box-sizing: border-box;
   color: $text-dark;
   font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
@@ -30,7 +32,7 @@ $container-max: 1200px;
 :host .container {
   max-width: $container-max;
   margin: 0 auto;
-  padding: 0 24px; /* comfortable horizontal padding */
+  padding: 0 12px; /* reduced horizontal padding to minimize side gutters */
   box-sizing: border-box;
   background: transparent;
 }
@@ -45,10 +47,10 @@ $container-max: 1200px;
   box-shadow: 0 8px 28px rgba(30, 41, 59, 0.08);
   position: relative;
   z-index: 2;
-  padding: 10px 0; /* compact vertical padding */
+  padding: 10px 0;
 }
 
-/* remove container paddings inside hero so band feels full-bleed but content stays centered */
+/* make hero band appear full-bleed while keeping inner content constrained */
 :host .hero > .container {
   padding-left: 0 !important;
   padding-right: 0 !important;
@@ -59,7 +61,7 @@ $container-max: 1200px;
 :host .hero-inner {
   max-width: $container-max;
   margin: 0 auto;
-  padding: 10px 20px;
+  padding: 12px 16px;
   display: flex;
   gap: 16px;
   align-items: center;
@@ -72,8 +74,6 @@ $container-max: 1200px;
   gap: 14px;
   align-items: center;
 }
-
-/* emoji */
 :host .welcome-emoji {
   font-size: 36px;
   line-height: 1;
@@ -81,8 +81,6 @@ $container-max: 1200px;
   align-items: center;
   justify-content: center;
 }
-
-/* welcome text */
 :host .welcome-text {
   display: flex;
   flex-direction: column;
@@ -108,44 +106,73 @@ $container-max: 1200px;
 
 /* ================================
    Columns layout (centered & balanced)
+   Left fixed (narrow), right flexible — same height
    ================================ */
-/* Grid wrapper around left and right */
 .home-columns {
   width: 100%;
-  max-width: 1200px;
+  max-width: $container-max;
   margin: 18px auto;
   display: grid;
-  grid-template-columns: 1fr 1fr; /* Les deux colonnes auront la même largeur */
-  gap: 28px;
-  align-items: start;
-  padding: 0 16px; /* Reduced padding for smaller gaps */
+  grid-template-columns: 320px 1fr; /* gauche fixe, droite flexible */
+  gap: 24px;
+  align-items: stretch; /* important pour égaler la hauteur */
+  grid-auto-rows: 1fr; /* chaque ligne prendra la même hauteur */
+  padding: 0 12px;
   box-sizing: border-box;
+}
+
+/* Ensure columns fill the grid cell */
+.left-column,
+.right-column {
+  height: 100%;
 }
 
 /* Left column card adjustments */
 .left-column .mail-card {
   margin: 0;
-  padding: 20px;
+  padding: 18px;
   display: flex;
   flex-direction: column;
   align-items: center;
   height: 100%;
+  box-sizing: border-box;
 }
 
-/* Right column */
+/* Right column — make inner panel stretch to full height */
 .right-column {
   display: block;
+}
+.right-column .panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding-top: 28px;
+  box-sizing: border-box;
+}
+.right-column .panel .panel-body {
+  /* let the body take remaining vertical space and be scrollable */
+  flex: 1 1 auto;
+  min-height: 0; /* allow proper scrolling inside flex */
+  overflow: auto;
+  padding-right: 6px;
 }
 
 /* When viewport is narrower — stack */
 @media (max-width: 980px) {
   .home-columns {
     grid-template-columns: 1fr;
+    grid-auto-rows: auto;
     gap: 16px;
     padding: 0 12px;
   }
   :host .hero-inner {
     padding: 10px 12px;
+  }
+  .left-column .mail-card {
+    height: auto;
+  }
+  .right-column .panel {
+    height: auto;
   }
 }
 
@@ -156,6 +183,7 @@ $container-max: 1200px;
   padding: 20px;
   box-shadow: 0 10px 30px rgba(11, 19, 43, 0.06);
   border: 1px solid rgba(29, 53, 87, 0.06);
+  box-sizing: border-box;
 }
 
 /* headings */
@@ -175,7 +203,8 @@ $container-max: 1200px;
    ------------------------ */
 :host .mail-card {
   background: linear-gradient(180deg, #ffffff, #fbfdff);
-  padding: 18px;
+  padding: 16px;
+  box-sizing: border-box;
 }
 
 :host .mail-card .card-header {
@@ -197,16 +226,17 @@ $container-max: 1200px;
   box-sizing: border-box;
 }
 
+/* allow mail-option to fill left column width while keeping square */
 :host .mail-option {
   width: 100%;
-  max-width: 420px; /* caps the square on large screens */
-  aspect-ratio: 1 / 1; /* keeps a perfect square */
+  max-width: 100%;
+  aspect-ratio: 1 / 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  padding: 20px;
+  padding: 18px;
   border-radius: 14px;
   border: 1px solid rgba(29, 53, 87, 0.08);
   background: linear-gradient(180deg, #fff, #f6f9ff);
@@ -380,6 +410,7 @@ $container-max: 1200px;
   box-shadow: 0 10px 30px rgba(11, 19, 43, 0.04);
   border: 1px solid rgba(29, 53, 87, 0.04);
   position: relative;
+  box-sizing: border-box;
 }
 :host .panel::before {
   content: '';
@@ -392,22 +423,11 @@ $container-max: 1200px;
   border-top-right-radius: $radius;
   background: linear-gradient(90deg, $accent-start 0%, $accent-end 100%);
 }
-:host .panel {
-  padding-top: 28px;
-}
 :host .panel-title {
   font-size: 15px;
   font-weight: 800;
   text-transform: uppercase;
   color: $text-dark;
-}
-
-/* panel body — allow it to be flexible, but reasonably tall on desktop */
-:host .panel-body {
-  min-height: 320px;
-  max-height: 66vh;
-  overflow: auto;
-  padding-right: 6px;
 }
 
 /* tasks header badges */

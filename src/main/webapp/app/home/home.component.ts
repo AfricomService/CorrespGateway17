@@ -1,12 +1,13 @@
 // src/main/webapp/app/home/home.component.ts
 // Modernized HomeComponent — tâches affichées en cartes (dossiers supprimés)
-// Corrigé : conversion dates + utilisation de status / dueDate
-// Ajout : export Excel (.xlsx) via import dynamique de sheetjs (xlsx)
+// Ajout : pagination client, correction du titre, export Excel (xlsx)
 
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subject, Subscription } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+
+import { Title } from '@angular/platform-browser';
 
 import { AccountService } from 'app/core/auth/account.service';
 import { Account } from 'app/core/auth/account.model';
@@ -30,6 +31,10 @@ export class HomeComponent implements OnInit, OnDestroy {
   // recherche simple côté client
   searchTerm = '';
 
+  // pagination
+  pageSize = 6; // <-- nombre d'éléments par page
+  currentPage = 1;
+
   // petits réglages visuels/restants
   loadPanel = { enabled: true };
   sorting = { mode: 'none' };
@@ -38,7 +43,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     private accountService: AccountService,
     private router: Router,
     private tasksService: TasksService,
-    private translate: TranslateService
+    private translate: TranslateService,
+    private titleService: Title
   ) {}
 
   ngOnInit(): void {
@@ -99,11 +105,28 @@ export class HomeComponent implements OnInit, OnDestroy {
     }
     // ---------------------------------------------------------------
 
-    this.accountService
+    // Abonnement à l'état d'authentification.
+    // On définit le titre de la page après que l'account soit disponible
+    this.authSubscription = this.accountService
       .getAuthenticationState()
       .pipe(takeUntil(this.destroy$))
-      .subscribe(account => (this.account = account));
+      .subscribe(account => {
+        this.account = account;
 
+        const name = account && account.firstName ? account.firstName : '';
+        this.translate.get('home.title', { firstName: name }).subscribe(translatedTitle => {
+          if (translatedTitle) {
+            try {
+              this.titleService.setTitle(translatedTitle);
+            } catch {
+              // fallback
+              (document as any).title = translatedTitle;
+            }
+          }
+        });
+      });
+
+    // charge les tâches
     this.loadTasks();
   }
 
@@ -111,7 +134,11 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.destroy$.next();
     this.destroy$.complete();
     if (this.authSubscription) {
-      this.authSubscription.unsubscribe();
+      try {
+        this.authSubscription.unsubscribe();
+      } catch {
+        // noop
+      }
     }
   }
 
@@ -132,7 +159,6 @@ export class HomeComponent implements OnInit, OnDestroy {
               (copy as any)[f] = undefined;
               return;
             }
-            // si c'est un objet qui a toDate (ex: dayjs)
             if (typeof (v as any).toDate === 'function') {
               try {
                 (copy as any)[f] = (v as any).toDate();
@@ -145,12 +171,16 @@ export class HomeComponent implements OnInit, OnDestroy {
             } else if (v instanceof Date) {
               (copy as any)[f] = v;
             } else {
-              // fallback: undefined to être safe pour pipe date
               (copy as any)[f] = undefined;
             }
           });
           return copy as ITasks;
         });
+
+        // ensure currentPage still valid after load
+        if (this.currentPage > this.totalPages) {
+          this.currentPage = this.totalPages || 1;
+        }
       });
   }
 
@@ -162,7 +192,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     return this.tasks ? this.tasks.length : 0;
   }
 
-  // recherche simple côté client : filtre object / responsible / status
+  // --- Filtering (ancien displayedTasks) : retourne la liste complète filtrée (non paginée)
   get displayedTasks(): ITasks[] {
     if (!this.tasks) {
       return [];
@@ -179,6 +209,49 @@ export class HomeComponent implements OnInit, OnDestroy {
     });
   }
 
+  // --- Pagination helpers
+  get totalTasks(): number {
+    return this.displayedTasks.length;
+  }
+
+  get totalPages(): number {
+    return Math.max(1, Math.ceil(this.totalTasks / this.pageSize));
+  }
+
+  get paginatedTasks(): ITasks[] {
+    const all = this.displayedTasks || [];
+    const start = (this.currentPage - 1) * this.pageSize;
+    return all.slice(start, start + this.pageSize);
+  }
+
+  get pages(): number[] {
+    return Array.from({ length: this.totalPages }, (_, i) => i + 1);
+  }
+
+  get startItem(): number {
+    if (this.totalTasks === 0) {
+      return 0;
+    }
+    return (this.currentPage - 1) * this.pageSize + 1;
+  }
+
+  get endItem(): number {
+    return Math.min(this.currentPage * this.pageSize, this.totalTasks);
+  }
+
+  setPage(page: number): void {
+    if (!page || page < 1) page = 1;
+    if (page > this.totalPages) page = this.totalPages;
+    this.currentPage = page;
+  }
+
+  nextPage(): void {
+    this.setPage(this.currentPage + 1);
+  }
+  prevPage(): void {
+    this.setPage(this.currentPage - 1);
+  }
+
   // --------- Navigation / interactions ----------
   onTypeClicked(type: string): void {
     this.router.navigate(['/corresp/new'], { queryParams: { type } });
@@ -190,22 +263,24 @@ export class HomeComponent implements OnInit, OnDestroy {
     }
   }
 
-  // handlers recherche
+  // handlers recherche — reset page à 1 lors d'une recherche
   onTasksSearchInput(value: string): void {
     this.searchTerm = value || '';
+    this.currentPage = 1;
   }
   onTasksSearchClick(value: string): void {
     this.searchTerm = value || '';
+    this.currentPage = 1;
   }
   clearTasksSearch(input: HTMLInputElement): void {
     if (input) {
       input.value = '';
     }
     this.searchTerm = '';
+    this.currentPage = 1;
   }
 
   // --------- Export helpers ----------
-  // Export Excel (.xlsx) — utilise import dynamique de 'xlsx' (sheetjs)
   exportTasksToExcel(): void {
     if (!this.tasks || this.tasks.length === 0) {
       // eslint-disable-next-line no-console
@@ -213,7 +288,6 @@ export class HomeComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Prépare les données: transforme dates en ISO et objets en JSON pour éviter erreurs
     const headers = this.guessHeadersFromArray(this.tasks);
     const rows = this.tasks.map(r => {
       const out: any = {};
@@ -236,7 +310,6 @@ export class HomeComponent implements OnInit, OnDestroy {
       return out;
     });
 
-    // import dynamique pour éviter erreur de build si la lib n'est pas installée
     import('xlsx')
       .then(XLSX => {
         try {
@@ -250,7 +323,7 @@ export class HomeComponent implements OnInit, OnDestroy {
           const fileName = `tasks_export_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.xlsx`;
           this.downloadBlobFromFile(blob, fileName);
         } catch (err) {
-          // fallback: si erreur sheetjs, on force CSV fallback
+          // fallback: CSV
           // eslint-disable-next-line no-console
           console.warn('Erreur lors de la génération XLSX, fallback CSV', err);
           this.exportTasksToCsv();
@@ -284,7 +357,6 @@ export class HomeComponent implements OnInit, OnDestroy {
     if (!arr || arr.length === 0) {
       return [];
     }
-    // on veut une liste stable d'en-têtes :
     const keys = new Set<string>();
     arr.forEach(item => {
       Object.keys(item || {}).forEach(k => keys.add(k));
@@ -366,15 +438,10 @@ export class HomeComponent implements OnInit, OnDestroy {
     return '';
   }
 
-  /**
-   * Convertit value (Dayjs | string | Date | number | null | undefined)
-   * en Date | null — utilisable en toute sécurité par le date pipe.
-   */
   formatToDate(value: any): Date | null {
     if (value == null) {
       return null;
     }
-    // dayjs-like
     if (typeof (value as any).toDate === 'function') {
       try {
         return (value as any).toDate();

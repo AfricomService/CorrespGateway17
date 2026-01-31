@@ -168,11 +168,11 @@
                 </div>
               </div>
 
-              <!-- cartes de tâches -->
+              <!-- cartes de tâches (avec pagination) -->
               <div class="panel-body">
                 <div class="task-cards">
                   <div
-                    *ngFor="let t of displayedTasks"
+                    *ngFor="let t of paginatedTasks"
                     class="task-card"
                     role="button"
                     tabindex="0"
@@ -209,8 +209,44 @@
                   </div>
 
                   <!-- message si aucune tâche -->
-                  <div *ngIf="displayedTasks.length === 0" class="no-tasks">
+                  <div *ngIf="totalTasks === 0" class="no-tasks">
                     <p>Aucune tâche trouvée.</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Pagination footer -->
+              <div class="panel-footer pagination-footer" *ngIf="totalTasks > 0">
+                <div
+                  class="pagination-top"
+                  style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap"
+                >
+                  <div class="pagination-info" aria-live="polite">Affichage {{ startItem }} - {{ endItem }} sur {{ totalTasks }}</div>
+
+                  <div class="pagination-controls" style="display: flex; gap: 8px; align-items: center">
+                    <button type="button" (click)="setPage(1)" [disabled]="currentPage === 1" aria-label="Première page">«</button>
+                    <button type="button" (click)="prevPage()" [disabled]="currentPage === 1" aria-label="Page précédente">Préc</button>
+
+                    <span class="page-numbers" style="display: flex; gap: 6px">
+                      <button
+                        *ngFor="let p of pages"
+                        type="button"
+                        (click)="setPage(p)"
+                        [class.active]="currentPage === p"
+                        [attr.aria-current]="currentPage === p ? 'page' : null"
+                        style="min-width: 34px"
+                        [attr.aria-label]="'Page ' + p"
+                      >
+                        {{ p }}
+                      </button>
+                    </span>
+
+                    <button type="button" (click)="nextPage()" [disabled]="currentPage === totalPages" aria-label="Page suivante">
+                      Suiv
+                    </button>
+                    <button type="button" (click)="setPage(totalPages)" [disabled]="currentPage === totalPages" aria-label="Dernière page">
+                      »
+                    </button>
                   </div>
                 </div>
               </div>
