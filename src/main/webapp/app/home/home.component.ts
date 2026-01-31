@@ -116,12 +116,7 @@ export class HomeComponent implements OnInit, OnDestroy {
         const name = account && account.firstName ? account.firstName : '';
         this.translate.get('home.title', { firstName: name }).subscribe(translatedTitle => {
           if (translatedTitle) {
-            try {
-              this.titleService.setTitle(translatedTitle);
-            } catch {
-              // fallback
-              (document as any).title = translatedTitle;
-            }
+            this.titleService.setTitle(translatedTitle);
           }
         });
       });

@@ -1,22 +1,30 @@
 /* ==========================================================================
    src/main/webapp/app/home/home.component.scss
-   Style revu — rendu plus pro, centré, responsive
-   - Layout 2 colonnes centré (gauche fixe, droite flexible)
-   - Réduction des marges latérales, colonnes même hauteur
-   - Nouveau Courrier : carrés adaptatifs (aspect-ratio)
-   - Tâches : panel flexible + body scrollable
+   Version améliorée — prête à coller (meilleur contraste hover, focus accessible,
+   responsive optimisé, icônes SVG utilisent currentColor pour s'adapter au thème)
    ========================================================================== */
 
 $radius: 14px;
 $card-bg: #ffffff;
 $text-dark: #1d3557;
 $muted: #6b7280;
-$accent-start: #3b82f6;
-$accent-end: #1e40af;
-/* Augmenter si vous voulez des pages plus larges / moins de marges */
-$container-max: 2000px;
+$accent-start: #3b82f6; // bleu vif
+$accent-end: #1e40af; // bleu profond
+$container-max: 1800px; // largeur raisonnable
 
-/* Base host */
+/* Utility: sr-only for accessibility */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
 :host {
   display: block;
   background-color: #f5f7fb;
@@ -28,20 +36,19 @@ $container-max: 2000px;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Page container (most content) */
 :host .container {
   max-width: $container-max;
   margin: 0 auto;
-  padding: 0 12px; /* reduced horizontal padding to minimize side gutters */
+  padding: 0 12px;
   box-sizing: border-box;
   background: transparent;
 }
 
-/* HERO — full width band with centered inner content */
+/* HERO */
 :host .hero {
   width: 100%;
-  background: linear-gradient(90deg, $accent-start 0%, $accent-end 100%) !important;
-  color: #fff !important;
+  background: linear-gradient(90deg, $accent-start 0%, $accent-end 100%);
+  color: #fff;
   border-bottom-left-radius: $radius;
   border-bottom-right-radius: $radius;
   box-shadow: 0 8px 28px rgba(30, 41, 59, 0.08);
@@ -50,14 +57,11 @@ $container-max: 2000px;
   padding: 10px 0;
 }
 
-/* make hero band appear full-bleed while keeping inner content constrained */
 :host .hero > .container {
   padding-left: 0 !important;
   padding-right: 0 !important;
   max-width: 100%;
 }
-
-/* inner hero content — constrained and centered */
 :host .hero-inner {
   max-width: $container-max;
   margin: 0 auto;
@@ -65,10 +69,7 @@ $container-max: 2000px;
   display: flex;
   gap: 16px;
   align-items: center;
-  box-sizing: border-box;
 }
-
-/* Welcome block */
 :host .welcome {
   display: flex;
   gap: 14px;
@@ -81,10 +82,6 @@ $container-max: 2000px;
   align-items: center;
   justify-content: center;
 }
-:host .welcome-text {
-  display: flex;
-  flex-direction: column;
-}
 :host .welcome-title {
   margin: 0;
   font-size: 20px;
@@ -94,40 +91,34 @@ $container-max: 2000px;
 :host .welcome-sub {
   margin: 4px 0 0 0;
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.92) !important;
+  color: rgba(255, 255, 255, 0.92);
 }
 
-/* MAIN area */
+/* MAIN AREA */
 :host .main-area {
   margin-top: 18px;
   position: relative;
   z-index: 1;
 }
 
-/* ================================
-   Columns layout (centered & balanced)
-   Left fixed (narrow), right flexible — same height
-   ================================ */
 .home-columns {
   width: 100%;
   max-width: $container-max;
   margin: 18px auto;
   display: grid;
-  grid-template-columns: 320px 1fr; /* gauche fixe, droite flexible */
+  grid-template-columns: 320px 1fr;
   gap: 24px;
-  align-items: stretch; /* important pour égaler la hauteur */
-  grid-auto-rows: 1fr; /* chaque ligne prendra la même hauteur */
+  align-items: stretch;
+  grid-auto-rows: 1fr;
   padding: 0 12px;
   box-sizing: border-box;
 }
 
-/* Ensure columns fill the grid cell */
 .left-column,
 .right-column {
   height: 100%;
 }
 
-/* Left column card adjustments */
 .left-column .mail-card {
   margin: 0;
   padding: 18px;
@@ -138,7 +129,6 @@ $container-max: 2000px;
   box-sizing: border-box;
 }
 
-/* Right column — make inner panel stretch to full height */
 .right-column {
   display: block;
 }
@@ -150,14 +140,12 @@ $container-max: 2000px;
   box-sizing: border-box;
 }
 .right-column .panel .panel-body {
-  /* let the body take remaining vertical space and be scrollable */
   flex: 1 1 auto;
-  min-height: 0; /* allow proper scrolling inside flex */
+  min-height: 0;
   overflow: auto;
   padding-right: 6px;
 }
 
-/* When viewport is narrower — stack */
 @media (max-width: 980px) {
   .home-columns {
     grid-template-columns: 1fr;
@@ -174,11 +162,34 @@ $container-max: 2000px;
   .right-column .panel {
     height: auto;
   }
+
+  /* New Styles for Horizontal Buttons in "Nouveau Courrier" */
+  .left-column .mail-card .mail-options {
+    flex-direction: row; /* Align buttons horizontally */
+    justify-content: space-between; /* Distribute space between buttons */
+    gap: 12px; /* Space between buttons */
+  }
+
+  .left-column .mail-card .mail-option {
+    width: auto; /* Allow buttons to adjust width based on content */
+    aspect-ratio: unset; /* Remove aspect ratio constraint */
+    flex: 1; /* Allow buttons to expand evenly */
+  }
+
+  .left-column .mail-card .mail-option .option-icon {
+    font-size: 32px; /* Adjust icon size */
+    width: 48px; /* Adjust icon width */
+    height: 48px; /* Adjust icon height */
+  }
+
+  .left-column .mail-card .mail-option .option-title {
+    font-size: 14px; /* Adjust title font size */
+  }
 }
 
-/* CARD (generic) */
+/* Cards */
 :host .card {
-  background: $card-bg !important;
+  background: $card-bg;
   border-radius: $radius;
   padding: 20px;
   box-shadow: 0 10px 30px rgba(11, 19, 43, 0.06);
@@ -186,35 +197,16 @@ $container-max: 2000px;
   box-sizing: border-box;
 }
 
-/* headings */
-:host h1,
-:host h2,
-:host h3,
-:host h4 {
-  color: $text-dark !important;
-  margin: 0;
-  line-height: 1.15;
-}
-
-/* ------------------------
-   Nouveau Courrier (left)
-   - cards stacked vertically
-   - each button is adaptive square (aspect-ratio)
-   ------------------------ */
+/* Nouveau courrier */
 :host .mail-card {
   background: linear-gradient(180deg, #ffffff, #fbfdff);
   padding: 16px;
   box-sizing: border-box;
 }
-
-:host .mail-card .card-header {
-  margin-bottom: 8px;
-}
 :host #nouveau-courrier-title {
   font-size: 18px;
   font-weight: 800;
 }
-
 :host .mail-options {
   width: 100%;
   display: flex;
@@ -226,11 +218,10 @@ $container-max: 2000px;
   box-sizing: border-box;
 }
 
-/* allow mail-option to fill left column width while keeping square */
 :host .mail-option {
   width: 100%;
   max-width: 100%;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 1/1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -242,20 +233,38 @@ $container-max: 2000px;
   background: linear-gradient(180deg, #fff, #f6f9ff);
   box-shadow: 0 12px 30px rgba(11, 19, 43, 0.06);
   cursor: pointer;
-  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background 200ms ease, color 200ms ease;
   text-align: center;
 }
 
-/* hover/focus for tactile feedback */
-:host .mail-option:hover,
+/* improved focus for keyboard users */
 :host .mail-option:focus {
-  transform: translateY(-6px);
-  box-shadow: 0 22px 44px rgba(11, 19, 43, 0.09);
-  border-color: rgba(30, 64, 175, 0.12);
   outline: none;
 }
+:host .mail-option:focus-visible {
+  box-shadow: 0 12px 30px rgba(30, 64, 175, 0.14);
+  transform: translateY(-4px);
+  border-color: rgba($accent-end, 0.18);
+}
 
-/* icon — consistent circular plate */
+/* hover: keep text readable and give icon plate a gradient + white icon */
+:host .mail-option:hover,
+:host .mail-option:active {
+  transform: translateY(-6px);
+  box-shadow: 0 28px 50px rgba(11, 19, 43, 0.12);
+  background: linear-gradient(135deg, rgba($accent-start, 0.1), rgba($accent-end, 0.08));
+  border-color: rgba($accent-end, 0.14);
+}
+:host .mail-option:hover .option-title,
+:host .mail-option:focus-visible .option-title {
+  color: #fff;
+}
+:host .mail-option:hover .option-sub,
+:host .mail-option:focus-visible .option-sub {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* icon plate */
 :host .option-icon {
   width: 96px !important;
   height: 96px !important;
@@ -267,9 +276,18 @@ $container-max: 2000px;
   background: rgba(255, 255, 255, 0.95);
   box-shadow: 0 8px 20px rgba(30, 64, 175, 0.06);
   flex-shrink: 0;
+  transition: background 200ms ease, color 200ms ease, transform 160ms ease, box-shadow 160ms ease;
 }
 
-/* option text */
+/* on hover: make the plate subtle gradient and make icon svg white (svg use currentColor) */
+:host .mail-option:hover .option-icon,
+:host .mail-option:focus-visible .option-icon {
+  background: linear-gradient(135deg, rgba($accent-start, 0.95), rgba($accent-end, 0.95));
+  color: #fff; /* affects svg stroke/fill when using currentColor */
+  transform: translateY(-2px);
+  box-shadow: 0 18px 36px rgba(30, 64, 175, 0.18);
+}
+
 :host .option-title {
   font-size: 16px;
   font-weight: 800 !important;
@@ -284,11 +302,7 @@ $container-max: 2000px;
   line-height: 1.3;
 }
 
-/* small screens — make options full width and row-like */
 @media (max-width: 640px) {
-  :host .mail-options {
-    gap: 12px;
-  }
   :host .mail-option {
     aspect-ratio: auto;
     height: auto;
@@ -313,17 +327,13 @@ $container-max: 2000px;
   }
 }
 
-/* ------------------------
-   Header actions row (exports + search)
-   ------------------------ */
+/* header actions */
 :host .header-actions-row {
   display: flex;
   gap: 12px;
   align-items: center;
   margin-top: 12px;
 }
-
-/* export icons (round subtle) */
 :host .export-icon-btn {
   display: inline-flex;
   align-items: center;
@@ -348,7 +358,6 @@ $container-max: 2000px;
   box-shadow: none;
 }
 
-/* Search box styling — compact + elevated */
 :host .header-search {
   margin-left: auto;
   display: flex;
@@ -368,8 +377,6 @@ $container-max: 2000px;
   width: 420px;
   max-width: 100%;
 }
-
-/* search input/button */
 :host .search-input {
   border: none;
   padding: 8px 10px;
@@ -378,6 +385,9 @@ $container-max: 2000px;
   background: transparent;
   outline: none;
   width: 100%;
+}
+:host .search-input:focus {
+  outline: none;
 }
 :host .search-btn {
   height: 40px;
@@ -398,15 +408,14 @@ $container-max: 2000px;
   font-size: 13px;
   padding: 6px 8px;
   color: $muted;
+  cursor: pointer;
 }
 
-/* ------------------------
-   Panel / Tasks area (right)
-   ------------------------ */
+/* PANEL / TASKS */
 :host .panel {
   padding: 18px;
   border-radius: $radius;
-  background: $card-bg !important;
+  background: $card-bg;
   box-shadow: 0 10px 30px rgba(11, 19, 43, 0.04);
   border: 1px solid rgba(29, 53, 87, 0.04);
   position: relative;
@@ -430,7 +439,6 @@ $container-max: 2000px;
   color: $text-dark;
 }
 
-/* tasks header badges */
 :host .task-count {
   display: inline-flex;
   align-items: center;
@@ -444,26 +452,28 @@ $container-max: 2000px;
   box-shadow: 0 8px 22px rgba(30, 64, 175, 0.1);
 }
 
-/* task cards list */
-:host .task-cards {
+.task-cards {
   display: flex;
   flex-direction: column;
   gap: 14px;
   padding-top: 8px;
 }
 
-/* each task card */
 :host .task-card {
   padding: 14px;
   border-radius: 12px;
   background: $card-bg;
   border: 1px solid rgba(29, 53, 87, 0.04);
   box-shadow: 0 8px 20px rgba(11, 19, 43, 0.04);
-  transition: transform 120ms ease, box-shadow 120ms ease;
+  transition: transform 120ms ease, box-shadow 120ms ease, background 220ms ease, color 220ms ease;
 }
 :host .task-card:hover {
   transform: translateY(-6px);
-  box-shadow: 0 16px 36px rgba(11, 19, 43, 0.08);
+  box-shadow: 0 18px 40px rgba(11, 19, 43, 0.1);
+  background: linear-gradient(90deg, rgba($accent-start, 0.04), rgba($accent-end, 0.02));
+}
+:host .task-card:focus-visible {
+  outline: 3px solid rgba($accent-start, 0.12);
 }
 
 :host .task-card-header {
@@ -488,7 +498,6 @@ $container-max: 2000px;
   color: $text-dark;
 }
 
-/* fields inside card */
 :host .task-card-body {
   display: flex;
   gap: 14px 24px;
@@ -496,16 +505,28 @@ $container-max: 2000px;
   margin-top: 8px;
 }
 :host .task-field {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
   flex: 1 1 30%;
   min-width: 140px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
 }
-:host .task-field-label {
-  font-weight: 700;
-  font-size: 12px;
-  color: rgba(29, 53, 87, 0.7);
+:host .task-field-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  font-size: 16px;
+  border-radius: 6px;
+  color: $accent-end;
+  transition: color 160ms ease, background 160ms ease, transform 120ms ease;
+}
+:host .task-card:hover .task-field-icon {
+  background: linear-gradient(180deg, rgba($accent-start, 0.16), rgba($accent-end, 0.12));
+  color: #fff;
+  transform: translateY(-1px);
 }
 :host .task-field-value {
   font-size: 13px;
@@ -515,7 +536,6 @@ $container-max: 2000px;
   text-overflow: ellipsis;
 }
 
-/* empty list message */
 :host .no-tasks {
   text-align: center;
   color: $muted;
@@ -524,7 +544,6 @@ $container-max: 2000px;
   background: rgba(0, 0, 0, 0.02);
 }
 
-/* status classes (applied dynamically in TS) */
 :host .status-actif {
   border-left: 4px solid #8fbf3b;
 }
@@ -535,23 +554,39 @@ $container-max: 2000px;
   border-left: 4px solid #d6c39a;
 }
 
-/* General responsive refinements */
-@media (max-width: 980px) {
-  :host .panel-body {
-    max-height: 60vh;
-  }
-  :host .task-field {
-    min-width: 120px;
-    flex-basis: 48%;
-  }
+.pagination-footer {
+  margin-top: 12px;
 }
+.pagination-controls button {
+  background: transparent;
+  border: 1px solid rgba(29, 53, 87, 0.06);
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 140ms ease, transform 120ms ease;
+}
+.pagination-controls button:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(90deg, rgba($accent-start, 0.06), rgba($accent-end, 0.04));
+}
+.pagination-controls button[disabled] {
+  opacity: 0.45;
+  cursor: default;
+  transform: none;
+}
+.pagination-controls button.active,
+.pagination-controls button.active:hover {
+  background: linear-gradient(90deg, $accent-start, $accent-end);
+  color: #fff;
+  border-color: transparent;
+}
+
 @media (max-width: 640px) {
   :host .task-field {
-    flex-basis: 100%;
-  }
-  :host .panel-body {
-    max-height: 50vh;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 100%;
   }
 }
 
-/* End of file */
+/* End of improved SCSS */
