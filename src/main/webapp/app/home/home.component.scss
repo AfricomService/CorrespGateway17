@@ -46,17 +46,17 @@ $container-max: 1800px; // largeur raisonnable
 
 /* HERO */
 :host .hero {
-  width: calc(100% - 24px);
-  max-width: $container-max;
-  margin: 20px auto 0; /* Ajout d'une marge supérieure pour séparer de la navbar */
-  background: #ffffff; /* Fond blanc pour un look "carte" propre */
-  color: $text-dark; /* Texte foncé */
-  border-radius: $radius;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); /* Ombre douce */
+  width: 100%;
+  max-width: 100%;
+  margin: 0; /* Supprimé la marge pour coller à la navbar */
+  background: linear-gradient(135deg, #e0f2fe 0%, #dbeafe 100%);
+  color: #1e3a8a;
+  border-radius: 0; /* Pas d'arrondi pour une bannière pleine largeur */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  padding: 24px 0;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.1);
   position: relative;
   z-index: 2;
-  padding: 16px 0;
-  border: 1px solid rgba(0, 0, 0, 0.03);
 }
 
 :host .hero > .container {
@@ -206,22 +206,26 @@ $container-max: 1800px; // largeur raisonnable
 
 /* Nouveau courrier */
 :host .mail-card {
-  background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
-  padding: 12px;
+  background: #ffffff; /* Cleaner white background */
+  padding: 16px;
   box-sizing: border-box;
+  border: 1px solid #e2e8f0;
 }
 :host #nouveau-courrier-title {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 800;
+  color: #1e40af; /* Deep blue title */
+  margin-bottom: 8px;
 }
+
 :host .mail-options {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px; /* Increased gap */
   align-items: center;
   justify-content: flex-start;
-  padding: 4px 0;
+  padding: 8px 0;
   box-sizing: border-box;
 }
 
@@ -233,14 +237,14 @@ $container-max: 1800px; // largeur raisonnable
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: 8px;
+  gap: 8px; /* Increased gap */
+  padding: 16px; /* Increased padding */
   border-radius: 12px;
   border: 1px solid rgba(29, 53, 87, 0.08);
-  background: linear-gradient(180deg, #fff, #f6f9ff);
-  box-shadow: 0 8px 22px rgba(11, 19, 43, 0.05);
+  background: #f8fafc; /* Subtle grey-blue bg */
+  box-shadow: 0 4px 6px rgba(11, 19, 43, 0.03);
   cursor: pointer;
-  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background 200ms ease, color 200ms ease;
+  transition: all 0.2s ease;
   text-align: center;
 }
 
@@ -257,74 +261,69 @@ $container-max: 1800px; // largeur raisonnable
 /* hover: keep text readable and give icon plate a gradient + white icon */
 :host .mail-option:hover,
 :host .mail-option:active {
-  transform: translateY(-6px);
-  box-shadow: 0 28px 50px rgba(11, 19, 43, 0.12);
-  /* Default blueish background for unknown types or base */
-  background: linear-gradient(135deg, rgba($accent-start, 0.1), rgba($accent-end, 0.08));
-  border-color: rgba($accent-end, 0.14);
-}
-
-/* === Custom Hover Colors per Type === */
-
-/* Arrivée: Green Gradient */
-:host .mail-option[data-type='arrivee']:hover,
-:host .mail-option[data-type='arrivee']:active {
-  background: linear-gradient(135deg, rgba(76, 175, 80, 0.15), rgba(46, 125, 50, 0.12));
-  border-color: rgba(46, 125, 50, 0.2);
-}
-:host .mail-option[data-type='arrivee']:hover .option-icon,
-:host .mail-option[data-type='arrivee']:focus-visible .option-icon {
-  background: linear-gradient(135deg, #66bb6a, #2e7d32); /* Green gradient */
-  box-shadow: 0 18px 36px rgba(46, 125, 50, 0.25);
-}
-
-/* Sortant: Orange Gradient */
-:host .mail-option[data-type='sortant']:hover,
-:host .mail-option[data-type='sortant']:active {
-  background: linear-gradient(135deg, rgba(255, 152, 0, 0.15), rgba(230, 81, 0, 0.12));
-  border-color: rgba(230, 81, 0, 0.2);
-}
-:host .mail-option[data-type='sortant']:hover .option-icon,
-:host .mail-option[data-type='sortant']:focus-visible .option-icon {
-  background: linear-gradient(135deg, #ffa726, #e65100); /* Orange gradient */
-  box-shadow: 0 18px 36px rgba(230, 81, 0, 0.25);
-}
-
-/* Interne: Blue Gradient (explicit) */
-:host .mail-option[data-type='interne']:hover,
-:host .mail-option[data-type='interne']:active {
-  background: linear-gradient(135deg, rgba($accent-start, 0.15), rgba($accent-end, 0.12));
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(11, 19, 43, 0.08);
+  background: #ffffff;
   border-color: rgba($accent-end, 0.2);
 }
-:host .mail-option[data-type='interne']:hover .option-icon,
-:host .mail-option[data-type='interne']:focus-visible .option-icon {
-  background: linear-gradient(135deg, $accent-start, $accent-end); /* Blue gradient */
-  box-shadow: 0 18px 36px rgba(30, 64, 175, 0.25);
-}
-/* ==================================== */
 
-:host .mail-option:hover .option-title,
-:host .mail-option:focus-visible .option-title {
-  color: #fff;
+/* === Custom Hover Colors per Type (Green/Orange/Blue) === */
+
+/* ARRIVEE (Green) */
+:host .mail-option[data-type='arrivee']:hover {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  border-color: #6ee7b7;
 }
-:host .mail-option:hover .option-sub,
-:host .mail-option:focus-visible .option-sub {
-  color: rgba(255, 255, 255, 0.9);
+:host .mail-option[data-type='arrivee']:hover .option-title {
+  color: #047857; /* Emerald 700 */
+}
+:host .mail-option[data-type='arrivee']:hover .option-icon {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%); /* Emerald 500-600 */
+  box-shadow: 0 12px 24px rgba(5, 150, 105, 0.25);
+  color: #ffffff;
+}
+
+/* SORTANT (Orange) */
+:host .mail-option[data-type='sortant']:hover {
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  border-color: #fdba74;
+}
+:host .mail-option[data-type='sortant']:hover .option-title {
+  color: #c2410c; /* Orange 700 */
+}
+:host .mail-option[data-type='sortant']:hover .option-icon {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); /* Orange 500-600 */
+  box-shadow: 0 12px 24px rgba(234, 88, 12, 0.25);
+  color: #ffffff;
+}
+
+/* INTERNE (Blue) */
+:host .mail-option[data-type='interne']:hover {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border-color: #93c5fd;
+}
+:host .mail-option[data-type='interne']:hover .option-title {
+  color: #1d4ed8; /* Blue 700 */
+}
+:host .mail-option[data-type='interne']:hover .option-icon {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); /* Blue 500-600 */
+  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.25);
+  color: #ffffff;
 }
 
 /* icon plate */
 :host .option-icon {
-  width: 44px !important;
-  height: 44px !important;
+  width: 56px !important; /* Increased size */
+  height: 56px !important; /* Increased size */
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 8px 20px rgba(30, 64, 175, 0.06);
+  font-size: 28px; /* Increased font size */
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 4px 10px rgba(30, 64, 175, 0.06);
   flex-shrink: 0;
-  transition: background 200ms ease, color 200ms ease, transform 160ms ease, box-shadow 160ms ease;
+  transition: all 0.2s ease;
 }
 
 /* on hover: make the plate subtle gradient and make icon svg white (svg use currentColor) */
@@ -679,4 +678,4 @@ $container-max: 1800px; // largeur raisonnable
   }
 }
 
-/* End of improved SCSS */
+/* End of improved SCSS 111*/

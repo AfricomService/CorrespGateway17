@@ -14,6 +14,7 @@ import { Account } from 'app/core/auth/account.model';
 import { ITasks } from '../entities/correspManage/tasks/tasks.model';
 import { HttpResponse } from '@angular/common/http';
 import { TasksService } from '../entities/correspManage/tasks/service/tasks.service';
+import { CorrespService } from '../entities/correspManage/corresp/service/corresp.service';
 
 import { TranslateService } from '@ngx-translate/core';
 
@@ -43,6 +44,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     private accountService: AccountService,
     private router: Router,
     private tasksService: TasksService,
+    private correspService: CorrespService,
     private translate: TranslateService,
     private titleService: Title
   ) {}
@@ -253,9 +255,21 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   openTask(task: ITasks): void {
-    if (task && (task as any).id != null) {
-      this.router.navigate([`/tasks/${(task as any).id}/view`]);
-    }
+    if (!task || (task as any).id == null) return;
+    const taskId = (task as any).id;
+    this.correspService
+      .getCorrespsByTask(taskId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((res: HttpResponse<any[]>) => {
+        const items = res.body || [];
+        const first = items && items.length ? items[0] : null;
+        const correspId = first && (first as any).id;
+        if (correspId != null) {
+          this.router.navigate([`/corresp/${correspId}/view`]);
+        } else {
+          this.router.navigate([`/tasks/${taskId}/view`]);
+        }
+      });
   }
 
   // handlers recherche — reset page à 1 lors d'une recherche

@@ -255,4 +255,10 @@ export class CorrespService {
 
     return this.http.patch(`${this.resourceUrl}/saveBodyToFile`, options);
   }
+
+  getCorrespsByTask(taskId: number): Observable<EntityArrayResponseType> {
+    return this.http
+      .get<RestCorresp[]>(`${this.resourceUrl}/by-task/${taskId}`, { observe: 'response' })
+      .pipe(map(res => this.convertResponseArrayFromServer(res)));
+  }
 }
