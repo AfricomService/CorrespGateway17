@@ -612,6 +612,21 @@ $container-max: 1800px; // largeur raisonnable
   color: $accent-end;
   transition: color 160ms ease, background 160ms ease, transform 120ms ease;
 }
+
+.task-count-badge {
+  display: inline-block;
+  min-width: 28px;
+  padding: 2px 8px;
+  margin-right: 8px;
+  font-weight: 700;
+  text-align: center;
+  border-radius: 999px;
+  background: #0d6efd;
+  color: #fff;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
 :host .task-card:hover .task-field-icon {
   background: linear-gradient(180deg, rgba($accent-start, 0.16), rgba($accent-end, 0.12));
   color: #fff;

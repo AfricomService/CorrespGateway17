@@ -163,8 +163,12 @@
                 <!-- titre -->
                 <div class="tasks-top">
                   <div class="tasks-left">
-                    <h4 id="taches-title" class="panel-title" jhiTranslate="home.tasksTitle">Tâches en cours</h4>
-                    <div class="task-count" aria-hidden="true">{{ tasksCount }}</div>
+                    <!--<h4 id="taches-title" class="panel-title" jhiTranslate="home.tasksTitle">Tâches en cours</h4>
+                    <div class="task-count" aria-hidden="true">{{ tasksCount }}</div>-->
+                    <h4 id="taches-title" class="panel-title">
+                      <span class="task-count-badge" aria-live="polite">{{ totalTasks ?? tasks?.length || 0 }}</span>
+                      Tâches en cours
+                    </h4>
                   </div>
                 </div>
 
@@ -385,7 +389,7 @@
           </section>
         </section>
       </div>
-      <!-- end home-columns -->
+      <!-- end home-columns111 -->
     </div>
   </main>
 </div>

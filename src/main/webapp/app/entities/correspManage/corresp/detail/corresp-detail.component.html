@@ -181,15 +181,65 @@
                 <div style="display: flex; gap: 12px; margin-bottom: 1.5em">
                   <div style="flex: 1">
                     <label class="form-label fw-semibold">Expéditeur <span class="text-danger">*</span></label>
-                    <input
-                      [(ngModel)]="expediteur"
-                      [class.is-invalid]="validationInfoGenErrors['expediteur']"
-                      class="form-control"
-                      name="expediteur"
-                      placeholder="Entrer l'expéditeur"
-                      type="text"
-                    />
-                    <div *ngIf="validationInfoGenErrors['expediteur']" class="invalid-feedback">
+                    <div *ngIf="!showManualExpediteur" style="display: flex; gap: 8px; align-items: center">
+                      <dx-select-box
+                        [(value)]="selectedCompanyId"
+                        [dataSource]="companies"
+                        [valueExpr]="'id'"
+                        displayExpr="nom"
+                        [searchEnabled]="true"
+                        [searchExpr]="companySearchExpr"
+                        placeholder="-- Choisir une société --"
+                        (onValueChanged)="onExpediteurChange($event.value)"
+                        class="w-100"
+                        [disabled]="loadingCompanies"
+                      >
+                        <div *dxTemplate="let item of 'listItem'">
+                          <div>
+                            {{ item.nom }} <span *ngIf="item.matrne"> - {{ item.matrne }}</span>
+                          </div>
+                        </div>
+                      </dx-select-box>
+                      <button
+                        type="button"
+                        class="btn btn-outline-secondary"
+                        aria-label="Entrer manuellement l'expéditeur"
+                        (click)="toggleManualExpediteur(true)"
+                        title="Entrer manuellement"
+                        style="padding: 6px 8px; display: inline-flex; align-items: center; justify-content: center"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                          <path
+                            d="M8 1a.5.5 0 0 1 .5.5V7.5H14a.5.5 0 0 1 0 1H8.5V14a.5.5 0 0 1-1 0V8.5H2a.5.5 0 0 1 0-1h5.5V1.5A.5.5 0 0 1 8 1z"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                    <div *ngIf="showManualExpediteur" style="display: flex; gap: 8px; align-items: center">
+                      <input
+                        type="text"
+                        class="form-control"
+                        [(ngModel)]="expediteur"
+                        name="expediteurManual"
+                        placeholder="Entrer manuellement l'expéditeur"
+                        [class.is-invalid]="validationInfoGenErrors['expediteur']"
+                        style="flex: 1"
+                      />
+                      <button
+                        type="button"
+                        class="btn btn-outline-secondary"
+                        (click)="toggleManualExpediteur(false)"
+                        title="Choisir dans la liste"
+                        style="padding: 6px 8px; display: inline-flex; align-items: center; justify-content: center"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                          <path
+                            d="M11.354 1.646a.5.5 0 0 1 0 .708L6.707 7l4.647 4.646a.5.5 0 0 1-.708.708l-5-5a.5.5 0 0 1 0-.708l5-5a.5.5 0 0 1 .708 0z"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                    <div class="invalid-feedback" *ngIf="validationInfoGenErrors['expediteur']">
                       {{ validationInfoGenErrors['expediteur'] }}
                     </div>
                   </div>
@@ -215,14 +265,66 @@
                 <div style="display: flex; gap: 12px; margin-bottom: 1.5em">
                   <div style="flex: 1">
                     <label class="form-label fw-semibold">Contact <span class="text-danger">*</span></label>
-                    <input
-                      [(ngModel)]="contactEmail"
-                      [class.is-invalid]="validationInfoGenErrors['contactEmail']"
-                      class="form-control"
-                      name="contactEmail"
-                      placeholder="Entrer le contact"
-                      type="text"
-                    />
+                    <div *ngIf="!showManualContact" style="display: flex; gap: 8px; align-items: center">
+                      <dx-select-box
+                        [(value)]="selectedPersonId"
+                        [dataSource]="personsForSelectedCompany"
+                        [valueExpr]="'id'"
+                        displayExpr="nom"
+                        [searchEnabled]="true"
+                        [searchExpr]="personSearchExpr"
+                        placeholder="-- Choisir un contact --"
+                        (onValueChanged)="onSelectContactPerson($event.value)"
+                        [disabled]="!selectedCompanyId || loadingPersons"
+                        class="w-100"
+                      >
+                        <div *dxTemplate="let item of 'listItem'">
+                          <div>
+                            {{ item.nom }}
+                            <span *ngIf="item.email"> — {{ item.email }}</span>
+                            <span *ngIf="!item.email && item.tel"> — {{ item.tel }}</span>
+                          </div>
+                        </div>
+                      </dx-select-box>
+                      <button
+                        type="button"
+                        class="btn btn-outline-secondary"
+                        aria-label="Entrer manuellement le contact"
+                        (click)="toggleManualContact(true)"
+                        title="Entrer manuellement"
+                        style="padding: 6px 8px; display: inline-flex; align-items: center; justify-content: center"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                          <path
+                            d="M8 1a.5.5 0 0 1 .5.5V7.5H14a.5.5 0 0 1 0 1H8.5V14a.5.5 0 0 1-1 0V8.5H2a.5.5 0 0 1 0-1h5.5V1.5A.5.5 0 0 1 8 1z"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                    <div *ngIf="showManualContact" style="display: flex; gap: 8px; align-items: center">
+                      <input
+                        type="text"
+                        class="form-control"
+                        [(ngModel)]="contactEmail"
+                        name="contactEmailFallback"
+                        placeholder="Entrer manuellement le contact"
+                        [class.is-invalid]="validationInfoGenErrors['contactEmail']"
+                        style="flex: 1"
+                      />
+                      <button
+                        type="button"
+                        class="btn btn-outline-secondary"
+                        (click)="toggleManualContact(false)"
+                        title="Choisir dans la liste"
+                        style="padding: 6px 8px; display: inline-flex; align-items: center; justify-content: center"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                          <path
+                            d="M11.354 1.646a.5.5 0 0 1 0 .708L6.707 7l4.647 4.646a.5.5 0 0 1-.708.708l-5-5a.5.5 0 0 1 0-.708l5-5a.5.5 0 0 1 .708 0z"
+                          />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
 
                   <div style="flex: 1">

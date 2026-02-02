@@ -18,6 +18,9 @@ import { TypedocumentService } from '../../../configManage/typedocument/service/
 import { switchMap } from 'rxjs';
 import { FilePreviewComponent } from '../../pj/file-preview/file-preview.component';
 import { saveAs } from 'file-saver';
+import { ContactCompanyService } from 'app/entities/configManage/contact-company/service/contact-company.service';
+import { IContactCompany } from 'app/entities/configManage/contact-company/contact-company.model';
+import { IPersonCompany } from 'app/entities/configManage/person-company/person-company.model';
 
 // Mocking the Interfaces locally for this example (or import them from your shared models)
 export enum CorrespStatus {
@@ -95,6 +98,21 @@ export class CorrespDetailComponent implements OnInit {
 
   selectedOrga: any = null;
 
+  companies: IContactCompany[] = [];
+  personsForSelectedCompany: IPersonCompany[] = [];
+  selectedCompanyId: number | null = null;
+  selectedPersonId: number | null = null;
+  loadingCompanies = false;
+  loadingPersons = false;
+  showManualExpediteur = true;
+  showManualContact = true;
+  companySearchExpr = function (dataItem: IContactCompany): string {
+    return dataItem.nom || '';
+  };
+  personSearchExpr = function (dataItem: IPersonCompany): string {
+    return (dataItem.nom ? dataItem.nom + ' ' : '') + (dataItem.email ? dataItem.email + ' ' : '') + (dataItem.tel ? dataItem.tel : '');
+  };
+
   departements: DepartementTreeFeignDTO[] = [];
   selectedDepartement = '';
 
@@ -123,7 +141,8 @@ export class CorrespDetailComponent implements OnInit {
     private typeDocumentService: TypedocumentService,
     private taskService: TasksService,
     private pjService: PjService,
-    private modalService: NgbModal
+    private modalService: NgbModal,
+    protected contactCompanyService: ContactCompanyService
   ) {}
 
   ngOnInit(): void {
@@ -174,6 +193,7 @@ export class CorrespDetailComponent implements OnInit {
     this.correspService.queryOrga().subscribe(res => {
       this.orgaList = res.body!;
     });
+    this.loadActiveCompanies();
   }
   // loadCorresp(id: number): void {
   //   this.correspService.find(id).subscribe((res: HttpResponse<ICorresp>) => {
@@ -254,6 +274,90 @@ export class CorrespDetailComponent implements OnInit {
       }
     });
     return obj;
+  }
+
+  loadActiveCompanies(): void {
+    this.loadingCompanies = true;
+    this.contactCompanyService.getActiveContactCompanies().subscribe({
+      next: (res: HttpResponse<IContactCompany[]>) => {
+        this.companies = res.body || [];
+        this.loadingCompanies = false;
+      },
+      error: () => {
+        this.companies = [];
+        this.loadingCompanies = false;
+      },
+    });
+  }
+
+  onExpediteurChange(companyId: number | null | string): void {
+    const id = companyId !== null && companyId !== undefined && companyId !== '' ? Number(companyId) : null;
+    this.selectedCompanyId = id;
+    this.personsForSelectedCompany = [];
+    this.selectedPersonId = null;
+    this.contactEmail = '';
+    if (id) {
+      const company = this.companies.find(c => c.id === id);
+      this.expediteur = company ? company.nom || '' : '';
+    } else {
+      if (!this.showManualExpediteur) {
+        this.expediteur = '';
+      }
+    }
+    if (!id) {
+      this.loadingPersons = false;
+      return;
+    }
+    this.loadingPersons = true;
+    this.contactCompanyService.getActivePersonsByCompany(id).subscribe({
+      next: (res: HttpResponse<IPersonCompany[]>) => {
+        this.personsForSelectedCompany = res.body || [];
+        this.loadingPersons = false;
+      },
+      error: () => {
+        this.personsForSelectedCompany = [];
+        this.loadingPersons = false;
+      },
+    });
+  }
+
+  onSelectContactPerson(personId: number | null): void {
+    this.selectedPersonId = personId;
+    if (!personId) {
+      this.contactEmail = '';
+      return;
+    }
+    const p = this.personsForSelectedCompany.find(x => x.id === personId);
+    if (p) {
+      this.contactEmail = p.email || p.whatsapp || p.tel || p.nom || '';
+    } else {
+      this.contactEmail = '';
+    }
+  }
+
+  toggleManualExpediteur(to?: boolean): void {
+    const next = typeof to === 'boolean' ? to : !this.showManualExpediteur;
+    if (next) {
+      this.selectedCompanyId = null;
+      this.personsForSelectedCompany = [];
+      this.selectedPersonId = null;
+      this.loadingPersons = false;
+    } else {
+      this.expediteur = '';
+      if (!this.companies || this.companies.length === 0) {
+        this.loadActiveCompanies();
+      }
+    }
+    this.showManualExpediteur = next;
+  }
+
+  toggleManualContact(to?: boolean): void {
+    const next = typeof to === 'boolean' ? to : !this.showManualContact;
+    this.showManualContact = next;
+    if (!next) {
+      this.selectedPersonId = null;
+      this.contactEmail = '';
+    }
   }
 
   saveDraft(): void {

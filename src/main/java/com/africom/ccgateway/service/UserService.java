@@ -313,6 +313,8 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public Mono<User> getUserWithAuthorities() {
+        //TODO RETRIEVE CODES DEPTS ASSOCIATED TO USER FROM ORGACARE
+
         return SecurityUtils.getCurrentUserLogin().flatMap(userRepository::findOneWithAuthoritiesByLogin);
     }
 
