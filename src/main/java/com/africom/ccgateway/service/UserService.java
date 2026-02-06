@@ -115,7 +115,6 @@ public class UserService {
                     User newUser = new User();
                     String encryptedPassword = passwordEncoder.encode(password);
                     newUser.setLogin(userDTO.getLogin().toLowerCase());
-                    // new user gets initially a generated password
                     newUser.setPassword(encryptedPassword);
                     newUser.setFirstName(userDTO.getFirstName());
                     newUser.setLastName(userDTO.getLastName());
@@ -124,10 +123,10 @@ public class UserService {
                     }
                     newUser.setImageUrl(userDTO.getImageUrl());
                     newUser.setLangKey(userDTO.getLangKey());
-                    // new user is not active
-                    newUser.setActivated(false);
-                    // new user gets registration key
-                    newUser.setActivationKey(RandomUtil.generateActivationKey());
+                    // **Utilisateur activé dès la création**
+                    newUser.setActivated(true);
+                    // pas d'activation key si activé immédiatement
+                    newUser.setActivationKey(null);
                     return newUser;
                 })
             )
@@ -145,35 +144,59 @@ public class UserService {
 
     @Transactional
     public Mono<User> createUser(AdminUserDTO userDTO) {
-        User user = new User();
-        user.setLogin(userDTO.getLogin().toLowerCase());
-        user.setFirstName(userDTO.getFirstName());
-        user.setLastName(userDTO.getLastName());
-        if (userDTO.getEmail() != null) {
-            user.setEmail(userDTO.getEmail().toLowerCase());
-        }
-        user.setImageUrl(userDTO.getImageUrl());
-        if (userDTO.getLangKey() == null) {
-            user.setLangKey(Constants.DEFAULT_LANGUAGE); // default language
-        } else {
-            user.setLangKey(userDTO.getLangKey());
-        }
-        return Flux
-            .fromIterable(userDTO.getAuthorities() != null ? userDTO.getAuthorities() : new HashSet<>())
-            .flatMap(authorityRepository::findById)
-            .doOnNext(authority -> user.getAuthorities().add(authority))
-            .then(Mono.just(user))
-            .publishOn(Schedulers.boundedElastic())
-            .map(newUser -> {
-                String encryptedPassword = passwordEncoder.encode(RandomUtil.generatePassword());
-                newUser.setPassword(encryptedPassword);
-                newUser.setResetKey(RandomUtil.generateResetKey());
-                newUser.setResetDate(Instant.now());
-                newUser.setActivated(true);
-                return newUser;
-            })
-            .flatMap(this::saveUser)
-            .doOnNext(user1 -> log.debug("Created Information for User: {}", user1));
+        final String loginLower = userDTO.getLogin().toLowerCase();
+        // check login existence
+        Mono<Boolean> loginExists = userRepository.findOneByLogin(loginLower).hasElement();
+        // check email existence (skip if null)
+        Mono<Boolean> emailExists = userDTO.getEmail() == null
+            ? Mono.just(false)
+            : userRepository.findOneByEmailIgnoreCase(userDTO.getEmail().toLowerCase()).hasElement();
+
+        return Mono
+            .zip(loginExists, emailExists)
+            .flatMap(tuple -> {
+                boolean loginAlready = tuple.getT1();
+                boolean emailAlready = tuple.getT2();
+                if (loginAlready) {
+                    return Mono.error(new LoginAlreadyUsedException());
+                }
+                if (emailAlready) {
+                    return Mono.error(new EmailAlreadyUsedException());
+                }
+
+                // Proceed with original creation logic
+                User user = new User();
+                user.setLogin(loginLower);
+                user.setFirstName(userDTO.getFirstName());
+                user.setLastName(userDTO.getLastName());
+                if (userDTO.getEmail() != null) {
+                    user.setEmail(userDTO.getEmail().toLowerCase());
+                }
+                user.setImageUrl(userDTO.getImageUrl());
+                if (userDTO.getLangKey() == null) {
+                    user.setLangKey(Constants.DEFAULT_LANGUAGE);
+                } else {
+                    user.setLangKey(userDTO.getLangKey());
+                }
+
+                // load authorities and then finalize creation
+                return Flux
+                    .fromIterable(userDTO.getAuthorities() != null ? userDTO.getAuthorities() : new HashSet<>())
+                    .flatMap(authorityRepository::findById)
+                    .doOnNext(authority -> user.getAuthorities().add(authority))
+                    .then(Mono.just(user))
+                    .publishOn(Schedulers.boundedElastic())
+                    .map(newUser -> {
+                        String encryptedPassword = passwordEncoder.encode(RandomUtil.generatePassword());
+                        newUser.setPassword(encryptedPassword);
+                        newUser.setResetKey(RandomUtil.generateResetKey());
+                        newUser.setResetDate(Instant.now());
+                        newUser.setActivated(true);
+                        return newUser;
+                    })
+                    .flatMap(this::saveUser)
+                    .doOnNext(created -> log.debug("Created Information for User: {}", created));
+            });
     }
 
     /**
@@ -184,30 +207,58 @@ public class UserService {
      */
     @Transactional
     public Mono<AdminUserDTO> updateUser(AdminUserDTO userDTO) {
-        return userRepository
-            .findById(userDTO.getId())
-            .flatMap(user -> {
-                user.setLogin(userDTO.getLogin().toLowerCase());
-                user.setFirstName(userDTO.getFirstName());
-                user.setLastName(userDTO.getLastName());
-                if (userDTO.getEmail() != null) {
-                    user.setEmail(userDTO.getEmail().toLowerCase());
+        final String loginLower = userDTO.getLogin().toLowerCase();
+
+        // check email conflict with other users (if email != null)
+        Mono<Boolean> emailConflict = userDTO.getEmail() == null
+            ? Mono.just(false)
+            : userRepository
+                .findOneByEmailIgnoreCase(userDTO.getEmail().toLowerCase())
+                .filter(u -> !u.getId().equals(userDTO.getId()))
+                .hasElement();
+
+        // check login conflict with other users
+        Mono<Boolean> loginConflict = userRepository
+            .findOneByLogin(loginLower)
+            .filter(u -> !u.getId().equals(userDTO.getId()))
+            .hasElement();
+
+        return Mono
+            .zip(emailConflict, loginConflict)
+            .flatMap(tuple -> {
+                if (Boolean.TRUE.equals(tuple.getT1())) {
+                    return Mono.error(new EmailAlreadyUsedException());
                 }
-                user.setImageUrl(userDTO.getImageUrl());
-                user.setActivated(userDTO.isActivated());
-                user.setLangKey(userDTO.getLangKey());
-                Set<Authority> managedAuthorities = user.getAuthorities();
-                managedAuthorities.clear();
+                if (Boolean.TRUE.equals(tuple.getT2())) {
+                    return Mono.error(new LoginAlreadyUsedException());
+                }
+
+                // no conflicts -> do existing update flow
                 return userRepository
-                    .deleteUserAuthorities(user.getId())
-                    .thenMany(Flux.fromIterable(userDTO.getAuthorities()))
-                    .flatMap(authorityRepository::findById)
-                    .map(managedAuthorities::add)
-                    .then(Mono.just(user));
-            })
-            .flatMap(this::saveUser)
-            .doOnNext(user -> log.debug("Changed Information for User: {}", user))
-            .map(AdminUserDTO::new);
+                    .findById(userDTO.getId())
+                    .flatMap(user -> {
+                        user.setLogin(loginLower);
+                        user.setFirstName(userDTO.getFirstName());
+                        user.setLastName(userDTO.getLastName());
+                        if (userDTO.getEmail() != null) {
+                            user.setEmail(userDTO.getEmail().toLowerCase());
+                        }
+                        user.setImageUrl(userDTO.getImageUrl());
+                        user.setActivated(userDTO.isActivated());
+                        user.setLangKey(userDTO.getLangKey());
+                        Set<Authority> managedAuthorities = user.getAuthorities();
+                        managedAuthorities.clear();
+                        return userRepository
+                            .deleteUserAuthorities(user.getId())
+                            .thenMany(Flux.fromIterable(userDTO.getAuthorities()))
+                            .flatMap(authorityRepository::findById)
+                            .map(managedAuthorities::add)
+                            .then(Mono.just(user));
+                    })
+                    .flatMap(this::saveUser)
+                    .doOnNext(user -> log.debug("Changed Information for User: {}", user))
+                    .map(AdminUserDTO::new);
+            });
     }
 
     @Transactional
@@ -345,5 +396,10 @@ public class UserService {
     @Transactional(readOnly = true)
     public Flux<String> getAuthorities() {
         return authorityRepository.findAll().map(Authority::getName);
+    }
+
+    @Transactional(readOnly = true)
+    public Mono<UserDTO> getUserById(Long id) {
+        return userRepository.findById(id).map(UserDTO::new);
     }
 }

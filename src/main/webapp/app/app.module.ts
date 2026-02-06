@@ -123,19 +123,16 @@ export class AppModule {
 
     // --------- Initialisation de la traduction (ngx-translate) ----------
     // Langues supportées
-    this.translate.addLangs(['fr', 'en', 'ar']);
+    this.translate.addLangs(['fr', 'en', 'ar-ly']);
     // Langue par défaut
     this.translate.setDefaultLang('fr');
 
     // Choix de la langue : priorise la sauvegardée, sinon le navigateur, sinon 'fr'
     const savedLang = localStorage.getItem('lang');
     const browserLang = this.translate.getBrowserLang();
+    const allowed = ['fr', 'en', 'ar-ly'];
     const useLang =
-      savedLang && ['fr', 'en', 'ar'].includes(savedLang)
-        ? savedLang
-        : browserLang && ['fr', 'en', 'ar'].includes(browserLang)
-        ? browserLang
-        : 'fr';
+      savedLang && allowed.includes(savedLang) ? savedLang : browserLang && allowed.includes(browserLang) ? browserLang : 'fr';
 
     // Utilise la langue choisie (charge i18n/{lang}.json via TranslateHttpLoader)
     this.translate.use(useLang);
@@ -144,7 +141,7 @@ export class AppModule {
     this.translate.onLangChange.subscribe(event => {
       const lang = event.lang;
       document.documentElement.lang = lang;
-      document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+      document.documentElement.dir = lang === 'ar-ly' ? 'rtl' : 'ltr';
       // Sauvegarde le choix
       try {
         localStorage.setItem('lang', lang);

@@ -7,6 +7,7 @@ import com.africom.ccgateway.security.AuthoritiesConstants;
 import com.africom.ccgateway.service.MailService;
 import com.africom.ccgateway.service.UserService;
 import com.africom.ccgateway.service.dto.AdminUserDTO;
+import com.africom.ccgateway.service.dto.UserDTO;
 import com.africom.ccgateway.web.rest.errors.BadRequestAlertException;
 import com.africom.ccgateway.web.rest.errors.EmailAlreadyUsedException;
 import com.africom.ccgateway.web.rest.errors.LoginAlreadyUsedException;
@@ -255,5 +256,11 @@ public class UserResource {
                     ResponseEntity.noContent().headers(HeaderUtil.createAlert(applicationName, "userManagement.deleted", login)).build()
                 )
             );
+    }
+
+    @GetMapping("/users/id/{id}")
+    public Mono<ResponseEntity<UserDTO>> getUserById(@PathVariable Long id) {
+        log.debug("REST request to get User by id : {}", id);
+        return userService.getUserById(id).map(userDto -> ResponseEntity.ok(userDto)).defaultIfEmpty(ResponseEntity.notFound().build());
     }
 }

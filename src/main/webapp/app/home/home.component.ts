@@ -4,7 +4,7 @@
 
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
-import { Subject, Subscription } from 'rxjs';
+import { Subject, Subscription, forkJoin } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 import { Title } from '@angular/platform-browser';
@@ -28,6 +28,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   tasks?: ITasks[];
   authSubscription?: Subscription;
   private destroy$ = new Subject<void>();
+  private correspInfoByTaskId: Record<number, { subject?: string | null; reference?: string | null }> = {};
 
   // recherche simple côté client
   searchTerm = '';
@@ -50,63 +51,6 @@ export class HomeComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    // --- Merge local translations to prevent translation-not-found ---
-    const fr = {
-      home: {
-        title: 'Bienvenue, {{firstName}}',
-        subtitle: 'Gérez vos courriers et tâches en toute simplicité',
-        newMail: '✨ Nouveau Courrier',
-        arrival: 'ARRIVÉE',
-        arrivalSub: 'Enregistrer un courrier entrant',
-        outgoing: 'SORTANT',
-        outgoingSub: 'Créer un courrier sortant',
-        internal: 'INTERNE',
-        internalSub: 'Communication interne',
-        panelsTitle: 'Tâches',
-        tasksTitle: 'Tâches en cours',
-        searchTasksLabel: 'Rechercher tâches',
-        searchTasks: 'Rechercher une tâche',
-        search: 'Rechercher',
-        clearSearch: 'Effacer la recherche',
-        exportExcel: 'Excel',
-        exportCsv: 'CSV',
-        objet: 'Objet',
-        creation: 'Création',
-        limite: 'Limite',
-        responsable: 'Responsable',
-        etat: 'État',
-      },
-    };
-
-    const en = {
-      home: {
-        title: 'Welcome, {{firstName}}',
-        subtitle: 'Manage your mail and tasks with ease',
-        panelsTitle: 'Tasks',
-        tasksTitle: 'Active Tasks',
-        searchTasksLabel: 'Search tasks',
-        searchTasks: 'Search a task',
-        search: 'Search',
-        clearSearch: 'Clear search',
-        exportExcel: 'Excel',
-        exportCsv: 'CSV',
-        objet: 'Object',
-        creation: 'Creation',
-        limite: 'Deadline',
-        responsable: 'Responsible',
-        etat: 'Status',
-      },
-    };
-
-    try {
-      this.translate.setTranslation('fr', fr, true);
-      this.translate.setTranslation('en', en, true);
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.warn("Erreur lors de l'enregistrement local des traductions home.*", err);
-    }
-    // ---------------------------------------------------------------
-
     // Abonnement à l'état d'authentification.
     // On définit le titre de la page après que l'account soit disponible
     this.authSubscription = this.accountService
@@ -174,6 +118,8 @@ export class HomeComponent implements OnInit, OnDestroy {
           return copy as ITasks;
         });
 
+        this.loadCorrespInfoForTasks();
+
         // ensure currentPage still valid after load
         if (this.currentPage > this.totalPages) {
           this.currentPage = this.totalPages || 1;
@@ -199,10 +145,11 @@ export class HomeComponent implements OnInit, OnDestroy {
       return this.tasks;
     }
     return this.tasks.filter(t => {
-      const obj = ((t as any).object || '').toString().toLowerCase();
+      const subj = (this.getTaskSubject(t) || '').toString().toLowerCase();
+      const ref = (this.getTaskReference(t) || '').toString().toLowerCase();
       const resp = ((t as any).responsible || '').toString().toLowerCase();
       const status = String((t as any).status || '').toLowerCase();
-      return obj.includes(q) || resp.includes(q) || status.includes(q);
+      return subj.includes(q) || ref.includes(q) || resp.includes(q) || status.includes(q);
     });
   }
 
@@ -466,5 +413,47 @@ export class HomeComponent implements OnInit, OnDestroy {
       return isNaN(d.getTime()) ? null : d;
     }
     return null;
+  }
+
+  private loadCorrespInfoForTasks(): void {
+    const tasks = this.tasks || [];
+    if (!tasks.length) {
+      return;
+    }
+    const calls = tasks
+      .map(t => (t && (t as any).id != null ? (t as any).id : null))
+      .filter((id): id is number => id != null)
+      .map(id => this.correspService.getCorrespsByTask(id));
+
+    if (!calls.length) {
+      return;
+    }
+    forkJoin(calls)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((responses: HttpResponse<any[]>[]) => {
+        responses.forEach((res, idx) => {
+          const task = tasks[idx];
+          const taskId = (task as any)?.id;
+          const items = res?.body || [];
+          const first = items && items.length ? items[0] : null;
+          const subject = first ? (first as any).subject ?? null : null;
+          const reference = first ? (first as any).reference ?? null : null;
+          if (typeof taskId === 'number') {
+            this.correspInfoByTaskId[taskId] = { subject, reference };
+          }
+        });
+      });
+  }
+
+  getTaskSubject(t: ITasks): string {
+    const id = (t as any)?.id;
+    const info = typeof id === 'number' ? this.correspInfoByTaskId[id] : undefined;
+    return (info && info.subject) || '';
+  }
+
+  getTaskReference(t: ITasks): string {
+    const id = (t as any)?.id;
+    const info = typeof id === 'number' ? this.correspInfoByTaskId[id] : undefined;
+    return (info && info.reference) || '';
   }
 }
