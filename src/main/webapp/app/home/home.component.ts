@@ -1,7 +1,4 @@
 // src/main/webapp/app/home/home.component.ts
-// Modernized HomeComponent — tâches affichées en cartes (dossiers supprimés)
-// Ajout : pagination client, correction du titre, export Excel (xlsx)
-
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subject, Subscription, forkJoin } from 'rxjs';
@@ -34,7 +31,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   searchTerm = '';
 
   // pagination
-  pageSize = 6; // <-- nombre d'éléments par page
+  pageSize = 4; // <-- nombre d'éléments par page
   currentPage = 1;
 
   // petits réglages visuels/restants
@@ -51,8 +48,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    // Abonnement à l'état d'authentification.
-    // On définit le titre de la page après que l'account soit disponible
+    // On attend l'authenticationState puis on charge les tâches avec l'id utilisateur
     this.authSubscription = this.accountService
       .getAuthenticationState()
       .pipe(takeUntil(this.destroy$))
@@ -65,10 +61,12 @@ export class HomeComponent implements OnInit, OnDestroy {
             this.titleService.setTitle(translatedTitle);
           }
         });
+
+        // <-- important : on charge les tâches une fois que l'account est connu
+        this.loadTasks();
       });
 
-    // charge les tâches
-    this.loadTasks();
+    // NOTE: on ne lance plus loadTasks() ici (on l'appelle après que account soit défini)
   }
 
   ngOnDestroy(): void {
@@ -85,46 +83,65 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   // --------- Data ----------
   loadTasks(): void {
-    this.tasksService
-      .getAllTasksByEtat({ etat: 'IN_PROGRESS' })
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((res: HttpResponse<ITasks[]>) => {
-        const raw = res.body || [];
-        // convertit les champs de date (Dayjs, string, Date, ...) en Date natif ou undefined
-        this.tasks = raw.map(t => {
-          const copy: any = { ...t };
-          const dateFields = ['creationDate', 'startDate', 'dueDate', 'closeDate', 'updatedDate'];
-          dateFields.forEach(f => {
-            const v = (copy as any)[f];
-            if (v == null) {
-              (copy as any)[f] = undefined;
-              return;
-            }
-            if (typeof (v as any).toDate === 'function') {
-              try {
-                (copy as any)[f] = (v as any).toDate();
-              } catch {
-                (copy as any)[f] = undefined;
-              }
-            } else if (typeof v === 'string' || typeof v === 'number') {
-              const d = new Date(v);
-              (copy as any)[f] = isNaN(d.getTime()) ? undefined : d;
-            } else if (v instanceof Date) {
-              (copy as any)[f] = v;
-            } else {
-              (copy as any)[f] = undefined;
-            }
-          });
-          return copy as ITasks;
+    // Récupère l'id de l'utilisateur connecté (adapter si le modèle Account a un autre nom de propriété)
+    const userId = this.account && (this.account as any).id != null ? (this.account as any).id : null;
+
+    if (userId != null) {
+      // Utilise l'API getTasksByUserAcl(userId)
+      this.tasksService
+        .getTasksByUserAcl(userId)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe((res: HttpResponse<ITasks[]>) => {
+          this.processTasksResponse(res);
         });
+    } else {
+      // Fallback : si on n'a pas d'account.id, on garde l'ancien comportement (optionnel)
+      this.tasksService
+        .getAllTasksByEtat({ etat: 'IN_PROGRESS' })
+        .pipe(takeUntil(this.destroy$))
+        .subscribe((res: HttpResponse<ITasks[]>) => {
+          this.processTasksResponse(res);
+        });
+    }
+  }
 
-        this.loadCorrespInfoForTasks();
-
-        // ensure currentPage still valid after load
-        if (this.currentPage > this.totalPages) {
-          this.currentPage = this.totalPages || 1;
+  // extrait la logique de traitement de la réponse pour éviter duplication
+  private processTasksResponse(res: HttpResponse<ITasks[]>): void {
+    const raw = res.body || [];
+    // convertit les champs de date (Dayjs, string, Date, ...) en Date natif ou undefined
+    this.tasks = raw.map(t => {
+      const copy: any = { ...t };
+      const dateFields = ['creationDate', 'startDate', 'dueDate', 'closeDate', 'updatedDate'];
+      dateFields.forEach(f => {
+        const v = (copy as any)[f];
+        if (v == null) {
+          (copy as any)[f] = undefined;
+          return;
+        }
+        if (typeof (v as any).toDate === 'function') {
+          try {
+            (copy as any)[f] = (v as any).toDate();
+          } catch {
+            (copy as any)[f] = undefined;
+          }
+        } else if (typeof v === 'string' || typeof v === 'number') {
+          const d = new Date(v);
+          (copy as any)[f] = isNaN(d.getTime()) ? undefined : d;
+        } else if (v instanceof Date) {
+          (copy as any)[f] = v;
+        } else {
+          (copy as any)[f] = undefined;
         }
       });
+      return copy as ITasks;
+    });
+
+    this.loadCorrespInfoForTasks();
+
+    // ensure currentPage still valid after load
+    if (this.currentPage > this.totalPages) {
+      this.currentPage = this.totalPages || 1;
+    }
   }
 
   refresh(): void {
