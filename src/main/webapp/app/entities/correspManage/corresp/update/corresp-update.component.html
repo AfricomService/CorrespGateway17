@@ -234,14 +234,7 @@
                       </div>
                     </div>
 
-                    <button
-                      *ngIf="selectedTypeDocument?.nom === 'Autre'"
-                      class="btn btn-primary"
-                      type="button"
-                      (click)="openAddDest(AddDest)"
-                    >
-                      Ajouter
-                    </button>
+                    <!-- Button removed -->
                   </div>
                 </div>
 
@@ -342,9 +335,7 @@
                       />
                     </div>
 
-                    <button *ngIf="selectedTypeDocument?.nom === 'Autre'" class="btn btn-primary" type="button" (click)="openAddCC(AddCC)">
-                      Ajouter
-                    </button>
+                    <!-- Button removed -->
                   </div>
                 </div>
 
@@ -848,50 +839,7 @@
 
         <!-- ************************ RIGHT SIDE ************************ -->
         <div class="col-md-7">
-          <!-- Organigramme -->
-          <label class="form-label fw-semibold">Organigramme <span class="text-danger">*</span></label>
-          <select
-            class="form-select mb-3"
-            [(ngModel)]="selectedOrga"
-            name="organigramme"
-            (change)="onOrgaChange()"
-            [class.border-danger]="validationErrors['organigramme']"
-          >
-            <option value="" disabled>-- Sélectionner un organigramme --</option>
-            <option *ngFor="let orga of orgaList" [ngValue]="orga">
-              {{ orga.organigramme }}
-            </option>
-          </select>
-          <div class="text-danger small" *ngIf="validationErrors['organigramme']">
-            {{ validationErrors['organigramme'] }}
-          </div>
-
-          <!-- Département -->
-          <label class="form-label fw-semibold">Département <span class="text-danger">*</span></label>
-          <dx-tree-view
-            id="treeView"
-            [items]="departements"
-            [selectedExpr]="'selected'"
-            displayExpr="nom"
-            selectionMode="single"
-            [expandAllEnabled]="true"
-            [searchEnabled]="true"
-            searchMode="contains"
-            [height]="300"
-            [dataStructure]="'tree'"
-            [keyExpr]="'id'"
-            [parentIdExpr]="'parentId'"
-            [itemsExpr]="'children'"
-            [selectByClick]="true"
-            (onItemClick)="selectDep($event)"
-            class="border rounded"
-            [class.border-danger]="validationErrors['departement']"
-          >
-          </dx-tree-view>
-
-          <div class="text-danger small mt-1" *ngIf="validationErrors['departement']">
-            {{ validationErrors['departement'] }}
-          </div>
+          <!-- Tree logic removed as requested -->
         </div>
       </div>
 
@@ -919,163 +867,4 @@
   </div>
 </ng-template>
 
-<!-- --------------------------------------------------------------------------------
---------------------------------------------------------------------------------
---------- MODAL ADD DESTINATAIRE AUTRE -----------------------------------------
---------------------------------------------------------------------------------
--------------------------------------------------------------------------------- -->
-
-<ng-template #AddDest let-AddDest class="modal-dialog modal-lg modal-dialog-centered">
-  <div class="modal-header">
-    <h5 class="modal-title">Choisir un département</h5>
-    <button type="button" class="btn-close" aria-label="Close" (click)="AddDest.close('Close click')"></button>
-  </div>
-
-  <div style="height: 100%" class="modal-body">
-    <form>
-      <div style="display: flex; flex-direction: column; gap: 1.5em">
-        <!-- ORGANIGRAMME -->
-        <div class="row mb-3">
-          <div class="col-md-12 mb-3 mb-md-0">
-            <label class="form-label fw-semibold">Organigramme <span class="text-danger">*</span></label>
-            <select
-              class="form-select"
-              [(ngModel)]="selectedOrgaDest"
-              name="organigramme"
-              (change)="onOrgaChangeDest()"
-              [class.border-danger]="validationErrors['organigramme']"
-            >
-              <option value="" disabled>-- Sélectionner un organigramme --</option>
-              <option *ngFor="let orga of orgaList" [ngValue]="orga">
-                {{ orga.organigramme }}
-              </option>
-            </select>
-            <div class="text-danger small mt-1" *ngIf="validationErrors['organigramme']">
-              {{ validationErrors['organigramme'] }}
-            </div>
-          </div>
-        </div>
-
-        <!-- DÉPARTEMENTS -->
-        <div class="row mb-3">
-          <div class="col-md-12 mb-3 mb-md-0">
-            <label class="form-label fw-semibold">Département <span class="text-danger">*</span></label>
-
-            <dx-tree-view
-              #treeView
-              [items]="departementsDest"
-              [selectedExpr]="'selected'"
-              displayExpr="nom"
-              selectionMode="single"
-              [expandAllEnabled]="true"
-              [searchEnabled]="true"
-              searchMode="contains"
-              [height]="450"
-              [dataStructure]="'tree'"
-              [keyExpr]="'id'"
-              [parentIdExpr]="'parentId'"
-              [itemsExpr]="'children'"
-              [selectByClick]="true"
-              (onItemClick)="selectDepDest($event, AddDest)"
-              [class.border-danger]="validationErrors['departement']"
-              class="border rounded"
-            >
-            </dx-tree-view>
-
-            <div class="text-danger small mt-1" *ngIf="validationErrors['departement']">
-              {{ validationErrors['departement'] }}
-            </div>
-          </div>
-        </div>
-      </div>
-    </form>
-  </div>
-
-  <div class="modal-footer d-flex justify-content-between">
-    <!--    <div>Departement selectionné : {{  || 'Aucun' }}-{{ selectedDepartement?.code || 'Aucun' }}</div>-->
-    <div>
-      <button type="button" class="btn btn-light" (click)="AddDest.close('Close click')">Annuler</button>
-      <button type="button" class="btn btn-primary" (click)="dismissDest()">Enregistrer</button>
-    </div>
-  </div>
-</ng-template>
-
-<!-- --------------------------------------------------------------------------------
---------------------------------------------------------------------------------
---------- MODAL ADD CC AUTRE -----------------------------------------
---------------------------------------------------------------------------------
--------------------------------------------------------------------------------- -->
-
-<ng-template #AddCC let-AddCC class="modal-dialog modal-lg modal-dialog-centered">
-  <div class="modal-header">
-    <h5 class="modal-title">Sélectionner un département</h5>
-    <button type="button" class="btn-close" aria-label="Close" (click)="AddCC.close('Close click')"></button>
-  </div>
-
-  <div style="height: 100%" class="modal-body">
-    <form>
-      <div style="display: flex; flex-direction: column; gap: 1.5em">
-        <!-- ORGANIGRAMME -->
-        <div class="row mb-3">
-          <div class="col-md-12 mb-3 mb-md-0">
-            <label class="form-label fw-semibold">Organigramme <span class="text-danger">*</span></label>
-            <select
-              class="form-select"
-              [(ngModel)]="selectedOrgaCC"
-              name="organigramme"
-              (change)="onOrgaChangeCC()"
-              [class.border-danger]="validationErrors['organigramme']"
-            >
-              <option value="" disabled>-- Sélectionner un organigramme --</option>
-              <option *ngFor="let orga of orgaList" [ngValue]="orga">
-                {{ orga.organigramme }}
-              </option>
-            </select>
-            <div class="text-danger small mt-1" *ngIf="validationErrors['organigramme']">
-              {{ validationErrors['organigramme'] }}
-            </div>
-          </div>
-        </div>
-
-        <!-- DÉPARTEMENTS -->
-        <div class="row mb-3">
-          <div class="col-md-12 mb-3 mb-md-0">
-            <label class="form-label fw-semibold">Département <span class="text-danger">*</span></label>
-
-            <dx-tree-view
-              #treeView1
-              [items]="departementsCC"
-              displayExpr="nom"
-              selectionMode="single"
-              [expandAllEnabled]="true"
-              [searchEnabled]="true"
-              searchMode="contains"
-              [height]="450"
-              [dataStructure]="'tree'"
-              [keyExpr]="'id'"
-              [parentIdExpr]="'parentId'"
-              [itemsExpr]="'children'"
-              [selectByClick]="true"
-              (onItemClick)="selectDepCopie($event, AddCC)"
-              [class.border-danger]="validationErrors['departement1']"
-              class="border rounded"
-            >
-            </dx-tree-view>
-
-            <div class="text-danger small mt-1" *ngIf="validationErrors['departement']">
-              {{ validationErrors['departement'] }}
-            </div>
-          </div>
-        </div>
-      </div>
-    </form>
-  </div>
-
-  <div class="modal-footer d-flex justify-content-between">
-    <!--    <div>Departement selectionné : {{ selectedDepartementNom1 || 'Aucun' }}-{{ selectedDepartement1?.code || 'Aucun' }}</div>-->
-    <div>
-      <button type="button" class="btn btn-light" (click)="AddCC.close('Close click')">Annuler</button>
-      <button type="button" class="btn btn-primary" (click)="dismissCC()">Enregistrer</button>
-    </div>
-  </div>
-</ng-template>
+<!-- Unused modals removed -->

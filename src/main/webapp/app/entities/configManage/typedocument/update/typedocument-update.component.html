@@ -86,67 +86,10 @@
         </div>
 
         <div style="height: 100%" class="modal-body">
-          <form>
-            <div style="display: flex; flex-direction: column; gap: 1.5em">
-              <!-- ORGANIGRAMME -->
-              <div class="row mb-3">
-                <div class="col-md-12 mb-3 mb-md-0">
-                  <label class="form-label fw-semibold">Organigramme <span class="text-danger">*</span></label>
-                  <select
-                    class="form-select"
-                    [(ngModel)]="selectedOrga"
-                    name="organigramme"
-                    (change)="onOrgaChange()"
-                    [class.border-danger]="validationErrors['organigramme']"
-                  >
-                    <option value="" disabled>-- Sélectionner un organigramme --</option>
-                    <option *ngFor="let orga of orgaList" [ngValue]="orga">
-                      {{ orga.organigramme }}
-                    </option>
-                  </select>
-                  <div class="text-danger small mt-1" *ngIf="validationErrors['organigramme']">
-                    {{ validationErrors['organigramme'] }}
-                  </div>
-                </div>
-              </div>
-
-              <!-- DÉPARTEMENTS -->
-              <div class="row mb-3">
-                <div class="col-md-12 mb-3 mb-md-0">
-                  <label class="form-label fw-semibold">Département <span class="text-danger">*</span></label>
-
-                  <dx-tree-view
-                    #treeView
-                    [items]="departements"
-                    [selectedExpr]="'selected'"
-                    displayExpr="nom"
-                    selectionMode="single"
-                    [expandAllEnabled]="true"
-                    [searchEnabled]="true"
-                    searchMode="contains"
-                    [height]="450"
-                    [dataStructure]="'tree'"
-                    [keyExpr]="'id'"
-                    [parentIdExpr]="'parentId'"
-                    [itemsExpr]="'children'"
-                    [selectByClick]="true"
-                    (onItemClick)="selectDepDest($event, AddTaskModal)"
-                    [class.border-danger]="validationErrors['departement']"
-                    class="border rounded"
-                  >
-                  </dx-tree-view>
-
-                  <div class="text-danger small mt-1" *ngIf="validationErrors['departement']">
-                    {{ validationErrors['departement'] }}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </form>
+          <!-- Tree logic removed -->
         </div>
 
         <div class="modal-footer d-flex justify-content-between">
-          <div>Departement selectionné : {{ selectedDepartementNom || 'Aucun' }}-{{ selectedDepartement?.code || 'Aucun' }}</div>
           <div>
             <button type="button" class="btn btn-light" (click)="AddTaskModal.close('Close click')">Annuler</button>
             <button type="button" class="btn btn-primary" (click)="dismissAll()">Enregistrer</button>
@@ -161,66 +104,10 @@
         </div>
 
         <div style="height: 100%" class="modal-body">
-          <form>
-            <div style="display: flex; flex-direction: column; gap: 1.5em">
-              <!-- ORGANIGRAMME -->
-              <div class="row mb-3">
-                <div class="col-md-12 mb-3 mb-md-0">
-                  <label class="form-label fw-semibold">Organigramme <span class="text-danger">*</span></label>
-                  <select
-                    class="form-select"
-                    [(ngModel)]="selectedOrga1"
-                    name="organigramme"
-                    (change)="onOrgaChange1()"
-                    [class.border-danger]="validationErrors['organigramme']"
-                  >
-                    <option value="" disabled selected>-- Sélectionner un organigramme --</option>
-                    <option *ngFor="let orga of orgaList" [ngValue]="orga">
-                      {{ orga.organigramme }}
-                    </option>
-                  </select>
-                  <div class="text-danger small mt-1" *ngIf="validationErrors['organigramme']">
-                    {{ validationErrors['organigramme'] }}
-                  </div>
-                </div>
-              </div>
-
-              <!-- DÉPARTEMENTS -->
-              <div class="row mb-3">
-                <div class="col-md-12 mb-3 mb-md-0">
-                  <label class="form-label fw-semibold">Département <span class="text-danger">*</span></label>
-
-                  <dx-tree-view
-                    #treeView1
-                    [items]="departementsCC"
-                    displayExpr="nom"
-                    selectionMode="single"
-                    [expandAllEnabled]="true"
-                    [searchEnabled]="true"
-                    searchMode="contains"
-                    [height]="450"
-                    [dataStructure]="'tree'"
-                    [keyExpr]="'id'"
-                    [parentIdExpr]="'parentId'"
-                    [itemsExpr]="'children'"
-                    [selectByClick]="true"
-                    (onItemClick)="selectDepCopie($event, AddTaskModal1)"
-                    [class.border-danger]="validationErrors['departement1']"
-                    class="border rounded"
-                  >
-                  </dx-tree-view>
-
-                  <div class="text-danger small mt-1" *ngIf="validationErrors['departement']">
-                    {{ validationErrors['departement'] }}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </form>
+          <!-- Tree logic removed -->
         </div>
 
         <div class="modal-footer d-flex justify-content-between">
-          <div>Departement selectionné : {{ selectedDepartementNom1 || 'Aucun' }}-{{ selectedDepartement1?.code || 'Aucun' }}</div>
           <div>
             <button type="button" class="btn btn-light" (click)="AddTaskModal1.close('Close click')">Annuler</button>
             <button type="button" class="btn btn-primary" (click)="dismissAll()">Enregistrer</button>

@@ -50,6 +50,8 @@ export class CorrespService {
     'api/OrganigrammesFromOrgaCare',
     'configmanage'
   );
+  // url pour l'endpoint qui renvoie l'arbre de départements (service orgacare)
+  protected resourceUrlDepartementHierarchy = this.applicationConfigService.getEndpointFor('api/departementshierarchy', 'orgacare');
 
   constructor(protected http: HttpClient, protected applicationConfigService: ApplicationConfigService) {}
 
@@ -101,6 +103,13 @@ export class CorrespService {
   queryOrgaDepsByCode(req?: any): Observable<HttpResponse<IDepartement>> {
     const options = createRequestOption(req);
     return this.http.get<IDepartement>(`${this.resourceUrlDepartementsFromOrgaCare}ByCode`, { params: options, observe: 'response' });
+  }
+
+  getDepartementHierarchyByOrganigramme(organigrammeCode: string): Observable<HttpResponse<DepartementTreeFeignDTO[]>> {
+    // on met observe: 'response' pour garder headers + status si besoin
+    return this.http.get<DepartementTreeFeignDTO[]>(`${this.resourceUrlDepartementHierarchy}/${encodeURIComponent(organigrammeCode)}`, {
+      observe: 'response',
+    });
   }
   queryOrgaById(req?: any): Observable<HttpResponse<organigrammeFeignDTO[]>> {
     const options = createRequestOption(req);

@@ -9,8 +9,8 @@ import { IPj } from '../../pj/pj.model';
 import { PjService } from '../../pj/service/pj.service';
 import { IUser } from '../../../../admin/user-management/user-management.model';
 import { HttpResponse } from '@angular/common/http';
-import { DepartementTreeFeignDTO } from '../update/DepartementTreeFeignDTO';
-import { IOrga } from '../orga';
+// import { DepartementTreeFeignDTO } from '../update/DepartementTreeFeignDTO';
+// import { IOrga } from '../orga';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ITypedocument } from '../../../configManage/typedocument/typedocument.model';
 import { IDepartement } from '../../../orgacare/departement/departement.model';
@@ -94,9 +94,9 @@ export class CorrespDetailComponent implements OnInit {
 
   pjsLoaded: IPj[] = [];
 
-  orgaList: IOrga[] = [];
+  // orgaList: IOrga[] = [];
 
-  selectedOrga: any = null;
+  // selectedOrga: any = null;
 
   companies: IContactCompany[] = [];
   personsForSelectedCompany: IPersonCompany[] = [];
@@ -113,8 +113,8 @@ export class CorrespDetailComponent implements OnInit {
     return (dataItem.nom ? dataItem.nom + ' ' : '') + (dataItem.email ? dataItem.email + ' ' : '') + (dataItem.tel ? dataItem.tel : '');
   };
 
-  departements: DepartementTreeFeignDTO[] = [];
-  selectedDepartement = '';
+  // departements: DepartementTreeFeignDTO[] = [];
+  // selectedDepartement = '';
 
   dateLimite = '';
   selectedType = '';
@@ -190,9 +190,9 @@ export class CorrespDetailComponent implements OnInit {
 
     this.correspType = 'Arrivée';
 
-    this.correspService.queryOrga().subscribe(res => {
-      this.orgaList = res.body!;
-    });
+    // this.correspService.queryOrga().subscribe(res => {
+    //   this.orgaList = res.body!;
+    // });
     this.loadActiveCompanies();
   }
   // loadCorresp(id: number): void {
@@ -568,7 +568,7 @@ export class CorrespDetailComponent implements OnInit {
 
     const taskModel: ITasks = {} as ITasks;
 
-    taskModel.responsible = this.selectedDepartement;
+    // taskModel.responsible = this.selectedDepartement;
     taskModel.dueDate = dayjs(this.dateLimite);
     taskModel.taskType = this.selectedType;
     taskModel.commentaire = this.commentaire;
@@ -588,7 +588,7 @@ export class CorrespDetailComponent implements OnInit {
     this.dateLimite = '';
     this.commentaire = '';
     this.validationErrors = {};
-    this.selectedDepartement = '';
+    // this.selectedDepartement = '';
     this.selectedType = '';
   }
 
@@ -603,15 +603,15 @@ export class CorrespDetailComponent implements OnInit {
     }
 
     // Validate task name
-    if (!this.selectedOrga) {
-      this.validationErrors['organigramme'] = 'L Organigramme est obligatoire';
-      isValid = false;
-    }
+    // if (!this.selectedOrga) {
+    //   this.validationErrors['organigramme'] = 'L Organigramme est obligatoire';
+    //   isValid = false;
+    // }
 
-    if (!this.selectedDepartement || this.selectedDepartement.trim() === '') {
-      this.validationErrors['departement'] = 'Le departement est obligatoire';
-      isValid = false;
-    }
+    // if (!this.selectedDepartement || this.selectedDepartement.trim() === '') {
+    //   this.validationErrors['departement'] = 'Le departement est obligatoire';
+    //   isValid = false;
+    // }
 
     return isValid;
   }
@@ -619,8 +619,8 @@ export class CorrespDetailComponent implements OnInit {
   validationErrors: { [key: string]: string } = {};
 
   openTasksModal(content: any): void {
-    this.selectedOrga = null;
-    this.selectedDepartement = '';
+    // this.selectedOrga = null;
+    // this.selectedDepartement = '';
     this.resetForm();
     this.modalService.open(content, { size: 'xl' });
   }
@@ -629,34 +629,34 @@ export class CorrespDetailComponent implements OnInit {
     this.modalService.open(content, { centered: true, size: 'xl' });
   }
 
-  onOrgaChange(): void {
-    if (!this.selectedOrga) return;
-
-    const req = { orgaCode: this.selectedOrga.orgaCode };
-
-    this.correspService.queryOrgaDeps(req).subscribe({
-      next: res => {
-        this.departements = (res.body as DepartementTreeFeignDTO[]) || [];
-        this.expandAllDepartments(this.departements);
-        // this.departements[0].selected = true;
-      },
-      error: err => console.error('Erreur lors du chargement des départements', err),
-    });
-  }
-
-  private expandAllDepartments(nodes: DepartementTreeFeignDTO[]): void {
-    nodes.forEach(node => {
-      (node as any).expanded = true; // DevExtreme reconnaît 'expanded'
-      if (node.children && node.children.length > 0) {
-        this.expandAllDepartments(node.children);
-      }
-    });
-  }
-
-  selectDep(event: any) {
-    console.log(event);
-    this.selectedDepartement = event.itemData.code;
-  }
+  // onOrgaChange(): void {
+  //   if (!this.selectedOrga) return;
+  //
+  //   const req = { orgaCode: this.selectedOrga.orgaCode };
+  //
+  //   this.correspService.queryOrgaDeps(req).subscribe({
+  //     next: res => {
+  //       this.departements = (res.body as DepartementTreeFeignDTO[]) || [];
+  //       this.expandAllDepartments(this.departements);
+  //       // this.departements[0].selected = true;
+  //     },
+  //     error: err => console.error('Erreur lors du chargement des départements', err),
+  //   });
+  // }
+  //
+  // private expandAllDepartments(nodes: DepartementTreeFeignDTO[]): void {
+  //   nodes.forEach(node => {
+  //     (node as any).expanded = true; // DevExtreme reconnaît 'expanded'
+  //     if (node.children && node.children.length > 0) {
+  //       this.expandAllDepartments(node.children);
+  //     }
+  //   });
+  // }
+  //
+  // selectDep(event: any) {
+  //   console.log(event);
+  //   this.selectedDepartement = event.itemData.code;
+  // }
 
   deleteTask(correspId: number, tasksId: number): void {
     this.taskService.deleteTaskFromCorrespAndDB(correspId, tasksId).subscribe(res => {
