@@ -1032,9 +1032,8 @@
                       [class]="isNodeExpanded(node.id) ? 'fa fa-chevron-down' : 'fa fa-chevron-right'"
                       style="color: #6c757d; font-size: 12px"
                     ></i>
-                    <span style="font-weight: 600; color: #2c3e50">{{ node.nom || node.code }}</span>
+                    <span style="font-weight: 600; color: #2c3e50">{{ node.nom }}</span>
                   </div>
-                  <div style="font-size: 12px; color: #6c757d">{{ node.code }}</div>
                 </div>
 
                 <div style="display: flex; gap: 8px; align-items: center">
@@ -1051,7 +1050,7 @@
               <!-- Affectations (People grouped by Type) -->
               <ul
                 *ngIf="getAffectationKeys(node).length > 0"
-                [style.marginLeft.px]="level * 18"
+                [style.marginLeft.px]="0"
                 style="margin: 6px 0 0 0; padding-left: 0; list-style: none"
               >
                 <ng-container *ngFor="let type of getAffectationKeys(node)">

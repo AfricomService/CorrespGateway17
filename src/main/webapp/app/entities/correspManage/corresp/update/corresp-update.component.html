@@ -808,7 +808,6 @@
                 <div style="display: flex; gap: 8px; align-items: center">
                   <div style="padding: 8px 12px; border-radius: 8px; background: #f1f5f9; border: 1px solid #e6eef9">
                     <strong>{{ selectedDepartementName || 'Aucun' }}</strong>
-                    <div style="font-size: 12px; color: #6c757d">{{ selectedDepartement || '' }}</div>
                   </div>
                 </div>
               </div>
@@ -856,8 +855,7 @@
                 [style.background]="selectedDept?.id === node.id ? '#e9f2ff' : '#ffffff'"
               >
                 <div style="display: flex; flex-direction: column; gap: 3px">
-                  <div style="font-weight: 600; color: #2c3e50">{{ node.nom || node.code }}</div>
-                  <div style="font-size: 12px; color: #6c757d">{{ node.code }}</div>
+                  <div style="font-weight: 600; color: #2c3e50">{{ node.nom }}</div>
                   <div *ngIf="getResponsablesForNode(node)" style="font-size: 12px; color: #495057; margin-top: 6px">
                     <small><em>Responsable(s):</em> {{ getResponsablesForNode(node) }}</small>
                   </div>
