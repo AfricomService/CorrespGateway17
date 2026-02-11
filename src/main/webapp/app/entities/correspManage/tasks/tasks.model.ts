@@ -20,6 +20,12 @@ export interface ITasks {
   commentaire?: string | null;
   updatedDate?: dayjs.Dayjs | null;
   corresps?: Pick<ICorresp, 'id'>[] | null;
+  responsables?: ResponsableSelection[] | null;
 }
 
 export type NewTasks = Omit<ITasks, 'id'> & { id: null };
+
+export interface ResponsableSelection {
+  codeDept?: string | null;
+  matriculePers?: string | null;
+}

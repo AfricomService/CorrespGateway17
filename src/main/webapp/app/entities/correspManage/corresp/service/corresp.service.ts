@@ -212,37 +212,40 @@ export class CorrespService {
     return this.http.post(`${this.resourceUrl}WithTasksAndPjs`, formData);
   }
 
-  addTaskToCorresp(tasksDTO: ITasks, correspId: number) {
-    const formData = new FormData();
+  //addTaskToCorresp(tasksDTO: ITasks, correspId: number) {
+  //  const formData = new FormData();
 
-    formData.append('correspId', correspId.toString());
+  // formData.append('correspId', correspId.toString());
 
-    formData.append('tasksDTO', new Blob([JSON.stringify(tasksDTO)], { type: 'application/json' }));
+  //  formData.append('tasksDTO', new Blob([JSON.stringify(tasksDTO)], { type: 'application/json' }));
 
-    return this.http.post(`${this.resourceUrl}AddTaskToCorresp`, formData);
-  }
-  addTaskToCorrespJson(correspId: number, tasksDTO: ITasks) {
-    // Préparer un "plain" object pour l'envoi (convertir dayjs en ISO si besoin)
-    const payload: any = {
-      ...tasksDTO,
+  //  return this.http.post(`${this.resourceUrl}AddTaskToCorresp`, formData);
+  // }
+
+  /**
+   * Convertit les champs date d'une tâche avant envoi au serveur (ISO string).
+   * Adapte les champs selon ton ITasks (ici on gère les dates les plus courantes).
+   */
+  protected convertTaskDateFromClient(task: ITasks): any {
+    return {
+      ...task,
+      creationDate: task.creationDate ? (task.creationDate as any).toJSON?.() ?? task.creationDate : null,
+      startDate: task.startDate ? (task.startDate as any).toJSON?.() ?? task.startDate : null,
+      dueDate: task.dueDate ? (task.dueDate as any).toJSON?.() ?? task.dueDate : null,
+      closeDate: task.closeDate ? (task.closeDate as any).toJSON?.() ?? task.closeDate : null,
+      updatedDate: task.updatedDate ? (task.updatedDate as any).toJSON?.() ?? task.updatedDate : null,
     };
+  }
 
-    // si dueDate est un dayjs (ou possède toISOString), convertir en string ISO
-    const dd: any = (tasksDTO as any).dueDate;
-    if (dd) {
-      try {
-        // dayjs -> toISOString, Date -> toISOString, string -> keep
-        payload.dueDate = typeof dd.toISOString === 'function' ? dd.toISOString() : dd;
-      } catch (e) {
-        // fallback: laisser tel quel
-        payload.dueDate = dd;
-      }
-    }
-
-    // Appel POST JSON vers /api/corresps/{correspId}/tasks
-    return this.http.post<any>(`${this.resourceUrl}/${encodeURIComponent(String(correspId))}/tasks`, payload, {
-      observe: 'response',
-    });
+  /**
+   * Appelle POST /api/corresps/{correspId}/tasks
+   * Envoie un TasksDTO (ITasks) en JSON. Retourne le Corresp mis à jour (avec headers si besoin).
+   */
+  addTaskToCorresp(tasksDTO: ITasks, correspId: number): Observable<HttpResponse<ICorresp>> {
+    const copy = this.convertTaskDateFromClient(tasksDTO);
+    return this.http
+      .post<RestCorresp>(`${this.resourceUrl}/${correspId}/tasks`, copy, { observe: 'response' })
+      .pipe(map(res => this.convertResponseFromServer(res)));
   }
 
   addPjToCorresp(pjDto: IPj, correspId: number) {

@@ -103,8 +103,8 @@
             >
               <h5 style="font-weight: 600; margin: 0; color: #2c3e50">
                 Informations Générales -
-                <span *ngIf="correspLoaded" [style.color]="getStatusLabelAndColor(correspLoaded.status!).color">
-                  {{ getStatusLabelAndColor(correspLoaded.status!).label }}
+                <span *ngIf="correspLoaded?.status as st" [style.color]="getTaskColor(st)">
+                  {{ getTaskLabel(st) }}
                 </span>
               </h5>
 
@@ -956,23 +956,36 @@
         <!-- ************************ RIGHT SIDE ************************ -->
         <div class="col-md-7">
           <div style="display: flex; flex-direction: column; gap: 10px">
-            <!-- Selected department summary -->
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px">
-              <div>
-                <label class="form-label fw-semibold mb-1">Département sélectionné</label>
-                <div style="display: flex; gap: 8px; align-items: center">
-                  <div style="padding: 8px 12px; border-radius: 8px; background: #f1f5f9; border: 1px solid #e6eef9">
-                    <strong>{{ selectedDepartementName || 'Aucun' }}</strong>
-                    <div style="font-size: 12px; color: #6c757d">{{ selectedDepartement || '' }}</div>
-                  </div>
+              <div style="flex: 1">
+                <label class="form-label fw-semibold mb-1">Sélections</label>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+                  <span
+                    *ngFor="let sel of selectedResponsables"
+                    class="badge bg-light text-dark"
+                    style="
+                      border: 1px solid #e6eef9;
+                      border-radius: 999px;
+                      padding: 8px 12px;
+                      display: inline-flex;
+                      align-items: center;
+                      gap: 8px;
+                    "
+                  >
+                    <span class="badge bg-secondary" style="font-size: 10px">
+                      {{ sel.matriculePers ? 'PERS' : 'DEPT' }}
+                    </span>
+                    <span>{{ sel.displayName || sel.codeDept || sel.matriculePers }}</span>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" (click)="removeSelection(sel)" style="padding: 2px 6px">
+                      ×
+                    </button>
+                  </span>
+                  <span *ngIf="selectedResponsables.length === 0" style="color: #6c757d">Aucune sélection</span>
                 </div>
               </div>
               <div style="text-align: right">
-                <button
-                  class="btn btn-sm btn-outline-secondary"
-                  (click)="selectedDept = null; selectedDepartement = ''; selectedDepartementName = ''"
-                >
-                  Effacer
+                <button class="btn btn-sm btn-outline-danger" (click)="clearSelections()" [disabled]="selectedResponsables.length === 0">
+                  Effacer tout
                 </button>
               </div>
             </div>
@@ -983,7 +996,7 @@
 
               <ul *ngIf="!loadingTree && taskTree?.length" style="padding-left: 0; margin: 0; list-style: none">
                 <ng-container *ngFor="let node of taskTree">
-                  <ng-template [ngTemplateOutlet]="renderNode" [ngTemplateOutletContext]="{ node: node }"></ng-template>
+                  <ng-template [ngTemplateOutlet]="renderNode" [ngTemplateOutletContext]="{ node: node, level: 0 }"></ng-template>
                 </ng-container>
               </ul>
 
@@ -994,10 +1007,11 @@
           </div>
 
           <!-- recursive node template -->
-          <ng-template #renderNode let-node="node">
+          <ng-template #renderNode let-node="node" let-level="level">
             <li style="margin: 8px 0; list-style: none">
               <div
-                (click)="onSelectDept(node)"
+                (click)="toggleNodeExpand(node.id)"
+                class="dept-card"
                 style="
                   display: flex;
                   justify-content: space-between;
@@ -1007,23 +1021,39 @@
                   border-radius: 8px;
                   cursor: pointer;
                 "
-                [style.border]="selectedDept?.id === node.id ? '2px solid #0d6efd' : '1px solid #f1f5f9'"
+                [style.borderStyle]="'solid'"
+                [style.borderWidth.px]="3"
+                [style.borderColor]="getLevelColor(level)"
                 [style.background]="selectedDept?.id === node.id ? '#e9f2ff' : '#ffffff'"
               >
                 <div style="display: flex; flex-direction: column; gap: 3px">
-                  <div style="font-weight: 600; color: #2c3e50">{{ node.nom || node.code }}</div>
+                  <div style="display: flex; align-items: center; gap: 8px">
+                    <i
+                      [class]="isNodeExpanded(node.id) ? 'fa fa-chevron-down' : 'fa fa-chevron-right'"
+                      style="color: #6c757d; font-size: 12px"
+                    ></i>
+                    <span style="font-weight: 600; color: #2c3e50">{{ node.nom || node.code }}</span>
+                  </div>
                   <div style="font-size: 12px; color: #6c757d">{{ node.code }}</div>
-                  <!-- Responsables summary removed as per request to show full list -->
                 </div>
 
                 <div style="display: flex; gap: 8px; align-items: center">
+                  <input
+                    type="checkbox"
+                    class="org-checkbox"
+                    [checked]="isDeptSelected(node)"
+                    (click)="toggleDeptSelection(node); $event.stopPropagation()"
+                  />
                   <span *ngIf="(node.children?.length || 0) > 0" style="font-size: 13px; color: #6c757d">{{ node.children.length }}</span>
-                  <button class="btn btn-sm btn-outline-primary" (click)="onSelectDept(node); $event.stopPropagation()">Choisir</button>
                 </div>
               </div>
 
               <!-- Affectations (People grouped by Type) -->
-              <ul *ngIf="getAffectationKeys(node).length > 0" style="margin: 6px 0 0 12px; padding-left: 0; list-style: none">
+              <ul
+                *ngIf="getAffectationKeys(node).length > 0"
+                [style.marginLeft.px]="level * 18"
+                style="margin: 6px 0 0 0; padding-left: 0; list-style: none"
+              >
                 <ng-container *ngFor="let type of getAffectationKeys(node)">
                   <li style="margin: 4px 0">
                     <!-- Group Header (Type) -->
@@ -1061,6 +1091,12 @@
                         style="margin: 4px 0 4px 12px; padding: 4px 8px; background: #fff; border: 1px solid #f1f5f9; border-radius: 4px"
                       >
                         <div style="display: flex; align-items: center; gap: 8px">
+                          <input
+                            type="checkbox"
+                            class="org-checkbox"
+                            [checked]="isPersonSelected(node, person)"
+                            (click)="togglePersonSelection(node, person); $event.stopPropagation()"
+                          />
                           <i class="fa fa-user" style="color: #6c757d; font-size: 12px"></i>
                           <span style="font-size: 13px; color: #212529">{{ person.nomPrenom || person.matricule }}</span>
                         </div>
@@ -1070,9 +1106,13 @@
                 </ng-container>
               </ul>
 
-              <ul *ngIf="node.children?.length" style="margin: 6px 0 0 12px; padding-left: 0; list-style: none">
+              <ul
+                *ngIf="isNodeExpanded(node.id) && node.children?.length"
+                [style.marginLeft.px]="(level + 1) * 18"
+                style="margin: 6px 0 0 0; padding-left: 0; list-style: none"
+              >
                 <ng-container *ngFor="let c of node.children">
-                  <ng-template [ngTemplateOutlet]="renderNode" [ngTemplateOutletContext]="{ node: c }"></ng-template>
+                  <ng-template [ngTemplateOutlet]="renderNode" [ngTemplateOutletContext]="{ node: c, level: level + 1 }"></ng-template>
                 </ng-container>
               </ul>
             </li>
@@ -1098,7 +1138,7 @@
 
   <div class="modal-footer">
     <button (click)="AddTaskModal.close('Close click')" class="btn btn-light btn-model" type="button">Annuler</button>
-    <button (click)="saveTask()" class="btn btn-primary btn-model" type="button">Enregistrer</button>
+    <button (click)="saveTask()" [disabled]="btnSaveTaskDisabled" class="btn btn-primary btn-model" type="button">Enregistrer</button>
   </div>
 </ng-template>
 

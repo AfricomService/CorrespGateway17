@@ -118,6 +118,7 @@ export class CorrespDetailComponent implements OnInit {
   // departements: DepartementTreeFeignDTO[] = [];
   selectedDepartement = '';
   selectedDepartementName = '';
+  selectedResponsables: { codeDept?: string | null; matriculePers?: string | null; displayName?: string | null }[] = [];
 
   // === NEW: Tree related state ===
   taskTree: DepartementTreeFeignDTO[] = []; // arbre récupéré depuis orgacare
@@ -569,7 +570,42 @@ export class CorrespDetailComponent implements OnInit {
 
   // ------------------------------------------------------------------------------------------------------------------------
 
+  // --- helper: convert dayjs/string -> ISO string or null
+  private toIso(value: any): string | null {
+    if (!value) return null;
+    // dayjs objects have toISOString via toJSON
+    if (typeof value === 'object' && typeof (value as any).toJSON === 'function') {
+      try {
+        return (value as any).toJSON();
+      } catch {
+        return String(value);
+      }
+    }
+    // string already
+    return String(value);
+  }
+
+  // --- helper: build a readable summary of selectedResponsables (for object/responsible display)
+  private getResponsablesSummary(): string {
+    if (!this.selectedResponsables || this.selectedResponsables.length === 0) return '';
+    const parts: string[] = [];
+    for (const r of this.selectedResponsables) {
+      if (r.matriculePers) {
+        // prefer person name if you have matricule -> but we only have matricule; use matricule
+        parts.push(r.matriculePers);
+      } else if (r.codeDept) {
+        parts.push(r.codeDept);
+      }
+    }
+    return parts.join(', ');
+  }
+
+  // --- replace existing saveTask() with this ---
   saveTask(): void {
+    if (this.btnSaveTaskDisabled) {
+      return;
+    }
+    // reset client-side errors
     this.validationErrors = {};
 
     if (!this.validateForm()) {
@@ -578,22 +614,77 @@ export class CorrespDetailComponent implements OnInit {
 
     this.btnSaveTaskDisabled = true;
 
-    const taskModel: ITasks = {} as ITasks;
+    // build 'object' (server requires non-null)
+    const responsibleText = this.getResponsablesSummary() || this.selectedDepartement || '';
+    const taskTypeText = this.selectedType ? this.selectedType.toUpperCase() : 'N/A';
 
-    taskModel.responsible = this.selectedDepartement;
-    taskModel.responsableName = this.selectedDepartementName;
-    taskModel.dueDate = dayjs(this.dateLimite);
-    taskModel.taskType = this.selectedType;
-    taskModel.commentaire = this.commentaire;
+    let objectBuilder = `${responsibleText} effectuera la tâche de ${taskTypeText}`;
+    if (this.dateLimite) {
+      const formatted = dayjs(this.dateLimite).format('DD/MM/YYYY');
+      objectBuilder += ` en ne dépassant pas la date limite du ${formatted}`;
+    }
 
-    console.log(taskModel);
+    // prepare payload
+    const taskModel: any = {
+      object: objectBuilder,
+      taskType: this.selectedType || null,
+      commentaire: this.commentaire || null,
+      // responsible for display (optional) — keep readable label
+      responsible: responsibleText || this.selectedDepartement || null,
+      // dueDate as ISO string (server expects String or date)
+      dueDate: this.dateLimite ? this.toIso(dayjs(this.dateLimite)) : null,
+      // responsables: only include fields that actually exist (no empty keys)
+      responsables: (this.selectedResponsables || [])
+        .map(r => {
+          const out: any = {};
+          if (r.codeDept) out.codeDept = r.codeDept;
+          if (r.matriculePers) out.matriculePers = r.matriculePers;
+          return out;
+        })
+        .filter(x => Object.keys(x).length > 0),
+    };
 
-    this.correspService.addTaskToCorresp(taskModel, this.correspLoaded.id).subscribe(res => {
-      this.resetForm();
+    // debug
+    console.log('POST /api/corresps/{id}/tasks payload =', taskModel);
 
-      this.modalService.dismissAll();
+    // call service: your CorrespService.addTaskToCorresp expects ITasks and converts dates
+    this.correspService.addTaskToCorresp(taskModel, this.correspLoaded.id).subscribe({
+      next: resp => {
+        this.btnSaveTaskDisabled = false;
+        this.resetForm();
+        this.modalService.dismissAll();
+        // refresh local tasks list (without full reload)
+        this.taskService.getAllTasksByCorrespId({ correspId: this.correspLoaded.id }).subscribe(r => {
+          this.tachesAssociees = r.body || [];
+        });
+        this.showNotification('Tâche ajoutée avec succès', 'success');
+      },
+      error: err => {
+        this.btnSaveTaskDisabled = false;
+        console.error('Erreur ajout tâche', err);
 
-      window.location.reload();
+        // Try to parse JHipster / Problem JSON with fieldErrors
+        if (err && err.error) {
+          const payload = err.error;
+          // if fieldErrors present, map to validationErrors
+          if (Array.isArray(payload.fieldErrors) && payload.fieldErrors.length) {
+            payload.fieldErrors.forEach((fe: any) => {
+              // fe.field may be 'object' etc.
+              this.validationErrors[fe.field] = fe.message || 'Valeur invalide';
+            });
+            this.showNotification('Erreur de validation : corrigez les champs indiqués', 'error');
+            return;
+          }
+          // generic message
+          if (payload.message) {
+            this.showNotification(payload.message, 'error');
+            return;
+          }
+        }
+
+        // fallback
+        this.showNotification("Erreur lors de l'ajout de la tâche (serveur)", 'error');
+      },
     });
   }
 
@@ -605,6 +696,7 @@ export class CorrespDetailComponent implements OnInit {
     this.selectedDepartementName = '';
     this.selectedDept = null;
     this.selectedType = '';
+    this.selectedResponsables = [];
   }
 
   validateForm(): boolean {
@@ -617,9 +709,8 @@ export class CorrespDetailComponent implements OnInit {
       isValid = false;
     }
 
-    // Validate task name
-    if (!this.selectedDepartement || this.selectedDepartement.trim() === '') {
-      this.validationErrors['departement'] = 'Le departement est obligatoire';
+    if (!this.selectedResponsables || this.selectedResponsables.length === 0) {
+      this.validationErrors['responsables'] = 'Sélectionnez au moins un responsable (dépt ou personne)';
       isValid = false;
     }
 
@@ -733,6 +824,8 @@ export class CorrespDetailComponent implements OnInit {
   // Selection d'un noeud (departement) dans l'arbre
   // --------------------------------------------------------------------------
   expandedAffectations: Set<string> = new Set();
+  expandedNodes: Set<number> = new Set();
+  private levelPalette: string[] = ['#1e90ff', '#22c55e', '#f59e0b', '#8b5cf6', '#ef4444', '#14b8a6'];
 
   toggleAffectation(nodeId: number, type: string): void {
     const key = `${nodeId}-${type}`;
@@ -765,6 +858,72 @@ export class CorrespDetailComponent implements OnInit {
     this.selectedDept = node;
     this.selectedDepartement = node.code ?? '';
     this.selectedDepartementName = node.nom ?? '';
+  }
+
+  toggleDeptSelection(node: DepartementTreeFeignDTO): void {
+    const code = node.code ?? '';
+    if (!code) return;
+    const idx = this.selectedResponsables.findIndex(r => r.codeDept === code && !r.matriculePers);
+    if (idx >= 0) {
+      this.selectedResponsables.splice(idx, 1);
+    } else {
+      this.selectedResponsables.push({ codeDept: code, displayName: node.nom ?? code });
+    }
+  }
+
+  isDeptSelected(node: DepartementTreeFeignDTO): boolean {
+    const code = node.code ?? '';
+    return !!this.selectedResponsables.find(r => r.codeDept === code && !r.matriculePers);
+  }
+
+  togglePersonSelection(node: DepartementTreeFeignDTO, person: PersonneFeignDTO): void {
+    const code = node.code ?? '';
+    const matricule = person.matricule ?? '';
+    if (!matricule) return;
+    const idx = this.selectedResponsables.findIndex(r => r.matriculePers === matricule && r.codeDept === code);
+    if (idx >= 0) {
+      this.selectedResponsables.splice(idx, 1);
+    } else {
+      this.selectedResponsables.push({ codeDept: code || null, matriculePers: matricule, displayName: person.nomPrenom ?? matricule });
+    }
+  }
+
+  isPersonSelected(node: DepartementTreeFeignDTO, person: PersonneFeignDTO): boolean {
+    const code = node.code ?? '';
+    const matricule = person.matricule ?? '';
+    return !!this.selectedResponsables.find(r => r.matriculePers === matricule && r.codeDept === code);
+  }
+
+  toggleNodeExpand(nodeId: number): void {
+    if (this.expandedNodes.has(nodeId)) {
+      this.expandedNodes.delete(nodeId);
+    } else {
+      this.expandedNodes.add(nodeId);
+    }
+  }
+
+  isNodeExpanded(nodeId: number): boolean {
+    return this.expandedNodes.has(nodeId);
+  }
+
+  removeSelection(sel: { codeDept?: string | null; matriculePers?: string | null }): void {
+    let idx = -1;
+    if (sel.matriculePers) {
+      idx = this.selectedResponsables.findIndex(r => r.matriculePers === sel.matriculePers && r.codeDept === (sel.codeDept ?? r.codeDept));
+    } else if (sel.codeDept) {
+      idx = this.selectedResponsables.findIndex(r => r.codeDept === sel.codeDept && !r.matriculePers);
+    }
+    if (idx >= 0) {
+      this.selectedResponsables.splice(idx, 1);
+    }
+  }
+
+  clearSelections(): void {
+    this.selectedResponsables = [];
+  }
+
+  getLevelColor(level: number): string {
+    return this.levelPalette[level % this.levelPalette.length];
   }
 
   // Utilitaire pour afficher les responsables d'un nœud (liste de noms)
