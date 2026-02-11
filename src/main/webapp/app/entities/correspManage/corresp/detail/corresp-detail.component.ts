@@ -9,7 +9,7 @@ import { IPj } from '../../pj/pj.model';
 import { PjService } from '../../pj/service/pj.service';
 import { IUser } from '../../../../admin/user-management/user-management.model';
 import { HttpResponse } from '@angular/common/http';
-// import { DepartementTreeFeignDTO } from '../update/DepartementTreeFeignDTO';
+import { DepartementTreeFeignDTO } from '../update/DepartementTreeFeignDTO';
 // import { IOrga } from '../orga';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ITypedocument } from '../../../configManage/typedocument/typedocument.model';
@@ -21,6 +21,8 @@ import { saveAs } from 'file-saver';
 import { ContactCompanyService } from 'app/entities/configManage/contact-company/service/contact-company.service';
 import { IContactCompany } from 'app/entities/configManage/contact-company/contact-company.model';
 import { IPersonCompany } from 'app/entities/configManage/person-company/person-company.model';
+import { PersonneFeignDTO } from '../update/PersonneFeignDTO';
+import { TypeAffectation } from '../update/enums';
 
 // Mocking the Interfaces locally for this example (or import them from your shared models)
 export enum CorrespStatus {
@@ -114,7 +116,17 @@ export class CorrespDetailComponent implements OnInit {
   };
 
   // departements: DepartementTreeFeignDTO[] = [];
-  // selectedDepartement = '';
+  selectedDepartement = '';
+  selectedDepartementName = '';
+
+  // === NEW: Tree related state ===
+  taskTree: DepartementTreeFeignDTO[] = []; // arbre récupéré depuis orgacare
+  loadingTree = false;
+  selectedDept: DepartementTreeFeignDTO | null = null;
+
+  // liste d'organigrammes (optionnel) et code sélectionné
+  orgaList: any[] = [];
+  selectedOrgaCode: string | null = null;
 
   dateLimite = '';
   selectedType = '';
@@ -568,7 +580,8 @@ export class CorrespDetailComponent implements OnInit {
 
     const taskModel: ITasks = {} as ITasks;
 
-    // taskModel.responsible = this.selectedDepartement;
+    taskModel.responsible = this.selectedDepartement;
+    taskModel.responsableName = this.selectedDepartementName;
     taskModel.dueDate = dayjs(this.dateLimite);
     taskModel.taskType = this.selectedType;
     taskModel.commentaire = this.commentaire;
@@ -588,7 +601,9 @@ export class CorrespDetailComponent implements OnInit {
     this.dateLimite = '';
     this.commentaire = '';
     this.validationErrors = {};
-    // this.selectedDepartement = '';
+    this.selectedDepartement = '';
+    this.selectedDepartementName = '';
+    this.selectedDept = null;
     this.selectedType = '';
   }
 
@@ -603,15 +618,10 @@ export class CorrespDetailComponent implements OnInit {
     }
 
     // Validate task name
-    // if (!this.selectedOrga) {
-    //   this.validationErrors['organigramme'] = 'L Organigramme est obligatoire';
-    //   isValid = false;
-    // }
-
-    // if (!this.selectedDepartement || this.selectedDepartement.trim() === '') {
-    //   this.validationErrors['departement'] = 'Le departement est obligatoire';
-    //   isValid = false;
-    // }
+    if (!this.selectedDepartement || this.selectedDepartement.trim() === '') {
+      this.validationErrors['departement'] = 'Le departement est obligatoire';
+      isValid = false;
+    }
 
     return isValid;
   }
@@ -620,13 +630,152 @@ export class CorrespDetailComponent implements OnInit {
 
   openTasksModal(content: any): void {
     // this.selectedOrga = null;
-    // this.selectedDepartement = '';
+    this.selectedDepartement = '';
     this.resetForm();
+    this.prepareAndLoadOrgaThenTree();
     this.modalService.open(content, { size: 'xl' });
   }
 
   openDeleteModal(content: any): void {
     this.modalService.open(content, { centered: true, size: 'xl' });
+  }
+
+  private prepareAndLoadOrgaThenTree(): void {
+    // Si on a déjà un orgaCode sélectionné, on le charge directement
+    if (this.selectedOrgaCode) {
+      this.loadTreeForModal(this.selectedOrgaCode);
+      return;
+    }
+
+    // Sinon on demande la liste des organigrammes puis on charge le premier
+    this.correspService.queryOrga().subscribe({
+      next: (res: HttpResponse<any[]>) => {
+        this.orgaList = res.body || [];
+        // essayer de récupérer un code dans plusieurs schémas possibles
+        const first = this.orgaList?.[0];
+        if (first) {
+          this.selectedOrgaCode = first.code ?? first.orgaCode ?? first.id?.toString() ?? null;
+        }
+        if (this.selectedOrgaCode) {
+          this.loadTreeForModal(this.selectedOrgaCode);
+        } else {
+          // fallback : optionally load a default code
+          console.warn('Aucun organigramme trouvé pour charger l’arbre.');
+          this.taskTree = [];
+        }
+      },
+      error: err => {
+        console.error('Erreur récupération organigrammes', err);
+        this.taskTree = [];
+      },
+    });
+  }
+
+  // --------------------------------------------------------------------------
+  // Load tree from backend and normalize it
+  // --------------------------------------------------------------------------
+  loadTreeForModal(orgaCode: string): void {
+    if (!orgaCode) {
+      this.taskTree = [];
+      return;
+    }
+    this.loadingTree = true;
+    this.correspService.getDepartementHierarchyByOrganigramme(orgaCode).subscribe({
+      next: (res: HttpResponse<DepartementTreeFeignDTO[]>) => {
+        const body = res.body || [];
+        this.taskTree = this.normalizeTree(body);
+        this.loadingTree = false;
+      },
+      error: err => {
+        console.error('Erreur getDepartementHierarchyByOrganigramme', err);
+        this.taskTree = [];
+        this.loadingTree = false;
+      },
+    });
+  }
+
+  // --------------------------------------------------------------------------
+  // Normalisation / util (défensif)
+  // --------------------------------------------------------------------------
+  private normalizeTree(nodes?: DepartementTreeFeignDTO[] | null): DepartementTreeFeignDTO[] {
+    if (!nodes) return [];
+    return nodes.map(n => this.normalizeNode(n));
+  }
+
+  private normalizeNode(node: DepartementTreeFeignDTO): DepartementTreeFeignDTO {
+    const children = node.children && Array.isArray(node.children) ? node.children.map(c => this.normalizeNode(c)) : [];
+
+    const rawAff = (node as any).affectationsByType || {};
+    const affs: Partial<Record<TypeAffectation, PersonneFeignDTO[]>> = {};
+
+    // copier proprement les clés connues
+    Object.keys(rawAff).forEach(k => {
+      if ((Object.values(TypeAffectation) as string[]).includes(k)) {
+        affs[k as TypeAffectation] = (rawAff as any)[k] ?? [];
+      } else {
+        // clé inconnue: defensive -> fusionner dans MEMBRE
+        affs.MEMBRE = ((affs.MEMBRE || []) as PersonneFeignDTO[]).concat((rawAff as any)[k] || []);
+      }
+    });
+
+    (Object.values(TypeAffectation) as TypeAffectation[]).forEach(t => {
+      affs[t] = affs[t] || [];
+    });
+
+    return {
+      ...node,
+      children,
+      affectationsByType: affs,
+    };
+  }
+
+  // --------------------------------------------------------------------------
+  // Selection d'un noeud (departement) dans l'arbre
+  // --------------------------------------------------------------------------
+  expandedAffectations: Set<string> = new Set();
+
+  toggleAffectation(nodeId: number, type: string): void {
+    const key = `${nodeId}-${type}`;
+    if (this.expandedAffectations.has(key)) {
+      this.expandedAffectations.delete(key);
+    } else {
+      this.expandedAffectations.add(key);
+    }
+  }
+
+  isAffectationExpanded(nodeId: number, type: string): boolean {
+    return this.expandedAffectations.has(`${nodeId}-${type}`);
+  }
+
+  getAffectationKeys(node: DepartementTreeFeignDTO): string[] {
+    if (!node.affectationsByType) return [];
+    // Only return keys that have people
+    return Object.keys(node.affectationsByType).filter(k => {
+      const list = (node.affectationsByType as any)[k];
+      return Array.isArray(list) && list.length > 0;
+    });
+  }
+
+  getPeopleForType(node: DepartementTreeFeignDTO, type: string): PersonneFeignDTO[] {
+    if (!node.affectationsByType) return [];
+    return (node.affectationsByType as any)[type] || [];
+  }
+
+  onSelectDept(node: DepartementTreeFeignDTO): void {
+    this.selectedDept = node;
+    this.selectedDepartement = node.code ?? '';
+    this.selectedDepartementName = node.nom ?? '';
+  }
+
+  // Utilitaire pour afficher les responsables d'un nœud (liste de noms)
+  getResponsablesForNode(node: DepartementTreeFeignDTO): string {
+    if (!node || !node.affectationsByType) return '';
+    const chefs = (node.affectationsByType['CHEF'] || []).map((p: any) => p.nomPrenom).filter(Boolean);
+    const membres = (node.affectationsByType['MEMBRE'] || []).map((p: any) => p.nomPrenom).filter(Boolean);
+    // priorité chefs
+    if (chefs.length) return chefs.join(', ');
+    if (membres.length) return membres.join(', ');
+    return '';
   }
 
   // onOrgaChange(): void {

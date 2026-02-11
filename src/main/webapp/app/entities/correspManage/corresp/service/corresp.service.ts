@@ -221,6 +221,29 @@ export class CorrespService {
 
     return this.http.post(`${this.resourceUrl}AddTaskToCorresp`, formData);
   }
+  addTaskToCorrespJson(correspId: number, tasksDTO: ITasks) {
+    // Préparer un "plain" object pour l'envoi (convertir dayjs en ISO si besoin)
+    const payload: any = {
+      ...tasksDTO,
+    };
+
+    // si dueDate est un dayjs (ou possède toISOString), convertir en string ISO
+    const dd: any = (tasksDTO as any).dueDate;
+    if (dd) {
+      try {
+        // dayjs -> toISOString, Date -> toISOString, string -> keep
+        payload.dueDate = typeof dd.toISOString === 'function' ? dd.toISOString() : dd;
+      } catch (e) {
+        // fallback: laisser tel quel
+        payload.dueDate = dd;
+      }
+    }
+
+    // Appel POST JSON vers /api/corresps/{correspId}/tasks
+    return this.http.post<any>(`${this.resourceUrl}/${encodeURIComponent(String(correspId))}/tasks`, payload, {
+      observe: 'response',
+    });
+  }
 
   addPjToCorresp(pjDto: IPj, correspId: number) {
     const formData = new FormData();

@@ -19,9 +19,6 @@
   >
     <!-- Left Side Buttons -->
     <div style="display: flex; gap: 12px; align-items: center">
-      <!--      <button class="btn btn-outline-primary" style="font-weight: 600; text-transform: uppercase">Réponse</button>-->
-      <!--      <button class="btn btn-outline-primary" style="font-weight: 600; text-transform: uppercase">Imprimer</button>-->
-      <!--      <button class="btn btn-outline-primary" style="font-weight: 600; text-transform: uppercase">Journal</button>-->
       <h5
         style="font-weight: bold; margin: 0"
         [ngStyle]="{
@@ -482,7 +479,7 @@
                           viewBox="0 0 16 16"
                         >
                           <path
-                            d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325"
+                            d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293z"
                           />
                         </svg>
                       </button>
@@ -566,11 +563,7 @@
                   <dxi-item name="undo"></dxi-item>
                   <dxi-item name="redo"></dxi-item>
                   <dxi-item name="separator"></dxi-item>
-                  <dxi-item
-                    name="size"
-                    [acceptedValues]="['8pt', '10pt', '12pt', '14pt', '18pt', '24pt', '36pt']"
-                    [options]="{ inputAttr: { 'aria-label': 'Font size' } }"
-                  ></dxi-item>
+                  <dxi-item name="size" [acceptedValues]="['8pt', '10pt', '12pt', '14pt', '18pt', '24pt', '36pt']"></dxi-item>
                   <dxi-item
                     name="font"
                     [acceptedValues]="[
@@ -583,7 +576,6 @@
                       'Times New Roman',
                       'Verdana'
                     ]"
-                    [options]="{ inputAttr: { 'aria-label': 'Font family' } }"
                   ></dxi-item>
                   <dxi-item name="separator"></dxi-item>
                   <dxi-item name="bold"></dxi-item>
@@ -599,11 +591,7 @@
                   <dxi-item name="orderedList"></dxi-item>
                   <dxi-item name="bulletList"></dxi-item>
                   <dxi-item name="separator"></dxi-item>
-                  <dxi-item
-                    name="header"
-                    [acceptedValues]="[false, 1, 2, 3, 4, 5]"
-                    [options]="{ inputAttr: { 'aria-label': 'Header' } }"
-                  ></dxi-item>
+                  <dxi-item name="header" [acceptedValues]="[false, 1, 2, 3, 4, 5]"></dxi-item>
                   <dxi-item name="separator"></dxi-item>
                   <dxi-item name="color"></dxi-item>
                   <dxi-item name="background"></dxi-item>
@@ -617,12 +605,6 @@
                   <dxi-item name="separator"></dxi-item>
                   <dxi-item name="insertTable"></dxi-item>
                   <dxi-item name="deleteTable"></dxi-item>
-                  <dxi-item name="insertRowAbove"></dxi-item>
-                  <dxi-item name="insertRowBelow"></dxi-item>
-                  <dxi-item name="deleteRow"></dxi-item>
-                  <dxi-item name="insertColumnLeft"></dxi-item>
-                  <dxi-item name="insertColumnRight"></dxi-item>
-                  <dxi-item name="deleteColumn"></dxi-item>
                 </dxo-toolbar>
               </dx-html-editor>
             </div>
@@ -689,7 +671,6 @@
                     border-left: 4px solid #0d6efd;
                   "
                 >
-                  <!-- File Info Row -->
                   <div style="display: flex; align-items: center; gap: 12px">
                     <p style="margin: 0; color: #495057; line-height: 1.6; flex: 1">
                       <strong>{{ file.name }}</strong> ({{ file.size / 1024 | number: '1.0-2' }} KB)
@@ -716,7 +697,6 @@
                     </button>
                   </div>
 
-                  <!-- Progress Bar -->
                   <div
                     *ngIf="getUploadProgress(i) !== null"
                     style="width: 100%; background-color: #e9ecef; border-radius: 4px; overflow: hidden; height: 8px"
@@ -727,7 +707,6 @@
                     ></div>
                   </div>
 
-                  <!-- Upload Status Text -->
                   <div *ngIf="getUploadProgress(i) !== null" style="font-size: 0.85em; color: #6c757d; text-align: right">
                     <span *ngIf="getUploadProgress(i)! < 100">Téléchargement en cours... {{ getUploadProgress(i) }} %</span>
                     <span *ngIf="getUploadProgress(i) === 100" style="color: #198754">✓ Téléchargement terminé</span>
@@ -735,7 +714,6 @@
                 </div>
               </div>
 
-              <!-- Empty State -->
               <div
                 *ngIf="uploadedFiles.length === 0"
                 style="padding: 24px; text-align: center; background-color: #f8f9fa; border-radius: 8px; border: 2px dashed #dee2e6"
@@ -750,24 +728,7 @@
       </div>
     </div>
 
-    <!-- Bottom Toolbar -->
-    <!--    <div-->
-    <!--      style="-->
-    <!--        display: flex;-->
-    <!--        justify-content: flex-end;-->
-    <!--        align-items: center;-->
-    <!--        padding: 12px 16px;-->
-    <!--        background-color: #f8f9fa;-->
-    <!--        border: 1px solid #dee2e6;-->
-    <!--        border-radius: 8px;-->
-    <!--        margin-top: 1em;-->
-    <!--      "-->
-    <!--    >-->
-    <!--      <div style="display: flex; gap: 12px">-->
-    <!--        <button class="btn btn-secondary" style="font-weight: 600; text-transform: uppercase; min-width: 120px">Annuler</button>-->
-    <!--        <button class="btn btn-success" style="font-weight: 600; text-transform: uppercase; min-width: 120px">Soumettre</button>-->
-    <!--      </div>-->
-    <!--    </div>-->
+    <!-- Bottom Toolbar (commented out) -->
   </div>
 </div>
 
@@ -837,9 +798,84 @@
           <input type="date" class="form-control" [(ngModel)]="dateLimite" name="dateLimite" />
         </div>
 
-        <!-- ************************ RIGHT SIDE ************************ -->
+        <!-- ************************ RIGHT SIDE: ORGANIGRAMME TREE ************************ -->
         <div class="col-md-7">
-          <!-- Tree logic removed as requested -->
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <!-- Selected department summary -->
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px">
+              <div>
+                <label class="form-label fw-semibold mb-1">Département sélectionné</label>
+                <div style="display: flex; gap: 8px; align-items: center">
+                  <div style="padding: 8px 12px; border-radius: 8px; background: #f1f5f9; border: 1px solid #e6eef9">
+                    <strong>{{ selectedDepartementName || 'Aucun' }}</strong>
+                    <div style="font-size: 12px; color: #6c757d">{{ selectedDepartement || '' }}</div>
+                  </div>
+                </div>
+              </div>
+              <div style="text-align: right">
+                <button
+                  class="btn btn-sm btn-outline-secondary"
+                  (click)="selectedDept = null; selectedDepartement = ''; selectedDepartementName = ''"
+                >
+                  Effacer
+                </button>
+              </div>
+            </div>
+
+            <!-- Tree container -->
+            <div style="height: 420px; overflow: auto; border: 1px solid #e9ecef; border-radius: 8px; padding: 12px; background: #fff">
+              <div *ngIf="loadingTree" style="text-align: center; padding: 40px 0; color: #6c757d">Chargement de l'organigramme...</div>
+
+              <ul *ngIf="!loadingTree && taskTree?.length" style="padding-left: 0; margin: 0; list-style: none">
+                <ng-container *ngFor="let node of taskTree">
+                  <ng-template [ngTemplateOutlet]="renderNode" [ngTemplateOutletContext]="{ node: node }"></ng-template>
+                </ng-container>
+              </ul>
+
+              <div *ngIf="!loadingTree && (!taskTree || taskTree.length === 0)" style="text-align: center; color: #6c757d">
+                Aucun département disponible.
+              </div>
+            </div>
+          </div>
+
+          <!-- recursive node template -->
+          <ng-template #renderNode let-node="node">
+            <li style="margin: 8px 0; list-style: none">
+              <div
+                (click)="onSelectDept(node)"
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  gap: 8px;
+                  padding: 8px;
+                  border-radius: 8px;
+                  cursor: pointer;
+                "
+                [style.border]="selectedDept?.id === node.id ? '2px solid #0d6efd' : '1px solid #f1f5f9'"
+                [style.background]="selectedDept?.id === node.id ? '#e9f2ff' : '#ffffff'"
+              >
+                <div style="display: flex; flex-direction: column; gap: 3px">
+                  <div style="font-weight: 600; color: #2c3e50">{{ node.nom || node.code }}</div>
+                  <div style="font-size: 12px; color: #6c757d">{{ node.code }}</div>
+                  <div *ngIf="getResponsablesForNode(node)" style="font-size: 12px; color: #495057; margin-top: 6px">
+                    <small><em>Responsable(s):</em> {{ getResponsablesForNode(node) }}</small>
+                  </div>
+                </div>
+
+                <div style="display: flex; gap: 8px; align-items: center">
+                  <span *ngIf="(node.children?.length || 0) > 0" style="font-size: 13px; color: #6c757d">{{ node.children.length }}</span>
+                  <button class="btn btn-sm btn-outline-primary" (click)="onSelectDept(node); $event.stopPropagation()">Choisir</button>
+                </div>
+              </div>
+
+              <ul *ngIf="node.children?.length" style="margin: 6px 0 0 12px; padding-left: 0; list-style: none">
+                <ng-container *ngFor="let c of node.children">
+                  <ng-template [ngTemplateOutlet]="renderNode" [ngTemplateOutletContext]="{ node: c }"></ng-template>
+                </ng-container>
+              </ul>
+            </li>
+          </ng-template>
         </div>
       </div>
 
@@ -866,5 +902,3 @@
     </button>
   </div>
 </ng-template>
-
-<!-- Unused modals removed -->

@@ -37,7 +37,7 @@
       </h5>
       <div *ngIf="correspLoaded?.reference; else showButton">
         <span style="font-weight: bold; font-size: 1.2em; color: #2c3e50; font-style: italic">
-          {{ correspLoaded.reference }}
+          {{ correspLoaded?.reference }}
         </span>
       </div>
 
@@ -381,14 +381,14 @@
                 style="overflow: hidden; transition: max-height 0.5s ease, padding 0.5s ease"
               >
                 <div class="alert alert-light" role="alert" style="border: 1px solid #dee2e6; color: #495057">
-                  <p><strong>Objet :</strong> {{ correspLoaded.subject }}</p>
+                  <p><strong>Objet :</strong> {{ correspLoaded?.subject }}</p>
                   <p>
-                    <strong>Expéditeur :</strong> {{ correspLoaded.sender }} | <strong>Destinataire :</strong>
-                    {{ correspLoaded.labelDestinataire }} | <strong>CC :</strong> {{ correspLoaded.labelContactCC }}
+                    <strong>Expéditeur :</strong> {{ correspLoaded?.sender }} | <strong>Destinataire :</strong>
+                    {{ correspLoaded?.labelDestinataire }} | <strong>CC :</strong> {{ correspLoaded?.labelContactCC }}
                   </p>
                   <p>
-                    <strong>Date :</strong> {{ formatLongDate(correspLoaded.courrierDate) }} | <strong>Contact :</strong>
-                    {{ correspLoaded.contactEmail }}
+                    <strong>Date :</strong> {{ formatLongDate(correspLoaded?.courrierDate) }} | <strong>Contact :</strong>
+                    {{ correspLoaded?.contactEmail }}
                   </p>
                 </div>
               </div>
@@ -413,7 +413,7 @@
               <div style="display: flex; align-items: center; gap: 12px">
                 <button
                   (click)="openTasksModal(AddTaskModal); $event.stopPropagation()"
-                  *ngIf="correspLoaded.status !== CorrespStatus.CLOSED"
+                  *ngIf="correspLoaded?.status !== CorrespStatus.CLOSED"
                   [disabled]="btnSaveTaskDisabled"
                   class="btn btn-primary btn-sm"
                   style="font-weight: bold; font-size: 1.2em; padding: 0 0.5em"
@@ -489,7 +489,7 @@
                     </p>
                     <div style="display: flex; gap: 0.5em">
                       <span
-                        (click)="changeTasksStatus(correspLoaded.id, task.id, 'CANCELLED')"
+                        (click)="changeTasksStatus(correspLoaded?.id!, task.id, 'CANCELLED')"
                         *ngIf="CorrespStatus.DRAFT === task.status"
                         [style.background-color]="'#6a2020'"
                         class="badge"
@@ -499,7 +499,7 @@
                       </span>
 
                       <span
-                        (click)="deleteTask(correspLoaded.id, task.id)"
+                        (click)="deleteTask(correspLoaded?.id!, task.id)"
                         *ngIf="CorrespStatus.DRAFT === task.status"
                         [style.background-color]="'#dc3545'"
                         class="badge"
@@ -509,7 +509,7 @@
                       </span>
 
                       <span
-                        (click)="changeTasksStatus(correspLoaded.id, task.id, 'IN_PROGRESS')"
+                        (click)="changeTasksStatus(correspLoaded?.id!, task.id, 'IN_PROGRESS')"
                         *ngIf="CorrespStatus.DRAFT === task.status"
                         [style.background-color]="'#0d6efd'"
                         class="badge"
@@ -519,7 +519,7 @@
                       </span>
 
                       <span
-                        (click)="changeTasksStatus(correspLoaded.id, task.id, 'CANCELLED')"
+                        (click)="changeTasksStatus(correspLoaded?.id!, task.id, 'CANCELLED')"
                         *ngIf="CorrespStatus.IN_PROGRESS === task.status"
                         [style.background-color]="'#6a2020'"
                         class="badge"
@@ -529,7 +529,7 @@
                       </span>
 
                       <span
-                        (click)="changeTasksStatus(correspLoaded.id, task.id, 'CLOSED')"
+                        (click)="changeTasksStatus(correspLoaded?.id!, task.id, 'CLOSED')"
                         *ngIf="CorrespStatus.IN_PROGRESS === task.status"
                         [style.background-color]="'#198754'"
                         class="badge"
@@ -688,7 +688,7 @@
               <div style="display: flex; align-items: center; gap: 12px">
                 <button
                   (click)="fileInput.click(); $event.stopPropagation()"
-                  *ngIf="correspLoaded.status === CorrespStatus.DRAFT"
+                  *ngIf="correspLoaded?.status === CorrespStatus.DRAFT"
                   [disabled]="isUploading"
                   [style.cursor]="isUploading ? 'not-allowed' : 'pointer'"
                   [style.opacity]="isUploading ? '0.5' : '1'"
@@ -845,7 +845,7 @@
     "
   >
     <div
-      *ngIf="correspLoaded.status !== CorrespStatus.CLOSED"
+      *ngIf="correspLoaded?.status !== CorrespStatus.CLOSED"
       style="display: flex; align-items: center; width: 100%; justify-content: space-between"
     >
       <div>
@@ -853,22 +853,22 @@
           class="btn"
           style="color: white; cursor: auto; font-weight: 600; text-transform: uppercase; min-width: 120px; background-color: #1f57ba"
         >
-          Dernière modification - {{ formatLongDateWithTime(correspLoaded.updatedDate) }}
+          Dernière modification - {{ formatLongDateWithTime(correspLoaded?.updatedDate) }}
         </button>
       </div>
       <div style="display: flex; align-items: center; gap: 12px">
         <button class="btn btn-secondary" style="font-weight: 600; text-transform: uppercase; min-width: 120px">Annuler</button>
         <button
-          (click)="soumettreCorresp(correspLoaded.id)"
-          *ngIf="correspLoaded.status === CorrespStatus.DRAFT"
+          (click)="soumettreCorresp(correspLoaded?.id!)"
+          *ngIf="correspLoaded?.status === CorrespStatus.DRAFT"
           class="btn btn-success"
           style="font-weight: 600; text-transform: uppercase; min-width: 120px"
         >
           Soumettre
         </button>
         <button
-          (click)="cloturerCorresp(correspLoaded.id)"
-          *ngIf="correspLoaded.status === CorrespStatus.IN_PROGRESS"
+          (click)="cloturerCorresp(correspLoaded?.id!)"
+          *ngIf="correspLoaded?.status === CorrespStatus.IN_PROGRESS"
           class="btn btn-danger"
           style="font-weight: 600; text-transform: uppercase; min-width: 120px"
         >
@@ -876,12 +876,12 @@
         </button>
       </div>
     </div>
-    <div *ngIf="correspLoaded.status === CorrespStatus.CLOSED" style="display: flex; gap: 12px; justify-content: flex-start; width: 100%">
+    <div *ngIf="correspLoaded?.status === CorrespStatus.CLOSED" style="display: flex; gap: 12px; justify-content: flex-start; width: 100%">
       <button
         class="btn"
         style="color: white; cursor: auto; font-weight: 600; text-transform: uppercase; min-width: 120px; background-color: #6a2020"
       >
-        Correspendance Clôturée - {{ formatLongDate(correspLoaded.updatedDate) }}
+        Correspendance Clôturée - {{ formatLongDate(correspLoaded?.updatedDate) }}
       </button>
     </div>
   </div>
@@ -955,7 +955,128 @@
 
         <!-- ************************ RIGHT SIDE ************************ -->
         <div class="col-md-7">
-          <!-- Tree logic removed -->
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <!-- Selected department summary -->
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px">
+              <div>
+                <label class="form-label fw-semibold mb-1">Département sélectionné</label>
+                <div style="display: flex; gap: 8px; align-items: center">
+                  <div style="padding: 8px 12px; border-radius: 8px; background: #f1f5f9; border: 1px solid #e6eef9">
+                    <strong>{{ selectedDepartementName || 'Aucun' }}</strong>
+                    <div style="font-size: 12px; color: #6c757d">{{ selectedDepartement || '' }}</div>
+                  </div>
+                </div>
+              </div>
+              <div style="text-align: right">
+                <button
+                  class="btn btn-sm btn-outline-secondary"
+                  (click)="selectedDept = null; selectedDepartement = ''; selectedDepartementName = ''"
+                >
+                  Effacer
+                </button>
+              </div>
+            </div>
+
+            <!-- Tree container -->
+            <div style="height: 420px; overflow: auto; border: 1px solid #e9ecef; border-radius: 8px; padding: 12px; background: #fff">
+              <div *ngIf="loadingTree" style="text-align: center; padding: 40px 0; color: #6c757d">Chargement de l'organigramme...</div>
+
+              <ul *ngIf="!loadingTree && taskTree?.length" style="padding-left: 0; margin: 0; list-style: none">
+                <ng-container *ngFor="let node of taskTree">
+                  <ng-template [ngTemplateOutlet]="renderNode" [ngTemplateOutletContext]="{ node: node }"></ng-template>
+                </ng-container>
+              </ul>
+
+              <div *ngIf="!loadingTree && (!taskTree || taskTree.length === 0)" style="text-align: center; color: #6c757d">
+                Aucun département disponible.
+              </div>
+            </div>
+          </div>
+
+          <!-- recursive node template -->
+          <ng-template #renderNode let-node="node">
+            <li style="margin: 8px 0; list-style: none">
+              <div
+                (click)="onSelectDept(node)"
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  gap: 8px;
+                  padding: 8px;
+                  border-radius: 8px;
+                  cursor: pointer;
+                "
+                [style.border]="selectedDept?.id === node.id ? '2px solid #0d6efd' : '1px solid #f1f5f9'"
+                [style.background]="selectedDept?.id === node.id ? '#e9f2ff' : '#ffffff'"
+              >
+                <div style="display: flex; flex-direction: column; gap: 3px">
+                  <div style="font-weight: 600; color: #2c3e50">{{ node.nom || node.code }}</div>
+                  <div style="font-size: 12px; color: #6c757d">{{ node.code }}</div>
+                  <!-- Responsables summary removed as per request to show full list -->
+                </div>
+
+                <div style="display: flex; gap: 8px; align-items: center">
+                  <span *ngIf="(node.children?.length || 0) > 0" style="font-size: 13px; color: #6c757d">{{ node.children.length }}</span>
+                  <button class="btn btn-sm btn-outline-primary" (click)="onSelectDept(node); $event.stopPropagation()">Choisir</button>
+                </div>
+              </div>
+
+              <!-- Affectations (People grouped by Type) -->
+              <ul *ngIf="getAffectationKeys(node).length > 0" style="margin: 6px 0 0 12px; padding-left: 0; list-style: none">
+                <ng-container *ngFor="let type of getAffectationKeys(node)">
+                  <li style="margin: 4px 0">
+                    <!-- Group Header (Type) -->
+                    <div
+                      (click)="toggleAffectation(node.id, type); $event.stopPropagation()"
+                      style="
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        padding: 6px 10px;
+                        background: #f8f9fa;
+                        border: 1px solid #e9ecef;
+                        border-radius: 6px;
+                        cursor: pointer;
+                      "
+                    >
+                      <div style="display: flex; align-items: center; gap: 8px">
+                        <span style="font-size: 12px; color: #6c757d">
+                          <i [class]="isAffectationExpanded(node.id, type) ? 'fa fa-chevron-down' : 'fa fa-chevron-right'"></i>
+                        </span>
+                        <span style="font-weight: 600; font-size: 13px; color: #495057">{{ type }}</span>
+                      </div>
+                      <span class="badge bg-primary rounded-pill" style="font-size: 11px">
+                        {{ getPeopleForType(node, type).length }}
+                      </span>
+                    </div>
+
+                    <!-- People List -->
+                    <ul
+                      *ngIf="isAffectationExpanded(node.id, type)"
+                      style="margin: 4px 0 0 12px; padding-left: 0; list-style: none; border-left: 2px solid #dee2e6"
+                    >
+                      <li
+                        *ngFor="let person of getPeopleForType(node, type)"
+                        style="margin: 4px 0 4px 12px; padding: 4px 8px; background: #fff; border: 1px solid #f1f5f9; border-radius: 4px"
+                      >
+                        <div style="display: flex; align-items: center; gap: 8px">
+                          <i class="fa fa-user" style="color: #6c757d; font-size: 12px"></i>
+                          <span style="font-size: 13px; color: #212529">{{ person.nomPrenom || person.matricule }}</span>
+                        </div>
+                      </li>
+                    </ul>
+                  </li>
+                </ng-container>
+              </ul>
+
+              <ul *ngIf="node.children?.length" style="margin: 6px 0 0 12px; padding-left: 0; list-style: none">
+                <ng-container *ngFor="let c of node.children">
+                  <ng-template [ngTemplateOutlet]="renderNode" [ngTemplateOutletContext]="{ node: c }"></ng-template>
+                </ng-container>
+              </ul>
+            </li>
+          </ng-template>
         </div>
       </div>
 
