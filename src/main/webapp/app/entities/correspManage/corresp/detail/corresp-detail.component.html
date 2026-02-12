@@ -893,67 +893,12 @@
     <h4 class="modal-title" style="color: #2c3e50; font-weight: bold; text-transform: uppercase; font-style: italic">
       Affectation d'une nouvelle tâche
     </h4>
+    <button (click)="saveTask()" [disabled]="btnSaveTaskDisabled" class="btn btn-primary btn-sm" type="button">Enregistrer</button>
   </div>
 
   <div class="modal-body">
     <form class="container-fluid">
       <div class="row" style="padding: 1em 0">
-        <!-- ************************ LEFT SIDE ************************ -->
-        <div class="col-md-5">
-          <!-- Type de tâche -->
-          <label class="form-label fw-semibold">Type De Tâche <span class="text-danger">*</span></label>
-          <div class="mb-3" style="display: flex; flex-direction: column; gap: 1em">
-            <button
-              (click)="selectedType = 'lecture'"
-              [ngClass]="selectedType === 'lecture' ? 'btn-primary' : 'btn-outline-primary'"
-              class="btn"
-              style="font-weight: 700; text-transform: uppercase"
-              type="button"
-            >
-              Lecture
-            </button>
-
-            <button
-              (click)="selectedType = 'signature'"
-              [ngClass]="selectedType === 'signature' ? 'btn-primary' : 'btn-outline-primary'"
-              class="btn"
-              style="font-weight: 700; text-transform: uppercase"
-              type="button"
-            >
-              Signature
-            </button>
-
-            <button
-              (click)="selectedType = 'traitement'"
-              [ngClass]="selectedType === 'traitement' ? 'btn-primary' : 'btn-outline-primary'"
-              class="btn"
-              style="font-weight: 700; text-transform: uppercase"
-              type="button"
-            >
-              Traitement
-            </button>
-
-            <button
-              (click)="selectedType = 'validation'"
-              [ngClass]="selectedType === 'validation' ? 'btn-primary' : 'btn-outline-primary'"
-              class="btn"
-              style="font-weight: 700; text-transform: uppercase"
-              type="button"
-            >
-              Validation
-            </button>
-          </div>
-
-          <div *ngIf="validationErrors['typeTask']" class="text-danger small">
-            {{ validationErrors['typeTask'] }}
-          </div>
-
-          <!-- Date limite -->
-          <label class="form-label fw-semibold mt-3">Date limite</label>
-          <input [(ngModel)]="dateLimite" class="form-control" name="dateLimite" type="date" />
-        </div>
-
-        <!-- ************************ RIGHT SIDE ************************ -->
         <div class="col-md-7">
           <div style="display: flex; flex-direction: column; gap: 10px">
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px">
@@ -999,7 +944,7 @@
                   [(ngModel)]="treeSearchQuery"
                   name="treeSearchQuery"
                   (input)="onTreeSearchChange()"
-                  placeholder="Recherche"
+                  placeholder="Rechercher (département ou personne)"
                 />
               </div>
               <div *ngIf="loadingTree" style="text-align: center; padding: 40px 0; color: #6c757d">Chargement de l'organigramme...</div>
@@ -1127,18 +1072,52 @@
             </li>
           </ng-template>
         </div>
-      </div>
-
-      <!-- ************************ COMMENTAIRE FULL WIDTH ************************ -->
-      <div class="row mt-4">
-        <div class="col-12">
-          <label class="form-label fw-semibold">Commentaire</label>
+        <div class="col-md-5">
+          <label class="form-label fw-semibold">Type De Tâche <span class="text-danger">*</span></label>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px">
+            <button
+              type="button"
+              class="btn btn-sm"
+              [ngClass]="selectedType === 'lecture' ? 'btn-primary' : 'btn-outline-primary'"
+              (click)="selectedType = 'lecture'"
+            >
+              <span class="me-1">📖</span> Lecture
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm"
+              [ngClass]="selectedType === 'signature' ? 'btn-primary' : 'btn-outline-primary'"
+              (click)="selectedType = 'signature'"
+            >
+              <span class="me-1">✒️</span> Signature
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm"
+              [ngClass]="selectedType === 'traitement' ? 'btn-primary' : 'btn-outline-primary'"
+              (click)="selectedType = 'traitement'"
+            >
+              <span class="me-1">⚙️</span> Traitement
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm"
+              [ngClass]="selectedType === 'validation' ? 'btn-primary' : 'btn-outline-primary'"
+              (click)="selectedType = 'validation'"
+            >
+              <span class="me-1">✔️</span> Validation
+            </button>
+          </div>
+          <div *ngIf="validationErrors['typeTask']" class="text-danger small">{{ validationErrors['typeTask'] }}</div>
+          <label class="form-label fw-semibold">Date limite</label>
+          <input [(ngModel)]="dateLimite" class="form-control" name="dateLimite" type="date" />
+          <label class="form-label fw-semibold mt-3">Commentaire</label>
           <textarea
             [(ngModel)]="commentaire"
             class="form-control"
             name="commentaire"
             placeholder="Saisir un commentaire..."
-            rows="4"
+            rows="6"
           ></textarea>
         </div>
       </div>
