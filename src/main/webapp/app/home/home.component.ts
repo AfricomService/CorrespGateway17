@@ -12,6 +12,7 @@ import { ITasks } from '../entities/correspManage/tasks/tasks.model';
 import { HttpResponse } from '@angular/common/http';
 import { TasksService } from '../entities/correspManage/tasks/service/tasks.service';
 import { CorrespService } from '../entities/correspManage/corresp/service/corresp.service';
+import { IDepartement } from '../entities/orgacare/departement/departement.model';
 
 import { TranslateService } from '@ngx-translate/core';
 
@@ -26,6 +27,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   authSubscription?: Subscription;
   private destroy$ = new Subject<void>();
   private correspInfoByTaskId: Record<number, { subject?: string | null; reference?: string | null }> = {};
+  private deptNameByCode: Map<string, string> = new Map<string, string>();
 
   // recherche simple côté client
   searchTerm = '';
@@ -137,6 +139,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     });
 
     this.loadCorrespInfoForTasks();
+    this.resolveDeptNamesForTasks();
 
     // ensure currentPage still valid after load
     if (this.currentPage > this.totalPages) {
@@ -472,5 +475,31 @@ export class HomeComponent implements OnInit, OnDestroy {
     const id = (t as any)?.id;
     const info = typeof id === 'number' ? this.correspInfoByTaskId[id] : undefined;
     return (info && info.reference) || '';
+  }
+
+  getResponsibleDisplay(t: ITasks): string {
+    const code = ((t as any).responsible || '').toString();
+    if (!code) return '';
+    return this.deptNameByCode.get(code) || code;
+  }
+
+  private resolveDeptNamesForTasks(): void {
+    const tasks = this.tasks || [];
+    const codes = Array.from(new Set(tasks.map(t => ((t as any).responsible || '').toString()).filter(c => !!c)));
+    const missing = codes.filter(c => !this.deptNameByCode.has(c));
+    if (!missing.length) return;
+    const calls = missing.map(code => this.correspService.queryOrgaDepsByCode({ code }));
+    forkJoin(calls)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((responses: HttpResponse<IDepartement>[]) => {
+        responses.forEach((res, idx) => {
+          const dep = res.body as unknown as IDepartement | undefined;
+          const code = missing[idx];
+          const name =
+            (dep && ((dep as any).nom || (dep as any).name || (dep as any).libelle || (dep as any).description || (dep as any).code)) ||
+            code;
+          this.deptNameByCode.set(code, name || code);
+        });
+      });
   }
 }

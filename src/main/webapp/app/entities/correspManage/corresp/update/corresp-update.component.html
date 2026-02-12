@@ -823,15 +823,25 @@
 
             <!-- Tree container -->
             <div style="height: 420px; overflow: auto; border: 1px solid #e9ecef; border-radius: 8px; padding: 12px; background: #fff">
+              <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px">
+                <input
+                  type="text"
+                  class="form-control"
+                  [(ngModel)]="treeSearchQuery"
+                  name="treeSearchQuery"
+                  (input)="onTreeSearchChange()"
+                  placeholder="Rechercher (département ou personne)"
+                />
+              </div>
               <div *ngIf="loadingTree" style="text-align: center; padding: 40px 0; color: #6c757d">Chargement de l'organigramme...</div>
 
-              <ul *ngIf="!loadingTree && taskTree?.length" style="padding-left: 0; margin: 0; list-style: none">
-                <ng-container *ngFor="let node of taskTree">
+              <ul *ngIf="!loadingTree && taskTreeFiltered?.length" style="padding-left: 0; margin: 0; list-style: none">
+                <ng-container *ngFor="let node of taskTreeFiltered">
                   <ng-template [ngTemplateOutlet]="renderNode" [ngTemplateOutletContext]="{ node: node }"></ng-template>
                 </ng-container>
               </ul>
 
-              <div *ngIf="!loadingTree && (!taskTree || taskTree.length === 0)" style="text-align: center; color: #6c757d">
+              <div *ngIf="!loadingTree && (!taskTreeFiltered || taskTreeFiltered.length === 0)" style="text-align: center; color: #6c757d">
                 Aucun département disponible.
               </div>
             </div>

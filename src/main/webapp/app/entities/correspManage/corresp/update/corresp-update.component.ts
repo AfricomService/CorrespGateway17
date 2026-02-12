@@ -142,6 +142,8 @@ export class CorrespUpdateComponent implements OnInit {
   loadingTree = false;
   selectedDept: DepartementTreeFeignDTO | null = null;
   objectKeys = Object.keys; // helper pour template
+  treeSearchQuery = '';
+  taskTreeFiltered: DepartementTreeFeignDTO[] = [];
 
   // réintroduction des champs pour stocker la sélection (utilisés par saveTask)
   selectedDepartement: string = '';
@@ -776,6 +778,7 @@ export class CorrespUpdateComponent implements OnInit {
   loadTreeForModal(orgaCode: string): void {
     if (!orgaCode) {
       this.taskTree = [];
+      this.taskTreeFiltered = [];
       return;
     }
     this.loadingTree = true;
@@ -783,11 +786,13 @@ export class CorrespUpdateComponent implements OnInit {
       next: (res: HttpResponse<DepartementTreeFeignDTO[]>) => {
         const body = res.body || [];
         this.taskTree = this.normalizeTree(body);
+        this.taskTreeFiltered = this.taskTree;
         this.loadingTree = false;
       },
       error: err => {
         console.error('Erreur getDepartementHierarchyByOrganigramme', err);
         this.taskTree = [];
+        this.taskTreeFiltered = [];
         this.loadingTree = false;
       },
     });
@@ -846,6 +851,46 @@ export class CorrespUpdateComponent implements OnInit {
     if (chefs.length) return chefs.join(', ');
     if (membres.length) return membres.join(', ');
     return '';
+  }
+
+  onTreeSearchChange(): void {
+    const q = (this.treeSearchQuery || '').trim().toLowerCase();
+    if (!q) {
+      this.taskTreeFiltered = this.taskTree;
+      return;
+    }
+    this.taskTreeFiltered = this.filterTree(this.taskTree, q);
+  }
+
+  private filterTree(nodes: DepartementTreeFeignDTO[], q: string): DepartementTreeFeignDTO[] {
+    return nodes.map(n => this.filterNode(n, q)).filter((n): n is DepartementTreeFeignDTO => n !== null);
+  }
+
+  private filterNode(node: DepartementTreeFeignDTO, q: string): DepartementTreeFeignDTO | null {
+    const name = (node.nom || '').toLowerCase();
+    const deptMatches = name.includes(q);
+
+    const filteredChildren =
+      (node.children || []).map(c => this.filterNode(c, q)).filter((c): c is DepartementTreeFeignDTO => c !== null) || [];
+
+    const aff = node.affectationsByType || {};
+    const filteredAff: Partial<Record<TypeAffectation, PersonneFeignDTO[]>> = {};
+    let personMatches = false;
+    Object.keys(aff as any).forEach(k => {
+      const list = ((aff as any)[k] as PersonneFeignDTO[]) || [];
+      const flist = list.filter(p => (p.nomPrenom || '').toLowerCase().includes(q));
+      if (flist.length) personMatches = true;
+      filteredAff[k as TypeAffectation] = flist;
+    });
+
+    const keepNode = deptMatches || personMatches || filteredChildren.length > 0;
+    if (!keepNode) return null;
+
+    return {
+      ...node,
+      children: filteredChildren,
+      affectationsByType: filteredAff,
+    };
   }
 
   // --------------------------------------------------------------------------
