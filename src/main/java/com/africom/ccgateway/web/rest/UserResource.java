@@ -263,4 +263,21 @@ public class UserResource {
         log.debug("REST request to get User by id : {}", id);
         return userService.getUserById(id).map(userDto -> ResponseEntity.ok(userDto)).defaultIfEmpty(ResponseEntity.notFound().build());
     }
+
+    /**
+     * GET /api/users/by-login?login=xxx
+     */
+    @GetMapping("/users/by-login")
+    public Mono<ResponseEntity<UserDTO>> getUserByLogin(@RequestParam("login") String login) {
+        return userService.findUserByLogin(login).map(ResponseEntity::ok).defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+
+    /**
+     * POST /api/users/by-logins
+     * Body: ["login1","login2"]
+     */
+    @PostMapping("/users/by-logins")
+    public Flux<UserDTO> getUsersByLogins(@RequestBody List<String> logins) {
+        return userService.findUsersByLogins(logins);
+    }
 }

@@ -29,6 +29,9 @@ export class HomeComponent implements OnInit, OnDestroy {
   private correspInfoByTaskId: Record<number, { subject?: string | null; reference?: string | null }> = {};
   private deptNameByCode: Map<string, string> = new Map<string, string>();
 
+  // map taskId -> liste de noms (deptName ou personneName ou matricule/code)
+  private taskResponsablesMap: Record<number, string[]> = {};
+
   // recherche simple côté client
   searchTerm = '';
 
@@ -107,7 +110,6 @@ export class HomeComponent implements OnInit, OnDestroy {
     }
   }
 
-  // extrait la logique de traitement de la réponse pour éviter duplication
   private processTasksResponse(res: HttpResponse<ITasks[]>): void {
     const raw = res.body || [];
     // convertit les champs de date (Dayjs, string, Date, ...) en Date natif ou undefined
@@ -138,7 +140,9 @@ export class HomeComponent implements OnInit, OnDestroy {
       return copy as ITasks;
     });
 
+    // charge infos supplémentaires (corresp) et résout les noms de départements/personnes
     this.loadCorrespInfoForTasks();
+    // resolveDeptNamesForTasks s'occupera aussi d'appeler buildResponsablesForTasks
     this.resolveDeptNamesForTasks();
 
     // ensure currentPage still valid after load
@@ -167,7 +171,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     return this.tasks.filter(t => {
       const subj = (this.getTaskSubject(t) || '').toString().toLowerCase();
       const ref = (this.getTaskReference(t) || '').toString().toLowerCase();
-      const resp = ((t as any).responsible || '').toString().toLowerCase();
+      const resp = (this.getResponsibleDisplay(t) || '').toString().toLowerCase();
       const status = String((t as any).status || '').toLowerCase();
       return subj.includes(q) || ref.includes(q) || resp.includes(q) || status.includes(q);
     });
@@ -478,6 +482,15 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   getResponsibleDisplay(t: ITasks): string {
+    const id = (t as any)?.id;
+    if (typeof id === 'number') {
+      const arr = this.taskResponsablesMap[id];
+      if (arr && arr.length) {
+        return arr.join(', ');
+      }
+    }
+
+    // fallback (ancien comportement)
     const code = ((t as any).responsible || '').toString();
     if (!code) return '';
     return this.deptNameByCode.get(code) || code;
@@ -485,21 +498,99 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   private resolveDeptNamesForTasks(): void {
     const tasks = this.tasks || [];
-    const codes = Array.from(new Set(tasks.map(t => ((t as any).responsible || '').toString()).filter(c => !!c)));
+
+    // 1) collecter tous les codes de departements à résoudre (depuis responsible OU responsables[].codeDept)
+    const codesFromResponsible = tasks.map(t => ((t as any).responsible || '').toString()).filter(c => !!c);
+
+    const codesFromResponsables = ([] as string[]).concat(
+      ...tasks.map(t => {
+        const rs = (t as any).responsables;
+        if (!rs || !Array.isArray(rs)) return [];
+        return rs.map((r: any) => (r && r.codeDept ? (r.codeDept || '').toString() : '')).filter((c: string) => !!c);
+      })
+    );
+
+    const codes = Array.from(new Set([...codesFromResponsible, ...codesFromResponsables])).filter(c => !!c);
+
+    // 2) garder seulement les codes manquants dans le cache deptNameByCode
     const missing = codes.filter(c => !this.deptNameByCode.has(c));
-    if (!missing.length) return;
+    if (!missing.length) {
+      // pas d'appel réseau nécessaire — on peut construire directement les listes de responsables
+      this.buildResponsablesForTasks();
+      return;
+    }
+
+    // créer les appels HTTP (forkJoin)
     const calls = missing.map(code => this.correspService.queryOrgaDepsByCode({ code }));
     forkJoin(calls)
       .pipe(takeUntil(this.destroy$))
-      .subscribe((responses: HttpResponse<IDepartement>[]) => {
-        responses.forEach((res, idx) => {
-          const dep = res.body as unknown as IDepartement | undefined;
-          const code = missing[idx];
-          const name =
-            (dep && ((dep as any).nom || (dep as any).name || (dep as any).libelle || (dep as any).description || (dep as any).code)) ||
-            code;
-          this.deptNameByCode.set(code, name || code);
-        });
+      .subscribe({
+        next: (responses: HttpResponse<IDepartement>[]) => {
+          responses.forEach((res, idx) => {
+            const dep = res.body as unknown as IDepartement | undefined;
+            const code = missing[idx];
+            const name =
+              (dep && ((dep as any).nom || (dep as any).name || (dep as any).libelle || (dep as any).description || (dep as any).code)) ||
+              code;
+            this.deptNameByCode.set(code, name || code);
+          });
+        },
+        error: err => {
+          // si erreur réseau, on log et on continue — on affichera les codes/matricules bruts
+          // eslint-disable-next-line no-console
+          console.warn('Erreur lors de la résolution des noms de départements', err);
+        },
+        complete: () => {
+          // une fois les resolvings faits (ou non), construire les responsables affichables
+          this.buildResponsablesForTasks();
+        },
       });
+  }
+
+  private buildResponsablesForTasks(): void {
+    this.taskResponsablesMap = {};
+    const tasks = this.tasks || [];
+
+    tasks.forEach(task => {
+      const taskId = (task as any)?.id;
+      if (typeof taskId !== 'number') return;
+
+      const displays: string[] = [];
+
+      const responsables = (task as any).responsables;
+      if (Array.isArray(responsables) && responsables.length > 0) {
+        // priorité : personneName -> deptName -> resolved codeDept name -> matricule -> raw code
+        responsables.forEach((r: any) => {
+          if (!r) return;
+          const pName = r.personneName;
+          const dName = r.deptName;
+          const codeDept = r.codeDept;
+          const matricule = r.matriculePers;
+
+          if (pName && pName.toString().trim()) {
+            displays.push(pName.toString().trim());
+          } else if (dName && dName.toString().trim()) {
+            displays.push(dName.toString().trim());
+          } else if (codeDept && codeDept.toString().trim()) {
+            const code = codeDept.toString().trim();
+            const resolved = this.deptNameByCode.get(code);
+            displays.push((resolved && resolved.toString()) || code);
+          } else if (matricule && matricule.toString().trim()) {
+            displays.push(matricule.toString().trim());
+          }
+        });
+      } else {
+        // fallback: utilser le champ 'responsible' (ancien comportement)
+        const code = ((task as any).responsible || '').toString();
+        if (code) {
+          const name = this.deptNameByCode.get(code);
+          displays.push((name && name.toString()) || code);
+        }
+      }
+
+      // dédoublonner tout en gardant l'ordre
+      const uniq = Array.from(new Set(displays.map(d => (d == null ? '' : d.toString()).trim()))).filter(s => !!s);
+      this.taskResponsablesMap[taskId] = uniq;
+    });
   }
 }

@@ -744,40 +744,68 @@
     <form class="container-fluid">
       <div class="row" style="padding: 1em 0">
         <div class="col-md-7">
-          <div class="col-md-5">
+          <div class="col-md-5 assign-controls">
             <label class="form-label fw-semibold">Type De Tâche <span class="text-danger">*</span></label>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px">
+            <div class="form-text" style="margin-top: -6px">Sélectionnez le type d'action à effectuer</div>
+            <div class="type-actions">
               <button
                 type="button"
-                class="btn btn-sm"
-                [ngClass]="selectedType === 'lecture' ? 'btn-primary' : 'btn-outline-primary'"
+                class="type-card lecture"
+                [class.active]="selectedType === 'lecture'"
                 (click)="selectedType = 'lecture'"
               >
-                <span class="me-1">📖</span> Lecture
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3 4h8a5 5 0 0 1 5 5v11H8a5 5 0 0 0-5-5V4Z" fill="currentColor" opacity="0.15" />
+                  <path d="M3 4h8a5 5 0 0 1 5 5v11H8a5 5 0 0 0-5-5V4Z" stroke="currentColor" stroke-width="1.6" fill="none" />
+                  <path d="M13 4h8v16h-8" stroke="currentColor" stroke-width="1.6" fill="none" />
+                </svg>
+                Lecture
               </button>
               <button
                 type="button"
-                class="btn btn-sm"
-                [ngClass]="selectedType === 'signature' ? 'btn-primary' : 'btn-outline-primary'"
+                class="type-card signature"
+                [class.active]="selectedType === 'signature'"
                 (click)="selectedType = 'signature'"
               >
-                <span class="me-1">✒️</span> Signature
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3 21l6-2 9-9-4-4-9 9-2 6Z" stroke="currentColor" stroke-width="1.6" fill="none" />
+                  <path d="M14 6l4 4" stroke="currentColor" stroke-width="1.6" />
+                </svg>
+                Signature
               </button>
               <button
                 type="button"
-                class="btn btn-sm"
-                [ngClass]="selectedType === 'traitement' ? 'btn-primary' : 'btn-outline-primary'"
+                class="type-card traitement"
+                [class.active]="selectedType === 'traitement'"
                 (click)="selectedType = 'traitement'"
               >
-                <span class="me-1">⚙️</span> Traitement
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M12 6v-3m0 18v-3M6 12H3m18 0h-3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"
+                    stroke="currentColor"
+                    stroke-width="1.6"
+                  />
+                  <circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="1.6" fill="none" />
+                </svg>
+                Traitement
               </button>
               <button
                 type="button"
-                class="btn btn-sm"
-                [ngClass]="selectedType === 'validation' ? 'btn-primary' : 'btn-outline-primary'"
+                class="type-card validation"
+                [class.active]="selectedType === 'validation'"
                 (click)="selectedType = 'validation'"
               >
-                <span class="me-1">✔️</span> Validation
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.6" fill="none" />
+                  <path
+                    d="M8.5 12.5l2.5 2.5 4.5-5"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                Validation
               </button>
             </div>
             <div class="text-danger small" *ngIf="validationErrors['typeTask']">{{ validationErrors['typeTask'] }}</div>

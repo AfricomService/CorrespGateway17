@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Pageable;
@@ -401,5 +402,34 @@ public class UserService {
     @Transactional(readOnly = true)
     public Mono<UserDTO> getUserById(Long id) {
         return userRepository.findById(id).map(UserDTO::new);
+    }
+
+    @Transactional(readOnly = true)
+    public Mono<UserDTO> findUserByLogin(String login) {
+        if (login == null || login.isBlank()) {
+            return Mono.empty();
+        }
+        String normalized = login.toLowerCase().trim();
+        return userRepository.findOneByLogin(normalized).map(UserDTO::new);
+    }
+
+    @Transactional(readOnly = true)
+    public Flux<UserDTO> findUsersByLogins(List<String> logins) {
+        if (logins == null || logins.isEmpty()) {
+            return Flux.empty();
+        }
+        // normaliser (lowercase + trim) et dédupliquer côté service
+        List<String> normalized = logins
+            .stream()
+            .filter(Objects::nonNull)
+            .map(String::trim)
+            .filter(s -> !s.isEmpty())
+            .map(String::toLowerCase)
+            .distinct()
+            .collect(Collectors.toList());
+
+        if (normalized.isEmpty()) return Flux.empty();
+
+        return userRepository.findAllByLoginIn(normalized).map(UserDTO::new);
     }
 }
