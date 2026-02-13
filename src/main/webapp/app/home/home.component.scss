@@ -635,9 +635,10 @@ $container-max: 1800px; // largeur raisonnable
 :host .task-field-value {
   font-size: 13px;
   color: rgba(29, 53, 87, 0.9);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  word-break: break-word;
 }
 
 :host .no-tasks {

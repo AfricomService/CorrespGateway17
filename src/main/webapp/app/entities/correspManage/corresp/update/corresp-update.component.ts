@@ -148,6 +148,10 @@ export class CorrespUpdateComponent implements OnInit {
   // réintroduction des champs pour stocker la sélection (utilisés par saveTask)
   selectedDepartement: string = '';
   selectedDepartementName: string = '';
+  selectedResponsables: { codeDept?: string | null; matriculePers?: string | null; displayName?: string | null }[] = [];
+  expandedAffectations: Set<string> = new Set();
+  expandedNodes: Set<number> = new Set();
+  private levelPalette: string[] = ['#1e90ff', '#22c55e', '#f59e0b', '#8b5cf6', '#ef4444', '#14b8a6'];
 
   // liste d'organigrammes (optionnel) et code sélectionné
   orgaList: any[] = [];
@@ -641,11 +645,12 @@ export class CorrespUpdateComponent implements OnInit {
       return;
     }
 
+    const responsibleText = this.getResponsablesSummary() || this.selectedDepartement || '';
     const taskData = {
       typeTask: this.selectedType,
-      responsable: this.selectedDepartement || '',
+      responsable: responsibleText,
       dateLimite: this.dateLimite,
-      responsableName: this.selectedDepartementName || '',
+      responsableName: this.selectedDepartementName || responsibleText,
       commentaire: this.commentaire,
     };
 
@@ -672,6 +677,9 @@ export class CorrespUpdateComponent implements OnInit {
     this.selectedDepartement = '';
     this.selectedDepartementName = '';
     this.selectedDept = null;
+    this.selectedResponsables = [];
+    this.expandedNodes.clear();
+    this.expandedAffectations.clear();
   }
 
   editTask(index: number, modal: any): void {
@@ -853,6 +861,112 @@ export class CorrespUpdateComponent implements OnInit {
     return '';
   }
 
+  // --- helpers: multi sélection + affichage
+  private getResponsablesSummary(): string {
+    if (!this.selectedResponsables || this.selectedResponsables.length === 0) return '';
+    const parts: string[] = [];
+    for (const r of this.selectedResponsables) {
+      if (r.matriculePers) {
+        parts.push(r.matriculePers);
+      } else if (r.codeDept) {
+        parts.push(r.codeDept);
+      }
+    }
+    return parts.join(', ');
+  }
+
+  toggleAffectation(nodeId: number, type: string): void {
+    const key = `${nodeId}-${type}`;
+    if (this.expandedAffectations.has(key)) {
+      this.expandedAffectations.delete(key);
+    } else {
+      this.expandedAffectations.add(key);
+    }
+  }
+
+  isAffectationExpanded(nodeId: number, type: string): boolean {
+    return this.expandedAffectations.has(`${nodeId}-${type}`);
+  }
+
+  getAffectationKeys(node: DepartementTreeFeignDTO): string[] {
+    if (!node.affectationsByType) return [];
+    return Object.keys(node.affectationsByType).filter(k => {
+      const list = (node.affectationsByType as any)[k];
+      return Array.isArray(list) && list.length > 0;
+    });
+  }
+
+  getPeopleForType(node: DepartementTreeFeignDTO, type: string): PersonneFeignDTO[] {
+    if (!node.affectationsByType) return [];
+    return (node.affectationsByType as any)[type] || [];
+  }
+
+  toggleDeptSelection(node: DepartementTreeFeignDTO): void {
+    const code = node.code ?? '';
+    if (!code) return;
+    const idx = this.selectedResponsables.findIndex(r => r.codeDept === code && !r.matriculePers);
+    if (idx >= 0) {
+      this.selectedResponsables.splice(idx, 1);
+    } else {
+      this.selectedResponsables.push({ codeDept: code, displayName: node.nom ?? code });
+    }
+  }
+
+  isDeptSelected(node: DepartementTreeFeignDTO): boolean {
+    const code = node.code ?? '';
+    return !!this.selectedResponsables.find(r => r.codeDept === code && !r.matriculePers);
+  }
+
+  togglePersonSelection(node: DepartementTreeFeignDTO, person: PersonneFeignDTO): void {
+    const code = node.code ?? '';
+    const matricule = person.matricule ?? '';
+    if (!matricule) return;
+    const idx = this.selectedResponsables.findIndex(r => r.matriculePers === matricule && r.codeDept === code);
+    if (idx >= 0) {
+      this.selectedResponsables.splice(idx, 1);
+    } else {
+      this.selectedResponsables.push({ codeDept: code || null, matriculePers: matricule, displayName: person.nomPrenom ?? matricule });
+    }
+  }
+
+  isPersonSelected(node: DepartementTreeFeignDTO, person: PersonneFeignDTO): boolean {
+    const code = node.code ?? '';
+    const matricule = person.matricule ?? '';
+    return !!this.selectedResponsables.find(r => r.matriculePers === matricule && r.codeDept === code);
+  }
+
+  toggleNodeExpand(nodeId: number): void {
+    if (this.expandedNodes.has(nodeId)) {
+      this.expandedNodes.delete(nodeId);
+    } else {
+      this.expandedNodes.add(nodeId);
+    }
+  }
+
+  isNodeExpanded(nodeId: number): boolean {
+    return this.expandedNodes.has(nodeId);
+  }
+
+  removeSelection(sel: { codeDept?: string | null; matriculePers?: string | null }): void {
+    let idx = -1;
+    if (sel.matriculePers) {
+      idx = this.selectedResponsables.findIndex(r => r.matriculePers === sel.matriculePers && r.codeDept === (sel.codeDept ?? r.codeDept));
+    } else if (sel.codeDept) {
+      idx = this.selectedResponsables.findIndex(r => r.codeDept === sel.codeDept && !r.matriculePers);
+    }
+    if (idx >= 0) {
+      this.selectedResponsables.splice(idx, 1);
+    }
+  }
+
+  clearSelections(): void {
+    this.selectedResponsables = [];
+  }
+
+  getLevelColor(level: number): string {
+    return this.levelPalette[level % this.levelPalette.length];
+  }
+
   onTreeSearchChange(): void {
     const q = (this.treeSearchQuery || '').trim().toLowerCase();
     if (!q) {
@@ -860,6 +974,7 @@ export class CorrespUpdateComponent implements OnInit {
       return;
     }
     this.taskTreeFiltered = this.filterTree(this.taskTree, q);
+    this.applyAutoExpand(this.taskTreeFiltered);
   }
 
   private filterTree(nodes: DepartementTreeFeignDTO[], q: string): DepartementTreeFeignDTO[] {
@@ -891,6 +1006,35 @@ export class CorrespUpdateComponent implements OnInit {
       children: filteredChildren,
       affectationsByType: filteredAff,
     };
+  }
+
+  private applyAutoExpand(nodes: DepartementTreeFeignDTO[]): void {
+    const nodesToExpand: number[] = [];
+    const affectationsToExpand: string[] = [];
+
+    const visit = (n: DepartementTreeFeignDTO): void => {
+      const id = n.id;
+      const children = n.children || [];
+      const aff = n.affectationsByType || {};
+
+      if (children.length > 0) {
+        nodesToExpand.push(id);
+      }
+
+      Object.keys(aff as any).forEach(t => {
+        const list = ((aff as any)[t] as PersonneFeignDTO[]) || [];
+        if (list.length > 0) {
+          affectationsToExpand.push(`${id}-${t}`);
+        }
+      });
+
+      children.forEach(c => visit(c));
+    };
+
+    nodes.forEach(n => visit(n));
+
+    nodesToExpand.forEach(id => this.expandedNodes.add(id));
+    affectationsToExpand.forEach(key => this.expandedAffectations.add(key));
   }
 
   // --------------------------------------------------------------------------
