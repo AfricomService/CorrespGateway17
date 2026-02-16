@@ -162,6 +162,14 @@ export class CorrespUpdateComponent implements OnInit {
   orgaList: any[] = [];
   selectedOrgaCode: string | null = null;
 
+  // Options de type d’envoi (UI)
+  dispatchTypeOptions: Array<{ value: DispatchType; label: string }> = [
+    { value: DispatchType.LETTER, label: 'Lettre' },
+    { value: DispatchType.REGISTERED_LETTER, label: 'Lettre recommandée' },
+    { value: DispatchType.EMAIL, label: 'E-mail' },
+    { value: DispatchType.FAX, label: 'Fax' },
+  ];
+
   constructor(
     protected dataUtils: DataUtils,
     protected eventManager: EventManager,
@@ -350,6 +358,25 @@ export class CorrespUpdateComponent implements OnInit {
     }
   }
 
+  onRecipientOrCcChange(): void {
+    this.syncDefaultTaskNames();
+  }
+
+  private syncDefaultTaskNames(): void {
+    if (!this.tasks || this.tasks.length === 0) {
+      return;
+    }
+    this.tasks = this.tasks.map(t => {
+      if (t.typeTask === 'traitement') {
+        return { ...t, responsableName: this.destinataireLabel || t.responsableName || '' };
+      }
+      if (t.typeTask === 'lecture') {
+        return { ...t, responsableName: this.contactEmailCCLabel || t.responsableName || '' };
+      }
+      return t;
+    });
+  }
+
   onTypeDocumentChange(): void {
     if (!this.selectedTypeDocument) {
       this.objet = '';
@@ -414,6 +441,7 @@ export class CorrespUpdateComponent implements OnInit {
             };
 
             this.tasks.push(taskData);
+            this.syncDefaultTaskNames();
           } else {
             this.contactEmailCC = '';
             this.contactEmailCCLabel = '';
@@ -428,6 +456,7 @@ export class CorrespUpdateComponent implements OnInit {
       this.contactEmailCC = '';
       this.contactEmailCCLabel = '';
     }
+    this.syncDefaultTaskNames();
   }
 
   generateRandomId(length: number = 8): string {
@@ -620,23 +649,7 @@ export class CorrespUpdateComponent implements OnInit {
     this.corresp!.priority = this.priorite === 'Prioritaire';
     this.corresp!.body = this.htmlContent;
 
-    switch (this.selectedType) {
-      case 'Demande de travail':
-      case 'Commande':
-      case 'Rapport technique':
-      case 'Réclamation':
-        this.corresp!.dispatchType = DispatchType.EMAIL;
-        break;
-      case 'Facture':
-        this.corresp!.dispatchType = DispatchType.REGISTERED_LETTER;
-        break;
-      case 'Note interne':
-        this.corresp!.dispatchType = DispatchType.LETTER;
-        break;
-      default:
-        this.corresp!.dispatchType = DispatchType.EMAIL;
-        break;
-    }
+    this.corresp!.dispatchType = (this.dispatchType as DispatchType) || DispatchType.EMAIL;
 
     switch (this.correspType) {
       case 'Arrivée':
@@ -662,7 +675,14 @@ export class CorrespUpdateComponent implements OnInit {
     this.correspService
       .saveCorrespWithTasksAndPj(this.corresp, this.tasksToSave, this.pjsToSave, this.selectedTypeDocument, withReference)
       .subscribe(res => {
-        this.router.navigate(['/corresp']);
+        if (!withReference) {
+          this.router.navigate(['/corresp']);
+        } else {
+          this.eventManager.broadcast({
+            name: 'notification',
+            content: 'Correspondance identifiée (brouillon) — restez sur le formulaire.',
+          });
+        }
       });
   }
 

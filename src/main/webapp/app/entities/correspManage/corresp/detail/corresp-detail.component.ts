@@ -23,6 +23,7 @@ import { IContactCompany } from 'app/entities/configManage/contact-company/conta
 import { IPersonCompany } from 'app/entities/configManage/person-company/person-company.model';
 import { PersonneFeignDTO } from '../update/PersonneFeignDTO';
 import { TypeAffectation } from '../update/enums';
+import { DispatchType } from 'app/entities/enumerations/dispatch-type.model';
 
 // Mocking the Interfaces locally for this example (or import them from your shared models)
 export enum CorrespStatus {
@@ -150,6 +151,14 @@ export class CorrespDetailComponent implements OnInit {
   treeSearchQuery = '';
   taskTreeFiltered: DepartementTreeFeignDTO[] = [];
 
+  dispatchType: DispatchType | '' = '';
+  dispatchTypeOptions: Array<{ value: DispatchType; label: string }> = [
+    { value: DispatchType.LETTER, label: 'Lettre' },
+    { value: DispatchType.REGISTERED_LETTER, label: 'Lettre recommandée' },
+    { value: DispatchType.EMAIL, label: 'E-mail' },
+    { value: DispatchType.FAX, label: 'Fax' },
+  ];
+
   constructor(
     protected activatedRoute: ActivatedRoute,
     protected router: Router,
@@ -179,6 +188,7 @@ export class CorrespDetailComponent implements OnInit {
       this.reponseSur = this.correspLoaded.responseTo || '';
       this.referenceEmetteur = this.correspLoaded.senderReference || '';
       this.priorite = this.correspLoaded.priority || false;
+      this.dispatchType = (this.correspLoaded.dispatchType as DispatchType) || '';
 
       //TODO - GET MESSAGE BY CORRESP ID AND GET PATH AND PASS IT BELOW
       //
