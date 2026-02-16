@@ -63,6 +63,8 @@ export class CorrespUpdateComponent implements OnInit {
 
   tasksToSave: ITasks[] = [];
   pjsToSave: IPj[] = [];
+  notificationMessage: string | null = null;
+  notificationType: 'success' | 'error' | null = null;
 
   fileLinks: FileIndexLink[] = [];
   uploadProgress: Map<string, number> = new Map();
@@ -674,15 +676,17 @@ export class CorrespUpdateComponent implements OnInit {
 
     this.correspService
       .saveCorrespWithTasksAndPj(this.corresp, this.tasksToSave, this.pjsToSave, this.selectedTypeDocument, withReference)
-      .subscribe(res => {
+      .subscribe((res: any) => {
         if (!withReference) {
           this.router.navigate(['/corresp']);
-        } else {
-          this.eventManager.broadcast({
-            name: 'notification',
-            content: 'Correspondance identifiée (brouillon) — restez sur le formulaire.',
-          });
+          return;
         }
+        const body: any = res && res.body ? res.body : res;
+        if (body && typeof body === 'object') {
+          this.corresp = body as ICorresp;
+        }
+        const ref = body && body.reference ? ` Référence: ${body.reference}` : '';
+        this.showNotification(`Correspondance identifiée.${ref}`, 'success');
       });
   }
 
@@ -1045,6 +1049,33 @@ export class CorrespUpdateComponent implements OnInit {
 
   getLevelColor(level: number): string {
     return this.levelPalette[level % this.levelPalette.length];
+  }
+
+  private showNotification(message: string, type: 'success' | 'error') {
+    this.notificationMessage = message;
+    this.notificationType = type;
+    setTimeout(() => {
+      this.notificationMessage = null;
+      this.notificationType = null;
+    }, 5000);
+  }
+
+  getTaskTypeBg(type?: string | null): string {
+    const k = (type || '').toString().toLowerCase();
+    if (k === 'lecture') return '#e8f2ff';
+    if (k === 'signature') return '#efe8ff';
+    if (k === 'traitement') return '#fff0e6';
+    if (k === 'validation') return '#e9f7ee';
+    return '#f8f9fa';
+  }
+
+  getTaskTypeAccent(type?: string | null): string {
+    const k = (type || '').toString().toLowerCase();
+    if (k === 'lecture') return '#1e7bff';
+    if (k === 'signature') return '#6d28d9';
+    if (k === 'traitement') return '#f97316';
+    if (k === 'validation') return '#16a34a';
+    return '#6c757d';
   }
 
   onTreeSearchChange(): void {

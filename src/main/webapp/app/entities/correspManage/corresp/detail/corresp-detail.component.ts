@@ -24,6 +24,7 @@ import { IPersonCompany } from 'app/entities/configManage/person-company/person-
 import { PersonneFeignDTO } from '../update/PersonneFeignDTO';
 import { TypeAffectation } from '../update/enums';
 import { DispatchType } from 'app/entities/enumerations/dispatch-type.model';
+import { CorrespPermissionsDTO, PermissionDTO } from '../../permissions.model';
 
 // Mocking the Interfaces locally for this example (or import them from your shared models)
 export enum CorrespStatus {
@@ -158,6 +159,14 @@ export class CorrespDetailComponent implements OnInit {
     { value: DispatchType.EMAIL, label: 'E-mail' },
     { value: DispatchType.FAX, label: 'Fax' },
   ];
+  // permission state
+  canReadCorresp = false;
+  canWriteCorresp = false;
+  canDeleteCorresp = false;
+  canAdminCorresp = false;
+
+  // task permissions: taskId -> PermissionDTO
+  taskPermissions: { [key: number]: PermissionDTO } = {};
 
   constructor(
     protected activatedRoute: ActivatedRoute,
@@ -176,6 +185,7 @@ export class CorrespDetailComponent implements OnInit {
 
     this.correspService.find(Number(id)).subscribe(res => {
       this.correspLoaded = res.body!;
+      this.loadPermissionsForCorresp(Number(this.correspLoaded.id));
       // this.htmlContent = this.correspLoaded.body || '';
       // this.formattedDate = dayjs(this.correspLoaded.courrierDate).format('dddd DD MMMM YYYY').toUpperCase();
       // console.log(this.correspLoaded)
@@ -347,6 +357,52 @@ export class CorrespDetailComponent implements OnInit {
     });
   }
 
+  loadPermissionsForCorresp(correspId: number): void {
+    if (!correspId) return;
+    this.correspService.getPermissions(correspId).subscribe({
+      next: (res: CorrespPermissionsDTO) => {
+        const p = res?.corresp || { canRead: false, canWrite: false, canDelete: false, canAdmin: false };
+
+        this.canReadCorresp = !!p.canRead;
+        this.canWriteCorresp = !!p.canWrite;
+        this.canDeleteCorresp = !!p.canDelete;
+        this.canAdminCorresp = !!p.canAdmin;
+
+        // normaliser keys tasksPermissions (backend peut renvoyer des clefs string)
+        this.taskPermissions = {};
+        const rawTasks = (res && (res as any).tasksPermissions) || {};
+        Object.keys(rawTasks).forEach(k => {
+          const id = Number(k);
+          if (!isNaN(id)) {
+            this.taskPermissions[id] = rawTasks[k] as PermissionDTO;
+          }
+        });
+
+        // If user has absolutely no read → show message and optionally redirect
+        if (!this.canReadCorresp) {
+          this.showNotification('Vous n’avez pas le droit de consulter cette correspondance', 'error');
+          // optionnel : rediriger vers la liste pour éviter affichage page vide :
+          // this.router.navigate(['/corresp']);
+        }
+      },
+      error: err => {
+        // <-- ici : fallback strict (sécurité)
+        console.error('Erreur chargement permissions', err);
+        // Par défaut on refuse toute modification et lecture si on ne sait pas.
+        this.canReadCorresp = false;
+        this.canWriteCorresp = false;
+        this.canDeleteCorresp = false;
+        this.canAdminCorresp = false;
+
+        // Indiquer à l'utilisateur (UX)
+        this.showNotification('Impossible de récupérer vos droits. Accès en lecture interdit.', 'error');
+
+        // Optionnel selon ton UX : rediriger
+        // this.router.navigate(['/corresp']);
+      },
+    });
+  }
+
   onSelectContactPerson(personId: number | null): void {
     this.selectedPersonId = personId;
     if (!personId) {
@@ -392,6 +448,12 @@ export class CorrespDetailComponent implements OnInit {
       return;
     }
 
+    // contrôle permission : authorisé si canWrite ou canAdmin
+    if (!(this.canWriteCorresp || this.canAdminCorresp)) {
+      this.showNotification('Vous n’avez pas le droit d’enregistrer ce brouillon', 'error');
+      return;
+    }
+
     if (!this.selectedTypeDocument) {
       this.showNotification('Veuillez sélectionner un type de document !', 'error');
       return;
@@ -426,11 +488,8 @@ export class CorrespDetailComponent implements OnInit {
       next: res => {
         this.isSaving = false;
         this.correspLoaded = res.body!;
-        // this.htmlContent = this.correspLoaded.body || '';
-        this.correspService.loadBodyFromFile({ correspId: this.correspLoaded.id }).subscribe(res => {
-          console.log('res lazy body');
-          console.log(res);
-          this.htmlContent = res;
+        this.correspService.loadBodyFromFile({ correspId: this.correspLoaded.id }).subscribe(body => {
+          this.htmlContent = body;
         });
         this.showNotification('Brouillon enregistré avec succès !', 'success');
       },
@@ -560,6 +619,15 @@ export class CorrespDetailComponent implements OnInit {
     }
   }
 
+  getTaskTypeBg(type?: string | null): string {
+    const k = (type || '').toString().toLowerCase();
+    if (k === 'lecture') return '#e8f2ff';
+    if (k === 'signature') return '#efe8ff';
+    if (k === 'traitement') return '#fff0e6';
+    if (k === 'validation') return '#e9f7ee';
+    return '#ffffff';
+  }
+
   // --- Helper: Format Date ---
   formatDate(date: dayjs.Dayjs | null | undefined): string {
     return date ? date.format('DD/MM/YYYY') : 'pas de date limite';
@@ -615,6 +683,10 @@ export class CorrespDetailComponent implements OnInit {
 
   // --- replace existing saveTask() with this ---
   saveTask(): void {
+    if (!this.canWriteCorresp) {
+      this.showNotification('Vous n’avez pas le droit d’ajouter une tâche sur ce courrier', 'error');
+      return;
+    }
     if (this.btnSaveTaskDisabled) {
       return;
     }
@@ -733,6 +805,10 @@ export class CorrespDetailComponent implements OnInit {
   validationErrors: { [key: string]: string } = {};
 
   openTasksModal(content: any): void {
+    if (!this.canWriteCorresp) {
+      this.showNotification('Vous êtes en lecture seule pour ce courrier', 'error');
+      return;
+    }
     // this.selectedOrga = null;
     this.selectedDepartement = '';
     this.resetForm();
@@ -1053,37 +1129,94 @@ export class CorrespDetailComponent implements OnInit {
   // }
 
   deleteTask(correspId: number, tasksId: number): void {
-    this.taskService.deleteTaskFromCorrespAndDB(correspId, tasksId).subscribe(res => {
-      window.location.reload();
+    const perm = this.taskPermissions[tasksId];
+    if (!(perm?.canDelete || this.canDeleteCorresp || this.canWriteCorresp)) {
+      this.showNotification('Action non autorisée', 'error');
+      return;
+    }
+    this.taskService.deleteTaskFromCorrespAndDB(correspId, tasksId).subscribe({
+      next: () => {
+        // update UI without full reload
+        this.tachesAssociees = this.tachesAssociees.filter(t => t.id !== tasksId);
+        this.showNotification('Tâche supprimée', 'success');
+      },
+      error: err => {
+        console.error('Erreur suppression tâche', err);
+        this.showNotification('Erreur lors de la suppression', 'error');
+      },
     });
   }
 
   changeTasksStatus(correspId: number, taskId: number, status: string): void {
-    this.correspService.changeTaskStatus({ correspId, taskId, status }).subscribe(res => {
-      window.location.reload();
+    const perm = this.taskPermissions[taskId];
+    if (!(perm?.canWrite || this.canWriteCorresp)) {
+      this.showNotification('Vous n’avez pas le droit de modifier le statut de la tâche', 'error');
+      return;
+    }
+    this.correspService.changeTaskStatus({ correspId, taskId, status }).subscribe({
+      next: () => {
+        // refresh tasks list
+        this.taskService.getAllTasksByCorrespId({ correspId: this.correspLoaded.id }).subscribe(r => {
+          this.tachesAssociees = r.body || [];
+        });
+        this.showNotification('Statut modifié', 'success');
+      },
+      error: err => {
+        console.error('Erreur changement statut', err);
+        this.showNotification('Erreur lors du changement', 'error');
+      },
     });
   }
 
   soumettreCorresp(correspId: number): void {
-    this.correspService.soumettreCorresp({ correspId }).subscribe(res => {
-      window.location.reload();
+    if (!this.canWriteCorresp) {
+      this.showNotification('Vous n’avez pas le droit de soumettre ce courrier', 'error');
+      return;
+    }
+    this.correspService.soumettreCorresp({ correspId }).subscribe({
+      next: () => {
+        window.location.reload();
+      },
+      error: err => {
+        console.error(err);
+        this.showNotification('Erreur', 'error');
+      },
     });
   }
 
   cloturerCorresp(correspId: number): void {
-    this.correspService.cloturerCorresp({ correspId }).subscribe(res => {
-      window.location.reload();
+    if (!this.canWriteCorresp) {
+      this.showNotification('Vous n’avez pas le droit de clôturer ce courrier', 'error');
+      return;
+    }
+    this.correspService.cloturerCorresp({ correspId }).subscribe({
+      next: () => {
+        window.location.reload();
+      },
+      error: err => {
+        console.error(err);
+        this.showNotification('Erreur', 'error');
+      },
     });
   }
   generateReference(): void {
     if (!this.correspLoaded || !this.correspLoaded.id) return;
 
+    // contrôle permission (écriture ou admin)
+    if (!(this.canWriteCorresp || this.canAdminCorresp)) {
+      this.showNotification("Vous n'avez pas le droit de générer une référence", 'error');
+      return;
+    }
+
     this.correspService.generateReferenceForCorresp(this.correspLoaded.id).subscribe({
       next: (res: ICorresp) => {
         this.correspLoaded.reference = res.reference;
-        console.log('Référence générée :', res.reference);
+        this.showNotification(`Référence générée${res.reference ? ' : ' + res.reference : ''}`, 'success');
       },
-      error: err => console.error('Erreur génération référence :', err),
+      error: err => {
+        console.error('Erreur génération référence :', err);
+        this.showNotification('Impossible de générer la référence', 'error');
+      },
     });
   }
 
@@ -1180,45 +1313,33 @@ export class CorrespDetailComponent implements OnInit {
   }
 
   uploadFileWithProgress(file: File, uniqueName: string, pjModel: IPj): void {
-    this.isUploading = true;
+    if (!(this.canWriteCorresp || this.canAdminCorresp)) {
+      this.showNotification("Vous n'avez pas le droit d'ajouter une pièce jointe", 'error');
+      return;
+    }
 
-    const req = { uniqueName }; // Pass uniqueName to backend
+    this.isUploading = true;
+    const req = { uniqueName };
 
     this.pjService.uploadPj(file, req).subscribe({
       next: progressOrResponse => {
         if (typeof progressOrResponse === 'number') {
-          // Update progress bar
           this.uploadProgress.set(uniqueName, progressOrResponse);
         } else {
-          // Upload complete - response is string
+          // upload complete, backend returns path/string
           this.uploadProgress.set(uniqueName, 100);
-          console.log('Upload successful:', progressOrResponse);
-
+          pjModel.path = progressOrResponse;
           if (!this.accordionStates['pieces']) {
             this.accordionStates['pieces'] = true;
           }
 
-          pjModel.path = progressOrResponse;
-          console.log('pjModel updated:', pjModel);
-          // console.log(progressOrResponse)
-          // this.finalPath = progressOrResponse
-          // console.log(this.finalPath)
+          // assign PJ to corresp (component wrapper handles permission & UI update)
+          this.addPjToCorresp(pjModel);
 
-          this.correspService.addPjToCorresp(pjModel, this.correspLoaded.id).subscribe({
-            next: () => {
-              console.log('PJ added to corresp successfully');
-            },
-            error: err => {
-              console.error('Failed to assign PJ:', err);
-            },
-          });
-
-          // Keep progress at 100% briefly, then remove to show complete state
+          // small delay to show 100% then remove progress
           setTimeout(() => {
             this.uploadProgress.delete(uniqueName);
             this.isUploading = false;
-
-            window.location.reload();
           }, 500);
         }
       },
@@ -1226,9 +1347,38 @@ export class CorrespDetailComponent implements OnInit {
         console.error('Upload failed:', error);
         this.uploadProgress.delete(uniqueName);
         this.isUploading = false;
+        this.showNotification('Échec du téléchargement du fichier', 'error');
+      },
+    });
+  }
+  private addPjToCorresp(pjModel: IPj): void {
+    if (!this.correspLoaded || !this.correspLoaded.id) {
+      console.warn('Aucune correspondance chargée pour attacher la PJ');
+      return;
+    }
 
-        // Show error to user
-        alert('Échec du téléchargement du fichier');
+    if (!(this.canWriteCorresp || this.canAdminCorresp)) {
+      this.showNotification("Vous n'avez pas le droit d'ajouter une pièce jointe", 'error');
+      return;
+    }
+
+    this.correspService.addPjToCorresp(pjModel, this.correspLoaded.id).subscribe({
+      next: () => {
+        // Refresh pj list localement (préférable à un reload complet)
+        this.pjService.getAllPjByCorrespId({ correspId: this.correspLoaded.id }).subscribe({
+          next: res => {
+            this.pjsLoaded = res.body || [];
+            this.showNotification('Pièce jointe ajoutée', 'success');
+          },
+          error: err => {
+            console.error('Erreur rafraîchissement PJ:', err);
+            this.showNotification('Pièce jointe ajoutée (mais impossible de rafraîchir la liste)', 'success');
+          },
+        });
+      },
+      error: err => {
+        console.error('Failed to assign PJ:', err);
+        this.showNotification("Impossible d'associer la pièce jointe", 'error');
       },
     });
   }
@@ -1257,23 +1407,57 @@ export class CorrespDetailComponent implements OnInit {
   }
 
   deletePjWithCorresp(): void {
+    if (!this.selectedPjToDelete) {
+      this.showNotification('Aucune pièce sélectionnée pour suppression', 'error');
+      return;
+    }
+
+    if (!(this.canWriteCorresp || this.canDeleteCorresp || this.canAdminCorresp)) {
+      this.showNotification('Vous n’avez pas le droit de supprimer cette pièce jointe', 'error');
+      return;
+    }
+
     const req = { uniqueName: this.selectedPjToDelete.uniqueName, fileType: this.selectedPjToDelete.fileType };
 
     this.pjService.deletePjWithCorresp(req).subscribe({
       next: () => {
-        console.log('File deleted successfully');
-        window.location.reload();
+        // remove from local array (no reload)
+        this.pjsLoaded = this.pjsLoaded.filter(p => p.uniqueName !== this.selectedPjToDelete.uniqueName);
+        this.selectedPjToDelete = undefined as any;
+        this.showNotification('Pièce jointe supprimée', 'success');
       },
       error: error => {
         console.error('Delete failed:', error);
-        alert('Échec de la suppression du fichier');
+        this.showNotification('Échec de la suppression du fichier', 'error');
       },
     });
   }
 
   deleteCorresp(): void {
-    this.correspService.delete(this.correspLoaded.id).subscribe(res => {
-      this.router.navigate(['/corresp']);
+    if (!(this.canDeleteCorresp || this.canAdminCorresp)) {
+      this.showNotification("Vous n'avez pas le droit de supprimer cette correspondance", 'error');
+      return;
+    }
+
+    // petite confirmation UX
+    if (!confirm('Confirmez-vous la suppression de cette correspondance ?')) {
+      return;
+    }
+
+    if (!this.correspLoaded || !this.correspLoaded.id) {
+      this.showNotification('Aucune correspondance chargée', 'error');
+      return;
+    }
+
+    this.correspService.delete(this.correspLoaded.id).subscribe({
+      next: () => {
+        this.showNotification('Correspondance supprimée', 'success');
+        this.router.navigate(['/corresp']);
+      },
+      error: err => {
+        console.error('Erreur suppression correspondance', err);
+        this.showNotification('Erreur lors de la suppression', 'error');
+      },
     });
   }
 }

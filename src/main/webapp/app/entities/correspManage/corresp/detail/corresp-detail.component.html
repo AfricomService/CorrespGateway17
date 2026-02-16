@@ -42,7 +42,13 @@
       </div>
 
       <ng-template #showButton>
-        <button (click)="generateReference()" class="btn btn-outline-secondary" style="font-weight: 600; text-transform: uppercase">
+        <button
+          (click)="generateReference()"
+          [disabled]="!(canWriteCorresp || canAdminCorresp)"
+          class="btn btn-outline-secondary"
+          style="font-weight: 600; text-transform: uppercase"
+          title="{{ canWriteCorresp || canAdminCorresp ? '' : 'Droit insuffisant' }}"
+        >
           Identifier
         </button>
       </ng-template>
@@ -58,8 +64,10 @@
     <div style="display: flex; gap: 1em; align-items: center">
       <button
         (click)="openDeleteModal(DeleteCorrespModal)"
+        [disabled]="!(canDeleteCorresp || canAdminCorresp)"
         class="btn btn-outline-danger"
         style="font-weight: 600; text-transform: uppercase"
+        title="{{ canDeleteCorresp || canAdminCorresp ? '' : 'Droit insuffisant' }}"
       >
         Supprimer
       </button>
@@ -69,9 +77,10 @@
       <button
         (click)="saveDraft()"
         *ngIf="correspLoaded?.status === 'DRAFT'"
-        [disabled]="isSaving"
+        [disabled]="isSaving || !(canWriteCorresp || canAdminCorresp)"
         class="btn btn-primary"
         style="font-weight: 600; text-transform: uppercase"
+        title="{{ canWriteCorresp || canAdminCorresp ? '' : 'Droit insuffisant' }}"
       >
         Enregistrer
       </button>
@@ -122,7 +131,7 @@
 
             <!-- 🟢 SI DRAFT : afficher le formulaire -->
             <div
-              *ngIf="correspLoaded?.status === 'DRAFT'; else lectureInfoGen"
+              *ngIf="correspLoaded?.status === 'DRAFT' && (canWriteCorresp || canAdminCorresp); else lectureInfoGen"
               [style.max-height]="accordionStates['infoGen'] ? '2000px' : '0'"
               [style.padding]="accordionStates['infoGen'] ? '16px' : '0 16px'"
               style="overflow: hidden; transition: max-height 0.5s ease, padding 0.5s ease"
@@ -349,9 +358,9 @@
                     </div>
 
                     <!-- <div style="flex: 1">
-                      <label class="form-label fw-semibold">Confidentialité</label>
-                      <input class="form-control" placeholder="Entrer la Confidentialité" type="text" />
-                    </div>-->
+                       <label class="form-label fw-semibold">Confidentialité</label>
+                       <input class="form-control" placeholder="Entrer la Confidentialité" type="text" />
+                     </div>-->
 
                     <div style="flex: 1">
                       <label class="form-label fw-semibold">Réference Emétteur</label>
@@ -423,9 +432,10 @@
                 <button
                   (click)="openTasksModal(AddTaskModal); $event.stopPropagation()"
                   *ngIf="correspLoaded?.status !== CorrespStatus.CLOSED"
-                  [disabled]="btnSaveTaskDisabled"
+                  [disabled]="btnSaveTaskDisabled || !(canWriteCorresp || canAdminCorresp)"
                   class="btn btn-primary btn-sm"
                   style="font-weight: bold; font-size: 1.2em; padding: 0 0.5em"
+                  title="{{ canWriteCorresp || canAdminCorresp ? '' : 'Droit insuffisant' }}"
                 >
                   +
                 </button>
@@ -477,6 +487,7 @@
                     display: flex;
                     flex-direction: column;
                   "
+                  [style.background-color]="getTaskTypeBg(task.taskType)"
                 >
                   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px">
                     <span
@@ -500,9 +511,12 @@
                       <span
                         (click)="changeTasksStatus(correspLoaded?.id!, task.id, 'CANCELLED')"
                         *ngIf="CorrespStatus.DRAFT === task.status"
+                        [style.pointer-events]="taskPermissions[task.id]?.canWrite || canWriteCorresp ? 'auto' : 'none'"
+                        [style.opacity]="taskPermissions[task.id]?.canWrite || canWriteCorresp ? '1' : '0.4'"
                         [style.background-color]="'#6a2020'"
                         class="badge"
                         style="font-size: 0.7em; text-transform: uppercase; cursor: pointer"
+                        title="{{ taskPermissions[task.id]?.canWrite || canWriteCorresp ? '' : 'Droit insuffisant' }}"
                       >
                         annuler
                       </span>
@@ -510,9 +524,14 @@
                       <span
                         (click)="deleteTask(correspLoaded?.id!, task.id)"
                         *ngIf="CorrespStatus.DRAFT === task.status"
+                        [style.pointer-events]="
+                          taskPermissions[task.id]?.canDelete || canDeleteCorresp || canWriteCorresp ? 'auto' : 'none'
+                        "
+                        [style.opacity]="taskPermissions[task.id]?.canDelete || canDeleteCorresp || canWriteCorresp ? '1' : '0.4'"
                         [style.background-color]="'#dc3545'"
                         class="badge"
                         style="font-size: 0.7em; text-transform: uppercase; cursor: pointer"
+                        title="{{ taskPermissions[task.id]?.canDelete || canDeleteCorresp || canWriteCorresp ? '' : 'Droit insuffisant' }}"
                       >
                         SUPPRIMER
                       </span>
@@ -520,9 +539,12 @@
                       <span
                         (click)="changeTasksStatus(correspLoaded?.id!, task.id, 'IN_PROGRESS')"
                         *ngIf="CorrespStatus.DRAFT === task.status"
+                        [style.pointer-events]="taskPermissions[task.id]?.canWrite || canWriteCorresp ? 'auto' : 'none'"
+                        [style.opacity]="taskPermissions[task.id]?.canWrite || canWriteCorresp ? '1' : '0.4'"
                         [style.background-color]="'#0d6efd'"
                         class="badge"
                         style="font-size: 0.7em; text-transform: uppercase; cursor: pointer"
+                        title="{{ taskPermissions[task.id]?.canWrite || canWriteCorresp ? '' : 'Droit insuffisant' }}"
                       >
                         commencer
                       </span>
@@ -530,9 +552,12 @@
                       <span
                         (click)="changeTasksStatus(correspLoaded?.id!, task.id, 'CANCELLED')"
                         *ngIf="CorrespStatus.IN_PROGRESS === task.status"
+                        [style.pointer-events]="taskPermissions[task.id]?.canWrite || canWriteCorresp ? 'auto' : 'none'"
+                        [style.opacity]="taskPermissions[task.id]?.canWrite || canWriteCorresp ? '1' : '0.4'"
                         [style.background-color]="'#6a2020'"
                         class="badge"
                         style="font-size: 0.7em; text-transform: uppercase; cursor: pointer"
+                        title="{{ taskPermissions[task.id]?.canWrite || canWriteCorresp ? '' : 'Droit insuffisant' }}"
                       >
                         annuler
                       </span>
@@ -540,9 +565,12 @@
                       <span
                         (click)="changeTasksStatus(correspLoaded?.id!, task.id, 'CLOSED')"
                         *ngIf="CorrespStatus.IN_PROGRESS === task.status"
+                        [style.pointer-events]="taskPermissions[task.id]?.canWrite || canWriteCorresp ? 'auto' : 'none'"
+                        [style.opacity]="taskPermissions[task.id]?.canWrite || canWriteCorresp ? '1' : '0.4'"
                         [style.background-color]="'#198754'"
                         class="badge"
                         style="font-size: 0.7em; text-transform: uppercase; cursor: pointer"
+                        title="{{ taskPermissions[task.id]?.canWrite || canWriteCorresp ? '' : 'Droit insuffisant' }}"
                       >
                         terminer
                       </span>
@@ -614,7 +642,7 @@
               style="overflow: hidden; transition: max-height 0.5s ease, padding 0.5s ease"
             >
               <!-- --- DRAFT MODE --- -->
-              <ng-container *ngIf="correspLoaded?.status === 'DRAFT'; else readOnlyBody">
+              <ng-container *ngIf="correspLoaded?.status === 'DRAFT' && (canWriteCorresp || canAdminCorresp); else readOnlyBody">
                 <!-- --- En-tête rapide (DRAFT) : De / À / CC - horizontal + responsive --- -->
                 <div class="header-quick" role="group" aria-label="En-tête rapide">
                   <div class="hq-item" title="{{ expediteur || correspLoaded?.sender || '-' }}">
@@ -698,11 +726,12 @@
                 <button
                   (click)="fileInput.click(); $event.stopPropagation()"
                   *ngIf="correspLoaded?.status === CorrespStatus.DRAFT"
-                  [disabled]="isUploading"
+                  [disabled]="isUploading || !(canWriteCorresp || canAdminCorresp)"
                   [style.cursor]="isUploading ? 'not-allowed' : 'pointer'"
-                  [style.opacity]="isUploading ? '0.5' : '1'"
+                  [style.opacity]="isUploading || !(canWriteCorresp || canAdminCorresp) ? '0.5' : '1'"
                   class="btn btn-primary btn-sm"
                   style="font-weight: bold; font-size: 1.2em; padding: 0 0.5em"
+                  title="{{ canWriteCorresp || canAdminCorresp ? '' : 'Droit insuffisant' }}"
                 >
                   +
                 </button>
@@ -813,11 +842,12 @@
 
                     <dx-button
                       (click)="openDeletePjModal(DeletePjModal, pj)"
-                      [disabled]="isUploading"
+                      [disabled]="isUploading || !(canWriteCorresp || canDeleteCorresp || canAdminCorresp)"
                       class="pj-action-btn"
                       icon="trash"
                       stylingMode="contained"
                       type="danger"
+                      [elementAttr]="{ title: canWriteCorresp || canDeleteCorresp || canAdminCorresp ? '' : 'Droit insuffisant' }"
                     ></dx-button>
                   </div>
                 </div>
@@ -870,16 +900,20 @@
         <button
           (click)="soumettreCorresp(correspLoaded?.id!)"
           *ngIf="correspLoaded?.status === CorrespStatus.DRAFT"
+          [disabled]="!(canWriteCorresp || canAdminCorresp)"
           class="btn btn-success"
           style="font-weight: 600; text-transform: uppercase; min-width: 120px"
+          title="{{ canWriteCorresp || canAdminCorresp ? '' : 'Droit insuffisant' }}"
         >
           Soumettre
         </button>
         <button
           (click)="cloturerCorresp(correspLoaded?.id!)"
           *ngIf="correspLoaded?.status === CorrespStatus.IN_PROGRESS"
+          [disabled]="!(canWriteCorresp || canAdminCorresp)"
           class="btn btn-danger"
           style="font-weight: 600; text-transform: uppercase; min-width: 120px"
+          title="{{ canWriteCorresp || canAdminCorresp ? '' : 'Droit insuffisant' }}"
         >
           Clôturer
         </button>
@@ -1037,7 +1071,7 @@
                         <span style="font-size: 12px; color: #6c757d">
                           <i [class]="isAffectationExpanded(node.id, type) ? 'fa fa-chevron-down' : 'fa fa-chevron-right'"></i>
                         </span>
-                        <span style="font-weight: 600; font-size: 13px; color: #495057">{{ type }}</span>
+                        <span style="font-weight: 600; font-size: 10px; color: #495057">{{ type }}</span>
                       </div>
                       <span class="badge bg-primary rounded-pill" style="font-size: 11px">
                         {{ getPeopleForType(node, type).length }}
@@ -1148,7 +1182,15 @@
 
   <div class="modal-footer">
     <button (click)="AddTaskModal.close('Close click')" class="btn btn-light btn-model" type="button">Annuler</button>
-    <button (click)="saveTask()" [disabled]="btnSaveTaskDisabled" class="btn btn-primary btn-model" type="button">Enregistrer</button>
+    <button
+      (click)="saveTask()"
+      [disabled]="btnSaveTaskDisabled || !(canWriteCorresp || canAdminCorresp)"
+      class="btn btn-primary btn-model"
+      type="button"
+      title="{{ canWriteCorresp || canAdminCorresp ? '' : 'Droit insuffisant' }}"
+    >
+      Enregistrer
+    </button>
   </div>
 </ng-template>
 
@@ -1173,7 +1215,15 @@
   <div class="modal-footer">
     <button (click)="DeleteCorrespModal.dismiss('cancel')" class="btn btn-secondary" type="button">ANNULER</button>
 
-    <button (click)="deleteCorresp(); DeleteCorrespModal.close('confirm')" class="btn btn-danger" type="button">SUPPRIMER</button>
+    <button
+      (click)="deleteCorresp(); DeleteCorrespModal.close('confirm')"
+      [disabled]="!(canDeleteCorresp || canAdminCorresp)"
+      class="btn btn-danger"
+      type="button"
+      title="{{ canDeleteCorresp || canAdminCorresp ? '' : 'Droit insuffisant' }}"
+    >
+      SUPPRIMER
+    </button>
   </div>
 </ng-template>
 
@@ -1191,6 +1241,14 @@
   <div class="modal-footer">
     <button (click)="DeletePjModal.dismiss('cancel')" class="btn btn-secondary" type="button">ANNULER</button>
 
-    <button (click)="deletePjWithCorresp(); DeletePjModal.close('confirm')" class="btn btn-danger" type="button">SUPPRIMER</button>
+    <button
+      (click)="deletePjWithCorresp(); DeletePjModal.close('confirm')"
+      [disabled]="!(canWriteCorresp || canDeleteCorresp || canAdminCorresp)"
+      class="btn btn-danger"
+      type="button"
+      title="{{ canWriteCorresp || canDeleteCorresp || canAdminCorresp ? '' : 'Droit insuffisant' }}"
+    >
+      SUPPRIMER
+    </button>
   </div>
 </ng-template>

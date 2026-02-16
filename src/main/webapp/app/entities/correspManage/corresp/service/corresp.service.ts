@@ -15,7 +15,7 @@ import { DepartementTreeFeignDTO } from '../update/DepartementTreeFeignDTO';
 import { IDepartement } from '../../../orgacare/departement/departement.model';
 import { organigrammeFeignDTO } from '../update/organigrammeFeignDTO';
 import { ITypedocument } from '../../../configManage/typedocument/typedocument.model';
-
+import { CorrespPermissionsDTO } from '../../permissions.model';
 export type PartialUpdateCorresp = Partial<ICorresp> & Pick<ICorresp, 'id'>;
 
 type RestOf<T extends ICorresp | NewCorresp> = Omit<T, 'dateCreated' | 'courrierDate' | 'updatedDate'> & {
@@ -317,5 +317,9 @@ export class CorrespService {
     return this.http
       .get<RestCorresp[]>(`${this.resourceUrl}/with-reference`, { params: options, observe: 'response' })
       .pipe(map(res => this.convertResponseArrayFromServer(res)));
+  }
+
+  getPermissions(correspId: number): Observable<CorrespPermissionsDTO> {
+    return this.http.get<CorrespPermissionsDTO>(`${this.resourceUrl}/${correspId}/permissions`);
   }
 }
