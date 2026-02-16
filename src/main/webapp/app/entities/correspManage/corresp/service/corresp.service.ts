@@ -296,4 +296,26 @@ export class CorrespService {
       .get<RestCorresp[]>(`${this.resourceUrl}/by-task/${taskId}`, { observe: 'response' })
       .pipe(map(res => this.convertResponseArrayFromServer(res)));
   }
+
+  /**
+   * Liste complète (non paginée) des corresps ayant une reference non-nulle.
+   * GET /api/corresps/with-reference/list
+   */
+  getAllWithReferenceList(): Observable<EntityArrayResponseType> {
+    return this.http
+      .get<RestCorresp[]>(`${this.resourceUrl}/with-reference/list`, { observe: 'response' })
+      .pipe(map(res => this.convertResponseArrayFromServer(res)));
+  }
+
+  /**
+   * Page des corresps ayant une reference non-nulle (paginée).
+   * GET /api/corresps/with-reference?page=1&size=20
+   * page = 1-based (comme dans ton service backend)
+   */
+  getAllWithReference(page: number = 1, size: number = 20): Observable<EntityArrayResponseType> {
+    const options = createRequestOption({ page, size });
+    return this.http
+      .get<RestCorresp[]>(`${this.resourceUrl}/with-reference`, { params: options, observe: 'response' })
+      .pipe(map(res => this.convertResponseArrayFromServer(res)));
+  }
 }

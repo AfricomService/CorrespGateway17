@@ -310,10 +310,10 @@
                       {{ validationInfoGenErrors['contactEmail'] }}
                     </div>
 
-                    <div *ngIf="contactEmail" class="mt-2 small text-muted">
+                    <!--  <div *ngIf="contactEmail" class="mt-2 small text-muted">
                       Contact sélectionné : <strong>{{ contactEmailLabel || contactEmail }}</strong>
                       <span *ngIf="contactEmailLabel && contactEmail"> — {{ contactEmail }}</span>
-                    </div>
+                    </div>-->
 
                     <div *ngIf="loadingPersons" class="mt-2 small text-muted">Chargement des contacts…</div>
                   </div>
@@ -339,19 +339,28 @@
                 <div style="display: flex; gap: 12px; margin-bottom: 1.5em; border-top: 1px dashed #5570a3">
                   <div style="flex: 1; display: flex; align-items: center; gap: 16px; padding-top: 30px">
                     <div style="flex: 1">
-                      <label class="form-label fw-semibold">Reponse Sur</label>
-                      <input
-                        type="text"
-                        class="form-control"
-                        [(ngModel)]="reponseSur"
-                        name="reponseSur"
-                        placeholder="Entrer la Reponse Sur"
-                      />
+                      <label class="form-label fw-semibold">Réponse Sur</label>
+                      <dx-select-box
+                        [(value)]="reponseSur"
+                        [dataSource]="correspsWithReference"
+                        [valueExpr]="'reference'"
+                        displayExpr="reference"
+                        [searchEnabled]="true"
+                        [searchExpr]="responseSearchExpr"
+                        placeholder="-- Choisir une correspondance (référence) --"
+                        class="w-100"
+                        [disabled]="loadingCorrespsWithRef"
+                        (onValueChanged)="onSelectReponseSur($event.value)"
+                      >
+                        <div *dxTemplate="let item of 'listItem'">
+                          <div>
+                            <strong>{{ item.reference || '(Sans référence)' }}</strong>
+                            <span *ngIf="item.subject"> — {{ item.subject }}</span>
+                            <span *ngIf="item.idinstance" class="text-muted"> — {{ item.idinstance }}</span>
+                          </div>
+                        </div>
+                      </dx-select-box>
                     </div>
-                    <!-- <div style="flex: 1">
-                       <label class="form-label fw-semibold">Confidentialité</label>
-                       <input type="text" class="form-control" placeholder="Entrer la Confidentialité" />
-                     </div>-->
 
                     <div style="flex: 1">
                       <label class="form-label fw-semibold">Réference Emétteur</label>

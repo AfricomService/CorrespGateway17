@@ -99,6 +99,10 @@ export class CorrespUpdateComponent implements OnInit {
   editingTaskIndex: number | null = null;
   isEditMode: boolean = false;
 
+  correspsWithReference: ICorresp[] = [];
+  selectedCorrespReference: string | null = null; // stocke la reference sélectionnée (facultatif)
+  loadingCorrespsWithRef = false;
+
   editForm: CorrespFormGroup = this.correspFormService.createCorrespFormGroup();
 
   searchExpr = function (dataItem: IUser): string {
@@ -133,6 +137,7 @@ export class CorrespUpdateComponent implements OnInit {
   loadingCompanies = false;
   loadingPersons = false;
   contactEmailLabel: string = '';
+  loadingCorresps = false;
 
   showManualExpediteur = false;
   showManualContact: boolean = false;
@@ -211,6 +216,8 @@ export class CorrespUpdateComponent implements OnInit {
 
     this.loadUsers();
     this.loadActiveCompanies();
+    this.loadAllCorresps();
+    this.loadCorrespsWithReferenceList();
   }
 
   // --------------------------------------------------------------------------
@@ -223,6 +230,14 @@ export class CorrespUpdateComponent implements OnInit {
   personSearchExpr = function (dataItem: IPersonCompany): string {
     return (dataItem.nom ? dataItem.nom + ' ' : '') + (dataItem.email ? dataItem.email + ' ' : '') + (dataItem.tel ? dataItem.tel : '');
   };
+  responseSearchExpr = function (dataItem: ICorresp): string {
+    return (
+      (dataItem.subject ? dataItem.subject + ' ' : '') +
+      (dataItem.reference ? dataItem.reference + ' ' : '') +
+      (dataItem.idinstance ? dataItem.idinstance : '')
+    );
+  };
+  corresps: ICorresp[] = [];
 
   loadActiveCompanies(): void {
     this.loadingCompanies = true;
@@ -235,6 +250,20 @@ export class CorrespUpdateComponent implements OnInit {
         console.error('Failed to load companies', err);
         this.companies = [];
         this.loadingCompanies = false;
+      },
+    });
+  }
+  loadAllCorresps(): void {
+    this.loadingCorresps = true;
+    this.correspService.query({ page: 0, size: 1000, sort: ['subject,ASC'] }).subscribe({
+      next: (res: HttpResponse<ICorresp[]>) => {
+        this.corresps = res.body || [];
+        this.loadingCorresps = false;
+      },
+      error: err => {
+        console.error('Erreur chargement correspondances', err);
+        this.corresps = [];
+        this.loadingCorresps = false;
       },
     });
   }
@@ -408,6 +437,37 @@ export class CorrespUpdateComponent implements OnInit {
       result += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     return result;
+  }
+
+  loadCorrespsWithReferenceList(): void {
+    this.loadingCorrespsWithRef = true;
+    // utilise le service que nous avons ajouté précédemment
+    this.correspService.getAllWithReferenceList().subscribe({
+      next: (res: HttpResponse<ICorresp[]>) => {
+        this.correspsWithReference = res.body || [];
+        this.loadingCorrespsWithRef = false;
+      },
+      error: err => {
+        console.error('Erreur chargement corresps with reference', err);
+        this.correspsWithReference = [];
+        this.loadingCorrespsWithRef = false;
+      },
+    });
+  }
+
+  onSelectReponseSur(reference: string | null): void {
+    this.reponseSur = reference ?? '';
+    this.selectedCorrespReference = reference;
+
+    // Si tu utilises le formGroup et que tu veux stocker la valeur dedans :
+    try {
+      // nom du control dans CorrespFormGroup : "responseTo" ? adapte si différent
+      if (this.editForm && this.editForm.controls && this.editForm.controls.responseTo) {
+        this.editForm.controls.responseTo.setValue(this.reponseSur);
+      }
+    } catch (e) {
+      // ignore si le control n'existe pas
+    }
   }
 
   // --------------------------------------------------------------------------

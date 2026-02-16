@@ -259,6 +259,7 @@ public class UserResource {
     }
 
     @GetMapping("/users/id/{id}")
+    @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.USER + "', '" + AuthoritiesConstants.ADMIN + "')")
     public Mono<ResponseEntity<UserDTO>> getUserById(@PathVariable Long id) {
         log.debug("REST request to get User by id : {}", id);
         return userService.getUserById(id).map(userDto -> ResponseEntity.ok(userDto)).defaultIfEmpty(ResponseEntity.notFound().build());
