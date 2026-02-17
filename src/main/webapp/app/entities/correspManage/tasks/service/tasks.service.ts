@@ -86,6 +86,13 @@ export class TasksService {
       .pipe(map((res: HttpResponse<RestTasks[]>) => this.convertResponseArrayFromServer(res)));
   }
 
+  getAllTasksByUserAclAllStatuses(userId: number): Observable<EntityArrayResponseType> {
+    const options = createRequestOption({ userId });
+    return this.http
+      .get<RestTasks[]>(`${this.resourceUrl}/tasksByUserAclAllStatuses`, { params: options, observe: 'response' })
+      .pipe(map((res: HttpResponse<RestTasks[]>) => this.convertResponseArrayFromServer(res)));
+  }
+
   delete(id: number): Observable<HttpResponse<{}>> {
     return this.http.delete(`${this.resourceUrl}/${id}`, { observe: 'response' });
   }

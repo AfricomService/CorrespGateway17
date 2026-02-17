@@ -475,9 +475,14 @@
                 </div>
               </div>
 
-              <div *ngIf="tachesAssociees.length > 0" style="display: flex; flex-direction: column; gap: 12px">
+              <div
+                *ngIf="tachesAssociees.length > 0"
+                id="tasksSection"
+                style="max-height: 420px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px"
+              >
                 <div
                   *ngFor="let task of tachesAssociees"
+                  [attr.id]="'task-' + task.id"
                   [style.border-left]="'5px solid ' + getTaskColor(task.status)"
                   style="
                     padding: 12px;
@@ -511,12 +516,12 @@
                       <span
                         (click)="changeTasksStatus(correspLoaded?.id!, task.id, 'CANCELLED')"
                         *ngIf="CorrespStatus.DRAFT === task.status"
-                        [style.pointer-events]="taskPermissions[task.id]?.canWrite || canWriteCorresp ? 'auto' : 'none'"
-                        [style.opacity]="taskPermissions[task.id]?.canWrite || canWriteCorresp ? '1' : '0.4'"
+                        [style.pointer-events]="isGlobalAdmin || canAdminCorresp || userAclTaskIds.has(+task.id) ? 'auto' : 'none'"
+                        [style.opacity]="isGlobalAdmin || canAdminCorresp || userAclTaskIds.has(+task.id) ? '1' : '0.4'"
                         [style.background-color]="'#6a2020'"
                         class="badge"
                         style="font-size: 0.7em; text-transform: uppercase; cursor: pointer"
-                        title="{{ taskPermissions[task.id]?.canWrite || canWriteCorresp ? '' : 'Droit insuffisant' }}"
+                        title="{{ isGlobalAdmin || canAdminCorresp || userAclTaskIds.has(+task.id) ? '' : 'Droit insuffisant' }}"
                       >
                         annuler
                       </span>
@@ -524,14 +529,12 @@
                       <span
                         (click)="deleteTask(correspLoaded?.id!, task.id)"
                         *ngIf="CorrespStatus.DRAFT === task.status"
-                        [style.pointer-events]="
-                          taskPermissions[task.id]?.canDelete || canDeleteCorresp || canWriteCorresp ? 'auto' : 'none'
-                        "
-                        [style.opacity]="taskPermissions[task.id]?.canDelete || canDeleteCorresp || canWriteCorresp ? '1' : '0.4'"
+                        [style.pointer-events]="isGlobalAdmin || canAdminCorresp || userAclTaskIds.has(+task.id) ? 'auto' : 'none'"
+                        [style.opacity]="isGlobalAdmin || canAdminCorresp || userAclTaskIds.has(+task.id) ? '1' : '0.4'"
                         [style.background-color]="'#dc3545'"
                         class="badge"
                         style="font-size: 0.7em; text-transform: uppercase; cursor: pointer"
-                        title="{{ taskPermissions[task.id]?.canDelete || canDeleteCorresp || canWriteCorresp ? '' : 'Droit insuffisant' }}"
+                        title="{{ isGlobalAdmin || canAdminCorresp || userAclTaskIds.has(+task.id) ? '' : 'Droit insuffisant' }}"
                       >
                         SUPPRIMER
                       </span>
@@ -539,12 +542,12 @@
                       <span
                         (click)="changeTasksStatus(correspLoaded?.id!, task.id, 'IN_PROGRESS')"
                         *ngIf="CorrespStatus.DRAFT === task.status"
-                        [style.pointer-events]="taskPermissions[task.id]?.canWrite || canWriteCorresp ? 'auto' : 'none'"
-                        [style.opacity]="taskPermissions[task.id]?.canWrite || canWriteCorresp ? '1' : '0.4'"
+                        [style.pointer-events]="isGlobalAdmin || canAdminCorresp || userAclTaskIds.has(+task.id) ? 'auto' : 'none'"
+                        [style.opacity]="isGlobalAdmin || canAdminCorresp || userAclTaskIds.has(+task.id) ? '1' : '0.4'"
                         [style.background-color]="'#0d6efd'"
                         class="badge"
                         style="font-size: 0.7em; text-transform: uppercase; cursor: pointer"
-                        title="{{ taskPermissions[task.id]?.canWrite || canWriteCorresp ? '' : 'Droit insuffisant' }}"
+                        title="{{ isGlobalAdmin || canAdminCorresp || userAclTaskIds.has(+task.id) ? '' : 'Droit insuffisant' }}"
                       >
                         commencer
                       </span>
@@ -552,12 +555,12 @@
                       <span
                         (click)="changeTasksStatus(correspLoaded?.id!, task.id, 'CANCELLED')"
                         *ngIf="CorrespStatus.IN_PROGRESS === task.status"
-                        [style.pointer-events]="taskPermissions[task.id]?.canWrite || canWriteCorresp ? 'auto' : 'none'"
-                        [style.opacity]="taskPermissions[task.id]?.canWrite || canWriteCorresp ? '1' : '0.4'"
+                        [style.pointer-events]="isGlobalAdmin || canAdminCorresp || userAclTaskIds.has(task.id) ? 'auto' : 'none'"
+                        [style.opacity]="isGlobalAdmin || canAdminCorresp || userAclTaskIds.has(task.id) ? '1' : '0.4'"
                         [style.background-color]="'#6a2020'"
                         class="badge"
                         style="font-size: 0.7em; text-transform: uppercase; cursor: pointer"
-                        title="{{ taskPermissions[task.id]?.canWrite || canWriteCorresp ? '' : 'Droit insuffisant' }}"
+                        title="{{ isGlobalAdmin || canAdminCorresp || userAclTaskIds.has(task.id) ? '' : 'Droit insuffisant' }}"
                       >
                         annuler
                       </span>
@@ -565,12 +568,30 @@
                       <span
                         (click)="changeTasksStatus(correspLoaded?.id!, task.id, 'CLOSED')"
                         *ngIf="CorrespStatus.IN_PROGRESS === task.status"
-                        [style.pointer-events]="taskPermissions[task.id]?.canWrite || canWriteCorresp ? 'auto' : 'none'"
-                        [style.opacity]="taskPermissions[task.id]?.canWrite || canWriteCorresp ? '1' : '0.4'"
+                        [style.pointer-events]="
+                          isGlobalAdmin ||
+                          canAdminCorresp ||
+                          ((taskPermissions[task.id]?.canWrite || canWriteCorresp) && userAclTaskIds.has(task.id))
+                            ? 'auto'
+                            : 'none'
+                        "
+                        [style.opacity]="
+                          isGlobalAdmin ||
+                          canAdminCorresp ||
+                          ((taskPermissions[task.id]?.canWrite || canWriteCorresp) && userAclTaskIds.has(task.id))
+                            ? '1'
+                            : '0.4'
+                        "
                         [style.background-color]="'#198754'"
                         class="badge"
                         style="font-size: 0.7em; text-transform: uppercase; cursor: pointer"
-                        title="{{ taskPermissions[task.id]?.canWrite || canWriteCorresp ? '' : 'Droit insuffisant' }}"
+                        title="{{
+                          isGlobalAdmin ||
+                          canAdminCorresp ||
+                          ((taskPermissions[task.id]?.canWrite || canWriteCorresp) && userAclTaskIds.has(task.id))
+                            ? ''
+                            : 'Droit insuffisant'
+                        }}"
                       >
                         terminer
                       </span>
@@ -888,12 +909,12 @@
       style="display: flex; align-items: center; width: 100%; justify-content: space-between"
     >
       <div>
-        <button
-          class="btn"
-          style="color: white; cursor: auto; font-weight: 600; text-transform: uppercase; min-width: 120px; background-color: #1f57ba"
-        >
-          Dernière modification - {{ formatLongDateWithTime(correspLoaded?.updatedDate) }}
-        </button>
+        <div class="last-modification" aria-hidden="false">
+          Dernière modification -
+          <time [attr.datetime]="correspLoaded?.updatedDate">
+            {{ formatLongDateWithTime(correspLoaded?.updatedDate) }}
+          </time>
+        </div>
       </div>
       <div style="display: flex; align-items: center; gap: 12px">
         <button class="btn btn-secondary" style="font-weight: 600; text-transform: uppercase; min-width: 120px">Annuler</button>
@@ -920,12 +941,12 @@
       </div>
     </div>
     <div *ngIf="correspLoaded?.status === CorrespStatus.CLOSED" style="display: flex; gap: 12px; justify-content: flex-start; width: 100%">
-      <button
-        class="btn"
-        style="color: white; cursor: auto; font-weight: 600; text-transform: uppercase; min-width: 120px; background-color: #6a2020"
-      >
-        Correspendance Clôturée - {{ formatLongDate(correspLoaded?.updatedDate) }}
-      </button>
+      <div class="last-modification last-modification--closed" aria-hidden="false">
+        Correspondance clôturée -
+        <time [attr.datetime]="correspLoaded?.updatedDate">
+          {{ formatLongDate(correspLoaded?.updatedDate) }}
+        </time>
+      </div>
     </div>
   </div>
 </div>

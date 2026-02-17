@@ -7,7 +7,6 @@ import { TasksService } from '../../tasks/service/tasks.service';
 import { ITasks } from '../../tasks/tasks.model';
 import { IPj } from '../../pj/pj.model';
 import { PjService } from '../../pj/service/pj.service';
-import { IUser } from '../../../../admin/user-management/user-management.model';
 import { HttpResponse } from '@angular/common/http';
 import { DepartementTreeFeignDTO } from '../update/DepartementTreeFeignDTO';
 // import { IOrga } from '../orga';
@@ -25,6 +24,8 @@ import { PersonneFeignDTO } from '../update/PersonneFeignDTO';
 import { TypeAffectation } from '../update/enums';
 import { DispatchType } from 'app/entities/enumerations/dispatch-type.model';
 import { CorrespPermissionsDTO, PermissionDTO } from '../../permissions.model';
+import { AccountService } from 'app/core/auth/account.service';
+import { Account } from 'app/core/auth/account.model';
 
 // Mocking the Interfaces locally for this example (or import them from your shared models)
 export enum CorrespStatus {
@@ -150,6 +151,7 @@ export class CorrespDetailComponent implements OnInit {
   @ViewChild('filePreview') filePreview!: FilePreviewComponent;
 
   treeSearchQuery = '';
+  selectedTaskId: number | null = null;
   taskTreeFiltered: DepartementTreeFeignDTO[] = [];
 
   dispatchType: DispatchType | '' = '';
@@ -167,6 +169,11 @@ export class CorrespDetailComponent implements OnInit {
 
   // task permissions: taskId -> PermissionDTO
   taskPermissions: { [key: number]: PermissionDTO } = {};
+  // tâches appartenant réellement à l'utilisateur (ACL)
+  userAclTaskIds: Set<number> = new Set<number>();
+  private currentAccountLogin: string | null = null;
+  private currentUserId: number | null = null;
+  isGlobalAdmin = false;
 
   constructor(
     protected activatedRoute: ActivatedRoute,
@@ -176,10 +183,17 @@ export class CorrespDetailComponent implements OnInit {
     private taskService: TasksService,
     private pjService: PjService,
     private modalService: NgbModal,
-    protected contactCompanyService: ContactCompanyService
+    protected contactCompanyService: ContactCompanyService,
+    private accountService: AccountService
   ) {}
 
   ngOnInit(): void {
+    this.accountService.identity().subscribe(acc => {
+      const roles = acc?.authorities ?? [];
+      this.isGlobalAdmin = Array.isArray(roles) && roles.includes('ROLE_ADMIN');
+    });
+    const qp = this.activatedRoute.snapshot.queryParamMap.get('taskId');
+    this.selectedTaskId = qp != null && qp !== '' ? Number(qp) : null;
     this.loadMockData();
     const id = this.activatedRoute.snapshot.paramMap.get('id');
 
@@ -218,6 +232,9 @@ export class CorrespDetailComponent implements OnInit {
     this.taskService.getAllTasksByCorrespId({ correspId: Number(id) }).subscribe(res => {
       this.tachesAssociees = res.body || [];
       console.log(this.tachesAssociees);
+      // si on a déjà les ACL, on ne fait rien, sinon on essayera après charge permissions
+      this.refreshUserAclEnablement();
+      setTimeout(() => this.scrollToTaskIfRequested(), 0);
     });
 
     this.pjService.getAllPjByCorrespId({ correspId: Number(id) }).subscribe(res => {
@@ -384,6 +401,12 @@ export class CorrespDetailComponent implements OnInit {
           // optionnel : rediriger vers la liste pour éviter affichage page vide :
           // this.router.navigate(['/corresp']);
         }
+
+        // Charger la liste des tâches réellement accessibles par l'utilisateur si write
+        // Un admin peut tout faire; on utilise ACL pour tous les non-admins (qu'ils aient write corresp ou pas)
+        if (!(this.canAdminCorresp || this.isGlobalAdmin)) {
+          this.loadCurrentUserAndAclTasks();
+        }
       },
       error: err => {
         // <-- ici : fallback strict (sécurité)
@@ -401,6 +424,57 @@ export class CorrespDetailComponent implements OnInit {
         // this.router.navigate(['/corresp']);
       },
     });
+  }
+
+  private loadCurrentUserAndAclTasks(): void {
+    this.accountService.identity().subscribe((acc: Account | null) => {
+      const uid = acc != null ? (acc as any).id : null;
+      this.currentAccountLogin = acc?.login ?? null;
+      if (typeof uid === 'number') {
+        this.currentUserId = uid;
+        this.taskService.getAllTasksByUserAclAllStatuses(uid).subscribe({
+          next: resp => {
+            const list = resp.body || [];
+            const ids = new Set<number>();
+            list.forEach(t => {
+              const tid: any = (t as any)?.id;
+              const numId = typeof tid === 'string' ? Number(tid) : tid;
+              if (typeof numId === 'number' && !isNaN(numId)) {
+                ids.add(numId);
+              }
+            });
+            this.userAclTaskIds = ids;
+            this.refreshUserAclEnablement();
+          },
+          error: () => {
+            this.userAclTaskIds.clear();
+          },
+        });
+      } else {
+        this.userAclTaskIds.clear();
+      }
+    });
+  }
+
+  private refreshUserAclEnablement(): void {
+    // Hook pour déclencher la détection si nécessaire
+  }
+
+  private scrollToTaskIfRequested(): void {
+    if (this.selectedTaskId != null) {
+      if (this.accordionStates && typeof this.accordionStates === 'object') {
+        (this.accordionStates as any)['taches'] = true;
+      }
+      const el = document.getElementById(`task-${this.selectedTaskId}`);
+      if (el && typeof (el as any).scrollIntoView === 'function') {
+        (el as any).scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        const container = document.getElementById('tasksSection');
+        if (container) {
+          container.scrollTop = container.scrollHeight;
+        }
+      }
+    }
   }
 
   onSelectContactPerson(personId: number | null): void {
@@ -1130,7 +1204,8 @@ export class CorrespDetailComponent implements OnInit {
 
   deleteTask(correspId: number, tasksId: number): void {
     const perm = this.taskPermissions[tasksId];
-    if (!(perm?.canDelete || this.canDeleteCorresp || this.canWriteCorresp)) {
+    const isAdminEffective = this.isGlobalAdmin || this.canAdminCorresp;
+    if (!isAdminEffective && !this.userAclTaskIds.has(tasksId)) {
       this.showNotification('Action non autorisée', 'error');
       return;
     }
@@ -1149,7 +1224,8 @@ export class CorrespDetailComponent implements OnInit {
 
   changeTasksStatus(correspId: number, taskId: number, status: string): void {
     const perm = this.taskPermissions[taskId];
-    if (!(perm?.canWrite || this.canWriteCorresp)) {
+    const isAdminEffective = this.isGlobalAdmin || this.canAdminCorresp;
+    if (!isAdminEffective && !this.userAclTaskIds.has(taskId)) {
       this.showNotification('Vous n’avez pas le droit de modifier le statut de la tâche', 'error');
       return;
     }

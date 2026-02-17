@@ -236,7 +236,7 @@ export class HomeComponent implements OnInit, OnDestroy {
         const first = items && items.length ? items[0] : null;
         const correspId = first && (first as any).id;
         if (correspId != null) {
-          this.router.navigate([`/corresp/${correspId}/view`]);
+          this.router.navigate([`/corresp/${correspId}/view`], { queryParams: { taskId }, fragment: 'tasks' });
         } else {
           this.router.navigate([`/tasks/${taskId}/view`]);
         }
