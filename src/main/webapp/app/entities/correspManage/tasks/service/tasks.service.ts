@@ -79,10 +79,10 @@ export class TasksService {
       .pipe(map((res: HttpResponse<RestTasks[]>) => this.convertResponseArrayFromServer(res)));
   }
 
-  getTasksByUserAcl(userId: number): Observable<EntityArrayResponseType> {
-    const options = createRequestOption({ userId });
+  getTasksByUserAcl(userId: number, status?: string): Observable<EntityArrayResponseType> {
+    const params = createRequestOption({ userId, status });
     return this.http
-      .get<RestTasks[]>(`${this.resourceUrl}/tasksByUserAcl`, { params: options, observe: 'response' })
+      .get<RestTasks[]>(`${this.resourceUrl}/tasksByUserAcl`, { params, observe: 'response' })
       .pipe(map((res: HttpResponse<RestTasks[]>) => this.convertResponseArrayFromServer(res)));
   }
 

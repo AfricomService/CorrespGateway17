@@ -448,9 +448,10 @@ $container-max: 1800px; // largeur raisonnable
 }
 
 :host .header-search {
-  margin-left: auto;
+  margin-left: 0;
   display: flex;
   align-items: center;
+  flex: 1 1 auto;
 }
 :host .search-container {
   display: inline-flex;
@@ -520,6 +521,136 @@ $container-max: 1800px; // largeur raisonnable
   border-top-left-radius: $radius;
   border-top-right-radius: $radius;
   background: linear-gradient(90deg, $accent-start 0%, $accent-end 100%);
+  transition: background 220ms ease;
+}
+
+/* Modes d'affichage des tâches */
+:host .panel.tasks-panel.inprogress-mode::before {
+  background: linear-gradient(90deg, #0ea5e9 0%, #1e3a8a 100%); /* bleu */
+}
+:host .panel.tasks-panel.draft-mode::before {
+  background: linear-gradient(90deg, #7c3aed 0%, #a78bfa 100%); /* violet */
+}
+.tasks-panel.draft-mode .task-count-badge {
+  background: #7c3aed;
+}
+
+/* ---------- Toggle buttons (En cours / Draft) - updated ---------- */
+.tasks-toggle {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* base toggle styling (non-actif : texte noir) */
+.toggle-btn {
+  position: relative;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(29, 53, 87, 0.08);
+  background: #f8fafc;
+  color: $text-dark; /* texte noir quand non-actif */
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 140ms ease, box-shadow 140ms ease, background 180ms ease, color 140ms ease, border-color 180ms ease;
+  will-change: transform, box-shadow, background, color, border-color;
+}
+
+/* per-type modifiers keep neutral appearance when NOT active */
+.toggle-btn--inprogress {
+  background: transparent;
+  color: $text-dark; /* texte noir */
+  border-color: rgba(14, 165, 233, 0.08);
+}
+
+.toggle-btn--draft {
+  background: transparent;
+  color: $text-dark; /* texte noir */
+  border-color: rgba(124, 58, 237, 0.08);
+}
+
+.toggle-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(11, 19, 43, 0.06);
+}
+
+/* active states: change text color to blue (inprogress) or violet (draft) */
+
+/* In-progress active: blue text */
+.toggle-btn--inprogress.active,
+.inprogress-mode .toggle-btn--inprogress.active {
+  background: linear-gradient(135deg, #bfdbfe, #93c5fd); /* léger fond bleu clair */
+  color: $accent-start; /* texte bleu vif (ex: #3b82f6) */
+  border-color: rgba(59, 130, 246, 0.35);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(59, 130, 246, 0.18);
+}
+
+/* Small underline/indicator for active inprogress button */
+.toggle-btn--inprogress.active::after {
+  content: '';
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: -2px;
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #0ea5e9, #1e3a8a);
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+/* Draft active: violet text */
+.toggle-btn--draft.active,
+.draft-mode .toggle-btn--draft.active {
+  background: linear-gradient(135deg, #e9d5ff, #c4b5fd); /* léger fond violet clair */
+  color: #7c3aed; /* texte violet quand actif */
+  border-color: rgba(124, 58, 237, 0.35);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(124, 58, 237, 0.18);
+}
+
+/* Small underline/indicator for active draft button */
+.toggle-btn--draft.active::after {
+  content: '';
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: -2px;
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #7c3aed, #a78bfa);
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+/* ensure focus/active visuals don't force text back to black */
+.toggle-btn:focus-visible,
+.toggle-btn:active {
+  outline: none;
+}
+
+@keyframes togglePulseBlue {
+  0% {
+    box-shadow: 0 8px 18px rgba(14, 165, 233, 0.18);
+  }
+  50% {
+    box-shadow: 0 10px 22px rgba(14, 165, 233, 0.28);
+  }
+  100% {
+    box-shadow: 0 8px 18px rgba(14, 165, 233, 0.18);
+  }
+}
+@keyframes togglePulseViolet {
+  0% {
+    box-shadow: 0 8px 18px rgba(124, 58, 237, 0.18);
+  }
+  50% {
+    box-shadow: 0 10px 22px rgba(124, 58, 237, 0.28);
+  }
+  100% {
+    box-shadow: 0 8px 18px rgba(124, 58, 237, 0.18);
+  }
 }
 :host .panel-title {
   font-size: 15px;

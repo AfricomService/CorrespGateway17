@@ -9,6 +9,7 @@ import { Title } from '@angular/platform-browser';
 import { AccountService } from 'app/core/auth/account.service';
 import { Account } from 'app/core/auth/account.model';
 import { ITasks } from '../entities/correspManage/tasks/tasks.model';
+import { CorrespStatus } from 'app/entities/enumerations/corresp-status.model';
 import { HttpResponse } from '@angular/common/http';
 import { TasksService } from '../entities/correspManage/tasks/service/tasks.service';
 import { CorrespService } from '../entities/correspManage/corresp/service/corresp.service';
@@ -28,6 +29,9 @@ export class HomeComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private correspInfoByTaskId: Record<number, { subject?: string | null; reference?: string | null }> = {};
   private deptNameByCode: Map<string, string> = new Map<string, string>();
+
+  // vue courante: 'inProgress' | 'draft'
+  tasksView: 'inProgress' | 'draft' = 'inProgress';
 
   // map taskId -> liste de noms (deptName ou personneName ou matricule/code)
   private taskResponsablesMap: Record<number, string[]> = {};
@@ -88,25 +92,49 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   // --------- Data ----------
   loadTasks(): void {
-    // Récupère l'id de l'utilisateur connecté (adapter si le modèle Account a un autre nom de propriété)
+    // comportement par défaut : charger les tâches IN_PROGRESS
+    this.tasksView = 'inProgress';
+    this.loadTasksByStatus(CorrespStatus.IN_PROGRESS);
+  }
+
+  /**
+   * Charge les tâches pour l'utilisateur courant en fonction du status demandé.
+   * Si account.id est absent on appelle le fallback getAllTasksByEtat.
+   */
+  private loadTasksByStatus(status: CorrespStatus): void {
     const userId = this.account && (this.account as any).id != null ? (this.account as any).id : null;
 
     if (userId != null) {
-      // Utilise l'API getTasksByUserAcl(userId)
       this.tasksService
-        .getTasksByUserAcl(userId)
+        .getTasksByUserAcl(userId, status)
         .pipe(takeUntil(this.destroy$))
-        .subscribe((res: HttpResponse<ITasks[]>) => {
-          this.processTasksResponse(res);
-        });
+        .subscribe(
+          (res: HttpResponse<ITasks[]>) => {
+            this.processTasksResponse(res);
+          },
+          err => {
+            // en cas d'erreur réseau, log et vider la liste (ou gérer autrement)
+            // eslint-disable-next-line no-console
+            console.warn(`Erreur lors du chargement des tâches par ACL (status=${status})`, err);
+            this.tasks = [];
+          }
+        );
     } else {
-      // Fallback : si on n'a pas d'account.id, on garde l'ancien comportement (optionnel)
+      // fallback : si on n'a pas d'account.id, on garde un endpoint alternatif
+      // on passe status en string via l'objet { etat: status }
       this.tasksService
-        .getAllTasksByEtat({ etat: 'IN_PROGRESS' })
+        .getAllTasksByEtat({ etat: status })
         .pipe(takeUntil(this.destroy$))
-        .subscribe((res: HttpResponse<ITasks[]>) => {
-          this.processTasksResponse(res);
-        });
+        .subscribe(
+          (res: HttpResponse<ITasks[]>) => {
+            this.processTasksResponse(res);
+          },
+          err => {
+            // eslint-disable-next-line no-console
+            console.warn('Erreur fallback getAllTasksByEtat', err);
+            this.tasks = [];
+          }
+        );
     }
   }
 
@@ -152,7 +180,12 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   refresh(): void {
-    this.loadTasks();
+    if (this.tasksView === 'inProgress') {
+      this.loadTasks();
+    } else {
+      // si on est en draft, recharger depuis l'API avec status DRAFT
+      this.loadTasksByStatus(CorrespStatus.DRAFT);
+    }
   }
 
   get tasksCount(): number {
@@ -225,7 +258,25 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.router.navigate(['/corresp/new'], { queryParams: { type } });
   }
 
+  // --- Tabs / boutons ---
+  showInProgress(): void {
+    if (this.tasksView !== 'inProgress') {
+      this.tasksView = 'inProgress';
+      this.loadTasksByStatus(CorrespStatus.IN_PROGRESS);
+    }
+  }
+
+  showDraft(): void {
+    if (this.tasksView === 'draft') {
+      return;
+    }
+    this.tasksView = 'draft';
+    // remplacer les fake data par un appel réel à l'API pour status=DRAFT
+    this.loadTasksByStatus(CorrespStatus.DRAFT);
+  }
+
   openTask(task: ITasks): void {
+    // autoriser l'ouverture des drafts aussi (on enlève le blocage précédent)
     if (!task || (task as any).id == null) return;
     const taskId = (task as any).id;
     this.correspService
