@@ -86,6 +86,13 @@ export class TasksService {
       .pipe(map((res: HttpResponse<RestTasks[]>) => this.convertResponseArrayFromServer(res)));
   }
 
+  searchTasksByUserAcl(userId: number, reference: string): Observable<EntityArrayResponseType> {
+    const params = createRequestOption({ userId, reference });
+    return this.http
+      .get<RestTasks[]>(`${this.resourceUrl}/searchByUserAcl`, { params, observe: 'response' })
+      .pipe(map((res: HttpResponse<RestTasks[]>) => this.convertResponseArrayFromServer(res)));
+  }
+
   getAllTasksByUserAclAllStatuses(userId: number): Observable<EntityArrayResponseType> {
     const options = createRequestOption({ userId });
     return this.http
@@ -107,6 +114,17 @@ export class TasksService {
 
   compareTasks(o1: Pick<ITasks, 'id'> | null, o2: Pick<ITasks, 'id'> | null): boolean {
     return o1 && o2 ? this.getTasksIdentifier(o1) === this.getTasksIdentifier(o2) : o1 === o2;
+  }
+
+  // retourne HttpResponse<Blob> pour lire headers (filename) + body (blob)
+  downloadTasksExcelByUserAcl(userId: number, status?: string): Observable<HttpResponse<Blob>> {
+    const params = createRequestOption({ userId, status });
+    // note: cast pour satisfaire TS quand responseType: 'blob'
+    return this.http.get(`${this.resourceUrl}/tasksByUserAcl/export`, {
+      params,
+      responseType: 'blob',
+      observe: 'response',
+    }) as Observable<HttpResponse<Blob>>;
   }
 
   addTasksToCollectionIfMissing<Type extends Pick<ITasks, 'id'>>(

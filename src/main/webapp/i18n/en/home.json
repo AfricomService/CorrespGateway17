@@ -11,6 +11,8 @@
     "internalSub": "Internal communication",
     "panelsTitle": "Tasks & folders",
     "tasksTitle": "Active Tasks",
+    "tasksInProgressTitle": "Active Tasks",
+    "tasksClosedTitle": "Closed Tasks",
     "dossiersTitle": "Folders",
     "searchTasks": "Search a task",
     "searchTasksLabel": "Search tasks",
@@ -18,6 +20,7 @@
     "search": "Search",
     "clearSearch": "Clear search",
     "exportExcel": "Excel",
+    "exportTasks": "Export tasks",
     "exportCsv": "CSV",
     "objet": "Object",
     "reference": "Reference",
@@ -28,6 +31,18 @@
     "responsable": "Responsible",
     "etat": "Status",
     "nom": "Name",
-    "publique": "Public"
+    "publique": "Public",
+    "loadingTasks": "Loading tasks…",
+    "noTasks": "No tasks found.",
+    "paginationInfo": "Showing {{start}} - {{end}} of {{total}}",
+    "firstPage": "First page",
+    "prevPage": "Previous page",
+    "nextPage": "Next page",
+    "lastPage": "Last page",
+    "pageLabel": "Page {{page}}",
+    "prevPageText": "Prev",
+    "nextPageText": "Next",
+    "firstPageSymbol": "«",
+    "lastPageSymbol": "»"
   }
 }

@@ -1,7 +1,8 @@
 // src/main/webapp/app/home/home.component.ts
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
-import { Subject, Subscription, forkJoin } from 'rxjs';
+import { Subject, Subscription, forkJoin, of } from 'rxjs';
+import { debounceTime, distinctUntilChanged, switchMap, catchError } from 'rxjs/operators';
 import { takeUntil } from 'rxjs/operators';
 
 import { Title } from '@angular/platform-browser';
@@ -38,6 +39,8 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   // recherche simple côté client
   searchTerm = '';
+  private search$ = new Subject<string>();
+  isSearching = false;
 
   // pagination
   pageSize = 4; // <-- nombre d'éléments par page
@@ -53,7 +56,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     private tasksService: TasksService,
     private correspService: CorrespService,
     private translate: TranslateService,
-    private titleService: Title
+    private titleService: Title,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -76,6 +80,52 @@ export class HomeComponent implements OnInit, OnDestroy {
       });
 
     // NOTE: on ne lance plus loadTasks() ici (on l'appelle après que account soit défini)
+
+    // pipeline de recherche distante (debounce + switchMap)
+    this.search$
+      .pipe(
+        takeUntil(this.destroy$),
+        debounceTime(250),
+        distinctUntilChanged(),
+        switchMap(query => {
+          const userId = this.account && (this.account as any).id != null ? (this.account as any).id : null;
+          const trimmed = (query || '').trim();
+          if (!userId) {
+            return of(new HttpResponse<ITasks[]>({ body: [] }));
+          }
+          if (!trimmed) {
+            // pas de recherche → recharger statut courant
+            if (this.tasksView === 'inProgress') {
+              return this.tasksService.getTasksByUserAcl(userId, CorrespStatus.IN_PROGRESS as any);
+            } else {
+              return this.tasksService.getTasksByUserAcl(userId, CorrespStatus.CLOSED as any);
+            }
+          }
+          this.isSearching = true;
+          return this.tasksService.searchTasksByUserAcl(userId, trimmed).pipe(
+            catchError(err => {
+              // eslint-disable-next-line no-console
+              console.warn('Erreur recherche des tâches (ACL)', err);
+              return of(new HttpResponse<ITasks[]>({ body: [] }));
+            })
+          );
+        })
+      )
+      .subscribe((res: HttpResponse<ITasks[]>) => {
+        this.currentPage = 1;
+        const predicate = (t: ITasks) => {
+          const s = String((t as any)?.status || '').toUpperCase();
+          return this.tasksView === 'inProgress' ? s === 'IN_PROGRESS' : s === 'CLOSED';
+        };
+        this.processTasksResponse(res, predicate);
+        this.isSearching = false;
+        try {
+          this.cdr.markForCheck();
+          this.cdr.detectChanges();
+        } catch {
+          // noop
+        }
+      });
   }
 
   ngOnDestroy(): void {
@@ -138,10 +188,10 @@ export class HomeComponent implements OnInit, OnDestroy {
     }
   }
 
-  private processTasksResponse(res: HttpResponse<ITasks[]>): void {
+  private processTasksResponse(res: HttpResponse<ITasks[]>, predicate?: (t: ITasks) => boolean): void {
     const raw = res.body || [];
     // convertit les champs de date (Dayjs, string, Date, ...) en Date natif ou undefined
-    this.tasks = raw.map(t => {
+    let mapped = raw.map(t => {
       const copy: any = { ...t };
       const dateFields = ['creationDate', 'startDate', 'dueDate', 'closeDate', 'updatedDate'];
       dateFields.forEach(f => {
@@ -167,6 +217,16 @@ export class HomeComponent implements OnInit, OnDestroy {
       });
       return copy as ITasks;
     });
+    if (typeof predicate === 'function') {
+      mapped = mapped.filter(predicate);
+    }
+    this.tasks = mapped;
+    // forcer l'actualisation immédiate de la vue
+    try {
+      this.cdr.detectChanges();
+    } catch {
+      // noop
+    }
 
     // charge infos supplémentaires (corresp) et résout les noms de départements/personnes
     this.loadCorrespInfoForTasks();
@@ -183,8 +243,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     if (this.tasksView === 'inProgress') {
       this.loadTasks();
     } else {
-      // si on est en draft, recharger depuis l'API avec status DRAFT
-      this.loadTasksByStatus(CorrespStatus.DRAFT);
+      // en vue terminées, recharger depuis l'API avec status CLOSED
+      this.loadTasksByStatus(CorrespStatus.CLOSED);
     }
   }
 
@@ -271,8 +331,8 @@ export class HomeComponent implements OnInit, OnDestroy {
       return;
     }
     this.tasksView = 'draft';
-    // remplacer les fake data par un appel réel à l'API pour status=DRAFT
-    this.loadTasksByStatus(CorrespStatus.DRAFT);
+    // afficher les tâches terminées via l'API ACL (status=CLOSED)
+    this.loadTasksByStatus(CorrespStatus.CLOSED);
   }
 
   openTask(task: ITasks): void {
@@ -294,14 +354,16 @@ export class HomeComponent implements OnInit, OnDestroy {
       });
   }
 
-  // handlers recherche — reset page à 1 lors d'une recherche
+  // handlers recherche — utilisent l'API server-side searchTasksByUserAcl
   onTasksSearchInput(value: string): void {
     this.searchTerm = value || '';
     this.currentPage = 1;
+    this.search$.next(this.searchTerm);
   }
   onTasksSearchClick(value: string): void {
     this.searchTerm = value || '';
     this.currentPage = 1;
+    this.search$.next(this.searchTerm);
   }
   clearTasksSearch(input: HTMLInputElement): void {
     if (input) {
@@ -309,65 +371,45 @@ export class HomeComponent implements OnInit, OnDestroy {
     }
     this.searchTerm = '';
     this.currentPage = 1;
+    this.search$.next('');
+    try {
+      this.cdr.detectChanges();
+    } catch {
+      // noop
+    }
   }
 
   // --------- Export helpers ----------
   exportTasksToExcel(): void {
-    if (!this.tasks || this.tasks.length === 0) {
+    const userId = this.account && (this.account as any).id != null ? (this.account as any).id : null;
+    if (!userId) {
       // eslint-disable-next-line no-console
-      console.warn('Aucune tâche à exporter.');
+      console.warn('Utilisateur non identifié, export impossible.');
       return;
     }
-
-    const headers = this.guessHeadersFromArray(this.tasks);
-    const rows = this.tasks.map(r => {
-      const out: any = {};
-      headers.forEach(h => {
-        const v = (r as any)[h];
-        if (v == null) {
-          out[h] = '';
-        } else if (v instanceof Date) {
-          out[h] = v.toISOString();
-        } else if (typeof v === 'object') {
-          try {
-            out[h] = JSON.stringify(v);
-          } catch {
-            out[h] = String(v);
-          }
-        } else {
-          out[h] = v;
+    const status = this.tasksView === 'inProgress' ? 'IN_PROGRESS' : 'CLOSED';
+    this.tasksService.downloadTasksExcelByUserAcl(userId, status).subscribe({
+      next: (resp: HttpResponse<Blob>) => {
+        const blob = resp.body || new Blob([], { type: 'application/octet-stream' });
+        // Essayer de récupérer le nom de fichier depuis Content-Disposition
+        const cd = resp.headers?.get('Content-Disposition') || resp.headers?.get('content-disposition') || '';
+        let fileName = `tasks_${status.toLowerCase()}_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.xlsx`;
+        const match = /filename=\"?([^\";]+)\"?/i.exec(cd);
+        if (match && match[1]) {
+          fileName = match[1];
         }
-      });
-      return out;
-    });
-
-    import('xlsx')
-      .then(XLSX => {
-        try {
-          const ws = XLSX.utils.json_to_sheet(rows, { header: headers });
-          const wb = XLSX.utils.book_new();
-          XLSX.utils.book_append_sheet(wb, ws, 'Tasks');
-          const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-          const blob = new Blob([wbout], {
-            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          });
-          const fileName = `tasks_export_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.xlsx`;
-          this.downloadBlobFromFile(blob, fileName);
-        } catch (err) {
-          // fallback: CSV
-          // eslint-disable-next-line no-console
-          console.warn('Erreur lors de la génération XLSX, fallback CSV', err);
-          this.exportTasksToCsv();
-        }
-      })
-      .catch(err => {
+        this.downloadBlobFromFile(blob, fileName);
+      },
+      error: err => {
         // eslint-disable-next-line no-console
-        console.warn(
-          "Impossible d'importer la librairie xlsx. Exécutez `npm install xlsx` pour activer l'export Excel. Fallback CSV.",
-          err
-        );
-        this.exportTasksToCsv();
-      });
+        console.warn('Erreur export Excel via API', err);
+        try {
+          alert('Export Excel indisponible. Veuillez réessayer plus tard.');
+        } catch {
+          // noop
+        }
+      },
+    });
   }
 
   exportTasksToCsv(): void {
@@ -468,6 +510,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     }
     return '';
   }
+
+  // ---------- Recherche distante ----------
 
   formatToDate(value: any): Date | null {
     if (value == null) {

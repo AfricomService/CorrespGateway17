@@ -1225,7 +1225,7 @@ export class CorrespDetailComponent implements OnInit {
   changeTasksStatus(correspId: number, taskId: number, status: string): void {
     const perm = this.taskPermissions[taskId];
     const isAdminEffective = this.isGlobalAdmin || this.canAdminCorresp;
-    if (!isAdminEffective && !this.userAclTaskIds.has(taskId)) {
+    if (!isAdminEffective && !(this.userAclTaskIds.has(taskId) || perm?.canWrite === true)) {
       this.showNotification('Vous n’avez pas le droit de modifier le statut de la tâche', 'error');
       return;
     }

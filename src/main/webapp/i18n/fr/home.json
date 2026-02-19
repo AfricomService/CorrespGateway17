@@ -11,6 +11,8 @@
     "internalSub": "Communication interne",
     "panelsTitle": "Tâches et dossiers",
     "tasksTitle": "Tâches en cours",
+    "tasksInProgressTitle": "Tâches en cours",
+    "tasksClosedTitle": "Tâches terminées",
     "dossiersTitle": "Dossiers",
     "searchTasks": "Rechercher une tâche",
     "searchTasksLabel": "Rechercher des tâches",
@@ -18,6 +20,7 @@
     "search": "Rechercher",
     "clearSearch": "Effacer la recherche",
     "exportExcel": "Excel",
+    "exportTasks": "Exporter les tâches",
     "exportCsv": "CSV",
     "objet": "Objet",
     "reference": "Référence",
@@ -28,6 +31,18 @@
     "responsable": "Responsable",
     "etat": "État",
     "nom": "Nom",
-    "publique": "Public"
+    "publique": "Public",
+    "loadingTasks": "Chargement des tâches…",
+    "noTasks": "Aucune tâche trouvée.",
+    "paginationInfo": "Affichage {{start}} - {{end}} sur {{total}}",
+    "firstPage": "Première page",
+    "prevPage": "Page précédente",
+    "nextPage": "Page suivante",
+    "lastPage": "Dernière page",
+    "pageLabel": "Page {{page}}",
+    "prevPageText": "Préc",
+    "nextPageText": "Suiv",
+    "firstPageSymbol": "«",
+    "lastPageSymbol": "»"
   }
 }
