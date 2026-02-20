@@ -98,6 +98,25 @@
         "start": "بدء",
         "finish": "إنهاء",
         "finishedOn": "تم إنهاؤها - {{ date }}"
+      },
+      "update": {
+        "title": "إضافة مراسلة",
+        "identify": "تعريف",
+        "typeDocument": "نوع المستند",
+        "selectTypePlaceholder": "-- اختر نوعًا --",
+        "dateLabel": "التاريخ",
+        "enterSubjectPlaceholder": "أدخل موضوع المراسلة",
+        "selectCompanyPlaceholder": "-- اختر شركة --",
+        "enterManually": "إدخال يدوي",
+        "chooseFromList": "اختر من القائمة",
+        "enterSenderManual": "أدخل المرسل يدويًا",
+        "enterRecipient": "أدخل المستلم",
+        "selectContactPlaceholder": "-- اختر جهة اتصال --",
+        "enterContactManually": "أدخل جهة الاتصال يدويًا",
+        "enterContactManual": "أدخل جهة الاتصال يدويًا",
+        "loadingContacts": "جاري تحميل جهات الاتصال…",
+        "noAssociatedTasksHint": "لا توجد مهمة مرتبطة. انقر على زر \"+\" لإضافة مهمة.",
+        "noAttachmentsHint": "لا يوجد مرفق مرتبط. انقر على زر \"+\" لإضافة مرفق."
       }
     }
   },

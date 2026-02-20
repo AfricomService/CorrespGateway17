@@ -98,6 +98,25 @@
         "start": "start",
         "finish": "finish",
         "finishedOn": "finished - {{ date }}"
+      },
+      "update": {
+        "title": "Add Correspondence",
+        "identify": "Identify",
+        "typeDocument": "Document type",
+        "selectTypePlaceholder": "-- Select a type --",
+        "dateLabel": "Date",
+        "enterSubjectPlaceholder": "Enter the correspondence subject",
+        "selectCompanyPlaceholder": "-- Choose a company --",
+        "enterManually": "Enter manually",
+        "chooseFromList": "Choose from list",
+        "enterSenderManual": "Enter sender manually",
+        "enterRecipient": "Enter recipient",
+        "selectContactPlaceholder": "-- Choose a contact --",
+        "enterContactManually": "Enter contact manually",
+        "enterContactManual": "Enter contact manually",
+        "loadingContacts": "Loading contacts…",
+        "noAssociatedTasksHint": "No associated task. Click the \"+\" button to add a task.",
+        "noAttachmentsHint": "No attachment associated. Click the \"+\" button to add an attachment."
       }
     }
   },

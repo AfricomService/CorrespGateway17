@@ -1,7 +1,12 @@
 <div style="width: 100%; display: flex; flex-direction: column; padding: 0 16px">
   <!-- Title Section -->
   <div style="margin-bottom: 1em">
-    <h4 style="color: #c1121f; text-transform: uppercase; font-weight: 600; font-style: italic; margin: 0">Ajouter Une Correspondance</h4>
+    <h4
+      style="color: #c1121f; text-transform: uppercase; font-weight: 600; font-style: italic; margin: 0"
+      jhiTranslate="correspCareApp.correspManageCorresp.update.title"
+    >
+      Ajouter Une Correspondance
+    </h4>
   </div>
 
   <!-- Top Toolbar -->
@@ -37,7 +42,7 @@
         style="font-weight: 600; text-transform: uppercase"
         (click)="saveCorresp(true)"
       >
-        Identifier
+        <span jhiTranslate="correspCareApp.correspManageCorresp.update.identify">Identifier</span>
       </button>
     </div>
 
@@ -49,7 +54,7 @@
         class="btn btn-primary"
         style="font-weight: 600; text-transform: uppercase"
       >
-        Enregistrer
+        <span jhiTranslate="correspCareApp.correspManageCorresp.actions.save">Enregistrer</span>
       </button>
     </div>
   </div>
@@ -87,7 +92,9 @@
               "
               [style.background-color]="accordionStates['infoGen'] ? '#e9ecef' : '#f8f9fa'"
             >
-              <h5 style="font-weight: 600; margin: 0; color: #2c3e50">Informations générales</h5>
+              <h5 style="font-weight: 600; margin: 0; color: #2c3e50" jhiTranslate="correspCareApp.correspManageCorresp.detail.generalInfo">
+                Informations générales
+              </h5>
               <svg
                 [style.transform]="accordionStates['infoGen'] ? 'rotate(180deg)' : 'rotate(0deg)'"
                 style="transition: transform 0.3s ease; width: 20px; height: 20px"
@@ -108,21 +115,29 @@
               <form>
                 <div style="padding-bottom: 1.5em; display: flex; gap: 12px; border-bottom: 1px dashed #5570a3">
                   <div style="flex: 1">
-                    <label class="form-label fw-semibold">Type de document <span class="text-danger">*</span></label>
+                    <label class="form-label fw-semibold"
+                      ><span jhiTranslate="correspCareApp.correspManageCorresp.update.typeDocument">Type de document</span>
+                      <span class="text-danger">*</span></label
+                    >
                     <select
                       class="form-select"
                       [(ngModel)]="selectedTypeDocument"
                       name="typeDocument"
                       (ngModelChange)="onTypeDocumentChange()"
                     >
-                      <option [ngValue]="undefined">-- Sélectionner un type --</option>
+                      <option [ngValue]="undefined" jhiTranslate="correspCareApp.correspManageCorresp.update.selectTypePlaceholder">
+                        -- Sélectionner un type --
+                      </option>
                       <option *ngFor="let type of typedocuments" [ngValue]="type">
                         {{ type.nom }}
                       </option>
                     </select>
                   </div>
                   <div style="flex: 1">
-                    <label class="form-label fw-semibold"> Date <span class="text-danger">*</span> </label>
+                    <label class="form-label fw-semibold"
+                      ><span jhiTranslate="correspCareApp.correspManageCorresp.update.dateLabel">Date</span>
+                      <span class="text-danger">*</span>
+                    </label>
                     <input
                       type="date"
                       class="form-control"
@@ -138,14 +153,16 @@
                   </div>
                 </div>
                 <div style="margin-bottom: 1.5em; padding-top: 15px">
-                  <label class="form-label fw-semibold">Objet <span class="text-danger">*</span></label>
+                  <label class="form-label fw-semibold"
+                    ><span jhiTranslate="correspCareApp.correspManageCorresp.subject">Objet</span> <span class="text-danger">*</span></label
+                  >
                   <input
                     type="text"
                     class="form-control"
                     [class.is-invalid]="validationInfoGenErrors['objet']"
                     [(ngModel)]="objet"
                     name="objet"
-                    placeholder="Entrer l'objet de la correspondance"
+                    [placeholder]="'correspCareApp.correspManageCorresp.update.enterSubjectPlaceholder' | translate"
                   />
                   <div class="invalid-feedback" *ngIf="validationInfoGenErrors['objet']">
                     {{ validationInfoGenErrors['objet'] }}
@@ -157,7 +174,10 @@
                   <!-- EXPÉDITEUR: select sociétés actives OR champ manuel -->
                   <div style="flex: 1; display: flex; gap: 8px; align-items: flex-start">
                     <div style="flex: 1">
-                      <label class="form-label fw-semibold">Expéditeur <span class="text-danger">*</span></label>
+                      <label class="form-label fw-semibold"
+                        ><span jhiTranslate="correspCareApp.correspManageCorresp.sender">Expéditeur</span>
+                        <span class="text-danger">*</span></label
+                      >
 
                       <!-- MODE SELECT with search -->
                       <div *ngIf="!showManualExpediteur" style="display: flex; gap: 8px; align-items: center">
@@ -168,7 +188,7 @@
                           displayExpr="nom"
                           [searchEnabled]="true"
                           [searchExpr]="companySearchExpr"
-                          placeholder="-- Choisir une société --"
+                          [placeholder]="'correspCareApp.correspManageCorresp.update.selectCompanyPlaceholder' | translate"
                           (onValueChanged)="onExpediteurChange($event.value)"
                           class="w-100"
                           [disabled]="loadingCompanies"
@@ -184,9 +204,9 @@
                         <button
                           type="button"
                           class="btn btn-outline-secondary"
-                          aria-label="Entrer manuellement"
+                          [attr.aria-label]="'correspCareApp.correspManageCorresp.update.enterManually' | translate"
                           (click)="toggleManualExpediteur(true)"
-                          title="Entrer manuellement"
+                          [attr.title]="'correspCareApp.correspManageCorresp.update.enterManually' | translate"
                           style="padding: 6px 8px; display: inline-flex; align-items: center; justify-content: center"
                         >
                           <!-- icône plus -->
@@ -205,7 +225,7 @@
                           class="form-control"
                           [(ngModel)]="expediteur"
                           name="expediteurManual"
-                          placeholder="Entrer manuellement l'expéditeur"
+                          [placeholder]="'correspCareApp.correspManageCorresp.update.enterSenderManual' | translate"
                           [class.is-invalid]="validationInfoGenErrors['expediteur']"
                           style="flex: 1"
                         />
@@ -213,7 +233,7 @@
                           type="button"
                           class="btn btn-outline-secondary"
                           (click)="toggleManualExpediteur(false)"
-                          title="Choisir dans la liste"
+                          [attr.title]="'correspCareApp.correspManageCorresp.update.chooseFromList' | translate"
                           style="padding: 6px 8px; display: inline-flex; align-items: center; justify-content: center"
                         >
                           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -233,7 +253,10 @@
                   <!-- DESTINATAIRE (inchangé: readonly + bouton Ajouter si Autre) -->
                   <div style="display: flex; gap: 10px; align-items: end; flex: 1">
                     <div style="flex: 1">
-                      <label class="form-label fw-semibold">Destinataire <span class="text-danger">*</span></label>
+                      <label class="form-label fw-semibold"
+                        ><span jhiTranslate="correspCareApp.correspManageCorresp.recipient">Destinataire</span>
+                        <span class="text-danger">*</span></label
+                      >
                       <input
                         type="text"
                         class="form-control"
@@ -241,7 +264,7 @@
                         [(ngModel)]="destinataireLabel"
                         (ngModelChange)="onRecipientOrCcChange()"
                         name="destinataire"
-                        placeholder="Entrer le destinataire"
+                        [placeholder]="'correspCareApp.correspManageCorresp.update.enterRecipient' | translate"
                       />
                       <div class="invalid-feedback" *ngIf="validationInfoGenErrors['destinataire']">
                         {{ validationInfoGenErrors['destinataire'] }}
@@ -255,7 +278,7 @@
                 <!-- ================= CONTACT ================= -->
                 <div style="display: flex; gap: 12px; margin-bottom: 1.5em">
                   <div style="flex: 1">
-                    <label class="form-label fw-semibold">Contact</label>
+                    <label class="form-label fw-semibold" jhiTranslate="correspCareApp.correspManageCorresp.contact">Contact</label>
 
                     <!-- MODE SELECT with search for persons -->
                     <div *ngIf="!showManualContact" style="display: flex; gap: 8px; align-items: center">
@@ -266,7 +289,7 @@
                         displayExpr="nom"
                         [searchEnabled]="true"
                         [searchExpr]="personSearchExpr"
-                        placeholder="-- Choisir un contact --"
+                        [placeholder]="'correspCareApp.correspManageCorresp.update.selectContactPlaceholder' | translate"
                         (onValueChanged)="onSelectContactPerson($event.value)"
                         [disabled]="!selectedCompanyId || loadingPersons"
                         class="w-100"
@@ -284,9 +307,9 @@
                       <button
                         type="button"
                         class="btn btn-outline-secondary"
-                        aria-label="Entrer manuellement le contact"
+                        [attr.aria-label]="'correspCareApp.correspManageCorresp.update.enterContactManually' | translate"
                         (click)="toggleManualContact(true)"
-                        title="Entrer manuellement"
+                        [attr.title]="'correspCareApp.correspManageCorresp.update.enterManually' | translate"
                         style="padding: 6px 8px; display: inline-flex; align-items: center; justify-content: center"
                       >
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -304,7 +327,7 @@
                         class="form-control"
                         [(ngModel)]="contactEmail"
                         name="contactEmailFallback"
-                        placeholder="Entrer manuellement le contact"
+                        [placeholder]="'correspCareApp.correspManageCorresp.update.enterContactManual' | translate"
                         [class.is-invalid]="validationInfoGenErrors['contactEmail']"
                         style="flex: 1"
                       />
@@ -312,7 +335,7 @@
                         type="button"
                         class="btn btn-outline-secondary"
                         (click)="toggleManualContact(false)"
-                        title="Choisir dans la liste"
+                        [attr.title]="'correspCareApp.correspManageCorresp.update.chooseFromList' | translate"
                         style="padding: 6px 8px; display: inline-flex; align-items: center; justify-content: center"
                       >
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -332,7 +355,13 @@
                         <span *ngIf="contactEmailLabel && contactEmail"> — {{ contactEmail }}</span>
                       </div>-->
 
-                    <div *ngIf="loadingPersons" class="mt-2 small text-muted">Chargement des contacts…</div>
+                    <div
+                      *ngIf="loadingPersons"
+                      class="mt-2 small text-muted"
+                      jhiTranslate="correspCareApp.correspManageCorresp.update.loadingContacts"
+                    >
+                      Chargement des contacts…
+                    </div>
                   </div>
 
                   <!-- CONTACT EN COPIE (inchangé) -->
@@ -431,7 +460,12 @@
               "
               [style.background-color]="accordionStates['taches'] ? '#e9ecef' : '#f8f9fa'"
             >
-              <h5 style="font-weight: 600; margin: 0; color: #2c3e50">Tâches Associées</h5>
+              <h5
+                style="font-weight: 600; margin: 0; color: #2c3e50"
+                jhiTranslate="correspCareApp.correspManageCorresp.detail.associatedTasks"
+              >
+                Tâches Associées
+              </h5>
               <div style="display: flex; align-items: center; gap: 12px">
                 <button
                   class="btn btn-primary btn-sm"
@@ -537,7 +571,10 @@
                 *ngIf="tasks.length === 0"
                 style="padding: 24px; text-align: center; background-color: #f8f9fa; border-radius: 8px; border: 2px dashed #dee2e6"
               >
-                <p style="margin: 0; color: #6c757d; font-style: italic">
+                <p
+                  style="margin: 0; color: #6c757d; font-style: italic"
+                  jhiTranslate="correspCareApp.correspManageCorresp.update.noAssociatedTasksHint"
+                >
                   Aucune tâche associée. Cliquez sur le bouton "+" pour ajouter une tâche.
                 </p>
               </div>
@@ -567,7 +604,9 @@
               "
               [style.background-color]="accordionStates['corps'] ? '#e9ecef' : '#f8f9fa'"
             >
-              <h5 style="font-weight: 600; margin: 0; color: #2c3e50">Corps de la Correspondance</h5>
+              <h5 style="font-weight: 600; margin: 0; color: #2c3e50" jhiTranslate="correspCareApp.correspManageCorresp.detail.bodySection">
+                Corps de la Correspondance
+              </h5>
               <svg
                 [style.transform]="accordionStates['corps'] ? 'rotate(180deg)' : 'rotate(0deg)'"
                 style="transition: transform 0.3s ease; width: 20px; height: 20px"
@@ -585,7 +624,11 @@
               style="overflow: hidden; transition: max-height 0.5s ease, padding 0.5s ease"
               [style.padding]="accordionStates['corps'] ? '16px' : '0 16px'"
             >
-              <dx-html-editor [(value)]="htmlContent" [height]="365" [placeholder]="'Type your content here...'">
+              <dx-html-editor
+                [(value)]="htmlContent"
+                [height]="365"
+                [placeholder]="'correspCareApp.correspManageCorresp.detail.bodyPlaceholder' | translate"
+              >
                 <dxo-toolbar [multiline]="true">
                   <dxi-item name="undo"></dxi-item>
                   <dxi-item name="redo"></dxi-item>
@@ -653,7 +696,12 @@
               "
               [style.background-color]="accordionStates['pieces'] ? '#e9ecef' : '#f8f9fa'"
             >
-              <h5 style="font-weight: 600; margin: 0; color: #2c3e50">Pièces jointes associées</h5>
+              <h5
+                style="font-weight: 600; margin: 0; color: #2c3e50"
+                jhiTranslate="correspCareApp.correspManageCorresp.detail.attachmentsSection"
+              >
+                Pièces jointes associées
+              </h5>
               <div style="display: flex; align-items: center; gap: 12px">
                 <button
                   class="btn btn-primary btn-sm"
@@ -745,7 +793,10 @@
                 *ngIf="uploadedFiles.length === 0"
                 style="padding: 24px; text-align: center; background-color: #f8f9fa; border-radius: 8px; border: 2px dashed #dee2e6"
               >
-                <p style="margin: 0; color: #6c757d; font-style: italic">
+                <p
+                  style="margin: 0; color: #6c757d; font-style: italic"
+                  jhiTranslate="correspCareApp.correspManageCorresp.update.noAttachmentsHint"
+                >
                   Aucune Piece Jointe associée. Cliquez sur le bouton "+" pour ajouter une Piece Jointe.
                 </p>
               </div>
@@ -774,7 +825,9 @@
           <div style="display: flex; flex-direction: column; gap: 10px">
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px">
               <div style="flex: 1">
-                <label class="form-label fw-semibold mb-1">Sélections</label>
+                <label class="form-label fw-semibold mb-1" jhiTranslate="correspCareApp.correspManageCorresp.detail.selections"
+                  >Sélections</label
+                >
                 <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
                   <span
                     *ngFor="let sel of selectedResponsables"
@@ -796,7 +849,12 @@
                       ×
                     </button>
                   </span>
-                  <span *ngIf="selectedResponsables.length === 0" style="color: #6c757d">Aucune sélection</span>
+                  <span
+                    *ngIf="selectedResponsables.length === 0"
+                    style="color: #6c757d"
+                    jhiTranslate="correspCareApp.correspManageCorresp.detail.noSelection"
+                    >Aucune sélection</span
+                  >
                 </div>
               </div>
               <div style="text-align: right">
@@ -814,10 +872,16 @@
                   [(ngModel)]="treeSearchQuery"
                   name="treeSearchQuery"
                   (input)="onTreeSearchChange()"
-                  placeholder="Rechercher"
+                  [placeholder]="'correspCareApp.correspManageCorresp.detail.search' | translate"
                 />
               </div>
-              <div *ngIf="loadingTree" style="text-align: center; padding: 40px 0; color: #6c757d">Chargement de l'organigramme...</div>
+              <div
+                *ngIf="loadingTree"
+                style="text-align: center; padding: 40px 0; color: #6c757d"
+                jhiTranslate="correspCareApp.correspManageCorresp.detail.loadingOrg"
+              >
+                Chargement de l'organigramme...
+              </div>
 
               <ul *ngIf="!loadingTree && taskTreeFiltered?.length" style="padding-left: 0; margin: 0; list-style: none">
                 <ng-container *ngFor="let node of taskTreeFiltered">

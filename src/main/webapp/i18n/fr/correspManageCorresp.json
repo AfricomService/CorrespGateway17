@@ -98,6 +98,25 @@
         "start": "commencer",
         "finish": "terminer",
         "finishedOn": "terminée - {{ date }}"
+      },
+      "update": {
+        "title": "Ajouter Une Correspondance",
+        "identify": "Identifier",
+        "typeDocument": "Type de document",
+        "selectTypePlaceholder": "-- Sélectionner un type --",
+        "dateLabel": "Date",
+        "enterSubjectPlaceholder": "Entrer l'objet de la correspondance",
+        "selectCompanyPlaceholder": "-- Choisir une société --",
+        "enterManually": "Entrer manuellement",
+        "chooseFromList": "Choisir dans la liste",
+        "enterSenderManual": "Entrer manuellement l'expéditeur",
+        "enterRecipient": "Entrer le destinataire",
+        "selectContactPlaceholder": "-- Choisir un contact --",
+        "enterContactManually": "Entrer manuellement le contact",
+        "enterContactManual": "Entrer manuellement le contact",
+        "loadingContacts": "Chargement des contacts…",
+        "noAssociatedTasksHint": "Aucune tâche associée. Cliquez sur le bouton \"+\" pour ajouter une tâche.",
+        "noAttachmentsHint": "Aucune Pièce Jointe associée. Cliquez sur le bouton \"+\" pour ajouter une Pièce Jointe."
       }
     }
   },
@@ -107,21 +126,5 @@
       "updated": "Le Corresp avec l'identifiant {{ param }} a été mis à jour",
       "deleted": "Le Corresp avec l'identifiant {{ param }} a été supprimé"
     }
-  },
-  "correspCareApp.actions": {
-    "insufficientRights": "Droit insuffisant",
-    "delete": "Supprimer",
-    "deleteUpper": "SUPPRIMER",
-    "reply": "Réponse",
-    "print": "Imprimer",
-    "journal": "Journal",
-    "save": "Enregistrer",
-    "cancel": "Annuler",
-    "cancelUpper": "ANNULER",
-    "submit": "Soumettre",
-    "close": "Clôturer",
-    "start": "commencer",
-    "finish": "terminer",
-    "finishedOn": "terminée - {{ date }}"
   }
 }
