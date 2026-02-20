@@ -201,7 +201,7 @@ strong {
 }
 .type-card.active {
   background: linear-gradient(180deg, #0d6efd 0%, #0b5ed7 100%);
-  color: #ffffff;
+  color: inherit;
   border-color: #0b5ed7;
   box-shadow: 0 6px 12px rgba(13, 110, 253, 0.25);
 }
@@ -220,7 +220,7 @@ strong {
 .type-card.lecture.active {
   background: linear-gradient(180deg, #4da3ff 0%, #1e7bff 100%);
   border-color: #1e7bff;
-  color: #ffffff;
+  color: #0b5ed7;
 }
 
 .type-card.signature {
@@ -233,7 +233,7 @@ strong {
 .type-card.signature.active {
   background: linear-gradient(180deg, #8b5cf6 0%, #6d28d9 100%);
   border-color: #6d28d9;
-  color: #ffffff;
+  color: #4c1d95;
 }
 
 .type-card.traitement {
@@ -246,7 +246,7 @@ strong {
 .type-card.traitement.active {
   background: linear-gradient(180deg, #fb923c 0%, #f97316 100%);
   border-color: #f97316;
-  color: #ffffff;
+  color: #b45309;
 }
 
 .type-card.validation {
@@ -259,7 +259,7 @@ strong {
 .type-card.validation.active {
   background: linear-gradient(180deg, #22c55e 0%, #16a34a 100%);
   border-color: #16a34a;
-  color: #ffffff;
+  color: #166534;
 }
 .assign-controls .form-control {
   border-radius: 10px;
