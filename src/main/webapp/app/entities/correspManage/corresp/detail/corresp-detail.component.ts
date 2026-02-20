@@ -385,6 +385,13 @@ export class CorrespDetailComponent implements OnInit {
         this.canDeleteCorresp = !!p.canDelete;
         this.canAdminCorresp = !!p.canAdmin;
 
+        if (this.isGlobalAdmin) {
+          this.canReadCorresp = true;
+          this.canWriteCorresp = true;
+          this.canDeleteCorresp = true;
+          this.canAdminCorresp = true;
+        }
+
         // normaliser keys tasksPermissions (backend peut renvoyer des clefs string)
         this.taskPermissions = {};
         const rawTasks = (res && (res as any).tasksPermissions) || {};
@@ -396,7 +403,7 @@ export class CorrespDetailComponent implements OnInit {
         });
 
         // If user has absolutely no read → show message and optionally redirect
-        if (!this.canReadCorresp) {
+        if (!this.canReadCorresp && !this.isGlobalAdmin) {
           this.showNotification('Vous n’avez pas le droit de consulter cette correspondance', 'error');
           // optionnel : rediriger vers la liste pour éviter affichage page vide :
           // this.router.navigate(['/corresp']);
