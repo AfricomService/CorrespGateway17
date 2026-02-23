@@ -18,10 +18,12 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -260,6 +262,54 @@ public class UserService {
                     .doOnNext(user -> log.debug("Changed Information for User: {}", user))
                     .map(AdminUserDTO::new);
             });
+    }
+
+    @Transactional
+    public Mono<AdminUserDTO> updateUserByLogin(String login, AdminUserDTO userDTO) {
+        final String normalizedLogin = login.toLowerCase();
+
+        // Vérifier conflit d'email (exclure l'utilisateur courant identifié par login)
+        Mono<Boolean> emailConflict = userDTO.getEmail() == null
+            ? Mono.just(false)
+            : userRepository
+                .findOneByEmailIgnoreCase(userDTO.getEmail().toLowerCase())
+                .filter(u -> !u.getLogin().equalsIgnoreCase(normalizedLogin))
+                .hasElement();
+
+        return emailConflict.flatMap(conflict -> {
+            if (Boolean.TRUE.equals(conflict)) {
+                return Mono.error(new EmailAlreadyUsedException());
+            }
+
+            return userRepository
+                .findOneByLogin(normalizedLogin)
+                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND)))
+                .flatMap(user -> {
+                    // NE PAS modifier user.setLogin(...)
+                    user.setFirstName(userDTO.getFirstName());
+                    user.setLastName(userDTO.getLastName());
+                    if (userDTO.getEmail() != null) {
+                        user.setEmail(userDTO.getEmail().toLowerCase());
+                    }
+                    user.setImageUrl(userDTO.getImageUrl());
+                    user.setActivated(userDTO.isActivated());
+                    user.setLangKey(userDTO.getLangKey());
+
+                    // mettre à jour les authorities : clear + delete + réinjecter
+                    Set<Authority> managedAuthorities = user.getAuthorities();
+                    managedAuthorities.clear();
+
+                    return userRepository
+                        .deleteUserAuthorities(user.getId())
+                        .thenMany(Flux.fromIterable(userDTO.getAuthorities() != null ? userDTO.getAuthorities() : Collections.emptySet()))
+                        .flatMap(authorityRepository::findById)
+                        .map(managedAuthorities::add)
+                        .then(Mono.just(user));
+                })
+                .flatMap(this::saveUser)
+                .doOnNext(u -> log.debug("Changed Information for User by login: {}", u))
+                .map(AdminUserDTO::new);
+        });
     }
 
     @Transactional

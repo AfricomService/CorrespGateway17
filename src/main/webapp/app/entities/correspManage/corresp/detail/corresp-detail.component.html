@@ -18,7 +18,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 12px 16px;
+      padding: 8px 12px;
       background-color: #f8f9fa;
       border: 1px solid #dee2e6;
       border-radius: 8px;
@@ -45,14 +45,24 @@
         <button
           (click)="generateReference()"
           [disabled]="!(canWriteCorresp || canAdminCorresp)"
-          class="btn btn-outline-secondary"
-          style="font-weight: 600; text-transform: uppercase"
-          [attr.title]="
-            canWriteCorresp || canAdminCorresp ? '' : ('correspCareApp.correspManageCorresp.actions.insufficientRights' | translate)
+          class="btn btn-outline-secondary btn-sm"
+          style="
+            font-weight: 600;
+            text-transform: uppercase;
+            min-width: 32px;
+            height: 32px;
+            padding: 0 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
           "
-          jhiTranslate="correspCareApp.correspManageCorresp.detail.identify"
+          [attr.title]="
+            canWriteCorresp || canAdminCorresp
+              ? ('correspCareApp.correspManageCorresp.detail.identify' | translate)
+              : ('correspCareApp.correspManageCorresp.actions.insufficientRights' | translate)
+          "
         >
-          Identifier
+          <fa-icon icon="id-badge"></fa-icon>
         </button>
       </ng-template>
 
@@ -68,48 +78,95 @@
       <button
         (click)="openDeleteModal(DeleteCorrespModal)"
         [disabled]="!(canDeleteCorresp || canAdminCorresp)"
-        class="btn btn-outline-danger"
-        style="font-weight: 600; text-transform: uppercase"
-        [attr.title]="
-          canDeleteCorresp || canAdminCorresp ? '' : ('correspCareApp.correspManageCorresp.actions.insufficientRights' | translate)
+        class="btn btn-outline-danger btn-sm"
+        style="
+          font-weight: 600;
+          text-transform: uppercase;
+          min-width: 32px;
+          height: 32px;
+          padding: 0 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         "
-        jhiTranslate="correspCareApp.correspManageCorresp.actions.delete"
+        [attr.title]="
+          canDeleteCorresp || canAdminCorresp
+            ? ('correspCareApp.correspManageCorresp.actions.delete' | translate)
+            : ('correspCareApp.correspManageCorresp.actions.insufficientRights' | translate)
+        "
       >
-        Supprimer
+        <fa-icon icon="trash"></fa-icon>
       </button>
       <button
-        class="btn btn-outline-primary"
-        style="font-weight: 600; text-transform: uppercase"
-        jhiTranslate="correspCareApp.correspManageCorresp.actions.reply"
+        class="btn btn-outline-primary btn-sm"
+        style="
+          font-weight: 600;
+          text-transform: uppercase;
+          min-width: 32px;
+          height: 32px;
+          padding: 0 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        "
+        [attr.title]="'correspCareApp.correspManageCorresp.actions.reply' | translate"
       >
-        Réponse
+        <fa-icon icon="reply"></fa-icon>
       </button>
       <button
-        class="btn btn-outline-primary"
-        style="font-weight: 600; text-transform: uppercase"
-        jhiTranslate="correspCareApp.correspManageCorresp.actions.print"
+        class="btn btn-outline-primary btn-sm"
+        style="
+          font-weight: 600;
+          text-transform: uppercase;
+          min-width: 32px;
+          height: 32px;
+          padding: 0 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        "
+        [attr.title]="'correspCareApp.correspManageCorresp.actions.print' | translate"
       >
-        Imprimer
+        <fa-icon icon="print"></fa-icon>
       </button>
       <button
-        class="btn btn-outline-primary"
-        style="font-weight: 600; text-transform: uppercase"
-        jhiTranslate="correspCareApp.correspManageCorresp.actions.journal"
+        class="btn btn-outline-primary btn-sm"
+        style="
+          font-weight: 600;
+          text-transform: uppercase;
+          min-width: 32px;
+          height: 32px;
+          padding: 0 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        "
+        [attr.title]="'correspCareApp.correspManageCorresp.actions.journal' | translate"
       >
-        Journal
+        <fa-icon icon="book"></fa-icon>
       </button>
       <button
         (click)="saveDraft()"
         *ngIf="correspLoaded?.status === 'DRAFT'"
         [disabled]="isSaving || !(canWriteCorresp || canAdminCorresp)"
-        class="btn btn-primary"
-        style="font-weight: 600; text-transform: uppercase"
-        [attr.title]="
-          canWriteCorresp || canAdminCorresp ? '' : ('correspCareApp.correspManageCorresp.actions.insufficientRights' | translate)
+        class="btn btn-primary btn-sm"
+        style="
+          font-weight: 600;
+          text-transform: uppercase;
+          min-width: 32px;
+          height: 32px;
+          padding: 0 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         "
-        jhiTranslate="correspCareApp.correspManageCorresp.actions.save"
+        [attr.title]="
+          canWriteCorresp || canAdminCorresp
+            ? ('correspCareApp.correspManageCorresp.actions.save' | translate)
+            : ('correspCareApp.correspManageCorresp.actions.insufficientRights' | translate)
+        "
       >
-        Enregistrer
+        <fa-icon icon="save"></fa-icon>
       </button>
     </div>
   </div>

@@ -58,6 +58,10 @@ import {
   faFileExcel,
   faPowerOff,
   faSearch,
+  faReply,
+  faPrint,
+  faIdBadge,
+  faBookOpen,
 } from '@fortawesome/free-solid-svg-icons';
 
 @NgModule({
@@ -116,7 +120,11 @@ export class AppModule {
       faBan,
       faFileExcel,
       faPowerOff,
-      faSearch
+      faSearch,
+      faReply,
+      faPrint,
+      faIdBadge,
+      faBookOpen
     );
 
     dpConfig.minDate = { year: dayjs().subtract(100, 'year').year(), month: 1, day: 1 };

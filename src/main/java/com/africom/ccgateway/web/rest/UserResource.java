@@ -281,4 +281,24 @@ public class UserResource {
     public Flux<UserDTO> getUsersByLogins(@RequestBody List<String> logins) {
         return userService.findUsersByLogins(logins);
     }
+
+    @PutMapping("/users/{login}")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
+    public Mono<ResponseEntity<AdminUserDTO>> updateUserByLogin(
+        @PathVariable @Pattern(regexp = Constants.LOGIN_REGEX) String login,
+        @Valid @RequestBody AdminUserDTO userDTO
+    ) {
+        log.debug("REST request to update User by login : {} with body {}", login, userDTO);
+
+        // S'assurer que le DTO a le même login que le path (empêche la modification du login)
+        userDTO.setLogin(login);
+
+        return userService
+            .updateUserByLogin(login, userDTO)
+            .map(updated ->
+                ResponseEntity.ok().headers(HeaderUtil.createAlert(applicationName, "userManagement.updated", login)).body(updated)
+            )
+            // Propager le NOT_FOUND si le service lève une ResponseStatusException(HttpStatus.NOT_FOUND)
+            .onErrorResume(ResponseStatusException.class, ex -> Mono.error(ex));
+    }
 }
