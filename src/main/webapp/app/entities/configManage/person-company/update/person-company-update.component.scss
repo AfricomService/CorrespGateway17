@@ -1,0 +1,206 @@
+/* person-company-update.component.scss */
+
+/* Variables */
+$primary: #0d6efd; // couleur principale (utilisée pour bg-primary)
+$primary-dark: #0b5ed7;
+$muted: #6c757d;
+$card-radius: 12px;
+$input-border: #e7e9ee;
+
+/* Page layout */
+.person-company-page {
+  padding: 24px 12px;
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+}
+
+/* Card look */
+.person-company-card {
+  border-radius: $card-radius;
+  overflow: hidden;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+
+  /* En-tête : style aligné sur contact-list */
+  .card-header {
+    background: linear-gradient(90deg, $primary, $primary-dark);
+    color: #fff;
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+
+    @media (min-width: 768px) {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .page-title {
+      h1 {
+        font-size: 1.25rem;
+        margin: 0;
+        font-weight: 600;
+      }
+      small {
+        color: rgba(255, 255, 255, 0.92);
+        display: block;
+        margin-top: 0.15rem;
+        font-size: 0.9rem;
+      }
+    }
+
+    .header-actions {
+      margin-top: 0.5rem;
+      @media (min-width: 768px) {
+        margin-top: 0;
+      }
+      .btn {
+        min-height: 40px;
+      }
+    }
+  }
+
+  .card-body {
+    padding: 22px;
+    background: #fff;
+  }
+}
+
+/* Form controls */
+.form-group {
+  margin-bottom: 12px;
+
+  label.form-label {
+    display: block;
+    font-size: 13px;
+    margin-bottom: 6px;
+    color: #333;
+    font-weight: 500;
+  }
+
+  input.form-control,
+  .form-select,
+  textarea.form-control {
+    border-radius: 8px;
+    border: 1px solid $input-border;
+    padding: 10px 12px;
+    transition: box-shadow 180ms ease, transform 120ms ease, border-color 180ms ease;
+    background-color: #fbfdff;
+
+    &:focus {
+      outline: none;
+      border-color: $primary;
+      box-shadow: 0 6px 18px rgba($primary, 0.06);
+      transform: translateY(-1px);
+    }
+
+    &.form-control-plaintext.readonly-input {
+      background: transparent;
+      border: 0;
+      padding-left: 0;
+      color: #495057;
+      font-weight: 600;
+    }
+  }
+
+  .invalid-feedback {
+    color: #c92a2a;
+    margin-top: 6px;
+  }
+
+  .form-text {
+    font-size: 12px;
+    color: $muted;
+  }
+}
+
+/* Readonly contact display */
+.readonly-field {
+  .company-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgba(13, 110, 253, 0.08), rgba(2, 132, 199, 0.06));
+    color: $primary;
+    border: 1px solid rgba(13, 110, 253, 0.12);
+    font-weight: 600;
+  }
+}
+
+/* Buttons animated */
+.btn-animated {
+  transition: transform 180ms ease, box-shadow 180ms ease, background-color 160ms ease;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  .fa-icon,
+  fa-icon {
+    transition: transform 180ms ease;
+  }
+
+  &:hover:not(:disabled) {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 10px 30px rgba(14, 30, 37, 0.08);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(-1px) scale(0.995);
+  }
+
+  &.btn-primary {
+    background-image: linear-gradient(90deg, $primary, darken($primary, 6%));
+    border: none;
+    color: #fff;
+  }
+
+  &.btn-outline-primary {
+    background: transparent;
+    border: 1px solid rgba($primary, 0.12);
+    color: $primary;
+
+    &:hover {
+      background: rgba($primary, 0.04);
+    }
+  }
+}
+
+/* Actions row for mobile */
+.actions-row {
+  @media (max-width: 767.98px) {
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 12px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.98));
+    border-top: 1px solid #f0f0f0;
+  }
+}
+
+/* Small niceties */
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, rgba(13, 110, 253, 0.12), rgba(2, 132, 199, 0.06));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: $primary;
+}
+
+/* Accessibility: ensure disabled-looking field still readable */
+input[disabled] {
+  cursor: not-allowed;
+  opacity: 0.85;
+}
+
+/* Utility */
+.text-muted {
+  color: $muted !important;
+}

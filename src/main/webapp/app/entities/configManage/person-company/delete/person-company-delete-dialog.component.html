@@ -1,28 +1,33 @@
 <form *ngIf="personCompany" name="deleteForm" (ngSubmit)="confirmDelete(personCompany.id!)">
   <div class="modal-header">
-    <h4 class="modal-title" data-cy="personCompanyDeleteDialogHeading" jhiTranslate="entity.delete.title">Confirmation de suppression</h4>
+    <!-- Title traduit -->
+    <h4 class="modal-title" data-cy="personCompanyDeleteDialogHeading">
+      {{ 'entity.delete.title' | translate }}
+    </h4>
 
     <button type="button" class="btn-close" data-dismiss="modal" aria-hidden="true" (click)="cancel()">&times;</button>
   </div>
 
   <div class="modal-body">
     <jhi-alert-error></jhi-alert-error>
+
+    <!-- Utilisation ngx-translate avec translateParams (name injecté) -->
     <p
       id="jhi-delete-personCompany-heading"
-      jhiTranslate="correspCareApp.configManagePersonCompany.delete.question"
-      [translateValues]="{ id: personCompany.id }"
+      [innerHTML]="'correspCareApp.configManagePersonCompany.delete.question' | translate: { name: personCompany.nom }"
     >
-      Êtes-vous certain de vouloir supprimer le Person Company {{ personCompany.id }} ?
+      <!-- Fallback si la clé i18n manque : -->
+      {{ 'Êtes-vous certain de vouloir supprimer le contact « ' + (personCompany.nom || '—') + ' » ?' }}
     </p>
   </div>
 
   <div class="modal-footer">
     <button type="button" class="btn btn-secondary" data-dismiss="modal" (click)="cancel()">
-      <fa-icon icon="ban"></fa-icon>&nbsp;<span jhiTranslate="entity.action.cancel">Annuler</span>
+      <fa-icon icon="ban"></fa-icon>&nbsp;<span>{{ 'entity.action.cancel' | translate }}</span>
     </button>
 
     <button id="jhi-confirm-delete-personCompany" data-cy="entityConfirmDeleteButton" type="submit" class="btn btn-danger">
-      <fa-icon icon="times"></fa-icon>&nbsp;<span jhiTranslate="entity.action.delete">Supprimer</span>
+      <fa-icon icon="times"></fa-icon>&nbsp;<span>{{ 'entity.action.delete' | translate }}</span>
     </button>
   </div>
 </form>

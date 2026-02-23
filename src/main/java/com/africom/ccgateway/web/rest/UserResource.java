@@ -7,6 +7,7 @@ import com.africom.ccgateway.security.AuthoritiesConstants;
 import com.africom.ccgateway.service.MailService;
 import com.africom.ccgateway.service.UserService;
 import com.africom.ccgateway.service.dto.AdminUserDTO;
+import com.africom.ccgateway.service.dto.UserDTO;
 import com.africom.ccgateway.web.rest.errors.BadRequestAlertException;
 import com.africom.ccgateway.web.rest.errors.EmailAlreadyUsedException;
 import com.africom.ccgateway.web.rest.errors.LoginAlreadyUsedException;
@@ -255,5 +256,49 @@ public class UserResource {
                     ResponseEntity.noContent().headers(HeaderUtil.createAlert(applicationName, "userManagement.deleted", login)).build()
                 )
             );
+    }
+
+    @GetMapping("/users/id/{id}")
+    @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.USER + "', '" + AuthoritiesConstants.ADMIN + "')")
+    public Mono<ResponseEntity<UserDTO>> getUserById(@PathVariable Long id) {
+        log.debug("REST request to get User by id : {}", id);
+        return userService.getUserById(id).map(userDto -> ResponseEntity.ok(userDto)).defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+
+    /**
+     * GET /api/users/by-login?login=xxx
+     */
+    @GetMapping("/users/by-login")
+    public Mono<ResponseEntity<UserDTO>> getUserByLogin(@RequestParam("login") String login) {
+        return userService.findUserByLogin(login).map(ResponseEntity::ok).defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+
+    /**
+     * POST /api/users/by-logins
+     * Body: ["login1","login2"]
+     */
+    @PostMapping("/users/by-logins")
+    public Flux<UserDTO> getUsersByLogins(@RequestBody List<String> logins) {
+        return userService.findUsersByLogins(logins);
+    }
+
+    @PutMapping("/users/{login}")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
+    public Mono<ResponseEntity<AdminUserDTO>> updateUserByLogin(
+        @PathVariable @Pattern(regexp = Constants.LOGIN_REGEX) String login,
+        @Valid @RequestBody AdminUserDTO userDTO
+    ) {
+        log.debug("REST request to update User by login : {} with body {}", login, userDTO);
+
+        // S'assurer que le DTO a le même login que le path (empêche la modification du login)
+        userDTO.setLogin(login);
+
+        return userService
+            .updateUserByLogin(login, userDTO)
+            .map(updated ->
+                ResponseEntity.ok().headers(HeaderUtil.createAlert(applicationName, "userManagement.updated", login)).body(updated)
+            )
+            // Propager le NOT_FOUND si le service lève une ResponseStatusException(HttpStatus.NOT_FOUND)
+            .onErrorResume(ResponseStatusException.class, ex -> Mono.error(ex));
     }
 }

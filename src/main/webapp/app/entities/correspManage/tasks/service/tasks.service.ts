@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpResponse } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { forkJoin, Observable, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 import dayjs from 'dayjs/esm';
 
 import { isPresent } from 'app/core/util/operators';
@@ -79,6 +79,27 @@ export class TasksService {
       .pipe(map((res: HttpResponse<RestTasks[]>) => this.convertResponseArrayFromServer(res)));
   }
 
+  getTasksByUserAcl(userId: number, status?: string): Observable<EntityArrayResponseType> {
+    const params = createRequestOption({ userId, status });
+    return this.http
+      .get<RestTasks[]>(`${this.resourceUrl}/tasksByUserAcl`, { params, observe: 'response' })
+      .pipe(map((res: HttpResponse<RestTasks[]>) => this.convertResponseArrayFromServer(res)));
+  }
+
+  searchTasksByUserAcl(userId: number, reference: string): Observable<EntityArrayResponseType> {
+    const params = createRequestOption({ userId, reference });
+    return this.http
+      .get<RestTasks[]>(`${this.resourceUrl}/searchByUserAcl`, { params, observe: 'response' })
+      .pipe(map((res: HttpResponse<RestTasks[]>) => this.convertResponseArrayFromServer(res)));
+  }
+
+  getAllTasksByUserAclAllStatuses(userId: number): Observable<EntityArrayResponseType> {
+    const options = createRequestOption({ userId });
+    return this.http
+      .get<RestTasks[]>(`${this.resourceUrl}/tasksByUserAclAllStatuses`, { params: options, observe: 'response' })
+      .pipe(map((res: HttpResponse<RestTasks[]>) => this.convertResponseArrayFromServer(res)));
+  }
+
   delete(id: number): Observable<HttpResponse<{}>> {
     return this.http.delete(`${this.resourceUrl}/${id}`, { observe: 'response' });
   }
@@ -93,6 +114,58 @@ export class TasksService {
 
   compareTasks(o1: Pick<ITasks, 'id'> | null, o2: Pick<ITasks, 'id'> | null): boolean {
     return o1 && o2 ? this.getTasksIdentifier(o1) === this.getTasksIdentifier(o2) : o1 === o2;
+  }
+
+  // retourne HttpResponse<Blob> pour lire headers (filename) + body (blob)
+  downloadTasksExcelByUserAcl(userId: number, status?: string): Observable<HttpResponse<Blob>> {
+    const params = createRequestOption({ userId, status });
+    // note: cast pour satisfaire TS quand responseType: 'blob'
+    return this.http.get(`${this.resourceUrl}/tasksByUserAcl/export`, {
+      params,
+      responseType: 'blob',
+      observe: 'response',
+    }) as Observable<HttpResponse<Blob>>;
+  }
+
+  // ------------------------
+  // Vérifier par ID (GET)
+  // ------------------------
+  canCurrentUserModifyTask(id: number): Observable<boolean> {
+    if (id === null || id === undefined) {
+      return of(false);
+    }
+    return this.http.get<boolean>(`${this.resourceUrl}/${id}/can-modify`).pipe(
+      // si le backend renvoie autre chose ou erreur -> false
+      catchError(() => of(false))
+    );
+  }
+
+  // ------------------------
+  // Vérifier en envoyant le DTO (POST) - si tu as implémenté l'endpoint POST
+  // ------------------------
+  canCurrentUserModifyTaskByDto(tasks: ITasks): Observable<boolean> {
+    if (!tasks) {
+      return of(false);
+    }
+    const copy = this.convertDateFromClient(tasks as any); // convertit les dates si nécessaire
+    return this.http.post<boolean>(`${this.resourceUrl}/can-modify`, copy).pipe(catchError(() => of(false)));
+  }
+
+  // ------------------------
+  // Helper pour enrichir une liste de tasks avec canModify (utilité côté liste)
+  // ------------------------
+  /**
+   * Renvoie un Observable qui émet la même liste de tasks, chaque objet enrichi par canModify:boolean
+   * ATTENTION : effectue N requêtes GET /{id}/can-modify (une par tâche)
+   */
+  enrichTasksWithCanModify(tasks: ITasks[]): Observable<ITasks[]> {
+    if (!tasks || tasks.length === 0) return of(tasks ?? []);
+    const calls = tasks.map(t => this.canCurrentUserModifyTask(t.id).pipe(catchError(() => of(false))));
+    return forkJoin(calls).pipe(
+      map(results => {
+        return tasks.map((t, i) => ({ ...t, canModify: results[i] }));
+      })
+    );
   }
 
   addTasksToCollectionIfMissing<Type extends Pick<ITasks, 'id'>>(

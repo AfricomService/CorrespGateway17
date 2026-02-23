@@ -1,0 +1,108 @@
+.contact-update {
+  .card {
+    border-radius: 10px;
+  }
+
+  .card-header {
+    background: #fff;
+    border-bottom: 0;
+  }
+
+  .input-group-text {
+    background: #f8f9fa;
+    border-right: 0;
+  }
+
+  .form-control:focus {
+    box-shadow: 0 0 0 0.12rem rgba(43, 109, 246, 0.18);
+    border-color: #2b6df6;
+  }
+
+  .card-footer {
+    background: transparent;
+    border-top: 0;
+  }
+
+  .spinner-border {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  label.form-label {
+    font-weight: 600;
+  }
+
+  .form-text.text-danger {
+    font-size: 0.85rem;
+  }
+
+  /* ======= Styles pour le bouton 'etat' et son menu ======= */
+  .etat-dropdown {
+    .etat-btn {
+      background: #f8f9fb;
+      border: 1px solid #dfe6f3;
+      color: #111827;
+      padding: 0.5rem 0.75rem;
+      border-radius: 0.4rem;
+      text-align: left;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 42px;
+      transition: transform 120ms ease, box-shadow 120ms ease;
+      width: 100%;
+    }
+
+    .etat-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 14px rgba(13, 38, 76, 0.06);
+    }
+
+    .etat-menu {
+      position: absolute;
+      z-index: 1100;
+      top: calc(100% + 8px);
+      left: 0;
+      min-width: 100%;
+      border-radius: 0.45rem;
+      overflow: hidden;
+    }
+
+    .etat-menu .dropdown-item {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 0.45rem 0.75rem;
+      background: white;
+      border: 0;
+      cursor: pointer;
+    }
+
+    .etat-menu .dropdown-item:hover {
+      background: #f1f5ff;
+    }
+
+    .etat-label {
+      font-weight: 600;
+    }
+  }
+
+  /* petites corrections responsive */
+  @media (max-width: 575.98px) {
+    .card-header {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .card-footer {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .etat-dropdown .etat-menu {
+      left: 0;
+      right: 0;
+      min-width: auto;
+    }
+  }
+}

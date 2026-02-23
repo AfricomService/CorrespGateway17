@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { IContactCompany } from '../contact-company.model';
+import { Authority } from '../../../../config/authority.constants';
 
 @Component({
   selector: 'jhi-contact-company-detail',
@@ -21,4 +22,6 @@ export class ContactCompanyDetailComponent implements OnInit {
   previousState(): void {
     window.history.back();
   }
+
+  protected readonly Authority = Authority;
 }

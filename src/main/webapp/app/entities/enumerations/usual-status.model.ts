@@ -1,7 +1,6 @@
+// src/app/enumerations/usual-status.model.ts
 export enum UsualStatus {
-  ACTIVE = 'ACTIVE',
-
-  DELETED = 'DELETED',
-
-  DISABLED = 'DISABLED',
+  Actif = 'Actif',
+  Delated = 'Delated',
+  Desactivated = 'Desactivated',
 }

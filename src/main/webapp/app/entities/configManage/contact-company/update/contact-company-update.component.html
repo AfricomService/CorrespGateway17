@@ -1,98 +1,174 @@
-<div class="d-flex justify-content-center">
-  <div class="col-8">
-    <form name="editForm" role="form" novalidate (ngSubmit)="save()" [formGroup]="editForm">
-      <h2
-        id="jhi-contact-company-heading"
-        data-cy="ContactCompanyCreateUpdateHeading"
-        jhiTranslate="correspCareApp.configManageContactCompany.home.createOrEditLabel"
-      >
-        Créer ou éditer un Contact Company
-      </h2>
-
+<div class="contact-update container py-4">
+  <div class="card shadow-sm">
+    <div class="card-header d-flex align-items-center justify-content-between">
       <div>
-        <jhi-alert-error></jhi-alert-error>
+        <h4 class="mb-0" id="jhi-contact-company-heading" data-cy="ContactCompanyCreateUpdateHeading">
+          <fa-icon icon="building" class="me-2"></fa-icon>
+          <span>{{ 'correspCareApp.configManageContactCompany.home.createOrEditLabel' | translate }}</span>
+        </h4>
+        <small class="text-muted">{{ 'correspCareApp.configManageContactCompany.form.subtitle' | translate }}</small>
+      </div>
+    </div>
 
-        <div class="row mb-3" *ngIf="editForm.controls.id.value !== null">
-          <label class="form-label" jhiTranslate="correspCareApp.configManageContactCompany.id" for="field_id">Id</label>
-          <input type="number" class="form-control" name="id" id="field_id" data-cy="id" formControlName="id" [readonly]="true" />
-        </div>
+    <form [formGroup]="editForm" novalidate class="card-body" (ngSubmit)="save()">
+      <jhi-alert-error></jhi-alert-error>
 
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.configManageContactCompany.nom" for="field_nom">Nom</label>
-          <input type="text" class="form-control" name="nom" id="field_nom" data-cy="nom" formControlName="nom" />
-          <div *ngIf="editForm.get('nom')!.invalid && (editForm.get('nom')!.dirty || editForm.get('nom')!.touched)">
-            <small class="form-text text-danger" *ngIf="editForm.get('nom')?.errors?.required" jhiTranslate="entity.validation.required">
-              Ce champ est obligatoire.
-            </small>
+      <div class="row g-3">
+        <!-- Row: Nom + Nom abrégé -->
+        <div class="col-md-8">
+          <label for="field_nom" class="form-label">{{ 'correspCareApp.configManageContactCompany.nom' | translate }}</label>
+          <div class="input-group">
+            <span class="input-group-text"><fa-icon icon="building"></fa-icon></span>
+            <input
+              id="field_nom"
+              type="text"
+              class="form-control"
+              [placeholder]="'correspCareApp.configManageContactCompany.form.placeholder.nom' | translate"
+              formControlName="nom"
+              aria-describedby="nomHelp"
+              required
+            />
+          </div>
+          <div
+            class="form-text text-danger"
+            *ngIf="editForm.get('nom')?.invalid && (editForm.get('nom')?.touched || editForm.get('nom')?.dirty)"
+          >
+            <span *ngIf="editForm.get('nom')?.errors?.required">{{ 'entity.validation.required' | translate }}</span>
+            <span *ngIf="editForm.get('nom')?.errors?.nameExists">{{
+              'correspCareApp.configManageContactCompany.errors.nameExists' | translate
+            }}</span>
           </div>
         </div>
 
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.configManageContactCompany.nomabrege" for="field_nomabrege"
-            >Nomabrege</label
+        <div class="col-md-4">
+          <label for="field_nomabrege" class="form-label">{{ 'correspCareApp.configManageContactCompany.nomabrege' | translate }}</label>
+          <input
+            id="field_nomabrege"
+            type="text"
+            class="form-control"
+            formControlName="nomabrege"
+            [placeholder]="'correspCareApp.configManageContactCompany.form.placeholder.nomabrege' | translate"
+          />
+        </div>
+
+        <!-- Row: Matrne + Pays -->
+        <div class="col-md-6">
+          <label for="field_matrne" class="form-label">{{ 'correspCareApp.configManageContactCompany.matrne' | translate }}</label>
+          <input
+            id="field_matrne"
+            type="text"
+            class="form-control"
+            formControlName="matrne"
+            [placeholder]="'correspCareApp.configManageContactCompany.form.placeholder.matrne' | translate"
+          />
+          <div
+            class="form-text text-danger"
+            *ngIf="editForm.get('matrne')?.invalid && (editForm.get('matrne')?.touched || editForm.get('matrne')?.dirty)"
           >
-          <input type="text" class="form-control" name="nomabrege" id="field_nomabrege" data-cy="nomabrege" formControlName="nomabrege" />
+            <span *ngIf="editForm.get('matrne')?.errors?.matrneExists">{{
+              'correspCareApp.configManageContactCompany.errors.matrneExists' | translate
+            }}</span>
+          </div>
         </div>
 
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.configManageContactCompany.matrne" for="field_matrne">Matrne</label>
-          <input type="text" class="form-control" name="matrne" id="field_matrne" data-cy="matrne" formControlName="matrne" />
+        <div class="col-md-6">
+          <label for="field_pays" class="form-label">{{ 'correspCareApp.configManageContactCompany.pays' | translate }}</label>
+          <input
+            id="field_pays"
+            type="text"
+            class="form-control"
+            formControlName="pays"
+            [placeholder]="'correspCareApp.configManageContactCompany.form.placeholder.pays' | translate"
+          />
         </div>
 
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.configManageContactCompany.pays" for="field_pays">Pays</label>
-          <input type="text" class="form-control" name="pays" id="field_pays" data-cy="pays" formControlName="pays" />
+        <!-- Adresse (full width) -->
+        <div class="col-12">
+          <label for="field_adresse" class="form-label">{{ 'correspCareApp.configManageContactCompany.adresse' | translate }}</label>
+          <input
+            id="field_adresse"
+            type="text"
+            class="form-control"
+            formControlName="adresse"
+            [placeholder]="'correspCareApp.configManageContactCompany.form.placeholder.adresse' | translate"
+          />
         </div>
 
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.configManageContactCompany.adresse" for="field_adresse">Adresse</label>
-          <input type="text" class="form-control" name="adresse" id="field_adresse" data-cy="adresse" formControlName="adresse" />
+        <!-- Row: Tel + Fax + Email -->
+        <div class="col-md-4">
+          <label for="field_tel" class="form-label">{{ 'correspCareApp.configManageContactCompany.tel' | translate }}</label>
+          <div class="input-group">
+            <span class="input-group-text">📞</span>
+            <input
+              id="field_tel"
+              type="tel"
+              class="form-control"
+              formControlName="tel"
+              [placeholder]="'correspCareApp.configManageContactCompany.form.placeholder.tel' | translate"
+            />
+          </div>
         </div>
 
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.configManageContactCompany.tel" for="field_tel">Tel</label>
-          <input type="text" class="form-control" name="tel" id="field_tel" data-cy="tel" formControlName="tel" />
+        <div class="col-md-4">
+          <label for="field_fax" class="form-label">{{ 'correspCareApp.configManageContactCompany.fax' | translate }}</label>
+          <input
+            id="field_fax"
+            type="text"
+            class="form-control"
+            formControlName="fax"
+            [placeholder]="'correspCareApp.configManageContactCompany.form.placeholder.fax' | translate"
+          />
         </div>
 
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.configManageContactCompany.fax" for="field_fax">Fax</label>
-          <input type="text" class="form-control" name="fax" id="field_fax" data-cy="fax" formControlName="fax" />
+        <div class="col-md-4">
+          <label for="field_email" class="form-label">{{ 'correspCareApp.configManageContactCompany.email' | translate }}</label>
+          <div class="input-group">
+            <span class="input-group-text">@</span>
+            <input
+              id="field_email"
+              type="email"
+              class="form-control"
+              formControlName="email"
+              [placeholder]="'correspCareApp.configManageContactCompany.form.placeholder.email' | translate"
+            />
+          </div>
+          <div
+            class="form-text text-danger"
+            *ngIf="editForm.get('email')?.invalid && (editForm.get('email')?.touched || editForm.get('email')?.dirty)"
+          >
+            <span *ngIf="editForm.get('email')?.errors?.email">{{ 'entity.validation.email' | translate }}</span>
+          </div>
         </div>
 
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.configManageContactCompany.email" for="field_email">Email</label>
-          <input type="text" class="form-control" name="email" id="field_email" data-cy="email" formControlName="email" />
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.configManageContactCompany.webpage" for="field_webpage">Webpage</label>
-          <input type="text" class="form-control" name="webpage" id="field_webpage" data-cy="webpage" formControlName="webpage" />
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.configManageContactCompany.etat" for="field_etat">Etat</label>
-          <select class="form-control" name="etat" formControlName="etat" id="field_etat" data-cy="etat">
-            <option [ngValue]="null">{{ 'correspCareApp.UsualStatus.null' | translate }}</option>
-            <option *ngFor="let usualStatus of usualStatusValues" [value]="usualStatus">
-              {{ 'correspCareApp.UsualStatus.' + usualStatus | translate }}
-            </option>
-          </select>
+        <!-- Webpage (full width now that Etat is removed) -->
+        <div class="col-md-12">
+          <label for="field_webpage" class="form-label">{{ 'correspCareApp.configManageContactCompany.webpage' | translate }}</label>
+          <input
+            id="field_webpage"
+            type="url"
+            class="form-control"
+            formControlName="webpage"
+            [placeholder]="'correspCareApp.configManageContactCompany.form.placeholder.webpage' | translate"
+          />
         </div>
       </div>
 
-      <div>
-        <button type="button" id="cancel-save" data-cy="entityCreateCancelButton" class="btn btn-secondary" (click)="previousState()">
-          <fa-icon icon="ban"></fa-icon>&nbsp;<span jhiTranslate="entity.action.cancel">Annuler</span>
+      <!-- Footer actions (responsive) -->
+      <div class="card-footer d-flex justify-content-end gap-2 mt-3">
+        <button type="button" class="btn btn-secondary" (click)="previousState()">
+          <fa-icon icon="ban"></fa-icon>
+          <span class="ms-1">{{ 'entity.action.cancel' | translate }}</span>
         </button>
 
-        <button
-          type="submit"
-          id="save-entity"
-          data-cy="entityCreateSaveButton"
-          [disabled]="editForm.invalid || isSaving"
-          class="btn btn-primary"
-        >
-          <fa-icon icon="save"></fa-icon>&nbsp;<span jhiTranslate="entity.action.save">Sauvegarder</span>
+        <button type="submit" class="btn btn-primary" [disabled]="editForm.invalid || isSaving">
+          <span *ngIf="!isSaving"
+            ><fa-icon icon="save"></fa-icon>&nbsp;<span>{{ 'entity.action.save' | translate }}</span></span
+          >
+          <span *ngIf="isSaving"
+            ><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>&nbsp;{{
+              'correspCareApp.configManageContactCompany.form.saving' | translate
+            }}</span
+          >
         </button>
       </div>
     </form>

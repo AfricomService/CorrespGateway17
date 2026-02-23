@@ -11,6 +11,7 @@ import {
   DxDataGridModule,
   DxHtmlEditorModule,
   DxListModule,
+  DxSelectBoxModule,
   DxTreeViewModule,
 } from 'devextreme-angular';
 import { FilePreviewComponent } from '../pj/file-preview/file-preview.component';
@@ -26,6 +27,7 @@ import { FilePreviewComponent } from '../pj/file-preview/file-preview.component'
     DxTreeViewModule,
     FilePreviewComponent,
     DxButtonModule,
+    DxSelectBoxModule,
   ],
   declarations: [CorrespComponent, CorrespDetailComponent, CorrespUpdateComponent, CorrespDeleteDialogComponent],
 })

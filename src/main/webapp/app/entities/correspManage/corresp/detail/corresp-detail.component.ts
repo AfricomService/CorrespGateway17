@@ -7,10 +7,9 @@ import { TasksService } from '../../tasks/service/tasks.service';
 import { ITasks } from '../../tasks/tasks.model';
 import { IPj } from '../../pj/pj.model';
 import { PjService } from '../../pj/service/pj.service';
-import { IUser } from '../../../../admin/user-management/user-management.model';
 import { HttpResponse } from '@angular/common/http';
 import { DepartementTreeFeignDTO } from '../update/DepartementTreeFeignDTO';
-import { IOrga } from '../orga';
+// import { IOrga } from '../orga';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ITypedocument } from '../../../configManage/typedocument/typedocument.model';
 import { IDepartement } from '../../../orgacare/departement/departement.model';
@@ -18,6 +17,15 @@ import { TypedocumentService } from '../../../configManage/typedocument/service/
 import { switchMap } from 'rxjs';
 import { FilePreviewComponent } from '../../pj/file-preview/file-preview.component';
 import { saveAs } from 'file-saver';
+import { ContactCompanyService } from 'app/entities/configManage/contact-company/service/contact-company.service';
+import { IContactCompany } from 'app/entities/configManage/contact-company/contact-company.model';
+import { IPersonCompany } from 'app/entities/configManage/person-company/person-company.model';
+import { PersonneFeignDTO } from '../update/PersonneFeignDTO';
+import { TypeAffectation } from '../update/enums';
+import { DispatchType } from 'app/entities/enumerations/dispatch-type.model';
+import { CorrespPermissionsDTO, PermissionDTO } from '../../permissions.model';
+import { AccountService } from 'app/core/auth/account.service';
+import { Account } from 'app/core/auth/account.model';
 
 // Mocking the Interfaces locally for this example (or import them from your shared models)
 export enum CorrespStatus {
@@ -91,12 +99,38 @@ export class CorrespDetailComponent implements OnInit {
 
   pjsLoaded: IPj[] = [];
 
-  orgaList: IOrga[] = [];
+  // orgaList: IOrga[] = [];
 
-  selectedOrga: any = null;
+  // selectedOrga: any = null;
 
-  departements: DepartementTreeFeignDTO[] = [];
+  companies: IContactCompany[] = [];
+  personsForSelectedCompany: IPersonCompany[] = [];
+  selectedCompanyId: number | null = null;
+  selectedPersonId: number | null = null;
+  loadingCompanies = false;
+  loadingPersons = false;
+  showManualExpediteur = true;
+  showManualContact = true;
+  companySearchExpr = function (dataItem: IContactCompany): string {
+    return dataItem.nom || '';
+  };
+  personSearchExpr = function (dataItem: IPersonCompany): string {
+    return (dataItem.nom ? dataItem.nom + ' ' : '') + (dataItem.email ? dataItem.email + ' ' : '') + (dataItem.tel ? dataItem.tel : '');
+  };
+
+  // departements: DepartementTreeFeignDTO[] = [];
   selectedDepartement = '';
+  selectedDepartementName = '';
+  selectedResponsables: { codeDept?: string | null; matriculePers?: string | null; displayName?: string | null }[] = [];
+
+  // === NEW: Tree related state ===
+  taskTree: DepartementTreeFeignDTO[] = []; // arbre récupéré depuis orgacare
+  loadingTree = false;
+  selectedDept: DepartementTreeFeignDTO | null = null;
+
+  // liste d'organigrammes (optionnel) et code sélectionné
+  orgaList: any[] = [];
+  selectedOrgaCode: string | null = null;
 
   dateLimite = '';
   selectedType = '';
@@ -116,6 +150,31 @@ export class CorrespDetailComponent implements OnInit {
 
   @ViewChild('filePreview') filePreview!: FilePreviewComponent;
 
+  treeSearchQuery = '';
+  selectedTaskId: number | null = null;
+  taskTreeFiltered: DepartementTreeFeignDTO[] = [];
+
+  dispatchType: DispatchType | '' = '';
+  dispatchTypeOptions: Array<{ value: DispatchType; label: string }> = [
+    { value: DispatchType.LETTER, label: 'Lettre' },
+    { value: DispatchType.REGISTERED_LETTER, label: 'Lettre recommandée' },
+    { value: DispatchType.EMAIL, label: 'E-mail' },
+    { value: DispatchType.FAX, label: 'Fax' },
+  ];
+  // permission state
+  canReadCorresp = false;
+  canWriteCorresp = false;
+  canDeleteCorresp = false;
+  canAdminCorresp = false;
+
+  // task permissions: taskId -> PermissionDTO
+  taskPermissions: { [key: number]: PermissionDTO } = {};
+  // tâches appartenant réellement à l'utilisateur (ACL)
+  userAclTaskIds: Set<number> = new Set<number>();
+  private currentAccountLogin: string | null = null;
+  private currentUserId: number | null = null;
+  isGlobalAdmin = false;
+
   constructor(
     protected activatedRoute: ActivatedRoute,
     protected router: Router,
@@ -123,15 +182,24 @@ export class CorrespDetailComponent implements OnInit {
     private typeDocumentService: TypedocumentService,
     private taskService: TasksService,
     private pjService: PjService,
-    private modalService: NgbModal
+    private modalService: NgbModal,
+    protected contactCompanyService: ContactCompanyService,
+    private accountService: AccountService
   ) {}
 
   ngOnInit(): void {
+    this.accountService.identity().subscribe(acc => {
+      const roles = acc?.authorities ?? [];
+      this.isGlobalAdmin = Array.isArray(roles) && roles.includes('ROLE_ADMIN');
+    });
+    const qp = this.activatedRoute.snapshot.queryParamMap.get('taskId');
+    this.selectedTaskId = qp != null && qp !== '' ? Number(qp) : null;
     this.loadMockData();
     const id = this.activatedRoute.snapshot.paramMap.get('id');
 
     this.correspService.find(Number(id)).subscribe(res => {
       this.correspLoaded = res.body!;
+      this.loadPermissionsForCorresp(Number(this.correspLoaded.id));
       // this.htmlContent = this.correspLoaded.body || '';
       // this.formattedDate = dayjs(this.correspLoaded.courrierDate).format('dddd DD MMMM YYYY').toUpperCase();
       // console.log(this.correspLoaded)
@@ -144,6 +212,7 @@ export class CorrespDetailComponent implements OnInit {
       this.reponseSur = this.correspLoaded.responseTo || '';
       this.referenceEmetteur = this.correspLoaded.senderReference || '';
       this.priorite = this.correspLoaded.priority || false;
+      this.dispatchType = (this.correspLoaded.dispatchType as DispatchType) || '';
 
       //TODO - GET MESSAGE BY CORRESP ID AND GET PATH AND PASS IT BELOW
       //
@@ -161,8 +230,14 @@ export class CorrespDetailComponent implements OnInit {
     });
 
     this.taskService.getAllTasksByCorrespId({ correspId: Number(id) }).subscribe(res => {
-      this.tachesAssociees = res.body || [];
-      console.log(this.tachesAssociees);
+      const list = res.body || [];
+      this.taskService.enrichTasksWithCanModify(list).subscribe(enriched => {
+        this.tachesAssociees = enriched || [];
+        console.log(this.tachesAssociees);
+        // si on a déjà les ACL, on ne fait rien, sinon on essayera après charge permissions
+        this.refreshUserAclEnablement();
+        setTimeout(() => this.scrollToTaskIfRequested(), 0);
+      });
     });
 
     this.pjService.getAllPjByCorrespId({ correspId: Number(id) }).subscribe(res => {
@@ -171,9 +246,10 @@ export class CorrespDetailComponent implements OnInit {
 
     this.correspType = 'Arrivée';
 
-    this.correspService.queryOrga().subscribe(res => {
-      this.orgaList = res.body!;
-    });
+    // this.correspService.queryOrga().subscribe(res => {
+    //   this.orgaList = res.body!;
+    // });
+    this.loadActiveCompanies();
   }
   // loadCorresp(id: number): void {
   //   this.correspService.find(id).subscribe((res: HttpResponse<ICorresp>) => {
@@ -256,9 +332,209 @@ export class CorrespDetailComponent implements OnInit {
     return obj;
   }
 
+  loadActiveCompanies(): void {
+    this.loadingCompanies = true;
+    this.contactCompanyService.getActiveContactCompanies().subscribe({
+      next: (res: HttpResponse<IContactCompany[]>) => {
+        this.companies = res.body || [];
+        this.loadingCompanies = false;
+      },
+      error: () => {
+        this.companies = [];
+        this.loadingCompanies = false;
+      },
+    });
+  }
+
+  onExpediteurChange(companyId: number | null | string): void {
+    const id = companyId !== null && companyId !== undefined && companyId !== '' ? Number(companyId) : null;
+    this.selectedCompanyId = id;
+    this.personsForSelectedCompany = [];
+    this.selectedPersonId = null;
+    this.contactEmail = '';
+    if (id) {
+      const company = this.companies.find(c => c.id === id);
+      this.expediteur = company ? company.nom || '' : '';
+    } else {
+      if (!this.showManualExpediteur) {
+        this.expediteur = '';
+      }
+    }
+    if (!id) {
+      this.loadingPersons = false;
+      return;
+    }
+    this.loadingPersons = true;
+    this.contactCompanyService.getActivePersonsByCompany(id).subscribe({
+      next: (res: HttpResponse<IPersonCompany[]>) => {
+        this.personsForSelectedCompany = res.body || [];
+        this.loadingPersons = false;
+      },
+      error: () => {
+        this.personsForSelectedCompany = [];
+        this.loadingPersons = false;
+      },
+    });
+  }
+
+  loadPermissionsForCorresp(correspId: number): void {
+    if (!correspId) return;
+    this.correspService.getPermissions(correspId).subscribe({
+      next: (res: CorrespPermissionsDTO) => {
+        const p = res?.corresp || { canRead: false, canWrite: false, canDelete: false, canAdmin: false };
+
+        this.canReadCorresp = !!p.canRead;
+        this.canWriteCorresp = !!p.canWrite;
+        this.canDeleteCorresp = !!p.canDelete;
+        this.canAdminCorresp = !!p.canAdmin;
+
+        if (this.isGlobalAdmin) {
+          this.canReadCorresp = true;
+          this.canWriteCorresp = true;
+          this.canDeleteCorresp = true;
+          this.canAdminCorresp = true;
+        }
+
+        // normaliser keys tasksPermissions (backend peut renvoyer des clefs string)
+        this.taskPermissions = {};
+        const rawTasks = (res && (res as any).tasksPermissions) || {};
+        Object.keys(rawTasks).forEach(k => {
+          const id = Number(k);
+          if (!isNaN(id)) {
+            this.taskPermissions[id] = rawTasks[k] as PermissionDTO;
+          }
+        });
+
+        // If user has absolutely no read → show message and optionally redirect
+        if (!this.canReadCorresp && !this.isGlobalAdmin) {
+          this.showNotification('Vous n’avez pas le droit de consulter cette correspondance', 'error');
+          // optionnel : rediriger vers la liste pour éviter affichage page vide :
+          // this.router.navigate(['/corresp']);
+        }
+
+        // Charger la liste des tâches réellement accessibles par l'utilisateur si write
+        // Un admin peut tout faire; on utilise ACL pour tous les non-admins (qu'ils aient write corresp ou pas)
+        if (!(this.canAdminCorresp || this.isGlobalAdmin)) {
+          this.loadCurrentUserAndAclTasks();
+        }
+      },
+      error: err => {
+        // <-- ici : fallback strict (sécurité)
+        console.error('Erreur chargement permissions', err);
+        // Par défaut on refuse toute modification et lecture si on ne sait pas.
+        this.canReadCorresp = false;
+        this.canWriteCorresp = false;
+        this.canDeleteCorresp = false;
+        this.canAdminCorresp = false;
+
+        // Indiquer à l'utilisateur (UX)
+        this.showNotification('Impossible de récupérer vos droits. Accès en lecture interdit.', 'error');
+
+        // Optionnel selon ton UX : rediriger
+        // this.router.navigate(['/corresp']);
+      },
+    });
+  }
+
+  private loadCurrentUserAndAclTasks(): void {
+    this.accountService.identity().subscribe((acc: Account | null) => {
+      const uid = acc != null ? (acc as any).id : null;
+      this.currentAccountLogin = acc?.login ?? null;
+      if (typeof uid === 'number') {
+        this.currentUserId = uid;
+        this.taskService.getAllTasksByUserAclAllStatuses(uid).subscribe({
+          next: resp => {
+            const list = resp.body || [];
+            const ids = new Set<number>();
+            list.forEach(t => {
+              const tid: any = (t as any)?.id;
+              const numId = typeof tid === 'string' ? Number(tid) : tid;
+              if (typeof numId === 'number' && !isNaN(numId)) {
+                ids.add(numId);
+              }
+            });
+            this.userAclTaskIds = ids;
+            this.refreshUserAclEnablement();
+          },
+          error: () => {
+            this.userAclTaskIds.clear();
+          },
+        });
+      } else {
+        this.userAclTaskIds.clear();
+      }
+    });
+  }
+
+  private refreshUserAclEnablement(): void {
+    // Hook pour déclencher la détection si nécessaire
+  }
+
+  private scrollToTaskIfRequested(): void {
+    if (this.selectedTaskId != null) {
+      if (this.accordionStates && typeof this.accordionStates === 'object') {
+        (this.accordionStates as any)['taches'] = true;
+      }
+      const el = document.getElementById(`task-${this.selectedTaskId}`);
+      if (el && typeof (el as any).scrollIntoView === 'function') {
+        (el as any).scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        const container = document.getElementById('tasksSection');
+        if (container) {
+          container.scrollTop = container.scrollHeight;
+        }
+      }
+    }
+  }
+
+  onSelectContactPerson(personId: number | null): void {
+    this.selectedPersonId = personId;
+    if (!personId) {
+      this.contactEmail = '';
+      return;
+    }
+    const p = this.personsForSelectedCompany.find(x => x.id === personId);
+    if (p) {
+      this.contactEmail = p.email || p.whatsapp || p.tel || p.nom || '';
+    } else {
+      this.contactEmail = '';
+    }
+  }
+
+  toggleManualExpediteur(to?: boolean): void {
+    const next = typeof to === 'boolean' ? to : !this.showManualExpediteur;
+    if (next) {
+      this.selectedCompanyId = null;
+      this.personsForSelectedCompany = [];
+      this.selectedPersonId = null;
+      this.loadingPersons = false;
+    } else {
+      this.expediteur = '';
+      if (!this.companies || this.companies.length === 0) {
+        this.loadActiveCompanies();
+      }
+    }
+    this.showManualExpediteur = next;
+  }
+
+  toggleManualContact(to?: boolean): void {
+    const next = typeof to === 'boolean' ? to : !this.showManualContact;
+    this.showManualContact = next;
+    if (!next) {
+      this.selectedPersonId = null;
+      this.contactEmail = '';
+    }
+  }
+
   saveDraft(): void {
     if (!this.correspLoaded) {
       this.showNotification('Aucune correspondance chargée !', 'error');
+      return;
+    }
+
+    // contrôle permission : authorisé si canWrite ou canAdmin
+    if (!(this.canWriteCorresp || this.canAdminCorresp)) {
+      this.showNotification('Vous n’avez pas le droit d’enregistrer ce brouillon', 'error');
       return;
     }
 
@@ -296,11 +572,8 @@ export class CorrespDetailComponent implements OnInit {
       next: res => {
         this.isSaving = false;
         this.correspLoaded = res.body!;
-        // this.htmlContent = this.correspLoaded.body || '';
-        this.correspService.loadBodyFromFile({ correspId: this.correspLoaded.id }).subscribe(res => {
-          console.log('res lazy body');
-          console.log(res);
-          this.htmlContent = res;
+        this.correspService.loadBodyFromFile({ correspId: this.correspLoaded.id }).subscribe(body => {
+          this.htmlContent = body;
         });
         this.showNotification('Brouillon enregistré avec succès !', 'success');
       },
@@ -430,6 +703,15 @@ export class CorrespDetailComponent implements OnInit {
     }
   }
 
+  getTaskTypeBg(type?: string | null): string {
+    const k = (type || '').toString().toLowerCase();
+    if (k === 'lecture') return '#e8f2ff';
+    if (k === 'signature') return '#efe8ff';
+    if (k === 'traitement') return '#fff0e6';
+    if (k === 'validation') return '#e9f7ee';
+    return '#ffffff';
+  }
+
   // --- Helper: Format Date ---
   formatDate(date: dayjs.Dayjs | null | undefined): string {
     return date ? date.format('DD/MM/YYYY') : 'pas de date limite';
@@ -453,7 +735,46 @@ export class CorrespDetailComponent implements OnInit {
 
   // ------------------------------------------------------------------------------------------------------------------------
 
+  // --- helper: convert dayjs/string -> ISO string or null
+  private toIso(value: any): string | null {
+    if (!value) return null;
+    // dayjs objects have toISOString via toJSON
+    if (typeof value === 'object' && typeof (value as any).toJSON === 'function') {
+      try {
+        return (value as any).toJSON();
+      } catch {
+        return String(value);
+      }
+    }
+    // string already
+    return String(value);
+  }
+
+  // --- helper: build a readable summary of selectedResponsables (for object/responsible display)
+  private getResponsablesSummary(): string {
+    if (!this.selectedResponsables || this.selectedResponsables.length === 0) return '';
+    const parts: string[] = [];
+    for (const r of this.selectedResponsables) {
+      if (r.matriculePers) {
+        // prefer person name if you have matricule -> but we only have matricule; use matricule
+        parts.push(r.matriculePers);
+      } else if (r.codeDept) {
+        parts.push(r.codeDept);
+      }
+    }
+    return parts.join(', ');
+  }
+
+  // --- replace existing saveTask() with this ---
   saveTask(): void {
+    if (!this.canWriteCorresp) {
+      this.showNotification('Vous n’avez pas le droit d’ajouter une tâche sur ce courrier', 'error');
+      return;
+    }
+    if (this.btnSaveTaskDisabled) {
+      return;
+    }
+    // reset client-side errors
     this.validationErrors = {};
 
     if (!this.validateForm()) {
@@ -462,21 +783,80 @@ export class CorrespDetailComponent implements OnInit {
 
     this.btnSaveTaskDisabled = true;
 
-    const taskModel: ITasks = {} as ITasks;
+    // build 'object' (server requires non-null)
+    const responsibleText = this.getResponsablesSummary() || this.selectedDepartement || '';
+    const taskTypeText = this.selectedType ? this.selectedType.toUpperCase() : 'N/A';
 
-    taskModel.responsible = this.selectedDepartement;
-    taskModel.dueDate = dayjs(this.dateLimite);
-    taskModel.taskType = this.selectedType;
-    taskModel.commentaire = this.commentaire;
+    let objectBuilder = `${responsibleText} effectuera la tâche de ${taskTypeText}`;
+    if (this.dateLimite) {
+      const formatted = dayjs(this.dateLimite).format('DD/MM/YYYY');
+      objectBuilder += ` en ne dépassant pas la date limite du ${formatted}`;
+    }
 
-    console.log(taskModel);
+    // prepare payload
+    const taskModel: any = {
+      object: objectBuilder,
+      taskType: this.selectedType || null,
+      commentaire: this.commentaire || null,
+      // responsible for display (optional) — keep readable label
+      responsible: responsibleText || this.selectedDepartement || null,
+      // dueDate as ISO string (server expects String or date)
+      dueDate: this.dateLimite ? this.toIso(dayjs(this.dateLimite)) : null,
+      // responsables: only include fields that actually exist (no empty keys)
+      responsables: (this.selectedResponsables || [])
+        .map(r => {
+          const out: any = {};
+          if (r.codeDept) out.codeDept = r.codeDept;
+          if (r.matriculePers) out.matriculePers = r.matriculePers;
+          return out;
+        })
+        .filter(x => Object.keys(x).length > 0),
+    };
 
-    this.correspService.addTaskToCorresp(taskModel, this.correspLoaded.id).subscribe(res => {
-      this.resetForm();
+    // debug
+    console.log('POST /api/corresps/{id}/tasks payload =', taskModel);
 
-      this.modalService.dismissAll();
+    // call service: your CorrespService.addTaskToCorresp expects ITasks and converts dates
+    this.correspService.addTaskToCorresp(taskModel, this.correspLoaded.id).subscribe({
+      next: resp => {
+        this.btnSaveTaskDisabled = false;
+        this.resetForm();
+        this.modalService.dismissAll();
+        // refresh local tasks list (without full reload) + enrich with canModify
+        this.taskService.getAllTasksByCorrespId({ correspId: this.correspLoaded.id }).subscribe(r => {
+          const list = r.body || [];
+          this.taskService.enrichTasksWithCanModify(list).subscribe(enriched => {
+            this.tachesAssociees = enriched || [];
+          });
+        });
+        this.showNotification('Tâche ajoutée avec succès', 'success');
+      },
+      error: err => {
+        this.btnSaveTaskDisabled = false;
+        console.error('Erreur ajout tâche', err);
 
-      window.location.reload();
+        // Try to parse JHipster / Problem JSON with fieldErrors
+        if (err && err.error) {
+          const payload = err.error;
+          // if fieldErrors present, map to validationErrors
+          if (Array.isArray(payload.fieldErrors) && payload.fieldErrors.length) {
+            payload.fieldErrors.forEach((fe: any) => {
+              // fe.field may be 'object' etc.
+              this.validationErrors[fe.field] = fe.message || 'Valeur invalide';
+            });
+            this.showNotification('Erreur de validation : corrigez les champs indiqués', 'error');
+            return;
+          }
+          // generic message
+          if (payload.message) {
+            this.showNotification(payload.message, 'error');
+            return;
+          }
+        }
+
+        // fallback
+        this.showNotification("Erreur lors de l'ajout de la tâche (serveur)", 'error');
+      },
     });
   }
 
@@ -485,7 +865,10 @@ export class CorrespDetailComponent implements OnInit {
     this.commentaire = '';
     this.validationErrors = {};
     this.selectedDepartement = '';
+    this.selectedDepartementName = '';
+    this.selectedDept = null;
     this.selectedType = '';
+    this.selectedResponsables = [];
   }
 
   validateForm(): boolean {
@@ -498,14 +881,8 @@ export class CorrespDetailComponent implements OnInit {
       isValid = false;
     }
 
-    // Validate task name
-    if (!this.selectedOrga) {
-      this.validationErrors['organigramme'] = 'L Organigramme est obligatoire';
-      isValid = false;
-    }
-
-    if (!this.selectedDepartement || this.selectedDepartement.trim() === '') {
-      this.validationErrors['departement'] = 'Le departement est obligatoire';
+    if (!this.selectedResponsables || this.selectedResponsables.length === 0) {
+      this.validationErrors['responsables'] = 'Sélectionnez au moins un responsable (dépt ou personne)';
       isValid = false;
     }
 
@@ -515,9 +892,14 @@ export class CorrespDetailComponent implements OnInit {
   validationErrors: { [key: string]: string } = {};
 
   openTasksModal(content: any): void {
-    this.selectedOrga = null;
+    if (!this.canWriteCorresp) {
+      this.showNotification('Vous êtes en lecture seule pour ce courrier', 'error');
+      return;
+    }
+    // this.selectedOrga = null;
     this.selectedDepartement = '';
     this.resetForm();
+    this.prepareAndLoadOrgaThenTree();
     this.modalService.open(content, { size: 'xl' });
   }
 
@@ -525,67 +907,410 @@ export class CorrespDetailComponent implements OnInit {
     this.modalService.open(content, { centered: true, size: 'xl' });
   }
 
-  onOrgaChange(): void {
-    if (!this.selectedOrga) return;
+  private prepareAndLoadOrgaThenTree(): void {
+    // Si on a déjà un orgaCode sélectionné, on le charge directement
+    if (this.selectedOrgaCode) {
+      this.loadTreeForModal(this.selectedOrgaCode);
+      return;
+    }
 
-    const req = { orgaCode: this.selectedOrga.orgaCode };
-
-    this.correspService.queryOrgaDeps(req).subscribe({
-      next: res => {
-        this.departements = (res.body as DepartementTreeFeignDTO[]) || [];
-        this.expandAllDepartments(this.departements);
-        // this.departements[0].selected = true;
+    // Sinon on demande la liste des organigrammes puis on charge le premier
+    this.correspService.queryOrga().subscribe({
+      next: (res: HttpResponse<any[]>) => {
+        this.orgaList = res.body || [];
+        // essayer de récupérer un code dans plusieurs schémas possibles
+        const first = this.orgaList?.[0];
+        if (first) {
+          this.selectedOrgaCode = first.code ?? first.orgaCode ?? first.id?.toString() ?? null;
+        }
+        if (this.selectedOrgaCode) {
+          this.loadTreeForModal(this.selectedOrgaCode);
+        } else {
+          // fallback : optionally load a default code
+          console.warn('Aucun organigramme trouvé pour charger l’arbre.');
+          this.taskTree = [];
+        }
       },
-      error: err => console.error('Erreur lors du chargement des départements', err),
+      error: err => {
+        console.error('Erreur récupération organigrammes', err);
+        this.taskTree = [];
+      },
     });
   }
 
-  private expandAllDepartments(nodes: DepartementTreeFeignDTO[]): void {
-    nodes.forEach(node => {
-      (node as any).expanded = true; // DevExtreme reconnaît 'expanded'
-      if (node.children && node.children.length > 0) {
-        this.expandAllDepartments(node.children);
+  // --------------------------------------------------------------------------
+  // Load tree from backend and normalize it
+  // --------------------------------------------------------------------------
+  loadTreeForModal(orgaCode: string): void {
+    if (!orgaCode) {
+      this.taskTree = [];
+      this.taskTreeFiltered = [];
+      return;
+    }
+    this.loadingTree = true;
+    this.correspService.getDepartementHierarchyByOrganigramme(orgaCode).subscribe({
+      next: (res: HttpResponse<DepartementTreeFeignDTO[]>) => {
+        const body = res.body || [];
+        this.taskTree = this.normalizeTree(body);
+        this.taskTreeFiltered = this.taskTree;
+        this.loadingTree = false;
+      },
+      error: err => {
+        console.error('Erreur getDepartementHierarchyByOrganigramme', err);
+        this.taskTree = [];
+        this.taskTreeFiltered = [];
+        this.loadingTree = false;
+      },
+    });
+  }
+
+  // --------------------------------------------------------------------------
+  // Normalisation / util (défensif)
+  // --------------------------------------------------------------------------
+  private normalizeTree(nodes?: DepartementTreeFeignDTO[] | null): DepartementTreeFeignDTO[] {
+    if (!nodes) return [];
+    return nodes.map(n => this.normalizeNode(n));
+  }
+
+  private normalizeNode(node: DepartementTreeFeignDTO): DepartementTreeFeignDTO {
+    const children = node.children && Array.isArray(node.children) ? node.children.map(c => this.normalizeNode(c)) : [];
+
+    const rawAff = (node as any).affectationsByType || {};
+    const affs: Partial<Record<TypeAffectation, PersonneFeignDTO[]>> = {};
+
+    // copier proprement les clés connues
+    Object.keys(rawAff).forEach(k => {
+      if ((Object.values(TypeAffectation) as string[]).includes(k)) {
+        affs[k as TypeAffectation] = (rawAff as any)[k] ?? [];
+      } else {
+        // clé inconnue: defensive -> fusionner dans MEMBRE
+        affs.MEMBRE = ((affs.MEMBRE || []) as PersonneFeignDTO[]).concat((rawAff as any)[k] || []);
       }
     });
+
+    (Object.values(TypeAffectation) as TypeAffectation[]).forEach(t => {
+      affs[t] = affs[t] || [];
+    });
+
+    return {
+      ...node,
+      children,
+      affectationsByType: affs,
+    };
   }
 
-  selectDep(event: any) {
-    console.log(event);
-    this.selectedDepartement = event.itemData.code;
+  // --------------------------------------------------------------------------
+  // Selection d'un noeud (departement) dans l'arbre
+  // --------------------------------------------------------------------------
+  expandedAffectations: Set<string> = new Set();
+  expandedNodes: Set<number> = new Set();
+  private levelPalette: string[] = ['#1e90ff', '#22c55e', '#f59e0b', '#8b5cf6', '#ef4444', '#14b8a6'];
+
+  toggleAffectation(nodeId: number, type: string): void {
+    const key = `${nodeId}-${type}`;
+    if (this.expandedAffectations.has(key)) {
+      this.expandedAffectations.delete(key);
+    } else {
+      this.expandedAffectations.add(key);
+    }
   }
+
+  isAffectationExpanded(nodeId: number, type: string): boolean {
+    return this.expandedAffectations.has(`${nodeId}-${type}`);
+  }
+
+  getAffectationKeys(node: DepartementTreeFeignDTO): string[] {
+    if (!node.affectationsByType) return [];
+    // Only return keys that have people
+    return Object.keys(node.affectationsByType).filter(k => {
+      const list = (node.affectationsByType as any)[k];
+      return Array.isArray(list) && list.length > 0;
+    });
+  }
+
+  getPeopleForType(node: DepartementTreeFeignDTO, type: string): PersonneFeignDTO[] {
+    if (!node.affectationsByType) return [];
+    return (node.affectationsByType as any)[type] || [];
+  }
+
+  onSelectDept(node: DepartementTreeFeignDTO): void {
+    this.selectedDept = node;
+    this.selectedDepartement = node.code ?? '';
+    this.selectedDepartementName = node.nom ?? '';
+  }
+
+  toggleDeptSelection(node: DepartementTreeFeignDTO): void {
+    const code = node.code ?? '';
+    if (!code) return;
+    const idx = this.selectedResponsables.findIndex(r => r.codeDept === code && !r.matriculePers);
+    if (idx >= 0) {
+      this.selectedResponsables.splice(idx, 1);
+    } else {
+      this.selectedResponsables.push({ codeDept: code, displayName: node.nom ?? code });
+    }
+  }
+
+  isDeptSelected(node: DepartementTreeFeignDTO): boolean {
+    const code = node.code ?? '';
+    return !!this.selectedResponsables.find(r => r.codeDept === code && !r.matriculePers);
+  }
+
+  togglePersonSelection(node: DepartementTreeFeignDTO, person: PersonneFeignDTO): void {
+    const code = node.code ?? '';
+    const matricule = person.matricule ?? '';
+    if (!matricule) return;
+    const idx = this.selectedResponsables.findIndex(r => r.matriculePers === matricule && r.codeDept === code);
+    if (idx >= 0) {
+      this.selectedResponsables.splice(idx, 1);
+    } else {
+      this.selectedResponsables.push({ codeDept: code || null, matriculePers: matricule, displayName: person.nomPrenom ?? matricule });
+    }
+  }
+
+  isPersonSelected(node: DepartementTreeFeignDTO, person: PersonneFeignDTO): boolean {
+    const code = node.code ?? '';
+    const matricule = person.matricule ?? '';
+    return !!this.selectedResponsables.find(r => r.matriculePers === matricule && r.codeDept === code);
+  }
+
+  toggleNodeExpand(nodeId: number): void {
+    if (this.expandedNodes.has(nodeId)) {
+      this.expandedNodes.delete(nodeId);
+    } else {
+      this.expandedNodes.add(nodeId);
+    }
+  }
+
+  isNodeExpanded(nodeId: number): boolean {
+    return this.expandedNodes.has(nodeId);
+  }
+
+  removeSelection(sel: { codeDept?: string | null; matriculePers?: string | null }): void {
+    let idx = -1;
+    if (sel.matriculePers) {
+      idx = this.selectedResponsables.findIndex(r => r.matriculePers === sel.matriculePers && r.codeDept === (sel.codeDept ?? r.codeDept));
+    } else if (sel.codeDept) {
+      idx = this.selectedResponsables.findIndex(r => r.codeDept === sel.codeDept && !r.matriculePers);
+    }
+    if (idx >= 0) {
+      this.selectedResponsables.splice(idx, 1);
+    }
+  }
+
+  clearSelections(): void {
+    this.selectedResponsables = [];
+  }
+
+  getLevelColor(level: number): string {
+    return this.levelPalette[level % this.levelPalette.length];
+  }
+
+  // Utilitaire pour afficher les responsables d'un nœud (liste de noms)
+  getResponsablesForNode(node: DepartementTreeFeignDTO): string {
+    if (!node || !node.affectationsByType) return '';
+    const chefs = (node.affectationsByType['CHEF'] || []).map((p: any) => p.nomPrenom).filter(Boolean);
+    const membres = (node.affectationsByType['MEMBRE'] || []).map((p: any) => p.nomPrenom).filter(Boolean);
+    // priorité chefs
+    if (chefs.length) return chefs.join(', ');
+    if (membres.length) return membres.join(', ');
+    return '';
+  }
+
+  onTreeSearchChange(): void {
+    const q = (this.treeSearchQuery || '').trim().toLowerCase();
+    if (!q) {
+      this.taskTreeFiltered = this.taskTree;
+      return;
+    }
+    this.taskTreeFiltered = this.filterTree(this.taskTree, q);
+    this.applyAutoExpand(this.taskTreeFiltered);
+  }
+
+  private filterTree(nodes: DepartementTreeFeignDTO[], q: string): DepartementTreeFeignDTO[] {
+    return nodes.map(n => this.filterNode(n, q)).filter((n): n is DepartementTreeFeignDTO => n !== null);
+  }
+
+  private filterNode(node: DepartementTreeFeignDTO, q: string): DepartementTreeFeignDTO | null {
+    const name = (node.nom || '').toLowerCase();
+    const deptMatches = name.includes(q);
+
+    const filteredChildren =
+      (node.children || []).map(c => this.filterNode(c, q)).filter((c): c is DepartementTreeFeignDTO => c !== null) || [];
+
+    const aff = node.affectationsByType || {};
+    const filteredAff: Partial<Record<TypeAffectation, PersonneFeignDTO[]>> = {};
+    let personMatches = false;
+    Object.keys(aff as any).forEach(k => {
+      const list = ((aff as any)[k] as PersonneFeignDTO[]) || [];
+      const flist = list.filter(p => (p.nomPrenom || '').toLowerCase().includes(q));
+      if (flist.length) personMatches = true;
+      filteredAff[k as TypeAffectation] = flist;
+    });
+
+    const keepNode = deptMatches || personMatches || filteredChildren.length > 0;
+    if (!keepNode) return null;
+
+    return {
+      ...node,
+      children: filteredChildren,
+      affectationsByType: filteredAff,
+    };
+  }
+
+  private applyAutoExpand(nodes: DepartementTreeFeignDTO[]): void {
+    const nodesToExpand: number[] = [];
+    const affectationsToExpand: string[] = [];
+
+    const visit = (n: DepartementTreeFeignDTO): void => {
+      const id = n.id;
+      const children = n.children || [];
+      const aff = n.affectationsByType || {};
+
+      if (children.length > 0) {
+        nodesToExpand.push(id);
+      }
+
+      Object.keys(aff as any).forEach(t => {
+        const list = ((aff as any)[t] as PersonneFeignDTO[]) || [];
+        if (list.length > 0) {
+          affectationsToExpand.push(`${id}-${t}`);
+        }
+      });
+
+      children.forEach(c => visit(c));
+    };
+
+    nodes.forEach(n => visit(n));
+
+    nodesToExpand.forEach(id => this.expandedNodes.add(id));
+    affectationsToExpand.forEach(key => this.expandedAffectations.add(key));
+  }
+
+  // onOrgaChange(): void {
+  //   if (!this.selectedOrga) return;
+  //
+  //   const req = { orgaCode: this.selectedOrga.orgaCode };
+  //
+  //   this.correspService.queryOrgaDeps(req).subscribe({
+  //     next: res => {
+  //       this.departements = (res.body as DepartementTreeFeignDTO[]) || [];
+  //       this.expandAllDepartments(this.departements);
+  //       // this.departements[0].selected = true;
+  //     },
+  //     error: err => console.error('Erreur lors du chargement des départements', err),
+  //   });
+  // }
+  //
+  // private expandAllDepartments(nodes: DepartementTreeFeignDTO[]): void {
+  //   nodes.forEach(node => {
+  //     (node as any).expanded = true; // DevExtreme reconnaît 'expanded'
+  //     if (node.children && node.children.length > 0) {
+  //       this.expandAllDepartments(node.children);
+  //     }
+  //   });
+  // }
+  //
+  // selectDep(event: any) {
+  //   console.log(event);
+  //   this.selectedDepartement = event.itemData.code;
+  // }
 
   deleteTask(correspId: number, tasksId: number): void {
-    this.taskService.deleteTaskFromCorrespAndDB(correspId, tasksId).subscribe(res => {
-      window.location.reload();
+    const perm = this.taskPermissions[tasksId];
+    const isAdminEffective = this.isGlobalAdmin || this.canAdminCorresp;
+    const canModifyLocal = !!(this.tachesAssociees.find(t => (t as any)?.id === tasksId) as any)?.canModify;
+    if (!isAdminEffective && !canModifyLocal && !this.userAclTaskIds.has(tasksId)) {
+      this.showNotification('Action non autorisée', 'error');
+      return;
+    }
+    this.taskService.deleteTaskFromCorrespAndDB(correspId, tasksId).subscribe({
+      next: () => {
+        // update UI without full reload
+        this.tachesAssociees = this.tachesAssociees.filter(t => t.id !== tasksId);
+        this.showNotification('Tâche supprimée', 'success');
+      },
+      error: err => {
+        console.error('Erreur suppression tâche', err);
+        this.showNotification('Erreur lors de la suppression', 'error');
+      },
     });
   }
 
   changeTasksStatus(correspId: number, taskId: number, status: string): void {
-    this.correspService.changeTaskStatus({ correspId, taskId, status }).subscribe(res => {
-      window.location.reload();
+    const perm = this.taskPermissions[taskId];
+    const isAdminEffective = this.isGlobalAdmin || this.canAdminCorresp;
+    const canModifyLocal = !!(this.tachesAssociees.find(t => (t as any)?.id === taskId) as any)?.canModify;
+    if (!isAdminEffective && !(this.userAclTaskIds.has(taskId) || perm?.canWrite === true || canModifyLocal)) {
+      this.showNotification('Vous n’avez pas le droit de modifier le statut de la tâche', 'error');
+      return;
+    }
+    this.correspService.changeTaskStatus({ correspId, taskId, status }).subscribe({
+      next: () => {
+        // refresh tasks list
+        this.taskService.getAllTasksByCorrespId({ correspId: this.correspLoaded.id }).subscribe(r => {
+          const list = r.body || [];
+          this.taskService.enrichTasksWithCanModify(list).subscribe(enriched => {
+            this.tachesAssociees = enriched || [];
+          });
+        });
+        this.showNotification('Statut modifié', 'success');
+      },
+      error: err => {
+        console.error('Erreur changement statut', err);
+        this.showNotification('Erreur lors du changement', 'error');
+      },
     });
   }
 
   soumettreCorresp(correspId: number): void {
-    this.correspService.soumettreCorresp({ correspId }).subscribe(res => {
-      window.location.reload();
+    if (!this.canWriteCorresp) {
+      this.showNotification('Vous n’avez pas le droit de soumettre ce courrier', 'error');
+      return;
+    }
+    this.correspService.soumettreCorresp({ correspId }).subscribe({
+      next: () => {
+        window.location.reload();
+      },
+      error: err => {
+        console.error(err);
+        this.showNotification('Erreur', 'error');
+      },
     });
   }
 
   cloturerCorresp(correspId: number): void {
-    this.correspService.cloturerCorresp({ correspId }).subscribe(res => {
-      window.location.reload();
+    if (!this.canWriteCorresp) {
+      this.showNotification('Vous n’avez pas le droit de clôturer ce courrier', 'error');
+      return;
+    }
+    this.correspService.cloturerCorresp({ correspId }).subscribe({
+      next: () => {
+        window.location.reload();
+      },
+      error: err => {
+        console.error(err);
+        this.showNotification('Erreur', 'error');
+      },
     });
   }
   generateReference(): void {
     if (!this.correspLoaded || !this.correspLoaded.id) return;
 
+    // contrôle permission (écriture ou admin)
+    if (!(this.canWriteCorresp || this.canAdminCorresp)) {
+      this.showNotification("Vous n'avez pas le droit de générer une référence", 'error');
+      return;
+    }
+
     this.correspService.generateReferenceForCorresp(this.correspLoaded.id).subscribe({
       next: (res: ICorresp) => {
         this.correspLoaded.reference = res.reference;
-        console.log('Référence générée :', res.reference);
+        this.showNotification(`Référence générée${res.reference ? ' : ' + res.reference : ''}`, 'success');
       },
-      error: err => console.error('Erreur génération référence :', err),
+      error: err => {
+        console.error('Erreur génération référence :', err);
+        this.showNotification('Impossible de générer la référence', 'error');
+      },
     });
   }
 
@@ -682,45 +1407,33 @@ export class CorrespDetailComponent implements OnInit {
   }
 
   uploadFileWithProgress(file: File, uniqueName: string, pjModel: IPj): void {
-    this.isUploading = true;
+    if (!(this.canWriteCorresp || this.canAdminCorresp)) {
+      this.showNotification("Vous n'avez pas le droit d'ajouter une pièce jointe", 'error');
+      return;
+    }
 
-    const req = { uniqueName }; // Pass uniqueName to backend
+    this.isUploading = true;
+    const req = { uniqueName };
 
     this.pjService.uploadPj(file, req).subscribe({
       next: progressOrResponse => {
         if (typeof progressOrResponse === 'number') {
-          // Update progress bar
           this.uploadProgress.set(uniqueName, progressOrResponse);
         } else {
-          // Upload complete - response is string
+          // upload complete, backend returns path/string
           this.uploadProgress.set(uniqueName, 100);
-          console.log('Upload successful:', progressOrResponse);
-
+          pjModel.path = progressOrResponse;
           if (!this.accordionStates['pieces']) {
             this.accordionStates['pieces'] = true;
           }
 
-          pjModel.path = progressOrResponse;
-          console.log('pjModel updated:', pjModel);
-          // console.log(progressOrResponse)
-          // this.finalPath = progressOrResponse
-          // console.log(this.finalPath)
+          // assign PJ to corresp (component wrapper handles permission & UI update)
+          this.addPjToCorresp(pjModel);
 
-          this.correspService.addPjToCorresp(pjModel, this.correspLoaded.id).subscribe({
-            next: () => {
-              console.log('PJ added to corresp successfully');
-            },
-            error: err => {
-              console.error('Failed to assign PJ:', err);
-            },
-          });
-
-          // Keep progress at 100% briefly, then remove to show complete state
+          // small delay to show 100% then remove progress
           setTimeout(() => {
             this.uploadProgress.delete(uniqueName);
             this.isUploading = false;
-
-            window.location.reload();
           }, 500);
         }
       },
@@ -728,9 +1441,38 @@ export class CorrespDetailComponent implements OnInit {
         console.error('Upload failed:', error);
         this.uploadProgress.delete(uniqueName);
         this.isUploading = false;
+        this.showNotification('Échec du téléchargement du fichier', 'error');
+      },
+    });
+  }
+  private addPjToCorresp(pjModel: IPj): void {
+    if (!this.correspLoaded || !this.correspLoaded.id) {
+      console.warn('Aucune correspondance chargée pour attacher la PJ');
+      return;
+    }
 
-        // Show error to user
-        alert('Échec du téléchargement du fichier');
+    if (!(this.canWriteCorresp || this.canAdminCorresp)) {
+      this.showNotification("Vous n'avez pas le droit d'ajouter une pièce jointe", 'error');
+      return;
+    }
+
+    this.correspService.addPjToCorresp(pjModel, this.correspLoaded.id).subscribe({
+      next: () => {
+        // Refresh pj list localement (préférable à un reload complet)
+        this.pjService.getAllPjByCorrespId({ correspId: this.correspLoaded.id }).subscribe({
+          next: res => {
+            this.pjsLoaded = res.body || [];
+            this.showNotification('Pièce jointe ajoutée', 'success');
+          },
+          error: err => {
+            console.error('Erreur rafraîchissement PJ:', err);
+            this.showNotification('Pièce jointe ajoutée (mais impossible de rafraîchir la liste)', 'success');
+          },
+        });
+      },
+      error: err => {
+        console.error('Failed to assign PJ:', err);
+        this.showNotification("Impossible d'associer la pièce jointe", 'error');
       },
     });
   }
@@ -759,23 +1501,57 @@ export class CorrespDetailComponent implements OnInit {
   }
 
   deletePjWithCorresp(): void {
+    if (!this.selectedPjToDelete) {
+      this.showNotification('Aucune pièce sélectionnée pour suppression', 'error');
+      return;
+    }
+
+    if (!(this.canWriteCorresp || this.canDeleteCorresp || this.canAdminCorresp)) {
+      this.showNotification('Vous n’avez pas le droit de supprimer cette pièce jointe', 'error');
+      return;
+    }
+
     const req = { uniqueName: this.selectedPjToDelete.uniqueName, fileType: this.selectedPjToDelete.fileType };
 
     this.pjService.deletePjWithCorresp(req).subscribe({
       next: () => {
-        console.log('File deleted successfully');
-        window.location.reload();
+        // remove from local array (no reload)
+        this.pjsLoaded = this.pjsLoaded.filter(p => p.uniqueName !== this.selectedPjToDelete.uniqueName);
+        this.selectedPjToDelete = undefined as any;
+        this.showNotification('Pièce jointe supprimée', 'success');
       },
       error: error => {
         console.error('Delete failed:', error);
-        alert('Échec de la suppression du fichier');
+        this.showNotification('Échec de la suppression du fichier', 'error');
       },
     });
   }
 
   deleteCorresp(): void {
-    this.correspService.delete(this.correspLoaded.id).subscribe(res => {
-      this.router.navigate(['/corresp']);
+    if (!(this.canDeleteCorresp || this.canAdminCorresp)) {
+      this.showNotification("Vous n'avez pas le droit de supprimer cette correspondance", 'error');
+      return;
+    }
+
+    // petite confirmation UX
+    if (!confirm('Confirmez-vous la suppression de cette correspondance ?')) {
+      return;
+    }
+
+    if (!this.correspLoaded || !this.correspLoaded.id) {
+      this.showNotification('Aucune correspondance chargée', 'error');
+      return;
+    }
+
+    this.correspService.delete(this.correspLoaded.id).subscribe({
+      next: () => {
+        this.showNotification('Correspondance supprimée', 'success');
+        this.router.navigate(['/corresp']);
+      },
+      error: err => {
+        console.error('Erreur suppression correspondance', err);
+        this.showNotification('Erreur lors de la suppression', 'error');
+      },
     });
   }
 }

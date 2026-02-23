@@ -1,37 +1,202 @@
 {
   "correspCareApp": {
+    "loading": "Chargement...",
+    "UsualStatus": {
+      "null": "",
+      "Actif": "Actif",
+      "Delated": "Supprimé",
+      "Desactivated": "Désactivé",
+      "ACTIVE": "Actif",
+      "DELETED": "Supprimé",
+      "DISABLED": "Désactivé"
+    },
     "configManageContactCompany": {
       "home": {
-        "title": "ContactCompanies",
-        "refreshListLabel": "Actualiser la liste",
-        "createLabel": "Créer un nouveau Contact Company",
-        "createOrEditLabel": "Créer ou éditer un Contact Company",
-        "notFound": "Aucun Contact Company trouvé"
+        "title": "Carnet d'adresses",
+        "subtitle": "Gestion des sociétés et contacts",
+        "refreshListLabel": "Rafraîchir la liste",
+        "createLabel": "Créer une nouvelle société",
+        "createOrEditLabel": "Créer / Éditer une société",
+        "notFound": "Aucune société trouvée"
       },
-      "delete": {
-        "question": "Êtes-vous certain de vouloir supprimer le Contact Company {{ id }} ?"
+      "search": {
+        "placeholder": "Rechercher une société...",
+        "aria": "Champ de recherche des sociétés"
       },
-      "detail": {
-        "title": "Contact Company"
+      "action": {
+        "search": {
+          "tooltip": "Rechercher"
+        },
+        "export": "Exporter",
+        "export.tooltip": "Exporter la liste en fichier Excel",
+        "add": "Ajouter",
+        "add.tooltip": "Créer une nouvelle société",
+        "addPerson": "Ajouter un contact",
+        "addPerson.tooltip": "Ajouter un contact à cette société",
+        "viewPerson": {
+          "tooltip": "Voir le contact"
+        },
+        "editPerson": {
+          "tooltip": "Éditer le contact"
+        },
+        "delete": {
+          "tooltip": "Supprimer la société"
+        },
+        "deletePerson": {
+          "tooltip": "Supprimer le contact"
+        },
+        "activate": "Activer",
+        "activate.tooltip": "Activer",
+        "deactivate": "Désactiver",
+        "deactivate.tooltip": "Désactiver",
+        "edit": {
+          "tooltip": "Modifier la société"
+        }
       },
-      "id": "Id",
+      "modal": {
+        "title": "Confirmation",
+        "closeAria": "Fermer",
+        "confirm": {
+          "companyPrefix": "Confirmer la",
+          "companySuffix": "de la société « {{ name }} » ?",
+          "companyFull": "Confirmer la suppression de la société « {{ name }} » ?",
+          "personPrefix": "Confirmer la",
+          "personSuffix": "du contact « {{ name }} » ?"
+        },
+        "buttons": {
+          "cancel": "Annuler",
+          "confirm": "Confirmer"
+        }
+      },
+      "list": {
+        "title": "Sociétés",
+        "contactsLabel": "contact(s)",
+        "contactsOf": "Contacts de {{ name }}",
+        "noPersons": "Aucune personne associée.",
+        "empty": "Aucune société trouvée."
+      },
       "nom": "Nom",
-      "nomabrege": "Nomabrege",
-      "matrne": "Matrne",
+      "nomabrege": "Nom abrégé",
+      "matrne": "Mat RNE",
       "pays": "Pays",
       "adresse": "Adresse",
       "tel": "Tel",
       "fax": "Fax",
       "email": "Email",
-      "webpage": "Webpage",
-      "etat": "Etat"
-    }
-  },
-  "configManageApp": {
-    "configManageContactCompany": {
-      "created": "Un nouveau Contact Company a été créé avec l'identifiant {{ param }}",
-      "updated": "Le Contact Company avec l'identifiant {{ param }} a été mis à jour",
-      "deleted": "Le Contact Company avec l'identifiant {{ param }} a été supprimé"
+      "webpage": "Site web",
+      "nomabrege_label": "Nom abrégé :",
+      "matrne_label": "Mat RNE :",
+      "loading": "Chargement...",
+      "form": {
+        "subtitle": "Remplissez les informations de la société",
+        "placeholder": {
+          "nom": "Nom de la société",
+          "nomabrege": "Ex : ACME",
+          "matrne": "Référence RNE",
+          "pays": "Pays",
+          "adresse": "Adresse complète",
+          "tel": "Téléphone",
+          "fax": "Fax",
+          "email": "contact@exemple.tn",
+          "webpage": "https://www.example.com"
+        },
+        "saving": "Enregistrement...",
+        "saveFailed": "Erreur lors de la sauvegarde."
+      },
+      "errors": {
+        "nameExists": "Une société avec ce nom existe déjà.",
+        "matrneExists": "Une société avec ce matricule existe déjà.",
+        "cannotChangeDelated": "Impossible de modifier une entité supprimée."
+      },
+      "export": {
+        "noFile": "Aucun fichier reçu.",
+        "failed": "Erreur lors de l'export Excel."
+      }
+    },
+    "configManagePersonCompany": {
+      "home": {
+        "title": "Contacts",
+        "subtitle": "Informations du contact et lien avec la société",
+        "createOrEditLabel": "Créer / Éditer un contact"
+      },
+      "nom": "Nom",
+      "pays": "Pays",
+      "adresse": "Adresse",
+      "tel": "Tel",
+      "fax": "Fax",
+      "email": "Email",
+      "whatsapp": "Whatsapp",
+      "placeholders": {
+        "nom": "Nom du contact",
+        "pays": "Ex : Tunisie",
+        "adresse": "Adresse postale",
+        "tel": "Téléphone",
+        "fax": "Fax",
+        "email": "email@exemple.com",
+        "whatsapp": "Whatsapp"
+      },
+      "labels": {
+        "contactCompany": "Société",
+        "contactCompanyReadonlyNote": "Le lien vers la société est verrouillé et ne peut pas être modifié ici."
+      },
+      "buttons": {
+        "viewCompany": "Voir la société"
+      },
+      "form": {
+        "saving": "Enregistrement..."
+      },
+      "messages": {
+        "contactCompanyNotFound": "Société liée introuvable (ID fourni invalide).",
+        "unknownSaveError": "Erreur serveur lors de l'enregistrement.",
+        "processingError": "Une erreur est survenue lors du traitement.",
+        "nameExists": "Un contact avec ce nom existe déjà."
+      },
+      "fields": {
+        "nom": "Nom",
+        "pays": "Pays",
+        "adresse": "Adresse",
+        "tel": "Tel",
+        "fax": "Fax",
+        "email": "Email",
+        "whatsapp": "Whatsapp"
+      },
+      "validation": {
+        "required": "Ce champ est obligatoire."
+      }
+    },
+    "pagination": {
+      "previous": "Précédent",
+      "next": "Suivant"
+    },
+    "entity": {
+      "validation": {
+        "required": "Ce champ est requis.",
+        "email": "Email invalide."
+      },
+      "action": {
+        "cancel": "Annuler",
+        "save": "Sauvegarder"
+      }
+    },
+    "contactCompany": {
+      "action": {
+        "activate": "Activer",
+        "deactivate": "Désactiver"
+      },
+      "modal": {
+        "confirm": {
+          "company": "Confirmer la {{ action }} de la société \"{{ name }}\" ?",
+          "person": "Confirmer la {{ action }} du contact \"{{ name }}\" ?"
+        }
+      },
+      "errors": {
+        "cannotChangeDelated": "Impossible de modifier une entité supprimée.",
+        "toggleFailed": "Erreur lors du changement d'état."
+      },
+      "export": {
+        "noFile": "Aucun fichier reçu.",
+        "failed": "Erreur lors de l'export Excel."
+      }
     }
   }
 }
