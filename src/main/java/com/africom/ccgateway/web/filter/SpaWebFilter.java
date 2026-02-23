@@ -10,18 +10,60 @@ public class SpaWebFilter implements WebFilter {
     /**
      * Forwards any unmapped paths (except those containing a period) to the client {@code index.html}.
      */
+    //    @Override
+    //    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+    //        String path = exchange.getRequest().getURI().getPath();
+    //        if (
+    //            !path.startsWith("/api") &&
+    //            !path.startsWith("/management") &&
+    //            !path.startsWith("/services") &&
+    //            !path.startsWith("/v3/api-docs") &&
+    //            path.matches("[^\\\\.]*")
+    //        ) {
+    //            return chain.filter(exchange.mutate().request(exchange.getRequest().mutate().path("/index.html").build()).build());
+    //        }
+    //        return chain.filter(exchange);
+    //    }
+
+    //    @Override
+    //    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+    //        org.springframework.http.server.RequestPath requestPath = exchange.getRequest().getPath();
+    //        String contextPath = requestPath.contextPath().value();
+    //        String path = requestPath.pathWithinApplication().value();
+    //
+    //        if (
+    //            !path.startsWith("/api") &&
+    //            !path.startsWith("/management") &&
+    //            !path.startsWith("/services") &&
+    //            !path.startsWith("/v3/api-docs") &&
+    //            !path.contains(".") &&
+    //            (path.equals("/") || path.length() != 1)
+    //        ) {
+    //            return chain.filter(
+    //                exchange.mutate().request(exchange.getRequest().mutate().path(contextPath + "/index.html").build()).build()
+    //            );
+    //        }
+    //        return chain.filter(exchange);
+    //    }
+
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
-        String path = exchange.getRequest().getURI().getPath();
-        if (
-            !path.startsWith("/api") &&
-            !path.startsWith("/management") &&
-            !path.startsWith("/services") &&
-            !path.startsWith("/v3/api-docs") &&
-            path.matches("[^\\\\.]*")
-        ) {
-            return chain.filter(exchange.mutate().request(exchange.getRequest().mutate().path("/index.html").build()).build());
+        var requestPath = exchange.getRequest().getPath();
+        String contextPath = requestPath.contextPath().value();
+        String path = requestPath.pathWithinApplication().value();
+
+        if (path.startsWith("/content/") || path.contains(".")) {
+            return chain.filter(exchange);
         }
+
+        if (
+            !path.startsWith("/api") && !path.startsWith("/management") && !path.startsWith("/services") && !path.startsWith("/v3/api-docs")
+        ) {
+            return chain.filter(
+                exchange.mutate().request(exchange.getRequest().mutate().path(contextPath + "/index.html").build()).build()
+            );
+        }
+
         return chain.filter(exchange);
     }
 }
