@@ -729,19 +729,46 @@ export class CorrespUpdateComponent implements OnInit {
       return;
     }
 
-    const responsibleText = this.getResponsablesSummary() || this.selectedDepartement || '';
-    const taskData = {
-      typeTask: this.selectedType,
-      responsable: responsibleText,
-      dateLimite: this.dateLimite,
-      responsableName: this.selectedDepartementName || responsibleText,
-      commentaire: this.commentaire,
-    };
-
-    if (this.isEditMode && this.editingTaskIndex !== null) {
-      this.tasks[this.editingTaskIndex] = taskData;
+    const selections = this.selectedResponsables || [];
+    if (selections.length > 0) {
+      // Crée une tâche par sélection, avec affichage lisible (nom pour DEPT, nomPrenom pour PERS)
+      const createdItems: Array<{ typeTask: string; responsable: any; dateLimite: string; responsableName: string; commentaire: string }> =
+        [];
+      for (const sel of selections) {
+        const codeOrMatricule = sel.matriculePers ? sel.matriculePers : sel.codeDept || '';
+        const displayLabel = sel.displayName || codeOrMatricule;
+        const taskData = {
+          typeTask: this.selectedType,
+          responsable: codeOrMatricule,
+          dateLimite: this.dateLimite,
+          responsableName: displayLabel,
+          commentaire: this.commentaire,
+        };
+        createdItems.push(taskData);
+      }
+      if (this.isEditMode && this.editingTaskIndex !== null && createdItems.length === 1) {
+        this.tasks[this.editingTaskIndex] = createdItems[0];
+      } else {
+        // En mode création ou multi-sélection en édition, on ajoute chaque item
+        for (const td of createdItems) {
+          this.tasks.push(td);
+        }
+      }
     } else {
-      this.tasks.push(taskData);
+      // Fallback: une seule sélection par département (ancien comportement)
+      const responsibleText = this.selectedDepartement || '';
+      const taskData = {
+        typeTask: this.selectedType,
+        responsable: responsibleText,
+        dateLimite: this.dateLimite,
+        responsableName: this.selectedDepartementName || responsibleText,
+        commentaire: this.commentaire,
+      };
+      if (this.isEditMode && this.editingTaskIndex !== null) {
+        this.tasks[this.editingTaskIndex] = taskData;
+      } else {
+        this.tasks.push(taskData);
+      }
     }
 
     this.resetForm();

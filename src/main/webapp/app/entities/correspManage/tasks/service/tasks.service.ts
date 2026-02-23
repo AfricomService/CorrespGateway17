@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpResponse } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { forkJoin, Observable, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 import dayjs from 'dayjs/esm';
 
 import { isPresent } from 'app/core/util/operators';
@@ -125,6 +125,47 @@ export class TasksService {
       responseType: 'blob',
       observe: 'response',
     }) as Observable<HttpResponse<Blob>>;
+  }
+
+  // ------------------------
+  // Vérifier par ID (GET)
+  // ------------------------
+  canCurrentUserModifyTask(id: number): Observable<boolean> {
+    if (id === null || id === undefined) {
+      return of(false);
+    }
+    return this.http.get<boolean>(`${this.resourceUrl}/${id}/can-modify`).pipe(
+      // si le backend renvoie autre chose ou erreur -> false
+      catchError(() => of(false))
+    );
+  }
+
+  // ------------------------
+  // Vérifier en envoyant le DTO (POST) - si tu as implémenté l'endpoint POST
+  // ------------------------
+  canCurrentUserModifyTaskByDto(tasks: ITasks): Observable<boolean> {
+    if (!tasks) {
+      return of(false);
+    }
+    const copy = this.convertDateFromClient(tasks as any); // convertit les dates si nécessaire
+    return this.http.post<boolean>(`${this.resourceUrl}/can-modify`, copy).pipe(catchError(() => of(false)));
+  }
+
+  // ------------------------
+  // Helper pour enrichir une liste de tasks avec canModify (utilité côté liste)
+  // ------------------------
+  /**
+   * Renvoie un Observable qui émet la même liste de tasks, chaque objet enrichi par canModify:boolean
+   * ATTENTION : effectue N requêtes GET /{id}/can-modify (une par tâche)
+   */
+  enrichTasksWithCanModify(tasks: ITasks[]): Observable<ITasks[]> {
+    if (!tasks || tasks.length === 0) return of(tasks ?? []);
+    const calls = tasks.map(t => this.canCurrentUserModifyTask(t.id).pipe(catchError(() => of(false))));
+    return forkJoin(calls).pipe(
+      map(results => {
+        return tasks.map((t, i) => ({ ...t, canModify: results[i] }));
+      })
+    );
   }
 
   addTasksToCollectionIfMissing<Type extends Pick<ITasks, 'id'>>(
