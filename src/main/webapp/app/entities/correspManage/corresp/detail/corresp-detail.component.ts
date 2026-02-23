@@ -230,11 +230,14 @@ export class CorrespDetailComponent implements OnInit {
     });
 
     this.taskService.getAllTasksByCorrespId({ correspId: Number(id) }).subscribe(res => {
-      this.tachesAssociees = res.body || [];
-      console.log(this.tachesAssociees);
-      // si on a déjà les ACL, on ne fait rien, sinon on essayera après charge permissions
-      this.refreshUserAclEnablement();
-      setTimeout(() => this.scrollToTaskIfRequested(), 0);
+      const list = res.body || [];
+      this.taskService.enrichTasksWithCanModify(list).subscribe(enriched => {
+        this.tachesAssociees = enriched || [];
+        console.log(this.tachesAssociees);
+        // si on a déjà les ACL, on ne fait rien, sinon on essayera après charge permissions
+        this.refreshUserAclEnablement();
+        setTimeout(() => this.scrollToTaskIfRequested(), 0);
+      });
     });
 
     this.pjService.getAllPjByCorrespId({ correspId: Number(id) }).subscribe(res => {
@@ -819,9 +822,12 @@ export class CorrespDetailComponent implements OnInit {
         this.btnSaveTaskDisabled = false;
         this.resetForm();
         this.modalService.dismissAll();
-        // refresh local tasks list (without full reload)
+        // refresh local tasks list (without full reload) + enrich with canModify
         this.taskService.getAllTasksByCorrespId({ correspId: this.correspLoaded.id }).subscribe(r => {
-          this.tachesAssociees = r.body || [];
+          const list = r.body || [];
+          this.taskService.enrichTasksWithCanModify(list).subscribe(enriched => {
+            this.tachesAssociees = enriched || [];
+          });
         });
         this.showNotification('Tâche ajoutée avec succès', 'success');
       },
@@ -1212,7 +1218,8 @@ export class CorrespDetailComponent implements OnInit {
   deleteTask(correspId: number, tasksId: number): void {
     const perm = this.taskPermissions[tasksId];
     const isAdminEffective = this.isGlobalAdmin || this.canAdminCorresp;
-    if (!isAdminEffective && !this.userAclTaskIds.has(tasksId)) {
+    const canModifyLocal = !!(this.tachesAssociees.find(t => (t as any)?.id === tasksId) as any)?.canModify;
+    if (!isAdminEffective && !canModifyLocal && !this.userAclTaskIds.has(tasksId)) {
       this.showNotification('Action non autorisée', 'error');
       return;
     }
@@ -1232,7 +1239,8 @@ export class CorrespDetailComponent implements OnInit {
   changeTasksStatus(correspId: number, taskId: number, status: string): void {
     const perm = this.taskPermissions[taskId];
     const isAdminEffective = this.isGlobalAdmin || this.canAdminCorresp;
-    if (!isAdminEffective && !(this.userAclTaskIds.has(taskId) || perm?.canWrite === true)) {
+    const canModifyLocal = !!(this.tachesAssociees.find(t => (t as any)?.id === taskId) as any)?.canModify;
+    if (!isAdminEffective && !(this.userAclTaskIds.has(taskId) || perm?.canWrite === true || canModifyLocal)) {
       this.showNotification('Vous n’avez pas le droit de modifier le statut de la tâche', 'error');
       return;
     }
@@ -1240,7 +1248,10 @@ export class CorrespDetailComponent implements OnInit {
       next: () => {
         // refresh tasks list
         this.taskService.getAllTasksByCorrespId({ correspId: this.correspLoaded.id }).subscribe(r => {
-          this.tachesAssociees = r.body || [];
+          const list = r.body || [];
+          this.taskService.enrichTasksWithCanModify(list).subscribe(enriched => {
+            this.tachesAssociees = enriched || [];
+          });
         });
         this.showNotification('Statut modifié', 'success');
       },

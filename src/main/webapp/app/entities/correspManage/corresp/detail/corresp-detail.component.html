@@ -614,12 +614,16 @@
                       <span
                         (click)="changeTasksStatus(correspLoaded?.id!, task.id, 'CANCELLED')"
                         *ngIf="CorrespStatus.DRAFT === task.status"
-                        [style.pointer-events]="isGlobalAdmin || canAdminCorresp || userAclTaskIds.has(+task.id) ? 'auto' : 'none'"
-                        [style.opacity]="isGlobalAdmin || canAdminCorresp || userAclTaskIds.has(+task.id) ? '1' : '0.4'"
+                        [style.pointer-events]="
+                          isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? 'auto' : 'none'
+                        "
+                        [style.opacity]="isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? '1' : '0.4'"
                         [style.background-color]="'#6a2020'"
                         class="badge"
                         style="font-size: 0.7em; text-transform: uppercase; cursor: pointer"
-                        title="{{ isGlobalAdmin || canAdminCorresp || userAclTaskIds.has(+task.id) ? '' : 'Droit insuffisant' }}"
+                        title="{{
+                          isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? '' : 'Droit insuffisant'
+                        }}"
                       >
                         <span jhiTranslate="correspCareApp.correspManageCorresp.actions.cancel">annuler</span>
                       </span>
@@ -627,12 +631,16 @@
                       <span
                         (click)="deleteTask(correspLoaded?.id!, task.id)"
                         *ngIf="CorrespStatus.DRAFT === task.status"
-                        [style.pointer-events]="isGlobalAdmin || canAdminCorresp || userAclTaskIds.has(+task.id) ? 'auto' : 'none'"
-                        [style.opacity]="isGlobalAdmin || canAdminCorresp || userAclTaskIds.has(+task.id) ? '1' : '0.4'"
+                        [style.pointer-events]="
+                          isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? 'auto' : 'none'
+                        "
+                        [style.opacity]="isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? '1' : '0.4'"
                         [style.background-color]="'#dc3545'"
                         class="badge"
                         style="font-size: 0.7em; text-transform: uppercase; cursor: pointer"
-                        title="{{ isGlobalAdmin || canAdminCorresp || userAclTaskIds.has(+task.id) ? '' : 'Droit insuffisant' }}"
+                        title="{{
+                          isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? '' : 'Droit insuffisant'
+                        }}"
                       >
                         <span jhiTranslate="correspCareApp.correspManageCorresp.actions.deleteUpper">SUPPRIMER</span>
                       </span>
@@ -640,12 +648,16 @@
                       <span
                         (click)="changeTasksStatus(correspLoaded?.id!, task.id, 'IN_PROGRESS')"
                         *ngIf="CorrespStatus.DRAFT === task.status"
-                        [style.pointer-events]="isGlobalAdmin || canAdminCorresp || userAclTaskIds.has(+task.id) ? 'auto' : 'none'"
-                        [style.opacity]="isGlobalAdmin || canAdminCorresp || userAclTaskIds.has(+task.id) ? '1' : '0.4'"
+                        [style.pointer-events]="
+                          isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? 'auto' : 'none'
+                        "
+                        [style.opacity]="isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? '1' : '0.4'"
                         [style.background-color]="'#0d6efd'"
                         class="badge"
                         style="font-size: 0.7em; text-transform: uppercase; cursor: pointer"
-                        title="{{ isGlobalAdmin || canAdminCorresp || userAclTaskIds.has(+task.id) ? '' : 'Droit insuffisant' }}"
+                        title="{{
+                          isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? '' : 'Droit insuffisant'
+                        }}"
                       >
                         <span jhiTranslate="correspCareApp.correspManageCorresp.actions.start">commencer</span>
                       </span>
@@ -653,12 +665,16 @@
                       <span
                         (click)="changeTasksStatus(correspLoaded?.id!, task.id, 'CANCELLED')"
                         *ngIf="CorrespStatus.IN_PROGRESS === task.status"
-                        [style.pointer-events]="isGlobalAdmin || canAdminCorresp || userAclTaskIds.has(task.id) ? 'auto' : 'none'"
-                        [style.opacity]="isGlobalAdmin || canAdminCorresp || userAclTaskIds.has(task.id) ? '1' : '0.4'"
+                        [style.pointer-events]="
+                          isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(task.id) ? 'auto' : 'none'
+                        "
+                        [style.opacity]="isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(task.id) ? '1' : '0.4'"
                         [style.background-color]="'#6a2020'"
                         class="badge"
                         style="font-size: 0.7em; text-transform: uppercase; cursor: pointer"
-                        title="{{ isGlobalAdmin || canAdminCorresp || userAclTaskIds.has(task.id) ? '' : 'Droit insuffisant' }}"
+                        title="{{
+                          isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(task.id) ? '' : 'Droit insuffisant'
+                        }}"
                       >
                         <span jhiTranslate="correspCareApp.correspManageCorresp.actions.cancel">annuler</span>
                       </span>

@@ -21,6 +21,7 @@ export interface ITasks {
   updatedDate?: dayjs.Dayjs | null;
   corresps?: Pick<ICorresp, 'id'>[] | null;
   responsables?: ResponsableSelection[] | null;
+  canModify?: boolean;
 }
 
 export type NewTasks = Omit<ITasks, 'id'> & { id: null };
