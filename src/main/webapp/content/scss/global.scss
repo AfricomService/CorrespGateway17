@@ -46,6 +46,13 @@ Generic styles
   border: none;
 }
 
+.jh-card-home {
+  padding: 0 !important;
+  margin-top: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
 .error {
   color: white;
   background-color: red;

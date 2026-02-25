@@ -1,4 +1,4 @@
-import { Component, OnInit, Compiler, Injector, NgModuleFactory, Type } from '@angular/core';
+import { Component, OnInit, Compiler, Injector, NgModuleFactory, Type, ViewEncapsulation } from '@angular/core';
 import { Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import { SessionStorageService } from 'ngx-webstorage';
@@ -15,6 +15,7 @@ import { EntityNavbarItems } from 'app/entities/entity-navbar-items';
   selector: 'jhi-navbar',
   templateUrl: './navbar.component.html',
   styleUrls: ['./navbar.component.scss'],
+  encapsulation: ViewEncapsulation.None,
 })
 export class NavbarComponent implements OnInit {
   inProduction?: boolean;

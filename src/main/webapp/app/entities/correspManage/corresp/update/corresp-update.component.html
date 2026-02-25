@@ -1,8 +1,13 @@
 <div style="width: 100%; display: flex; flex-direction: column; padding: 0 16px">
   <!-- Title Section -->
-  <div style="margin-bottom: 1em">
-    <h4 style="color: #c1121f; text-transform: uppercase; font-weight: 600; font-style: italic; margin: 0">Ajouter Une Correspondance</h4>
-  </div>
+  <!--<div style="margin-bottom: 1em">
+    <h4
+      style="color: #c1121f; text-transform: uppercase; font-weight: 600; font-style: italic; margin: 0"
+      jhiTranslate="correspCareApp.correspManageCorresp.update.title"
+    >
+      Ajouter Une Correspondance
+    </h4>
+  </div>-->
 
   <!-- Top Toolbar -->
   <div
@@ -10,7 +15,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 12px 16px;
+      padding: 8px 12px;
       background-color: #f8f9fa;
       border: 1px solid #dee2e6;
       border-radius: 8px;
@@ -19,9 +24,6 @@
   >
     <!-- Left Side Buttons -->
     <div style="display: flex; gap: 12px; align-items: center">
-      <!--      <button class="btn btn-outline-primary" style="font-weight: 600; text-transform: uppercase">Réponse</button>-->
-      <!--      <button class="btn btn-outline-primary" style="font-weight: 600; text-transform: uppercase">Imprimer</button>-->
-      <!--      <button class="btn btn-outline-primary" style="font-weight: 600; text-transform: uppercase">Journal</button>-->
       <h5
         style="font-weight: bold; margin: 0"
         [ngStyle]="{
@@ -31,8 +33,26 @@
       >
         {{ correspType }}
       </h5>
-      <button class="btn btn-outline-secondary" style="font-weight: 600; text-transform: uppercase" (click)="saveCorresp(true)">
-        Identifier
+      <div *ngIf="corresp?.reference" style="font-weight: bold; font-size: 1.1em; color: #2c3e50; font-style: italic">
+        {{ corresp?.reference }}
+      </div>
+      <button
+        *ngIf="!corresp?.reference"
+        class="btn btn-outline-secondary btn-sm"
+        style="
+          font-weight: 600;
+          text-transform: uppercase;
+          min-width: 32px;
+          height: 32px;
+          padding: 0 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        "
+        (click)="saveCorresp(true)"
+        [attr.title]="'correspCareApp.correspManageCorresp.update.identify' | translate"
+      >
+        <fa-icon icon="id-badge"></fa-icon>
       </button>
     </div>
 
@@ -41,16 +61,35 @@
       <button
         [disabled]="isUploading"
         (click)="saveCorresp(false)"
-        class="btn btn-primary"
-        style="font-weight: 600; text-transform: uppercase"
+        class="btn btn-primary btn-sm"
+        style="
+          font-weight: 600;
+          text-transform: uppercase;
+          min-width: 32px;
+          height: 32px;
+          padding: 0 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        "
+        [attr.title]="'correspCareApp.correspManageCorresp.actions.save' | translate"
       >
-        Enregistrer
+        <fa-icon icon="save"></fa-icon>
       </button>
     </div>
   </div>
 
   <!-- Form -->
   <div style="display: flex; flex-direction: column; flex-grow: 1">
+    <div
+      *ngIf="notificationMessage"
+      [ngClass]="{ 'alert-success': notificationType === 'success', 'alert-danger': notificationType === 'error' }"
+      class="alert"
+      role="alert"
+      style="margin-bottom: 12px"
+    >
+      {{ notificationMessage }}
+    </div>
     <div style="display: flex; flex-grow: 1; gap: 16px; padding-bottom: 1em">
       <!-- Left Column -->
       <div style="flex: 1">
@@ -73,7 +112,9 @@
               "
               [style.background-color]="accordionStates['infoGen'] ? '#e9ecef' : '#f8f9fa'"
             >
-              <h5 style="font-weight: 600; margin: 0; color: #2c3e50">Informations générales</h5>
+              <h5 style="font-weight: 600; margin: 0; color: #2c3e50" jhiTranslate="correspCareApp.correspManageCorresp.detail.generalInfo">
+                Informations générales
+              </h5>
               <svg
                 [style.transform]="accordionStates['infoGen'] ? 'rotate(180deg)' : 'rotate(0deg)'"
                 style="transition: transform 0.3s ease; width: 20px; height: 20px"
@@ -94,21 +135,29 @@
               <form>
                 <div style="padding-bottom: 1.5em; display: flex; gap: 12px; border-bottom: 1px dashed #5570a3">
                   <div style="flex: 1">
-                    <label class="form-label fw-semibold">Type de document <span class="text-danger">*</span></label>
+                    <label class="form-label fw-semibold"
+                      ><span jhiTranslate="correspCareApp.correspManageCorresp.update.typeDocument">Type de document</span>
+                      <span class="text-danger">*</span></label
+                    >
                     <select
                       class="form-select"
                       [(ngModel)]="selectedTypeDocument"
                       name="typeDocument"
                       (ngModelChange)="onTypeDocumentChange()"
                     >
-                      <option [ngValue]="undefined">-- Sélectionner un type --</option>
+                      <option [ngValue]="undefined" jhiTranslate="correspCareApp.correspManageCorresp.update.selectTypePlaceholder">
+                        -- Sélectionner un type --
+                      </option>
                       <option *ngFor="let type of typedocuments" [ngValue]="type">
                         {{ type.nom }}
                       </option>
                     </select>
                   </div>
                   <div style="flex: 1">
-                    <label class="form-label fw-semibold"> Date <span class="text-danger">*</span> </label>
+                    <label class="form-label fw-semibold"
+                      ><span jhiTranslate="correspCareApp.correspManageCorresp.update.dateLabel">Date</span>
+                      <span class="text-danger">*</span>
+                    </label>
                     <input
                       type="date"
                       class="form-control"
@@ -124,83 +173,218 @@
                   </div>
                 </div>
                 <div style="margin-bottom: 1.5em; padding-top: 15px">
-                  <label class="form-label fw-semibold">Objet <span class="text-danger">*</span></label>
+                  <label class="form-label fw-semibold"
+                    ><span jhiTranslate="correspCareApp.correspManageCorresp.subject">Objet</span> <span class="text-danger">*</span></label
+                  >
                   <input
                     type="text"
                     class="form-control"
                     [class.is-invalid]="validationInfoGenErrors['objet']"
                     [(ngModel)]="objet"
                     name="objet"
-                    placeholder="Entrer l'objet de la correspondance"
+                    [placeholder]="'correspCareApp.correspManageCorresp.update.enterSubjectPlaceholder' | translate"
                   />
                   <div class="invalid-feedback" *ngIf="validationInfoGenErrors['objet']">
                     {{ validationInfoGenErrors['objet'] }}
                   </div>
                 </div>
 
-                <!-- Expéditeur / Destinataire -->
+                <!-- ================= Expéditeur / Destinataire ================= -->
                 <div style="display: flex; gap: 12px; margin-bottom: 1.5em">
-                  <div style="flex: 1">
-                    <label class="form-label fw-semibold">Expéditeur <span class="text-danger">*</span></label>
-                    <input
-                      type="text"
-                      class="form-control"
-                      [class.is-invalid]="validationInfoGenErrors['expediteur']"
-                      [(ngModel)]="expediteur"
-                      name="expediteur"
-                      placeholder="Entrer l'expéditeur"
-                    />
-                    <div class="invalid-feedback" *ngIf="validationInfoGenErrors['expediteur']">
-                      {{ validationInfoGenErrors['expediteur'] }}
+                  <!-- EXPÉDITEUR: select sociétés actives OR champ manuel -->
+                  <div style="flex: 1; display: flex; gap: 8px; align-items: flex-start">
+                    <div style="flex: 1">
+                      <label class="form-label fw-semibold"
+                        ><span jhiTranslate="correspCareApp.correspManageCorresp.sender">Expéditeur</span>
+                        <span class="text-danger">*</span></label
+                      >
+
+                      <!-- MODE SELECT with search -->
+                      <div *ngIf="!showManualExpediteur" style="display: flex; gap: 8px; align-items: center">
+                        <dx-select-box
+                          [(value)]="selectedCompanyId"
+                          [dataSource]="companies"
+                          [valueExpr]="'id'"
+                          displayExpr="nom"
+                          [searchEnabled]="true"
+                          [searchExpr]="companySearchExpr"
+                          [placeholder]="'correspCareApp.correspManageCorresp.update.selectCompanyPlaceholder' | translate"
+                          (onValueChanged)="onExpediteurChange($event.value)"
+                          class="w-100"
+                          [disabled]="loadingCompanies"
+                        >
+                          <div *dxTemplate="let item of 'listItem'">
+                            <div>
+                              {{ item.nom }} <span *ngIf="item.matrne"> - {{ item.matrne }}</span>
+                            </div>
+                          </div>
+                        </dx-select-box>
+
+                        <!-- bouton plus -> mode manuel -->
+                        <button
+                          type="button"
+                          class="btn btn-outline-secondary"
+                          [attr.aria-label]="'correspCareApp.correspManageCorresp.update.enterManually' | translate"
+                          (click)="toggleManualExpediteur(true)"
+                          [attr.title]="'correspCareApp.correspManageCorresp.update.enterManually' | translate"
+                          style="padding: 6px 8px; display: inline-flex; align-items: center; justify-content: center"
+                        >
+                          <!-- icône plus -->
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                            <path
+                              d="M8 1a.5.5 0 0 1 .5.5V7.5H14a.5.5 0 0 1 0 1H8.5V14a.5.5 0 0 1-1 0V8.5H2a.5.5 0 0 1 0-1h5.5V1.5A.5.5 0 0 1 8 1z"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+
+                      <!-- MODE MANUEL -->
+                      <div *ngIf="showManualExpediteur" style="display: flex; gap: 8px; align-items: center">
+                        <input
+                          type="text"
+                          class="form-control"
+                          [(ngModel)]="expediteur"
+                          name="expediteurManual"
+                          [placeholder]="'correspCareApp.correspManageCorresp.update.enterSenderManual' | translate"
+                          [class.is-invalid]="validationInfoGenErrors['expediteur']"
+                          style="flex: 1"
+                        />
+                        <button
+                          type="button"
+                          class="btn btn-outline-secondary"
+                          (click)="toggleManualExpediteur(false)"
+                          [attr.title]="'correspCareApp.correspManageCorresp.update.chooseFromList' | translate"
+                          style="padding: 6px 8px; display: inline-flex; align-items: center; justify-content: center"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                            <path
+                              d="M11.354 1.646a.5.5 0 0 1 0 .708L6.707 7l4.647 4.646a.5.5 0 0 1-.708.708l-5-5a.5.5 0 0 1 0-.708l5-5a.5.5 0 0 1 .708 0z"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+
+                      <div class="invalid-feedback" *ngIf="validationInfoGenErrors['expediteur']">
+                        {{ validationInfoGenErrors['expediteur'] }}
+                      </div>
                     </div>
                   </div>
 
+                  <!-- DESTINATAIRE (inchangé: readonly + bouton Ajouter si Autre) -->
                   <div style="display: flex; gap: 10px; align-items: end; flex: 1">
-                    <!-- INPUT -->
                     <div style="flex: 1">
-                      <label class="form-label fw-semibold"> Destinataire <span class="text-danger">*</span> </label>
+                      <label class="form-label fw-semibold"
+                        ><span jhiTranslate="correspCareApp.correspManageCorresp.recipient">Destinataire</span>
+                        <span class="text-danger">*</span></label
+                      >
                       <input
                         type="text"
                         class="form-control"
                         [class.is-invalid]="validationInfoGenErrors['destinataire']"
                         [(ngModel)]="destinataireLabel"
+                        (ngModelChange)="onRecipientOrCcChange()"
                         name="destinataire"
-                        readonly
-                        placeholder="Entrer le destinataire"
+                        [placeholder]="'correspCareApp.correspManageCorresp.update.enterRecipient' | translate"
                       />
                       <div class="invalid-feedback" *ngIf="validationInfoGenErrors['destinataire']">
                         {{ validationInfoGenErrors['destinataire'] }}
                       </div>
                     </div>
 
-                    <button
-                      *ngIf="selectedTypeDocument?.nom === 'Autre'"
-                      class="btn btn-primary"
-                      type="button"
-                      (click)="openAddDest(AddDest)"
-                    >
-                      Ajouter
-                    </button>
+                    <!-- Button removed -->
                   </div>
                 </div>
 
-                <!-- Réponse sur / Étape / Priorité -->
+                <!-- ================= CONTACT ================= -->
                 <div style="display: flex; gap: 12px; margin-bottom: 1.5em">
                   <div style="flex: 1">
-                    <label class="form-label fw-semibold">Contact <span class="text-danger">*</span></label>
-                    <input
-                      type="text"
-                      class="form-control"
-                      [class.is-invalid]="validationInfoGenErrors['contactEmail']"
-                      [(ngModel)]="contactEmail"
-                      name="contactEmail"
-                      placeholder="Entrer le contact"
-                    />
-                    <div class="invalid-feedback" *ngIf="validationInfoGenErrors['contact']">
-                      {{ validationInfoGenErrors['contact'] }}
+                    <label class="form-label fw-semibold" jhiTranslate="correspCareApp.correspManageCorresp.contact">Contact</label>
+
+                    <!-- MODE SELECT with search for persons -->
+                    <div *ngIf="!showManualContact" style="display: flex; gap: 8px; align-items: center">
+                      <dx-select-box
+                        [(value)]="selectedPersonId"
+                        [dataSource]="personsForSelectedCompany"
+                        [valueExpr]="'id'"
+                        displayExpr="nom"
+                        [searchEnabled]="true"
+                        [searchExpr]="personSearchExpr"
+                        [placeholder]="'correspCareApp.correspManageCorresp.update.selectContactPlaceholder' | translate"
+                        (onValueChanged)="onSelectContactPerson($event.value)"
+                        [disabled]="!selectedCompanyId || loadingPersons"
+                        class="w-100"
+                      >
+                        <div *dxTemplate="let item of 'listItem'">
+                          <div>
+                            {{ item.nom }}
+                            <span *ngIf="item.email"> — {{ item.email }}</span>
+                            <span *ngIf="!item.email && item.tel"> — {{ item.tel }}</span>
+                          </div>
+                        </div>
+                      </dx-select-box>
+
+                      <!-- bouton plus -> mode manuel -->
+                      <button
+                        type="button"
+                        class="btn btn-outline-secondary"
+                        [attr.aria-label]="'correspCareApp.correspManageCorresp.update.enterContactManually' | translate"
+                        (click)="toggleManualContact(true)"
+                        [attr.title]="'correspCareApp.correspManageCorresp.update.enterManually' | translate"
+                        style="padding: 6px 8px; display: inline-flex; align-items: center; justify-content: center"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                          <path
+                            d="M8 1a.5.5 0 0 1 .5.5V7.5H14a.5.5 0 0 1 0 1H8.5V14a.5.5 0 0 1-1 0V8.5H2a.5.5 0 0 1 0-1h5.5V1.5A.5.5 0 0 1 8 1z"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+
+                    <!-- MODE MANUEL pour contact -->
+                    <div *ngIf="showManualContact" style="display: flex; gap: 8px; align-items: center">
+                      <input
+                        type="text"
+                        class="form-control"
+                        [(ngModel)]="contactEmail"
+                        name="contactEmailFallback"
+                        [placeholder]="'correspCareApp.correspManageCorresp.update.enterContactManual' | translate"
+                        [class.is-invalid]="validationInfoGenErrors['contactEmail']"
+                        style="flex: 1"
+                      />
+                      <button
+                        type="button"
+                        class="btn btn-outline-secondary"
+                        (click)="toggleManualContact(false)"
+                        [attr.title]="'correspCareApp.correspManageCorresp.update.chooseFromList' | translate"
+                        style="padding: 6px 8px; display: inline-flex; align-items: center; justify-content: center"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                          <path
+                            d="M11.354 1.646a.5.5 0 0 1 0 .708L6.707 7l4.647 4.646a.5.5 0 0 1-.708.708l-5-5a.5.5 0 0 1 0-.708l5-5a.5.5 0 0 1 .708 0z"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+
+                    <div class="invalid-feedback" *ngIf="validationInfoGenErrors['contactEmail']">
+                      {{ validationInfoGenErrors['contactEmail'] }}
+                    </div>
+
+                    <!--  <div *ngIf="contactEmail" class="mt-2 small text-muted">
+                        Contact sélectionné : <strong>{{ contactEmailLabel || contactEmail }}</strong>
+                        <span *ngIf="contactEmailLabel && contactEmail"> — {{ contactEmail }}</span>
+                      </div>-->
+
+                    <div
+                      *ngIf="loadingPersons"
+                      class="mt-2 small text-muted"
+                      jhiTranslate="correspCareApp.correspManageCorresp.update.loadingContacts"
+                    >
+                      Chargement des contacts…
                     </div>
                   </div>
 
+                  <!-- CONTACT EN COPIE (inchangé) -->
                   <div style="display: flex; gap: 10px; align-items: end; flex: 1">
                     <div style="flex: 1">
                       <label class="form-label fw-semibold">Contact En Copie</label>
@@ -208,33 +392,40 @@
                         type="text"
                         class="form-control"
                         [(ngModel)]="contactEmailCCLabel"
-                        readonly
+                        (ngModelChange)="onRecipientOrCcChange()"
                         name="contactEmailCC"
                         placeholder="Entrer le contact en copie"
                       />
                     </div>
 
-                    <button *ngIf="selectedTypeDocument?.nom === 'Autre'" class="btn btn-primary" type="button" (click)="openAddCC(AddCC)">
-                      Ajouter
-                    </button>
+                    <!-- Button removed -->
                   </div>
                 </div>
 
                 <div style="display: flex; gap: 12px; margin-bottom: 1.5em; border-top: 1px dashed #5570a3">
                   <div style="flex: 1; display: flex; align-items: center; gap: 16px; padding-top: 30px">
                     <div style="flex: 1">
-                      <label class="form-label fw-semibold">Reponse Sur</label>
-                      <input
-                        type="text"
-                        class="form-control"
-                        [(ngModel)]="reponseSur"
-                        name="reponseSur"
-                        placeholder="Entrer la Reponse Sur"
-                      />
-                    </div>
-                    <div style="flex: 1">
-                      <label class="form-label fw-semibold">Confidentialité</label>
-                      <input type="text" class="form-control" placeholder="Entrer la Confidentialité" />
+                      <label class="form-label fw-semibold">Réponse Sur</label>
+                      <dx-select-box
+                        [(value)]="reponseSur"
+                        [dataSource]="correspsWithReference"
+                        [valueExpr]="'reference'"
+                        displayExpr="reference"
+                        [searchEnabled]="true"
+                        [searchExpr]="responseSearchExpr"
+                        placeholder="-- Choisir une correspondance (référence) --"
+                        class="w-100"
+                        [disabled]="loadingCorrespsWithRef"
+                        (onValueChanged)="onSelectReponseSur($event.value)"
+                      >
+                        <div *dxTemplate="let item of 'listItem'">
+                          <div>
+                            <strong>{{ item.reference || '(Sans référence)' }}</strong>
+                            <span *ngIf="item.subject"> — {{ item.subject }}</span>
+                            <span *ngIf="item.idinstance" class="text-muted"> — {{ item.idinstance }}</span>
+                          </div>
+                        </div>
+                      </dx-select-box>
                     </div>
 
                     <div style="flex: 1">
@@ -247,7 +438,15 @@
                         placeholder="Entrer la Réference d'émetteur"
                       />
                     </div>
-
+                    <div style="flex: 1">
+                      <label class="form-label fw-semibold">Type d’envoi</label>
+                      <select class="form-select" [(ngModel)]="dispatchType" name="dispatchType">
+                        <option [ngValue]="undefined">-- Sélectionner un type d’envoi --</option>
+                        <option *ngFor="let opt of dispatchTypeOptions" [ngValue]="opt.value">
+                          {{ opt.label }}
+                        </option>
+                      </select>
+                    </div>
                     <div style="flex: 0.1; display: flex; flex-direction: column; align-items: center; height: 70px">
                       <label class="form-label fw-semibold mb-0" style="padding-bottom: 15px">Important</label>
                       <input
@@ -281,7 +480,12 @@
               "
               [style.background-color]="accordionStates['taches'] ? '#e9ecef' : '#f8f9fa'"
             >
-              <h5 style="font-weight: 600; margin: 0; color: #2c3e50">Tâches Associées</h5>
+              <h5
+                style="font-weight: 600; margin: 0; color: #2c3e50"
+                jhiTranslate="correspCareApp.correspManageCorresp.detail.associatedTasks"
+              >
+                Tâches Associées
+              </h5>
               <div style="display: flex; align-items: center; gap: 12px">
                 <button
                   class="btn btn-primary btn-sm"
@@ -312,16 +516,9 @@
               <div *ngIf="tasks.length > 0" style="display: flex; flex-direction: column; gap: 12px">
                 <div
                   *ngFor="let task of tasks; let i = index"
-                  style="
-                    display: flex;
-                    align-items: center;
-                    gap: 12px;
-                    padding: 12px;
-                    background-color: #f8f9fa;
-                    border-radius: 8px;
-                    border-left: 4px solid deeppink;
-                    justify-content: space-between;
-                  "
+                  style="display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; justify-content: space-between"
+                  [style.background-color]="getTaskTypeBg(task.typeTask)"
+                  [style.border-left]="'4px solid ' + getTaskTypeAccent(task.typeTask)"
                 >
                   <div style="display: flex; align-items: center; justify-content: space-between; gap: 1em; width: 100%">
                     <div style="display: flex; flex-direction: column; gap: 0.5em">
@@ -363,7 +560,7 @@
                           viewBox="0 0 16 16"
                         >
                           <path
-                            d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325"
+                            d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293z"
                           />
                         </svg>
                       </button>
@@ -394,7 +591,10 @@
                 *ngIf="tasks.length === 0"
                 style="padding: 24px; text-align: center; background-color: #f8f9fa; border-radius: 8px; border: 2px dashed #dee2e6"
               >
-                <p style="margin: 0; color: #6c757d; font-style: italic">
+                <p
+                  style="margin: 0; color: #6c757d; font-style: italic"
+                  jhiTranslate="correspCareApp.correspManageCorresp.update.noAssociatedTasksHint"
+                >
                   Aucune tâche associée. Cliquez sur le bouton "+" pour ajouter une tâche.
                 </p>
               </div>
@@ -424,7 +624,9 @@
               "
               [style.background-color]="accordionStates['corps'] ? '#e9ecef' : '#f8f9fa'"
             >
-              <h5 style="font-weight: 600; margin: 0; color: #2c3e50">Corps de la Correspondance</h5>
+              <h5 style="font-weight: 600; margin: 0; color: #2c3e50" jhiTranslate="correspCareApp.correspManageCorresp.detail.bodySection">
+                Corps de la Correspondance
+              </h5>
               <svg
                 [style.transform]="accordionStates['corps'] ? 'rotate(180deg)' : 'rotate(0deg)'"
                 style="transition: transform 0.3s ease; width: 20px; height: 20px"
@@ -442,16 +644,16 @@
               style="overflow: hidden; transition: max-height 0.5s ease, padding 0.5s ease"
               [style.padding]="accordionStates['corps'] ? '16px' : '0 16px'"
             >
-              <dx-html-editor [(value)]="htmlContent" [height]="365" [placeholder]="'Type your content here...'">
+              <dx-html-editor
+                [(value)]="htmlContent"
+                [height]="365"
+                [placeholder]="'correspCareApp.correspManageCorresp.detail.bodyPlaceholder' | translate"
+              >
                 <dxo-toolbar [multiline]="true">
                   <dxi-item name="undo"></dxi-item>
                   <dxi-item name="redo"></dxi-item>
                   <dxi-item name="separator"></dxi-item>
-                  <dxi-item
-                    name="size"
-                    [acceptedValues]="['8pt', '10pt', '12pt', '14pt', '18pt', '24pt', '36pt']"
-                    [options]="{ inputAttr: { 'aria-label': 'Font size' } }"
-                  ></dxi-item>
+                  <dxi-item name="size" [acceptedValues]="['8pt', '10pt', '12pt', '14pt', '18pt', '24pt', '36pt']"></dxi-item>
                   <dxi-item
                     name="font"
                     [acceptedValues]="[
@@ -464,7 +666,6 @@
                       'Times New Roman',
                       'Verdana'
                     ]"
-                    [options]="{ inputAttr: { 'aria-label': 'Font family' } }"
                   ></dxi-item>
                   <dxi-item name="separator"></dxi-item>
                   <dxi-item name="bold"></dxi-item>
@@ -480,11 +681,7 @@
                   <dxi-item name="orderedList"></dxi-item>
                   <dxi-item name="bulletList"></dxi-item>
                   <dxi-item name="separator"></dxi-item>
-                  <dxi-item
-                    name="header"
-                    [acceptedValues]="[false, 1, 2, 3, 4, 5]"
-                    [options]="{ inputAttr: { 'aria-label': 'Header' } }"
-                  ></dxi-item>
+                  <dxi-item name="header" [acceptedValues]="[false, 1, 2, 3, 4, 5]"></dxi-item>
                   <dxi-item name="separator"></dxi-item>
                   <dxi-item name="color"></dxi-item>
                   <dxi-item name="background"></dxi-item>
@@ -498,12 +695,6 @@
                   <dxi-item name="separator"></dxi-item>
                   <dxi-item name="insertTable"></dxi-item>
                   <dxi-item name="deleteTable"></dxi-item>
-                  <dxi-item name="insertRowAbove"></dxi-item>
-                  <dxi-item name="insertRowBelow"></dxi-item>
-                  <dxi-item name="deleteRow"></dxi-item>
-                  <dxi-item name="insertColumnLeft"></dxi-item>
-                  <dxi-item name="insertColumnRight"></dxi-item>
-                  <dxi-item name="deleteColumn"></dxi-item>
                 </dxo-toolbar>
               </dx-html-editor>
             </div>
@@ -525,7 +716,12 @@
               "
               [style.background-color]="accordionStates['pieces'] ? '#e9ecef' : '#f8f9fa'"
             >
-              <h5 style="font-weight: 600; margin: 0; color: #2c3e50">Pièces jointes associées</h5>
+              <h5
+                style="font-weight: 600; margin: 0; color: #2c3e50"
+                jhiTranslate="correspCareApp.correspManageCorresp.detail.attachmentsSection"
+              >
+                Pièces jointes associées
+              </h5>
               <div style="display: flex; align-items: center; gap: 12px">
                 <button
                   class="btn btn-primary btn-sm"
@@ -570,7 +766,6 @@
                     border-left: 4px solid #0d6efd;
                   "
                 >
-                  <!-- File Info Row -->
                   <div style="display: flex; align-items: center; gap: 12px">
                     <p style="margin: 0; color: #495057; line-height: 1.6; flex: 1">
                       <strong>{{ file.name }}</strong> ({{ file.size / 1024 | number: '1.0-2' }} KB)
@@ -597,7 +792,6 @@
                     </button>
                   </div>
 
-                  <!-- Progress Bar -->
                   <div
                     *ngIf="getUploadProgress(i) !== null"
                     style="width: 100%; background-color: #e9ecef; border-radius: 4px; overflow: hidden; height: 8px"
@@ -608,7 +802,6 @@
                     ></div>
                   </div>
 
-                  <!-- Upload Status Text -->
                   <div *ngIf="getUploadProgress(i) !== null" style="font-size: 0.85em; color: #6c757d; text-align: right">
                     <span *ngIf="getUploadProgress(i)! < 100">Téléchargement en cours... {{ getUploadProgress(i) }} %</span>
                     <span *ngIf="getUploadProgress(i) === 100" style="color: #198754">✓ Téléchargement terminé</span>
@@ -616,12 +809,14 @@
                 </div>
               </div>
 
-              <!-- Empty State -->
               <div
                 *ngIf="uploadedFiles.length === 0"
                 style="padding: 24px; text-align: center; background-color: #f8f9fa; border-radius: 8px; border: 2px dashed #dee2e6"
               >
-                <p style="margin: 0; color: #6c757d; font-style: italic">
+                <p
+                  style="margin: 0; color: #6c757d; font-style: italic"
+                  jhiTranslate="correspCareApp.correspManageCorresp.update.noAttachmentsHint"
+                >
                   Aucune Piece Jointe associée. Cliquez sur le bouton "+" pour ajouter une Piece Jointe.
                 </p>
               </div>
@@ -631,24 +826,7 @@
       </div>
     </div>
 
-    <!-- Bottom Toolbar -->
-    <!--    <div-->
-    <!--      style="-->
-    <!--        display: flex;-->
-    <!--        justify-content: flex-end;-->
-    <!--        align-items: center;-->
-    <!--        padding: 12px 16px;-->
-    <!--        background-color: #f8f9fa;-->
-    <!--        border: 1px solid #dee2e6;-->
-    <!--        border-radius: 8px;-->
-    <!--        margin-top: 1em;-->
-    <!--      "-->
-    <!--    >-->
-    <!--      <div style="display: flex; gap: 12px">-->
-    <!--        <button class="btn btn-secondary" style="font-weight: 600; text-transform: uppercase; min-width: 120px">Annuler</button>-->
-    <!--        <button class="btn btn-success" style="font-weight: 600; text-transform: uppercase; min-width: 120px">Soumettre</button>-->
-    <!--      </div>-->
-    <!--    </div>-->
+    <!-- Bottom Toolbar (commented out) -->
   </div>
 </div>
 
@@ -663,117 +841,242 @@
   <div class="modal-body">
     <form class="container-fluid">
       <div class="row" style="padding: 1em 0">
-        <!-- ************************ LEFT SIDE ************************ -->
-        <div class="col-md-5">
-          <!-- Type de tâche -->
+        <div class="col-md-7">
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px">
+              <div style="flex: 1">
+                <label class="form-label fw-semibold mb-1" jhiTranslate="correspCareApp.correspManageCorresp.detail.selections"
+                  >Sélections</label
+                >
+                <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+                  <span
+                    *ngFor="let sel of selectedResponsables"
+                    class="badge bg-light text-dark"
+                    style="
+                      border: 1px solid #e6eef9;
+                      border-radius: 999px;
+                      padding: 8px 12px;
+                      display: inline-flex;
+                      align-items: center;
+                      gap: 8px;
+                    "
+                  >
+                    <span class="badge bg-secondary" style="font-size: 10px">
+                      {{ sel.matriculePers ? 'PERS' : 'DEPT' }}
+                    </span>
+                    <span>{{ sel.displayName || sel.codeDept || sel.matriculePers }}</span>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" (click)="removeSelection(sel)" style="padding: 2px 6px">
+                      ×
+                    </button>
+                  </span>
+                  <span
+                    *ngIf="selectedResponsables.length === 0"
+                    style="color: #6c757d"
+                    jhiTranslate="correspCareApp.correspManageCorresp.detail.noSelection"
+                    >Aucune sélection</span
+                  >
+                </div>
+              </div>
+              <div style="text-align: right">
+                <button class="btn btn-sm btn-outline-danger" (click)="clearSelections()" [disabled]="selectedResponsables.length === 0">
+                  Effacer tout
+                </button>
+              </div>
+            </div>
+
+            <div style="height: 420px; overflow: auto; border: 1px solid #e9ecef; border-radius: 8px; padding: 12px; background: #fff">
+              <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px">
+                <input
+                  type="text"
+                  class="form-control"
+                  [(ngModel)]="treeSearchQuery"
+                  name="treeSearchQuery"
+                  (input)="onTreeSearchChange()"
+                  [placeholder]="'correspCareApp.correspManageCorresp.detail.search' | translate"
+                />
+              </div>
+              <div
+                *ngIf="loadingTree"
+                style="text-align: center; padding: 40px 0; color: #6c757d"
+                jhiTranslate="correspCareApp.correspManageCorresp.detail.loadingOrg"
+              >
+                Chargement de l'organigramme...
+              </div>
+
+              <ul *ngIf="!loadingTree && taskTreeFiltered?.length" style="padding-left: 0; margin: 0; list-style: none">
+                <ng-container *ngFor="let node of taskTreeFiltered">
+                  <ng-template [ngTemplateOutlet]="renderNode" [ngTemplateOutletContext]="{ node: node, level: 0 }"></ng-template>
+                </ng-container>
+              </ul>
+
+              <div *ngIf="!loadingTree && (!taskTreeFiltered || taskTreeFiltered.length === 0)" style="text-align: center; color: #6c757d">
+                Aucun département disponible.
+              </div>
+            </div>
+          </div>
+
+          <ng-template #renderNode let-node="node" let-level="level">
+            <li style="margin: 8px 0; list-style: none">
+              <div
+                (click)="toggleNodeExpand(node.id)"
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  gap: 8px;
+                  padding: 8px;
+                  border-radius: 8px;
+                  cursor: pointer;
+                "
+                [style.borderStyle]="'solid'"
+                [style.borderWidth.px]="3"
+                [style.borderColor]="getLevelColor(level)"
+                [style.background]="selectedDept?.id === node.id ? '#e9f2ff' : '#ffffff'"
+              >
+                <div style="display: flex; flex-direction: column; gap: 3px">
+                  <div style="display: flex; align-items: center; gap: 8px">
+                    <i
+                      [class]="isNodeExpanded(node.id) ? 'fa fa-chevron-down' : 'fa fa-chevron-right'"
+                      style="color: #6c757d; font-size: 12px"
+                    ></i>
+                    <span style="font-weight: 600; color: #2c3e50">{{ node.nom }}</span>
+                  </div>
+                </div>
+
+                <div style="display: flex; gap: 8px; align-items: center">
+                  <input
+                    type="checkbox"
+                    class="org-checkbox"
+                    [checked]="isDeptSelected(node)"
+                    (click)="toggleDeptSelection(node); $event.stopPropagation()"
+                  />
+                  <span *ngIf="(node.children?.length || 0) > 0" style="font-size: 13px; color: #6c757d">{{ node.children.length }}</span>
+                </div>
+              </div>
+
+              <ul
+                *ngIf="getAffectationKeys(node).length > 0"
+                [style.marginLeft.px]="0"
+                style="margin: 6px 0 0 0; padding-left: 0; list-style: none"
+              >
+                <ng-container *ngFor="let type of getAffectationKeys(node)">
+                  <li style="margin: 4px 0">
+                    <div
+                      (click)="toggleAffectation(node.id, type); $event.stopPropagation()"
+                      style="
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        padding: 6px 10px;
+                        background: #f8f9fa;
+                        border: 1px solid #e9ecef;
+                        border-radius: 6px;
+                        cursor: pointer;
+                      "
+                    >
+                      <div style="display: flex; align-items: center; gap: 8px">
+                        <span style="font-size: 12px; color: #6c757d">
+                          <i [class]="isAffectationExpanded(node.id, type) ? 'fa fa-chevron-down' : 'fa fa-chevron-right'"></i>
+                        </span>
+                        <span style="font-weight: 600; font-size: 10px; color: #495057">{{ type }}</span>
+                      </div>
+                      <span class="badge bg-primary rounded-pill" style="font-size: 11px">
+                        {{ getPeopleForType(node, type).length }}
+                      </span>
+                    </div>
+
+                    <ul
+                      *ngIf="isAffectationExpanded(node.id, type)"
+                      style="margin: 4px 0 0 12px; padding-left: 0; list-style: none; border-left: 2px solid #dee2e6"
+                    >
+                      <li
+                        *ngFor="let person of getPeopleForType(node, type)"
+                        style="margin: 4px 0 4px 12px; padding: 4px 8px; background: #fff; border: 1px solid #f1f5f9; border-radius: 4px"
+                      >
+                        <div style="display: flex; align-items: center; gap: 8px">
+                          <input
+                            type="checkbox"
+                            class="org-checkbox"
+                            [checked]="isPersonSelected(node, person)"
+                            (click)="togglePersonSelection(node, person); $event.stopPropagation()"
+                          />
+                          <i class="fa fa-user" style="color: #6c757d; font-size: 12px"></i>
+                          <span style="font-size: 13px; color: #212529">{{ person.nomPrenom || person.matricule }}</span>
+                        </div>
+                      </li>
+                    </ul>
+                  </li>
+                </ng-container>
+              </ul>
+
+              <ul
+                *ngIf="isNodeExpanded(node.id) && node.children?.length"
+                [style.marginLeft.px]="(level + 1) * 18"
+                style="margin: 6px 0 0 0; padding-left: 0; list-style: none"
+              >
+                <ng-container *ngFor="let c of node.children">
+                  <ng-template [ngTemplateOutlet]="renderNode" [ngTemplateOutletContext]="{ node: c, level: level + 1 }"></ng-template>
+                </ng-container>
+              </ul>
+            </li>
+          </ng-template>
+        </div>
+        <div class="col-md-5 assign-controls">
           <label class="form-label fw-semibold">Type De Tâche <span class="text-danger">*</span></label>
-          <div class="mb-3" style="display: flex; flex-direction: column; gap: 1em">
-            <button
-              type="button"
-              class="btn"
-              style="font-weight: 700; text-transform: uppercase"
-              [ngClass]="selectedType === 'lecture' ? 'btn-primary' : 'btn-outline-primary'"
-              (click)="selectedType = 'lecture'"
-            >
+          <div class="form-text" style="margin-top: -6px">Sélectionnez le type d'action à effectuer</div>
+          <div class="type-actions">
+            <button type="button" class="type-card lecture" [class.active]="selectedType === 'lecture'" (click)="selectedType = 'lecture'">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 4h8a5 5 0 0 1 5 5v11H8a5 5 0 0 0-5-5V4Z" fill="currentColor" opacity="0.15" />
+                <path d="M3 4h8a5 5 0 0 1 5 5v11H8a5 5 0 0 0-5-5V4Z" stroke="currentColor" stroke-width="1.6" fill="none" />
+                <path d="M13 4h8v16h-8" stroke="currentColor" stroke-width="1.6" fill="none" />
+              </svg>
               Lecture
             </button>
-
             <button
               type="button"
-              class="btn"
-              style="font-weight: 700; text-transform: uppercase"
-              [ngClass]="selectedType === 'signature' ? 'btn-primary' : 'btn-outline-primary'"
+              class="type-card signature"
+              [class.active]="selectedType === 'signature'"
               (click)="selectedType = 'signature'"
             >
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 21l6-2 9-9-4-4-9 9-2 6Z" stroke="currentColor" stroke-width="1.6" fill="none" />
+                <path d="M14 6l4 4" stroke="currentColor" stroke-width="1.6" />
+              </svg>
               Signature
             </button>
-
             <button
               type="button"
-              class="btn"
-              style="font-weight: 700; text-transform: uppercase"
-              [ngClass]="selectedType === 'traitement' ? 'btn-primary' : 'btn-outline-primary'"
+              class="type-card traitement"
+              [class.active]="selectedType === 'traitement'"
               (click)="selectedType = 'traitement'"
             >
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 6v-3m0 18v-3M6 12H3m18 0h-3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2" stroke="currentColor" stroke-width="1.6" />
+                <circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="1.6" fill="none" />
+              </svg>
               Traitement
             </button>
-
             <button
               type="button"
-              class="btn"
-              style="font-weight: 700; text-transform: uppercase"
-              [ngClass]="selectedType === 'validation' ? 'btn-primary' : 'btn-outline-primary'"
+              class="type-card validation"
+              [class.active]="selectedType === 'validation'"
               (click)="selectedType = 'validation'"
             >
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.6" fill="none" />
+                <path d="M8.5 12.5l2.5 2.5 4.5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
               Validation
             </button>
           </div>
-
-          <div class="text-danger small" *ngIf="validationErrors['typeTask']">
-            {{ validationErrors['typeTask'] }}
-          </div>
-
-          <!-- Date limite -->
-          <label class="form-label fw-semibold mt-3">Date limite</label>
+          <div class="text-danger small" *ngIf="validationErrors['typeTask']">{{ validationErrors['typeTask'] }}</div>
+          <label class="form-label fw-semibold">Date limite</label>
           <input type="date" class="form-control" [(ngModel)]="dateLimite" name="dateLimite" />
-        </div>
-
-        <!-- ************************ RIGHT SIDE ************************ -->
-        <div class="col-md-7">
-          <!-- Organigramme -->
-          <label class="form-label fw-semibold">Organigramme <span class="text-danger">*</span></label>
-          <select
-            class="form-select mb-3"
-            [(ngModel)]="selectedOrga"
-            name="organigramme"
-            (change)="onOrgaChange()"
-            [class.border-danger]="validationErrors['organigramme']"
-          >
-            <option value="" disabled selected>-- Sélectionner un organigramme --</option>
-            <option *ngFor="let orga of orgaList" [ngValue]="orga">
-              {{ orga.organigramme }}
-            </option>
-          </select>
-          <div class="text-danger small" *ngIf="validationErrors['organigramme']">
-            {{ validationErrors['organigramme'] }}
-          </div>
-
-          <!-- Département -->
-          <label class="form-label fw-semibold">Département <span class="text-danger">*</span></label>
-          <dx-tree-view
-            id="treeView"
-            [items]="departements"
-            [selectedExpr]="'selected'"
-            displayExpr="nom"
-            selectionMode="single"
-            [expandAllEnabled]="true"
-            [searchEnabled]="true"
-            searchMode="contains"
-            [height]="300"
-            [dataStructure]="'tree'"
-            [keyExpr]="'id'"
-            [parentIdExpr]="'parentId'"
-            [itemsExpr]="'children'"
-            [selectByClick]="true"
-            (onItemClick)="selectDep($event)"
-            class="border rounded"
-            [class.border-danger]="validationErrors['departement']"
-          >
-          </dx-tree-view>
-
-          <div class="text-danger small mt-1" *ngIf="validationErrors['departement']">
-            {{ validationErrors['departement'] }}
-          </div>
-        </div>
-      </div>
-
-      <!-- ************************ COMMENTAIRE FULL WIDTH ************************ -->
-      <div class="row mt-4">
-        <div class="col-12">
-          <label class="form-label fw-semibold">Commentaire</label>
+          <label class="form-label fw-semibold mt-3">Commentaire</label>
           <textarea
             class="form-control"
-            rows="4"
+            rows="6"
             name="commentaire"
             [(ngModel)]="commentaire"
             placeholder="Saisir un commentaire..."
@@ -788,166 +1091,5 @@
     <button type="button" class="btn btn-primary btn-model" (click)="saveTask()">
       {{ isEditMode ? 'Mettre à jour' : 'Enregistrer' }}
     </button>
-  </div>
-</ng-template>
-
-<!-- --------------------------------------------------------------------------------
---------------------------------------------------------------------------------
---------- MODAL ADD DESTINATAIRE AUTRE -----------------------------------------
---------------------------------------------------------------------------------
--------------------------------------------------------------------------------- -->
-
-<ng-template #AddDest let-AddDest class="modal-dialog modal-lg modal-dialog-centered">
-  <div class="modal-header">
-    <h5 class="modal-title">Choisir un département</h5>
-    <button type="button" class="btn-close" aria-label="Close" (click)="AddDest.close('Close click')"></button>
-  </div>
-
-  <div style="height: 100%" class="modal-body">
-    <form>
-      <div style="display: flex; flex-direction: column; gap: 1.5em">
-        <!-- ORGANIGRAMME -->
-        <div class="row mb-3">
-          <div class="col-md-12 mb-3 mb-md-0">
-            <label class="form-label fw-semibold">Organigramme <span class="text-danger">*</span></label>
-            <select
-              class="form-select"
-              [(ngModel)]="selectedOrgaDest"
-              name="organigramme"
-              (change)="onOrgaChangeDest()"
-              [class.border-danger]="validationErrors['organigramme']"
-            >
-              <option value="" disabled>-- Sélectionner un organigramme --</option>
-              <option *ngFor="let orga of orgaList" [ngValue]="orga">
-                {{ orga.organigramme }}
-              </option>
-            </select>
-            <div class="text-danger small mt-1" *ngIf="validationErrors['organigramme']">
-              {{ validationErrors['organigramme'] }}
-            </div>
-          </div>
-        </div>
-
-        <!-- DÉPARTEMENTS -->
-        <div class="row mb-3">
-          <div class="col-md-12 mb-3 mb-md-0">
-            <label class="form-label fw-semibold">Département <span class="text-danger">*</span></label>
-
-            <dx-tree-view
-              #treeView
-              [items]="departementsDest"
-              [selectedExpr]="'selected'"
-              displayExpr="nom"
-              selectionMode="single"
-              [expandAllEnabled]="true"
-              [searchEnabled]="true"
-              searchMode="contains"
-              [height]="450"
-              [dataStructure]="'tree'"
-              [keyExpr]="'id'"
-              [parentIdExpr]="'parentId'"
-              [itemsExpr]="'children'"
-              [selectByClick]="true"
-              (onItemClick)="selectDepDest($event, AddDest)"
-              [class.border-danger]="validationErrors['departement']"
-              class="border rounded"
-            >
-            </dx-tree-view>
-
-            <div class="text-danger small mt-1" *ngIf="validationErrors['departement']">
-              {{ validationErrors['departement'] }}
-            </div>
-          </div>
-        </div>
-      </div>
-    </form>
-  </div>
-
-  <div class="modal-footer d-flex justify-content-between">
-    <!--    <div>Departement selectionné : {{  || 'Aucun' }}-{{ selectedDepartement?.code || 'Aucun' }}</div>-->
-    <div>
-      <button type="button" class="btn btn-light" (click)="AddDest.close('Close click')">Annuler</button>
-      <button type="button" class="btn btn-primary" (click)="dismissDest()">Enregistrer</button>
-    </div>
-  </div>
-</ng-template>
-
-<!-- --------------------------------------------------------------------------------
---------------------------------------------------------------------------------
---------- MODAL ADD CC AUTRE -----------------------------------------
---------------------------------------------------------------------------------
--------------------------------------------------------------------------------- -->
-
-<ng-template #AddCC let-AddCC class="modal-dialog modal-lg modal-dialog-centered">
-  <div class="modal-header">
-    <h5 class="modal-title">Sélectionner un département</h5>
-    <button type="button" class="btn-close" aria-label="Close" (click)="AddCC.close('Close click')"></button>
-  </div>
-
-  <div style="height: 100%" class="modal-body">
-    <form>
-      <div style="display: flex; flex-direction: column; gap: 1.5em">
-        <!-- ORGANIGRAMME -->
-        <div class="row mb-3">
-          <div class="col-md-12 mb-3 mb-md-0">
-            <label class="form-label fw-semibold">Organigramme <span class="text-danger">*</span></label>
-            <select
-              class="form-select"
-              [(ngModel)]="selectedOrgaCC"
-              name="organigramme"
-              (change)="onOrgaChangeCC()"
-              [class.border-danger]="validationErrors['organigramme']"
-            >
-              <option value="" disabled selected>-- Sélectionner un organigramme --</option>
-              <option *ngFor="let orga of orgaList" [ngValue]="orga">
-                {{ orga.organigramme }}
-              </option>
-            </select>
-            <div class="text-danger small mt-1" *ngIf="validationErrors['organigramme']">
-              {{ validationErrors['organigramme'] }}
-            </div>
-          </div>
-        </div>
-
-        <!-- DÉPARTEMENTS -->
-        <div class="row mb-3">
-          <div class="col-md-12 mb-3 mb-md-0">
-            <label class="form-label fw-semibold">Département <span class="text-danger">*</span></label>
-
-            <dx-tree-view
-              #treeView1
-              [items]="departementsCC"
-              displayExpr="nom"
-              selectionMode="single"
-              [expandAllEnabled]="true"
-              [searchEnabled]="true"
-              searchMode="contains"
-              [height]="450"
-              [dataStructure]="'tree'"
-              [keyExpr]="'id'"
-              [parentIdExpr]="'parentId'"
-              [itemsExpr]="'children'"
-              [selectByClick]="true"
-              (onItemClick)="selectDepCopie($event, AddCC)"
-              [class.border-danger]="validationErrors['departement1']"
-              class="border rounded"
-            >
-            </dx-tree-view>
-
-            <div class="text-danger small mt-1" *ngIf="validationErrors['departement']">
-              {{ validationErrors['departement'] }}
-            </div>
-          </div>
-        </div>
-      </div>
-    </form>
-  </div>
-
-  <div class="modal-footer d-flex justify-content-between">
-    <!--    <div>Departement selectionné : {{ selectedDepartementNom1 || 'Aucun' }}-{{ selectedDepartement1?.code || 'Aucun' }}</div>-->
-    <div>
-      <button type="button" class="btn btn-light" (click)="AddCC.close('Close click')">Annuler</button>
-      <button type="button" class="btn btn-primary" (click)="dismissCC()">Enregistrer</button>
-    </div>
   </div>
 </ng-template>

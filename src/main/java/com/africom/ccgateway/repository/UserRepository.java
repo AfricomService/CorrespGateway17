@@ -46,6 +46,9 @@ public interface UserRepository extends R2dbcRepository<User, Long>, UserReposit
 
     Flux<User> findAllByIdNotNullAndActivatedIsTrue(Pageable pageable);
 
+    // méthode dérivée : retourne tous les users dont le login est dans la liste
+    Flux<User> findAllByLoginIn(List<String> logins);
+
     Mono<Long> count();
 
     @Query("INSERT INTO jhi_user_authority VALUES(:userId, :authority)")

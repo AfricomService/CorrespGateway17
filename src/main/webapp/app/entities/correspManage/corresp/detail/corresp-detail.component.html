@@ -18,7 +18,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 12px 16px;
+      padding: 8px 12px;
       background-color: #f8f9fa;
       border: 1px solid #dee2e6;
       border-radius: 8px;
@@ -37,13 +37,32 @@
       </h5>
       <div *ngIf="correspLoaded?.reference; else showButton">
         <span style="font-weight: bold; font-size: 1.2em; color: #2c3e50; font-style: italic">
-          {{ correspLoaded.reference }}
+          {{ correspLoaded?.reference }}
         </span>
       </div>
 
       <ng-template #showButton>
-        <button (click)="generateReference()" class="btn btn-outline-secondary" style="font-weight: 600; text-transform: uppercase">
-          Identifier
+        <button
+          (click)="generateReference()"
+          [disabled]="!(canWriteCorresp || canAdminCorresp)"
+          class="btn btn-outline-secondary btn-sm"
+          style="
+            font-weight: 600;
+            text-transform: uppercase;
+            min-width: 32px;
+            height: 32px;
+            padding: 0 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          "
+          [attr.title]="
+            canWriteCorresp || canAdminCorresp
+              ? ('correspCareApp.correspManageCorresp.detail.identify' | translate)
+              : ('correspCareApp.correspManageCorresp.actions.insufficientRights' | translate)
+          "
+        >
+          <fa-icon icon="id-badge"></fa-icon>
         </button>
       </ng-template>
 
@@ -58,22 +77,96 @@
     <div style="display: flex; gap: 1em; align-items: center">
       <button
         (click)="openDeleteModal(DeleteCorrespModal)"
-        class="btn btn-outline-danger"
-        style="font-weight: 600; text-transform: uppercase"
+        [disabled]="!(canDeleteCorresp || canAdminCorresp)"
+        class="btn btn-outline-danger btn-sm"
+        style="
+          font-weight: 600;
+          text-transform: uppercase;
+          min-width: 32px;
+          height: 32px;
+          padding: 0 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        "
+        [attr.title]="
+          canDeleteCorresp || canAdminCorresp
+            ? ('correspCareApp.correspManageCorresp.actions.delete' | translate)
+            : ('correspCareApp.correspManageCorresp.actions.insufficientRights' | translate)
+        "
       >
-        Supprimer
+        <fa-icon icon="trash"></fa-icon>
       </button>
-      <button class="btn btn-outline-primary" style="font-weight: 600; text-transform: uppercase">Réponse</button>
-      <button class="btn btn-outline-primary" style="font-weight: 600; text-transform: uppercase">Imprimer</button>
-      <button class="btn btn-outline-primary" style="font-weight: 600; text-transform: uppercase">Journal</button>
+      <button
+        class="btn btn-outline-primary btn-sm"
+        style="
+          font-weight: 600;
+          text-transform: uppercase;
+          min-width: 32px;
+          height: 32px;
+          padding: 0 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        "
+        [attr.title]="'correspCareApp.correspManageCorresp.actions.reply' | translate"
+      >
+        <fa-icon icon="reply"></fa-icon>
+      </button>
+      <button
+        class="btn btn-outline-primary btn-sm"
+        style="
+          font-weight: 600;
+          text-transform: uppercase;
+          min-width: 32px;
+          height: 32px;
+          padding: 0 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        "
+        [attr.title]="'correspCareApp.correspManageCorresp.actions.print' | translate"
+      >
+        <fa-icon icon="print"></fa-icon>
+      </button>
+      <button
+        class="btn btn-outline-primary btn-sm"
+        style="
+          font-weight: 600;
+          text-transform: uppercase;
+          min-width: 32px;
+          height: 32px;
+          padding: 0 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        "
+        [attr.title]="'correspCareApp.correspManageCorresp.actions.journal' | translate"
+      >
+        <fa-icon icon="book"></fa-icon>
+      </button>
       <button
         (click)="saveDraft()"
         *ngIf="correspLoaded?.status === 'DRAFT'"
-        [disabled]="isSaving"
-        class="btn btn-primary"
-        style="font-weight: 600; text-transform: uppercase"
+        [disabled]="isSaving || !(canWriteCorresp || canAdminCorresp)"
+        class="btn btn-primary btn-sm"
+        style="
+          font-weight: 600;
+          text-transform: uppercase;
+          min-width: 32px;
+          height: 32px;
+          padding: 0 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        "
+        [attr.title]="
+          canWriteCorresp || canAdminCorresp
+            ? ('correspCareApp.correspManageCorresp.actions.save' | translate)
+            : ('correspCareApp.correspManageCorresp.actions.insufficientRights' | translate)
+        "
       >
-        Enregistrer
+        <fa-icon icon="save"></fa-icon>
       </button>
     </div>
   </div>
@@ -102,9 +195,9 @@
               "
             >
               <h5 style="font-weight: 600; margin: 0; color: #2c3e50">
-                Informations Générales -
-                <span *ngIf="correspLoaded" [style.color]="getStatusLabelAndColor(correspLoaded.status!).color">
-                  {{ getStatusLabelAndColor(correspLoaded.status!).label }}
+                <span jhiTranslate="correspCareApp.correspManageCorresp.detail.generalInfo">Informations Générales</span> -
+                <span *ngIf="correspLoaded?.status as st" [style.color]="getTaskColor(st)">
+                  {{ getTaskLabel(st) }}
                 </span>
               </h5>
 
@@ -122,7 +215,7 @@
 
             <!-- 🟢 SI DRAFT : afficher le formulaire -->
             <div
-              *ngIf="correspLoaded?.status === 'DRAFT'; else lectureInfoGen"
+              *ngIf="correspLoaded?.status === 'DRAFT' && (canWriteCorresp || canAdminCorresp); else lectureInfoGen"
               [style.max-height]="accordionStates['infoGen'] ? '2000px' : '0'"
               [style.padding]="accordionStates['infoGen'] ? '16px' : '0 16px'"
               style="overflow: hidden; transition: max-height 0.5s ease, padding 0.5s ease"
@@ -181,15 +274,65 @@
                 <div style="display: flex; gap: 12px; margin-bottom: 1.5em">
                   <div style="flex: 1">
                     <label class="form-label fw-semibold">Expéditeur <span class="text-danger">*</span></label>
-                    <input
-                      [(ngModel)]="expediteur"
-                      [class.is-invalid]="validationInfoGenErrors['expediteur']"
-                      class="form-control"
-                      name="expediteur"
-                      placeholder="Entrer l'expéditeur"
-                      type="text"
-                    />
-                    <div *ngIf="validationInfoGenErrors['expediteur']" class="invalid-feedback">
+                    <div *ngIf="!showManualExpediteur" style="display: flex; gap: 8px; align-items: center">
+                      <dx-select-box
+                        [(value)]="selectedCompanyId"
+                        [dataSource]="companies"
+                        [valueExpr]="'id'"
+                        displayExpr="nom"
+                        [searchEnabled]="true"
+                        [searchExpr]="companySearchExpr"
+                        placeholder="-- Choisir une société --"
+                        (onValueChanged)="onExpediteurChange($event.value)"
+                        class="w-100"
+                        [disabled]="loadingCompanies"
+                      >
+                        <div *dxTemplate="let item of 'listItem'">
+                          <div>
+                            {{ item.nom }} <span *ngIf="item.matrne"> - {{ item.matrne }}</span>
+                          </div>
+                        </div>
+                      </dx-select-box>
+                      <button
+                        type="button"
+                        class="btn btn-outline-secondary"
+                        aria-label="Entrer manuellement l'expéditeur"
+                        (click)="toggleManualExpediteur(true)"
+                        title="Entrer manuellement"
+                        style="padding: 6px 8px; display: inline-flex; align-items: center; justify-content: center"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                          <path
+                            d="M8 1a.5.5 0 0 1 .5.5V7.5H14a.5.5 0 0 1 0 1H8.5V14a.5.5 0 0 1-1 0V8.5H2a.5.5 0 0 1 0-1h5.5V1.5A.5.5 0 0 1 8 1z"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                    <div *ngIf="showManualExpediteur" style="display: flex; gap: 8px; align-items: center">
+                      <input
+                        type="text"
+                        class="form-control"
+                        [(ngModel)]="expediteur"
+                        name="expediteurManual"
+                        placeholder="Entrer manuellement l'expéditeur"
+                        [class.is-invalid]="validationInfoGenErrors['expediteur']"
+                        style="flex: 1"
+                      />
+                      <button
+                        type="button"
+                        class="btn btn-outline-secondary"
+                        (click)="toggleManualExpediteur(false)"
+                        title="Choisir dans la liste"
+                        style="padding: 6px 8px; display: inline-flex; align-items: center; justify-content: center"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                          <path
+                            d="M11.354 1.646a.5.5 0 0 1 0 .708L6.707 7l4.647 4.646a.5.5 0 0 1-.708.708l-5-5a.5.5 0 0 1 0-.708l5-5a.5.5 0 0 1 .708 0z"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                    <div class="invalid-feedback" *ngIf="validationInfoGenErrors['expediteur']">
                       {{ validationInfoGenErrors['expediteur'] }}
                     </div>
                   </div>
@@ -215,14 +358,66 @@
                 <div style="display: flex; gap: 12px; margin-bottom: 1.5em">
                   <div style="flex: 1">
                     <label class="form-label fw-semibold">Contact <span class="text-danger">*</span></label>
-                    <input
-                      [(ngModel)]="contactEmail"
-                      [class.is-invalid]="validationInfoGenErrors['contactEmail']"
-                      class="form-control"
-                      name="contactEmail"
-                      placeholder="Entrer le contact"
-                      type="text"
-                    />
+                    <div *ngIf="!showManualContact" style="display: flex; gap: 8px; align-items: center">
+                      <dx-select-box
+                        [(value)]="selectedPersonId"
+                        [dataSource]="personsForSelectedCompany"
+                        [valueExpr]="'id'"
+                        displayExpr="nom"
+                        [searchEnabled]="true"
+                        [searchExpr]="personSearchExpr"
+                        placeholder="-- Choisir un contact --"
+                        (onValueChanged)="onSelectContactPerson($event.value)"
+                        [disabled]="!selectedCompanyId || loadingPersons"
+                        class="w-100"
+                      >
+                        <div *dxTemplate="let item of 'listItem'">
+                          <div>
+                            {{ item.nom }}
+                            <span *ngIf="item.email"> — {{ item.email }}</span>
+                            <span *ngIf="!item.email && item.tel"> — {{ item.tel }}</span>
+                          </div>
+                        </div>
+                      </dx-select-box>
+                      <button
+                        type="button"
+                        class="btn btn-outline-secondary"
+                        aria-label="Entrer manuellement le contact"
+                        (click)="toggleManualContact(true)"
+                        title="Entrer manuellement"
+                        style="padding: 6px 8px; display: inline-flex; align-items: center; justify-content: center"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                          <path
+                            d="M8 1a.5.5 0 0 1 .5.5V7.5H14a.5.5 0 0 1 0 1H8.5V14a.5.5 0 0 1-1 0V8.5H2a.5.5 0 0 1 0-1h5.5V1.5A.5.5 0 0 1 8 1z"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                    <div *ngIf="showManualContact" style="display: flex; gap: 8px; align-items: center">
+                      <input
+                        type="text"
+                        class="form-control"
+                        [(ngModel)]="contactEmail"
+                        name="contactEmailFallback"
+                        placeholder="Entrer manuellement le contact"
+                        [class.is-invalid]="validationInfoGenErrors['contactEmail']"
+                        style="flex: 1"
+                      />
+                      <button
+                        type="button"
+                        class="btn btn-outline-secondary"
+                        (click)="toggleManualContact(false)"
+                        title="Choisir dans la liste"
+                        style="padding: 6px 8px; display: inline-flex; align-items: center; justify-content: center"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                          <path
+                            d="M11.354 1.646a.5.5 0 0 1 0 .708L6.707 7l4.647 4.646a.5.5 0 0 1-.708.708l-5-5a.5.5 0 0 1 0-.708l5-5a.5.5 0 0 1 .708 0z"
+                          />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
 
                   <div style="flex: 1">
@@ -246,14 +441,23 @@
                       <input [(ngModel)]="reponseSur" class="form-control" name="reponseSur" type="text" />
                     </div>
 
-                    <div style="flex: 1">
-                      <label class="form-label fw-semibold">Confidentialité</label>
-                      <input class="form-control" placeholder="Entrer la Confidentialité" type="text" />
-                    </div>
+                    <!-- <div style="flex: 1">
+                       <label class="form-label fw-semibold">Confidentialité</label>
+                       <input class="form-control" placeholder="Entrer la Confidentialité" type="text" />
+                     </div>-->
 
                     <div style="flex: 1">
                       <label class="form-label fw-semibold">Réference Emétteur</label>
                       <input [(ngModel)]="referenceEmetteur" class="form-control" name="referenceEmetteur" type="text" />
+                    </div>
+
+                    <div style="flex: 1">
+                      <label class="form-label fw-semibold">Type d’envoi</label>
+                      <select class="form-select" [(ngModel)]="dispatchType" name="dispatchType" [disabled]="true">
+                        <option *ngFor="let opt of dispatchTypeOptions" [ngValue]="opt.value">
+                          {{ opt.label }}
+                        </option>
+                      </select>
                     </div>
 
                     <div style="flex: 0.1; display: flex; flex-direction: column; align-items: center; height: 70px">
@@ -279,14 +483,18 @@
                 style="overflow: hidden; transition: max-height 0.5s ease, padding 0.5s ease"
               >
                 <div class="alert alert-light" role="alert" style="border: 1px solid #dee2e6; color: #495057">
-                  <p><strong>Objet :</strong> {{ correspLoaded.subject }}</p>
+                  <p><strong jhiTranslate="correspCareApp.correspManageCorresp.subject">Objet</strong> : {{ correspLoaded?.subject }}</p>
                   <p>
-                    <strong>Expéditeur :</strong> {{ correspLoaded.sender }} | <strong>Destinataire :</strong>
-                    {{ correspLoaded.labelDestinataire }} | <strong>CC :</strong> {{ correspLoaded.labelContactCC }}
+                    <strong jhiTranslate="correspCareApp.correspManageCorresp.sender">Expéditeur</strong> : {{ correspLoaded?.sender }} |
+                    <strong jhiTranslate="correspCareApp.correspManageCorresp.recipient">Destinataire</strong> :
+                    {{ correspLoaded?.labelDestinataire }} | <strong jhiTranslate="correspCareApp.correspManageCorresp.cc">CC</strong> :
+                    {{ correspLoaded?.labelContactCC }}
                   </p>
                   <p>
-                    <strong>Date :</strong> {{ formatLongDate(correspLoaded.courrierDate) }} | <strong>Contact :</strong>
-                    {{ correspLoaded.contactEmail }}
+                    <strong jhiTranslate="correspCareApp.correspManageCorresp.date">Date</strong> :
+                    {{ formatLongDate(correspLoaded?.courrierDate) }} |
+                    <strong jhiTranslate="correspCareApp.correspManageCorresp.contact">Contact</strong> :
+                    {{ correspLoaded?.contactEmail }}
                   </p>
                 </div>
               </div>
@@ -307,14 +515,20 @@
                 user-select: none;
               "
             >
-              <h5 style="font-weight: 600; margin: 0; color: #2c3e50">Tâches Associées</h5>
+              <h5
+                style="font-weight: 600; margin: 0; color: #2c3e50"
+                jhiTranslate="correspCareApp.correspManageCorresp.detail.associatedTasks"
+              >
+                Tâches Associées
+              </h5>
               <div style="display: flex; align-items: center; gap: 12px">
                 <button
                   (click)="openTasksModal(AddTaskModal); $event.stopPropagation()"
-                  *ngIf="correspLoaded.status !== CorrespStatus.CLOSED"
-                  [disabled]="btnSaveTaskDisabled"
+                  *ngIf="correspLoaded?.status !== CorrespStatus.CLOSED"
+                  [disabled]="btnSaveTaskDisabled || !(canWriteCorresp || canAdminCorresp)"
                   class="btn btn-primary btn-sm"
                   style="font-weight: bold; font-size: 1.2em; padding: 0 0.5em"
+                  title="{{ canWriteCorresp || canAdminCorresp ? '' : 'Droit insuffisant' }}"
                 >
                   +
                 </button>
@@ -338,7 +552,11 @@
             >
               <div style="margin-bottom: 16px">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 4px">
-                  <span style="font-size: 0.85em; font-weight: 600; color: #495057">Avancement global</span>
+                  <span
+                    style="font-size: 0.85em; font-weight: 600; color: #495057"
+                    jhiTranslate="correspCareApp.correspManageCorresp.detail.overallProgress"
+                    >Avancement global</span
+                  >
                   <span style="font-size: 0.85em; font-weight: bold">{{ taskCompletionPercentage }}%</span>
                 </div>
                 <div class="progress" style="height: 10px">
@@ -354,9 +572,14 @@
                 </div>
               </div>
 
-              <div *ngIf="tachesAssociees.length > 0" style="display: flex; flex-direction: column; gap: 12px">
+              <div
+                *ngIf="tachesAssociees.length > 0"
+                id="tasksSection"
+                style="max-height: 420px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px"
+              >
                 <div
                   *ngFor="let task of tachesAssociees"
+                  [attr.id]="'task-' + task.id"
                   [style.border-left]="'5px solid ' + getTaskColor(task.status)"
                   style="
                     padding: 12px;
@@ -366,6 +589,7 @@
                     display: flex;
                     flex-direction: column;
                   "
+                  [style.background-color]="getTaskTypeBg(task.taskType)"
                 >
                   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px">
                     <span
@@ -376,7 +600,8 @@
                       {{ getTaskLabel(task.status) }}
                     </span>
                     <span style="font-size: 0.85em; color: #6c757d; text-transform: capitalize">
-                      <span *ngIf="task.dueDate">Échéance: </span>{{ formatDate(task.dueDate) }}</span
+                      <span *ngIf="task.dueDate" jhiTranslate="correspCareApp.correspManageCorresp.detail.dueDateLabel">Échéance:</span>
+                      {{ formatDate(task.dueDate) }}</span
                     >
                   </div>
 
@@ -387,53 +612,96 @@
                     </p>
                     <div style="display: flex; gap: 0.5em">
                       <span
-                        (click)="changeTasksStatus(correspLoaded.id, task.id, 'CANCELLED')"
+                        (click)="changeTasksStatus(correspLoaded?.id!, task.id, 'CANCELLED')"
                         *ngIf="CorrespStatus.DRAFT === task.status"
+                        [style.pointer-events]="
+                          isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? 'auto' : 'none'
+                        "
+                        [style.opacity]="isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? '1' : '0.4'"
                         [style.background-color]="'#6a2020'"
                         class="badge"
                         style="font-size: 0.7em; text-transform: uppercase; cursor: pointer"
+                        title="{{
+                          isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? '' : 'Droit insuffisant'
+                        }}"
                       >
-                        annuler
+                        <span jhiTranslate="correspCareApp.correspManageCorresp.actions.cancel">annuler</span>
                       </span>
 
                       <span
-                        (click)="deleteTask(correspLoaded.id, task.id)"
+                        (click)="deleteTask(correspLoaded?.id!, task.id)"
                         *ngIf="CorrespStatus.DRAFT === task.status"
+                        [style.pointer-events]="
+                          isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? 'auto' : 'none'
+                        "
+                        [style.opacity]="isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? '1' : '0.4'"
                         [style.background-color]="'#dc3545'"
                         class="badge"
                         style="font-size: 0.7em; text-transform: uppercase; cursor: pointer"
+                        title="{{
+                          isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? '' : 'Droit insuffisant'
+                        }}"
                       >
-                        SUPPRIMER
+                        <span jhiTranslate="correspCareApp.correspManageCorresp.actions.deleteUpper">SUPPRIMER</span>
                       </span>
 
                       <span
-                        (click)="changeTasksStatus(correspLoaded.id, task.id, 'IN_PROGRESS')"
+                        (click)="changeTasksStatus(correspLoaded?.id!, task.id, 'IN_PROGRESS')"
                         *ngIf="CorrespStatus.DRAFT === task.status"
+                        [style.pointer-events]="
+                          isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? 'auto' : 'none'
+                        "
+                        [style.opacity]="isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? '1' : '0.4'"
                         [style.background-color]="'#0d6efd'"
                         class="badge"
                         style="font-size: 0.7em; text-transform: uppercase; cursor: pointer"
+                        title="{{
+                          isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? '' : 'Droit insuffisant'
+                        }}"
                       >
-                        commencer
+                        <span jhiTranslate="correspCareApp.correspManageCorresp.actions.start">commencer</span>
                       </span>
 
                       <span
-                        (click)="changeTasksStatus(correspLoaded.id, task.id, 'CANCELLED')"
+                        (click)="changeTasksStatus(correspLoaded?.id!, task.id, 'CANCELLED')"
                         *ngIf="CorrespStatus.IN_PROGRESS === task.status"
+                        [style.pointer-events]="
+                          isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(task.id) ? 'auto' : 'none'
+                        "
+                        [style.opacity]="isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(task.id) ? '1' : '0.4'"
                         [style.background-color]="'#6a2020'"
                         class="badge"
                         style="font-size: 0.7em; text-transform: uppercase; cursor: pointer"
+                        title="{{
+                          isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(task.id) ? '' : 'Droit insuffisant'
+                        }}"
                       >
-                        annuler
+                        <span jhiTranslate="correspCareApp.correspManageCorresp.actions.cancel">annuler</span>
                       </span>
 
                       <span
-                        (click)="changeTasksStatus(correspLoaded.id, task.id, 'CLOSED')"
+                        (click)="changeTasksStatus(correspLoaded?.id!, task.id, 'CLOSED')"
                         *ngIf="CorrespStatus.IN_PROGRESS === task.status"
+                        [style.pointer-events]="
+                          isGlobalAdmin || canAdminCorresp || taskPermissions[task.id]?.canWrite || userAclTaskIds.has(task.id)
+                            ? 'auto'
+                            : 'none'
+                        "
+                        [style.opacity]="
+                          isGlobalAdmin || canAdminCorresp || taskPermissions[task.id]?.canWrite || userAclTaskIds.has(task.id)
+                            ? '1'
+                            : '0.4'
+                        "
                         [style.background-color]="'#198754'"
                         class="badge"
                         style="font-size: 0.7em; text-transform: uppercase; cursor: pointer"
+                        title="{{
+                          isGlobalAdmin || canAdminCorresp || taskPermissions[task.id]?.canWrite || userAclTaskIds.has(task.id)
+                            ? ''
+                            : 'Droit insuffisant'
+                        }}"
                       >
-                        terminer
+                        <span jhiTranslate="correspCareApp.correspManageCorresp.actions.finish">terminer</span>
                       </span>
 
                       <span
@@ -442,7 +710,11 @@
                         class="badge"
                         style="font-size: 0.7em; text-transform: uppercase"
                       >
-                        terminée - {{ formatLongDate(task.closeDate) }}
+                        <span
+                          jhiTranslate="correspCareApp.correspManageCorresp.actions.finishedOn"
+                          [translateValues]="{ date: formatLongDate(task.closeDate) }"
+                          >terminée - {{ formatLongDate(task.closeDate) }}</span
+                        >
                       </span>
                     </div>
                   </div>
@@ -455,7 +727,7 @@
               </div>
 
               <div *ngIf="tasks.length === 0" style="text-align: center; padding: 10px; color: #999">
-                <i>Aucune tâche associée.</i>
+                <i jhiTranslate="correspCareApp.correspManageCorresp.detail.noAssociatedTasks">Aucune tâche associée.</i>
               </div>
             </div>
           </div>
@@ -466,6 +738,7 @@
         <div
           style="padding: 16px; border: 1px solid #ccc; border-radius: 12px; height: 100%; display: flex; flex-direction: column; gap: 16px"
         >
+          <!-- =================== BLOC : Corps de la Correspondance (REMPLACER ICI) =================== -->
           <div style="border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden">
             <!-- Titre avec toggle -->
             <div
@@ -482,7 +755,9 @@
                 transition: background-color 0.3s ease;
               "
             >
-              <h5 style="font-weight: 600; margin: 0; color: #2c3e50">Corps de la Correspondance</h5>
+              <h5 style="font-weight: 600; margin: 0; color: #2c3e50" jhiTranslate="correspCareApp.correspManageCorresp.detail.bodySection">
+                Corps de la Correspondance
+              </h5>
               <svg
                 [style.transform]="accordionStates['corps'] ? 'rotate(180deg)' : 'rotate(0deg)'"
                 fill="none"
@@ -501,9 +776,36 @@
               [style.padding]="accordionStates['corps'] ? '16px' : '0 16px'"
               style="overflow: hidden; transition: max-height 0.5s ease, padding 0.5s ease"
             >
-              <!-- Si DRAFT -->
-              <ng-container *ngIf="correspLoaded?.status === 'DRAFT'; else readOnlyBody">
-                <dx-html-editor [(value)]="htmlContent" [height]="365" [placeholder]="'Tapez votre contenu ici...'">
+              <!-- --- DRAFT MODE --- -->
+              <ng-container *ngIf="correspLoaded?.status === 'DRAFT' && (canWriteCorresp || canAdminCorresp); else readOnlyBody">
+                <!-- --- En-tête rapide (DRAFT) : De / À / CC - horizontal + responsive --- -->
+                <div
+                  class="header-quick"
+                  role="group"
+                  [attr.aria-label]="'correspCareApp.correspManageCorresp.detail.headerQuick' | translate"
+                >
+                  <div class="hq-item" title="{{ expediteur || correspLoaded?.sender || '-' }}">
+                    <strong jhiTranslate="correspCareApp.correspManageCorresp.detail.from">De :</strong>
+                    {{ expediteur || correspLoaded?.sender || '-' }}
+                  </div>
+
+                  <div class="hq-item" title="{{ destinataireLabel || 'Destinataire principal (à remplacer)' }}">
+                    <strong jhiTranslate="correspCareApp.correspManageCorresp.detail.to">À :</strong>
+                    {{ destinataireLabel || 'Destinataire principal (à remplacer)' }}
+                  </div>
+
+                  <div class="hq-item" title="{{ contactEmailCCLabel || 'Contact en copie (à remplacer)' }}">
+                    <strong jhiTranslate="correspCareApp.correspManageCorresp.cc">CC :</strong>
+                    {{ contactEmailCCLabel || 'Contact en copie (à remplacer)' }}
+                  </div>
+                </div>
+
+                <!-- Éditeur -->
+                <dx-html-editor
+                  [(value)]="htmlContent"
+                  [height]="365"
+                  [placeholder]="'correspCareApp.correspManageCorresp.detail.bodyPlaceholder' | translate"
+                >
                   <dxo-toolbar [multiline]="true">
                     <dxi-item name="undo"></dxi-item>
                     <dxi-item name="redo"></dxi-item>
@@ -527,14 +829,33 @@
                   </dxo-toolbar>
                 </dx-html-editor>
               </ng-container>
-              <!-- Si autre status : lecture seule -->
+
+              <!-- --- READONLY MODE --- -->
               <ng-template #readOnlyBody>
+                <!-- En-tête rapide (readonly) : De / À / CC (vertical) -->
+                <div style="margin-bottom: 12px; background: #fafafa; padding: 10px; border-radius: 6px; border: 1px solid #eee">
+                  <div style="display: flex; flex-direction: column; gap: 6px">
+                    <div style="font-size: 0.95em">
+                      <strong jhiTranslate="correspCareApp.correspManageCorresp.detail.from">De :</strong>
+                      {{ correspLoaded?.sender || '-' }}
+                    </div>
+                    <div style="font-size: 0.95em">
+                      <strong jhiTranslate="correspCareApp.correspManageCorresp.detail.to">À :</strong> Destinataire principal (hard-coded)
+                    </div>
+                    <div style="font-size: 0.95em">
+                      <strong jhiTranslate="correspCareApp.correspManageCorresp.cc">CC :</strong>
+                      {{ correspLoaded?.labelContactCC || 'Contact en copie (hard-coded)' }}
+                    </div>
+                  </div>
+                </div>
+
                 <div style="background: #fff; padding: 10px; border: 1px solid #eee; border-radius: 4px; min-height: 100px">
                   <div [innerHTML]="correspLoaded?.body"></div>
                 </div>
               </ng-template>
             </div>
           </div>
+          <!-- =================== FIN BLOC Corps =================== -->
 
           <div style="border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden">
             <div
@@ -550,16 +871,22 @@
                 user-select: none;
               "
             >
-              <h5 style="font-weight: 600; margin: 0; color: #2c3e50">Pièces Jointes</h5>
+              <h5
+                style="font-weight: 600; margin: 0; color: #2c3e50"
+                jhiTranslate="correspCareApp.correspManageCorresp.detail.attachmentsSection"
+              >
+                Pièces Jointes
+              </h5>
               <div style="display: flex; align-items: center; gap: 12px">
                 <button
                   (click)="fileInput.click(); $event.stopPropagation()"
-                  *ngIf="correspLoaded.status === CorrespStatus.DRAFT"
-                  [disabled]="isUploading"
+                  *ngIf="correspLoaded?.status === CorrespStatus.DRAFT"
+                  [disabled]="isUploading || !(canWriteCorresp || canAdminCorresp)"
                   [style.cursor]="isUploading ? 'not-allowed' : 'pointer'"
-                  [style.opacity]="isUploading ? '0.5' : '1'"
+                  [style.opacity]="isUploading || !(canWriteCorresp || canAdminCorresp) ? '0.5' : '1'"
                   class="btn btn-primary btn-sm"
                   style="font-weight: bold; font-size: 1.2em; padding: 0 0.5em"
+                  title="{{ canWriteCorresp || canAdminCorresp ? '' : 'Droit insuffisant' }}"
                 >
                   +
                 </button>
@@ -580,7 +907,12 @@
 
             <!-- Uploading indicator -->
             <div *ngIf="isUploading" style="margin-top: 10px; width: 100%">
-              <div style="font-size: 14px; font-weight: 600; margin-bottom: 5px">Téléchargement en cours...</div>
+              <div
+                style="font-size: 14px; font-weight: 600; margin-bottom: 5px"
+                jhiTranslate="correspCareApp.correspManageCorresp.detail.uploading"
+              >
+                Téléchargement en cours...
+              </div>
 
               <div style="width: 100%; height: 10px; background: #e9ecef; border-radius: 10px; overflow: hidden">
                 <div [style.width]="getProgressValue() + '%'" style="height: 100%; background: #0d6efd; transition: width 0.3s ease"></div>
@@ -670,17 +1002,22 @@
 
                     <dx-button
                       (click)="openDeletePjModal(DeletePjModal, pj)"
-                      [disabled]="isUploading"
+                      [disabled]="isUploading || !(canWriteCorresp || canDeleteCorresp || canAdminCorresp)"
                       class="pj-action-btn"
                       icon="trash"
                       stylingMode="contained"
                       type="danger"
+                      [elementAttr]="{ title: canWriteCorresp || canDeleteCorresp || canAdminCorresp ? '' : 'Droit insuffisant' }"
                     ></dx-button>
                   </div>
                 </div>
 
                 <!-- Empty state -->
-                <span *ngIf="pjsLoaded.length === 0" style="grid-column: span 2; color: #999; font-style: italic">
+                <span
+                  *ngIf="pjsLoaded.length === 0"
+                  style="grid-column: span 2; color: #999; font-style: italic"
+                  jhiTranslate="correspCareApp.correspManageCorresp.detail.noAttachments"
+                >
                   Aucune pièce jointe.
                 </span>
               </div>
@@ -711,44 +1048,60 @@
     "
   >
     <div
-      *ngIf="correspLoaded.status !== CorrespStatus.CLOSED"
+      *ngIf="correspLoaded?.status !== CorrespStatus.CLOSED"
       style="display: flex; align-items: center; width: 100%; justify-content: space-between"
     >
       <div>
-        <button
-          class="btn"
-          style="color: white; cursor: auto; font-weight: 600; text-transform: uppercase; min-width: 120px; background-color: #1f57ba"
-        >
-          Dernière modification - {{ formatLongDateWithTime(correspLoaded.updatedDate) }}
-        </button>
+        <div class="last-modification" aria-hidden="false">
+          <span jhiTranslate="correspCareApp.correspManageCorresp.detail.lastModification">Dernière modification</span> -
+          <time [attr.datetime]="correspLoaded?.updatedDate">
+            {{ formatLongDateWithTime(correspLoaded?.updatedDate) }}
+          </time>
+        </div>
       </div>
       <div style="display: flex; align-items: center; gap: 12px">
-        <button class="btn btn-secondary" style="font-weight: 600; text-transform: uppercase; min-width: 120px">Annuler</button>
         <button
-          (click)="soumettreCorresp(correspLoaded.id)"
-          *ngIf="correspLoaded.status === CorrespStatus.DRAFT"
+          class="btn btn-secondary"
+          style="font-weight: 600; text-transform: uppercase; min-width: 120px"
+          jhiTranslate="correspCareApp.correspManageCorresp.actions.cancel"
+        >
+          Annuler
+        </button>
+        <button
+          (click)="soumettreCorresp(correspLoaded?.id!)"
+          *ngIf="correspLoaded?.status === CorrespStatus.DRAFT"
+          [disabled]="!(canWriteCorresp || canAdminCorresp)"
           class="btn btn-success"
           style="font-weight: 600; text-transform: uppercase; min-width: 120px"
+          [attr.title]="
+            canWriteCorresp || canAdminCorresp ? '' : ('correspCareApp.correspManageCorresp.actions.insufficientRights' | translate)
+          "
+          jhiTranslate="correspCareApp.correspManageCorresp.actions.submit"
         >
           Soumettre
         </button>
         <button
-          (click)="cloturerCorresp(correspLoaded.id)"
-          *ngIf="correspLoaded.status === CorrespStatus.IN_PROGRESS"
+          (click)="cloturerCorresp(correspLoaded?.id!)"
+          *ngIf="correspLoaded?.status === CorrespStatus.IN_PROGRESS"
+          [disabled]="!(canWriteCorresp || canAdminCorresp)"
           class="btn btn-danger"
           style="font-weight: 600; text-transform: uppercase; min-width: 120px"
+          [attr.title]="
+            canWriteCorresp || canAdminCorresp ? '' : ('correspCareApp.correspManageCorresp.actions.insufficientRights' | translate)
+          "
+          jhiTranslate="correspCareApp.correspManageCorresp.actions.close"
         >
           Clôturer
         </button>
       </div>
     </div>
-    <div *ngIf="correspLoaded.status === CorrespStatus.CLOSED" style="display: flex; gap: 12px; justify-content: flex-start; width: 100%">
-      <button
-        class="btn"
-        style="color: white; cursor: auto; font-weight: 600; text-transform: uppercase; min-width: 120px; background-color: #6a2020"
-      >
-        Correspendance Clôturée - {{ formatLongDate(correspLoaded.updatedDate) }}
-      </button>
+    <div *ngIf="correspLoaded?.status === CorrespStatus.CLOSED" style="display: flex; gap: 12px; justify-content: flex-start; width: 100%">
+      <div class="last-modification last-modification--closed" aria-hidden="false">
+        <span jhiTranslate="correspCareApp.correspManageCorresp.detail.correspondenceClosed">Correspondance clôturée</span> -
+        <time [attr.datetime]="correspLoaded?.updatedDate">
+          {{ formatLongDate(correspLoaded?.updatedDate) }}
+        </time>
+      </div>
     </div>
   </div>
 </div>
@@ -756,128 +1109,281 @@
 <!-- Modal Template  -->
 <ng-template #AddTaskModal class="modal-dialog modal-lg modal-dialog-centered" let-AddTaskModal>
   <div class="modal-header">
-    <h4 class="modal-title" style="color: #2c3e50; font-weight: bold; text-transform: uppercase; font-style: italic">
+    <h4
+      class="modal-title"
+      style="color: #2c3e50; font-weight: bold; text-transform: uppercase; font-style: italic"
+      jhiTranslate="correspCareApp.correspManageCorresp.detail.assignNewTask"
+    >
       Affectation d'une nouvelle tâche
     </h4>
+    <button
+      (click)="saveTask()"
+      [disabled]="btnSaveTaskDisabled"
+      class="btn btn-primary btn-sm"
+      type="button"
+      jhiTranslate="correspCareApp.correspManageCorresp.actions.save"
+    >
+      Enregistrer
+    </button>
   </div>
 
   <div class="modal-body">
     <form class="container-fluid">
       <div class="row" style="padding: 1em 0">
-        <!-- ************************ LEFT SIDE ************************ -->
-        <div class="col-md-5">
-          <!-- Type de tâche -->
-          <label class="form-label fw-semibold">Type De Tâche <span class="text-danger">*</span></label>
-          <div class="mb-3" style="display: flex; flex-direction: column; gap: 1em">
-            <button
-              (click)="selectedType = 'lecture'"
-              [ngClass]="selectedType === 'lecture' ? 'btn-primary' : 'btn-outline-primary'"
-              class="btn"
-              style="font-weight: 700; text-transform: uppercase"
-              type="button"
-            >
+        <div class="col-md-7">
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px">
+              <div style="flex: 1">
+                <label class="form-label fw-semibold mb-1" jhiTranslate="correspCareApp.correspManageCorresp.detail.selections"
+                  >Sélections</label
+                >
+                <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+                  <span
+                    *ngFor="let sel of selectedResponsables"
+                    class="badge bg-light text-dark"
+                    style="
+                      border: 1px solid #e6eef9;
+                      border-radius: 999px;
+                      padding: 8px 12px;
+                      display: inline-flex;
+                      align-items: center;
+                      gap: 8px;
+                    "
+                  >
+                    <span class="badge bg-secondary" style="font-size: 10px">
+                      {{ sel.matriculePers ? 'PERS' : 'DEPT' }}
+                    </span>
+                    <span>{{ sel.displayName || sel.codeDept || sel.matriculePers }}</span>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" (click)="removeSelection(sel)" style="padding: 2px 6px">
+                      ×
+                    </button>
+                  </span>
+                  <span
+                    *ngIf="selectedResponsables.length === 0"
+                    style="color: #6c757d"
+                    jhiTranslate="correspCareApp.correspManageCorresp.detail.noSelection"
+                    >Aucune sélection</span
+                  >
+                </div>
+              </div>
+              <div style="text-align: right">
+                <button
+                  class="btn btn-sm btn-outline-danger"
+                  (click)="clearSelections()"
+                  [disabled]="selectedResponsables.length === 0"
+                  jhiTranslate="correspCareApp.correspManageCorresp.detail.clearAll"
+                >
+                  Effacer tout
+                </button>
+              </div>
+            </div>
+
+            <!-- Tree container -->
+            <div style="height: 420px; overflow: auto; border: 1px solid #e9ecef; border-radius: 8px; padding: 12px; background: #fff">
+              <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px">
+                <input
+                  type="text"
+                  class="form-control"
+                  [(ngModel)]="treeSearchQuery"
+                  name="treeSearchQuery"
+                  (input)="onTreeSearchChange()"
+                  [placeholder]="'correspCareApp.correspManageCorresp.detail.search' | translate"
+                />
+              </div>
+              <div
+                *ngIf="loadingTree"
+                style="text-align: center; padding: 40px 0; color: #6c757d"
+                jhiTranslate="correspCareApp.correspManageCorresp.detail.loadingOrg"
+              >
+                Chargement de l'organigramme...
+              </div>
+
+              <ul *ngIf="!loadingTree && taskTreeFiltered?.length" style="padding-left: 0; margin: 0; list-style: none">
+                <ng-container *ngFor="let node of taskTreeFiltered">
+                  <ng-template [ngTemplateOutlet]="renderNode" [ngTemplateOutletContext]="{ node: node, level: 0 }"></ng-template>
+                </ng-container>
+              </ul>
+
+              <div *ngIf="!loadingTree && (!taskTreeFiltered || taskTreeFiltered.length === 0)" style="text-align: center; color: #6c757d">
+                Aucun département disponible.
+              </div>
+            </div>
+          </div>
+
+          <!-- recursive node template -->
+          <ng-template #renderNode let-node="node" let-level="level">
+            <li style="margin: 8px 0; list-style: none">
+              <div
+                (click)="toggleNodeExpand(node.id)"
+                class="dept-card"
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  gap: 8px;
+                  padding: 8px;
+                  border-radius: 8px;
+                  cursor: pointer;
+                "
+                [style.borderStyle]="'solid'"
+                [style.borderWidth.px]="3"
+                [style.borderColor]="getLevelColor(level)"
+                [style.background]="selectedDept?.id === node.id ? '#e9f2ff' : '#ffffff'"
+              >
+                <div style="display: flex; flex-direction: column; gap: 3px">
+                  <div style="display: flex; align-items: center; gap: 8px">
+                    <i
+                      [class]="isNodeExpanded(node.id) ? 'fa fa-chevron-down' : 'fa fa-chevron-right'"
+                      style="color: #6c757d; font-size: 12px"
+                    ></i>
+                    <span style="font-weight: 600; color: #2c3e50">{{ node.nom }}</span>
+                  </div>
+                </div>
+
+                <div style="display: flex; gap: 8px; align-items: center">
+                  <input
+                    type="checkbox"
+                    class="org-checkbox"
+                    [checked]="isDeptSelected(node)"
+                    (click)="toggleDeptSelection(node); $event.stopPropagation()"
+                  />
+                  <span *ngIf="(node.children?.length || 0) > 0" style="font-size: 13px; color: #6c757d">{{ node.children.length }}</span>
+                </div>
+              </div>
+
+              <!-- Affectations (People grouped by Type) -->
+              <ul
+                *ngIf="getAffectationKeys(node).length > 0"
+                [style.marginLeft.px]="0"
+                style="margin: 6px 0 0 0; padding-left: 0; list-style: none"
+              >
+                <ng-container *ngFor="let type of getAffectationKeys(node)">
+                  <li style="margin: 4px 0">
+                    <!-- Group Header (Type) -->
+                    <div
+                      (click)="toggleAffectation(node.id, type); $event.stopPropagation()"
+                      style="
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        padding: 6px 10px;
+                        background: #f8f9fa;
+                        border: 1px solid #e9ecef;
+                        border-radius: 6px;
+                        cursor: pointer;
+                      "
+                    >
+                      <div style="display: flex; align-items: center; gap: 8px">
+                        <span style="font-size: 12px; color: #6c757d">
+                          <i [class]="isAffectationExpanded(node.id, type) ? 'fa fa-chevron-down' : 'fa fa-chevron-right'"></i>
+                        </span>
+                        <span style="font-weight: 600; font-size: 10px; color: #495057">{{ type }}</span>
+                      </div>
+                      <span class="badge bg-primary rounded-pill" style="font-size: 11px">
+                        {{ getPeopleForType(node, type).length }}
+                      </span>
+                    </div>
+
+                    <!-- People List -->
+                    <ul
+                      *ngIf="isAffectationExpanded(node.id, type)"
+                      style="margin: 4px 0 0 12px; padding-left: 0; list-style: none; border-left: 2px solid #dee2e6"
+                    >
+                      <li
+                        *ngFor="let person of getPeopleForType(node, type)"
+                        style="margin: 4px 0 4px 12px; padding: 4px 8px; background: #fff; border: 1px solid #f1f5f9; border-radius: 4px"
+                      >
+                        <div style="display: flex; align-items: center; gap: 8px">
+                          <input
+                            type="checkbox"
+                            class="org-checkbox"
+                            [checked]="isPersonSelected(node, person)"
+                            (click)="togglePersonSelection(node, person); $event.stopPropagation()"
+                          />
+                          <i class="fa fa-user" style="color: #6c757d; font-size: 12px"></i>
+                          <span style="font-size: 13px; color: #212529">{{ person.nomPrenom || person.matricule }}</span>
+                        </div>
+                      </li>
+                    </ul>
+                  </li>
+                </ng-container>
+              </ul>
+
+              <ul
+                *ngIf="isNodeExpanded(node.id) && node.children?.length"
+                [style.marginLeft.px]="(level + 1) * 18"
+                style="margin: 6px 0 0 0; padding-left: 0; list-style: none"
+              >
+                <ng-container *ngFor="let c of node.children">
+                  <ng-template [ngTemplateOutlet]="renderNode" [ngTemplateOutletContext]="{ node: c, level: level + 1 }"></ng-template>
+                </ng-container>
+              </ul>
+            </li>
+          </ng-template>
+        </div>
+        <div class="col-md-5 assign-controls">
+          <label class="form-label fw-semibold" jhiTranslate="correspCareApp.correspManageCorresp.detail.taskType"
+            >Type De Tâche <span class="text-danger">*</span></label
+          >
+          <div class="form-text" style="margin-top: -6px" jhiTranslate="correspCareApp.correspManageCorresp.detail.selectActionType">
+            Sélectionnez le type d'action à effectuer
+          </div>
+          <div class="type-actions">
+            <button type="button" class="type-card lecture" [class.active]="selectedType === 'lecture'" (click)="selectedType = 'lecture'">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 4h8a5 5 0 0 1 5 5v11H8a5 5 0 0 0-5-5V4Z" fill="currentColor" opacity="0.15" />
+                <path d="M3 4h8a5 5 0 0 1 5 5v11H8a5 5 0 0 0-5-5V4Z" stroke="currentColor" stroke-width="1.6" fill="none" />
+                <path d="M13 4h8v16h-8" stroke="currentColor" stroke-width="1.6" fill="none" />
+              </svg>
               Lecture
             </button>
-
             <button
-              (click)="selectedType = 'signature'"
-              [ngClass]="selectedType === 'signature' ? 'btn-primary' : 'btn-outline-primary'"
-              class="btn"
-              style="font-weight: 700; text-transform: uppercase"
               type="button"
+              class="type-card signature"
+              [class.active]="selectedType === 'signature'"
+              (click)="selectedType = 'signature'"
             >
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 21l6-2 9-9-4-4-9 9-2 6Z" stroke="currentColor" stroke-width="1.6" fill="none" />
+                <path d="M14 6l4 4" stroke="currentColor" stroke-width="1.6" />
+              </svg>
               Signature
             </button>
-
             <button
-              (click)="selectedType = 'traitement'"
-              [ngClass]="selectedType === 'traitement' ? 'btn-primary' : 'btn-outline-primary'"
-              class="btn"
-              style="font-weight: 700; text-transform: uppercase"
               type="button"
+              class="type-card traitement"
+              [class.active]="selectedType === 'traitement'"
+              (click)="selectedType = 'traitement'"
             >
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 6v-3m0 18v-3M6 12H3m18 0h-3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2" stroke="currentColor" stroke-width="1.6" />
+                <circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="1.6" fill="none" />
+              </svg>
               Traitement
             </button>
-
             <button
-              (click)="selectedType = 'validation'"
-              [ngClass]="selectedType === 'validation' ? 'btn-primary' : 'btn-outline-primary'"
-              class="btn"
-              style="font-weight: 700; text-transform: uppercase"
               type="button"
+              class="type-card validation"
+              [class.active]="selectedType === 'validation'"
+              (click)="selectedType = 'validation'"
             >
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.6" fill="none" />
+                <path d="M8.5 12.5l2.5 2.5 4.5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
               Validation
             </button>
           </div>
-
-          <div *ngIf="validationErrors['typeTask']" class="text-danger small">
-            {{ validationErrors['typeTask'] }}
-          </div>
-
-          <!-- Date limite -->
-          <label class="form-label fw-semibold mt-3">Date limite</label>
+          <div *ngIf="validationErrors['typeTask']" class="text-danger small">{{ validationErrors['typeTask'] }}</div>
+          <label class="form-label fw-semibold" jhiTranslate="correspCareApp.correspManageCorresp.detail.deadline">Date limite</label>
           <input [(ngModel)]="dateLimite" class="form-control" name="dateLimite" type="date" />
-        </div>
-
-        <!-- ************************ RIGHT SIDE ************************ -->
-        <div class="col-md-7">
-          <!-- Organigramme -->
-          <label class="form-label fw-semibold">Organigramme <span class="text-danger">*</span></label>
-          <select
-            (change)="onOrgaChange()"
-            [(ngModel)]="selectedOrga"
-            [class.border-danger]="validationErrors['organigramme']"
-            class="form-select mb-3"
-            name="organigramme"
-          >
-            <option disabled selected value="">-- Sélectionner un organigramme --</option>
-            <option *ngFor="let orga of orgaList" [ngValue]="orga">
-              {{ orga.organigramme }}
-            </option>
-          </select>
-          <div *ngIf="validationErrors['organigramme']" class="text-danger small">
-            {{ validationErrors['organigramme'] }}
-          </div>
-
-          <!-- Département -->
-          <label class="form-label fw-semibold">Département <span class="text-danger">*</span></label>
-          <dx-tree-view
-            (onItemClick)="selectDep($event)"
-            [class.border-danger]="validationErrors['departement']"
-            [dataStructure]="'tree'"
-            [expandAllEnabled]="true"
-            [height]="300"
-            [itemsExpr]="'children'"
-            [items]="departements"
-            [keyExpr]="'id'"
-            [parentIdExpr]="'parentId'"
-            [searchEnabled]="true"
-            [selectByClick]="true"
-            [selectedExpr]="'selected'"
-            class="border rounded"
-            displayExpr="nom"
-            id="treeView"
-            searchMode="contains"
-            selectionMode="single"
-          >
-          </dx-tree-view>
-
-          <div *ngIf="validationErrors['departement']" class="text-danger small mt-1">
-            {{ validationErrors['departement'] }}
-          </div>
-        </div>
-      </div>
-
-      <!-- ************************ COMMENTAIRE FULL WIDTH ************************ -->
-      <div class="row mt-4">
-        <div class="col-12">
-          <label class="form-label fw-semibold">Commentaire</label>
+          <label class="form-label fw-semibold mt-3" jhiTranslate="correspCareApp.correspManageCorresp.detail.comment">Commentaire</label>
           <textarea
             [(ngModel)]="commentaire"
             class="form-control"
             name="commentaire"
-            placeholder="Saisir un commentaire..."
-            rows="4"
+            [placeholder]="'correspCareApp.correspManageCorresp.detail.commentPlaceholder' | translate"
+            rows="6"
           ></textarea>
         </div>
       </div>
@@ -885,50 +1391,122 @@
   </div>
 
   <div class="modal-footer">
-    <button (click)="AddTaskModal.close('Close click')" class="btn btn-light btn-model" type="button">Annuler</button>
-    <button (click)="saveTask()" class="btn btn-primary btn-model" type="button">Enregistrer</button>
+    <button
+      (click)="AddTaskModal.close('Close click')"
+      class="btn btn-light btn-model"
+      type="button"
+      jhiTranslate="correspCareApp.correspManageCorresp.actions.cancel"
+    >
+      Annuler
+    </button>
+    <button
+      (click)="saveTask()"
+      [disabled]="btnSaveTaskDisabled || !(canWriteCorresp || canAdminCorresp)"
+      class="btn btn-primary btn-model"
+      type="button"
+      [attr.title]="
+        canWriteCorresp || canAdminCorresp ? '' : ('correspCareApp.correspManageCorresp.actions.insufficientRights' | translate)
+      "
+      jhiTranslate="correspCareApp.correspManageCorresp.actions.save"
+    >
+      Enregistrer
+    </button>
   </div>
 </ng-template>
 
 <ng-template #DeleteCorrespModal class="modal-dialog modal-md modal-dialog-centered" let-DeleteCorrespModal>
   <div class="modal-header">
-    <h5 class="modal-title text-danger" style="font-weight: 700">Confirmation de suppression</h5>
+    <h5 class="modal-title text-danger" style="font-weight: 700" jhiTranslate="correspCareApp.correspManageCorresp.delete.confirmTitle">
+      Confirmation de suppression
+    </h5>
   </div>
 
   <div class="modal-body" style="font-size: 1.3em; background-color: white; text-transform: uppercase">
-    <p>Êtes-vous sûr de vouloir <strong>supprimer cette correspondance</strong> ?</p>
+    <p jhiTranslate="correspCareApp.correspManageCorresp.delete.confirmQuestionCorresp">
+      Êtes-vous sûr de vouloir <strong>supprimer cette correspondance</strong> ?
+    </p>
 
-    <p class="text-warning mb-0">Cette action entraînera également la suppression :</p>
+    <p class="text-warning mb-0" jhiTranslate="correspCareApp.correspManageCorresp.delete.alsoRemoves">
+      Cette action entraînera également la suppression :
+    </p>
 
     <ul class="mt-2">
-      <li>de <strong>toutes les tâches associées</strong></li>
-      <li>de <strong>toutes les pièces jointes</strong></li>
+      <li jhiTranslate="correspCareApp.correspManageCorresp.delete.alsoRemovesTasks">de <strong>toutes les tâches associées</strong></li>
+      <li jhiTranslate="correspCareApp.correspManageCorresp.delete.alsoRemovesAttachments">
+        de <strong>toutes les pièces jointes</strong>
+      </li>
     </ul>
 
-    <p class="text-danger mt-3">⚠️ Cette action est <strong>irréversible</strong>.</p>
+    <p class="text-danger mt-3" jhiTranslate="correspCareApp.correspManageCorresp.delete.irreversible">
+      ⚠️ Cette action est <strong>irréversible</strong>.
+    </p>
   </div>
 
   <div class="modal-footer">
-    <button (click)="DeleteCorrespModal.dismiss('cancel')" class="btn btn-secondary" type="button">ANNULER</button>
+    <button
+      (click)="DeleteCorrespModal.dismiss('cancel')"
+      class="btn btn-secondary"
+      type="button"
+      jhiTranslate="correspCareApp.correspManageCorresp.actions.cancelUpper"
+    >
+      ANNULER
+    </button>
 
-    <button (click)="deleteCorresp(); DeleteCorrespModal.close('confirm')" class="btn btn-danger" type="button">SUPPRIMER</button>
+    <button
+      (click)="deleteCorresp(); DeleteCorrespModal.close('confirm')"
+      [disabled]="!(canDeleteCorresp || canAdminCorresp)"
+      class="btn btn-danger"
+      type="button"
+      [attr.title]="
+        canDeleteCorresp || canAdminCorresp ? '' : ('correspCareApp.correspManageCorresp.actions.insufficientRights' | translate)
+      "
+      jhiTranslate="correspCareApp.correspManageCorresp.actions.deleteUpper"
+    >
+      SUPPRIMER
+    </button>
   </div>
 </ng-template>
 
 <ng-template #DeletePjModal class="modal-dialog modal-md modal-dialog-centered" let-DeletePjModal>
   <div class="modal-header">
-    <h5 class="modal-title text-danger" style="font-weight: 700">Confirmation de suppression</h5>
+    <h5 class="modal-title text-danger" style="font-weight: 700" jhiTranslate="correspCareApp.correspManageCorresp.delete.confirmTitle">
+      Confirmation de suppression
+    </h5>
   </div>
 
   <div class="modal-body" style="font-size: 1.3em; background-color: white; text-transform: uppercase">
-    <p>Êtes-vous sûr de vouloir <strong>supprimer cette piece jointe </strong> ?</p>
+    <p jhiTranslate="correspCareApp.correspManageCorresp.delete.confirmQuestionPj">
+      Êtes-vous sûr de vouloir <strong>supprimer cette piece jointe </strong> ?
+    </p>
 
-    <p class="text-danger mt-3">⚠️ Cette action est <strong>irréversible</strong>.</p>
+    <p class="text-danger mt-3" jhiTranslate="correspCareApp.correspManageCorresp.delete.irreversible">
+      ⚠️ Cette action est <strong>irréversible</strong>.
+    </p>
   </div>
 
   <div class="modal-footer">
-    <button (click)="DeletePjModal.dismiss('cancel')" class="btn btn-secondary" type="button">ANNULER</button>
+    <button
+      (click)="DeletePjModal.dismiss('cancel')"
+      class="btn btn-secondary"
+      type="button"
+      jhiTranslate="correspCareApp.correspManageCorresp.actions.cancelUpper"
+    >
+      ANNULER
+    </button>
 
-    <button (click)="deletePjWithCorresp(); DeletePjModal.close('confirm')" class="btn btn-danger" type="button">SUPPRIMER</button>
+    <button
+      (click)="deletePjWithCorresp(); DeletePjModal.close('confirm')"
+      [disabled]="!(canWriteCorresp || canDeleteCorresp || canAdminCorresp)"
+      class="btn btn-danger"
+      type="button"
+      [attr.title]="
+        canWriteCorresp || canDeleteCorresp || canAdminCorresp
+          ? ''
+          : ('correspCareApp.correspManageCorresp.actions.insufficientRights' | translate)
+      "
+      jhiTranslate="correspCareApp.correspManageCorresp.actions.deleteUpper"
+    >
+      SUPPRIMER
+    </button>
   </div>
 </ng-template>

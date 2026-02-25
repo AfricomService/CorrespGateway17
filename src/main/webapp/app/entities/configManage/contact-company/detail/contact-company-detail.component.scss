@@ -1,0 +1,55 @@
+.contact-detail {
+  .card {
+    border-radius: 10px;
+  }
+
+  .avatar-large {
+    .avatar-circle {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #2b6df6 0%, #6b8cff 100%);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 28px;
+    }
+  }
+
+  .avatar-sm {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #eef4ff;
+    color: #2b6df6;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+  }
+
+  .persons-block {
+    .list-group-item {
+      border: none;
+      border-radius: 6px;
+      margin-bottom: 6px;
+      background: #fff;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+    }
+  }
+
+  .actions button,
+  .actions a {
+    margin-left: 6px;
+  }
+
+  dl.jh-entity-details dt {
+    font-weight: 600;
+  }
+
+  dl.jh-entity-details dd {
+    margin-bottom: 0.8rem;
+  }
+}

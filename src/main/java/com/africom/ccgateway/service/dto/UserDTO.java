@@ -16,6 +16,7 @@ public class UserDTO implements Serializable {
 
     private String firstName;
     private String lastName;
+    private String email;
 
     public UserDTO() {
         // Empty constructor needed for Jackson.
@@ -27,6 +28,7 @@ public class UserDTO implements Serializable {
         this.login = user.getLogin();
         this.firstName = user.getFirstName();
         this.lastName = user.getLastName();
+        this.email = user.getEmail();
     }
 
     public String getLastName() {
@@ -45,6 +47,10 @@ public class UserDTO implements Serializable {
         this.firstName = firstName;
     }
 
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
     public Long getId() {
         return id;
     }
@@ -59,6 +65,10 @@ public class UserDTO implements Serializable {
 
     public void setLogin(String login) {
         this.login = login;
+    }
+
+    public String getEmail() {
+        return email;
     }
 
     // prettier-ignore

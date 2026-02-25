@@ -2,17 +2,18 @@
   "correspCareApp": {
     "configManagePersonCompany": {
       "home": {
-        "title": "PersonCompanies",
-        "refreshListLabel": "Actualiser la liste",
-        "createLabel": "Créer un nouveau Person Company",
-        "createOrEditLabel": "Créer ou éditer un Person Company",
-        "notFound": "Aucun Person Company trouvé"
+        "title": "Contacts",
+        "refreshListLabel": "Rafraîchir la liste",
+        "createLabel": "Créer un nouveau contact",
+        "createOrEditLabel": "Créer / Éditer un contact",
+        "notFound": "Aucun contact trouvé",
+        "subtitle": "Informations du contact et lien avec la société"
       },
       "delete": {
-        "question": "Êtes-vous certain de vouloir supprimer le Person Company {{ id }} ?"
+        "question": "Êtes-vous certain de vouloir supprimer le contact « {{ name }} » ?"
       },
       "detail": {
-        "title": "Person Company"
+        "title": "Contact"
       },
       "id": "Id",
       "nom": "Nom",
@@ -22,14 +23,61 @@
       "fax": "Fax",
       "email": "Email",
       "whatsapp": "Whatsapp",
-      "etat": "Etat"
-    }
-  },
-  "configManageApp": {
-    "configManagePersonCompany": {
-      "created": "Un nouveau Person Company a été créé avec l'identifiant {{ param }}",
-      "updated": "Le Person Company avec l'identifiant {{ param }} a été mis à jour",
-      "deleted": "Le Person Company avec l'identifiant {{ param }} a été supprimé"
+      "etat": "Etat",
+      "placeholders": {
+        "nom": "Nom du contact",
+        "pays": "Ex : Tunisie",
+        "adresse": "Adresse postale",
+        "tel": "Téléphone",
+        "fax": "Fax",
+        "email": "email@exemple.com",
+        "whatsapp": "Whatsapp"
+      },
+      "labels": {
+        "contactCompany": "Société",
+        "contactCompanyReadonlyNote": "Le lien vers la société est verrouillé et ne peut pas être modifié ici."
+      },
+      "buttons": {
+        "viewCompany": "Voir la société"
+      },
+      "form": {
+        "saving": "Enregistrement..."
+      },
+      "messages": {
+        "contactCompanyNotFound": "Société liée introuvable (ID fourni invalide).",
+        "unknownSaveError": "Erreur serveur lors de l'enregistrement.",
+        "processingError": "Une erreur est survenue lors du traitement.",
+        "nameExists": "Un contact avec ce nom existe déjà."
+      },
+      "fields": {
+        "nom": "Nom",
+        "pays": "Pays",
+        "adresse": "Adresse",
+        "tel": "Tel",
+        "fax": "Fax",
+        "email": "Email",
+        "whatsapp": "Whatsapp"
+      },
+      "validation": {
+        "required": "Ce champ est obligatoire."
+      }
+    },
+    "configManageApp": {
+      "configManagePersonCompany": {
+        "created": "Un nouveau contact a été créé avec l'identifiant {{ param }}",
+        "updated": "Un contact a été mis à jour avec l'identifiant {{ param }}",
+        "deleted": "Un contact a été supprimé avec l'identifiant {{ param }}"
+      }
+    },
+    "entity": {
+      "action": {
+        "cancel": "Annuler",
+        "delete": "Supprimer",
+        "save": "Sauvegarder"
+      },
+      "delete": {
+        "title": "Confirmation de suppression"
+      }
     }
   }
 }

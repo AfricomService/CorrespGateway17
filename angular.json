@@ -20,6 +20,7 @@
         "build": {
           "builder": "@angular-builders/custom-webpack:browser",
           "options": {
+            "baseHref": "/cc/",
             "customWebpackConfig": {
               "path": "./webpack/webpack.custom.js"
             },
@@ -44,6 +45,7 @@
           },
           "configurations": {
             "production": {
+              "baseHref": "/cc/",
               "optimization": true,
               "outputHashing": "all",
               "sourceMap": false,
@@ -56,13 +58,13 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kb",
-                  "maximumError": "1mb"
+                  "maximumWarning": "3mb",
+                  "maximumError": "5mb"
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "2kb",
-                  "maximumError": "4kb"
+                  "maximumWarning": "25kb",
+                  "maximumError": "30kb"
                 }
               ]
             },

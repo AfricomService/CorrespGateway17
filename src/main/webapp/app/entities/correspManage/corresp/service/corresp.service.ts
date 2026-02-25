@@ -15,7 +15,7 @@ import { DepartementTreeFeignDTO } from '../update/DepartementTreeFeignDTO';
 import { IDepartement } from '../../../orgacare/departement/departement.model';
 import { organigrammeFeignDTO } from '../update/organigrammeFeignDTO';
 import { ITypedocument } from '../../../configManage/typedocument/typedocument.model';
-
+import { CorrespPermissionsDTO } from '../../permissions.model';
 export type PartialUpdateCorresp = Partial<ICorresp> & Pick<ICorresp, 'id'>;
 
 type RestOf<T extends ICorresp | NewCorresp> = Omit<T, 'dateCreated' | 'courrierDate' | 'updatedDate'> & {
@@ -50,6 +50,8 @@ export class CorrespService {
     'api/OrganigrammesFromOrgaCare',
     'configmanage'
   );
+  // url pour l'endpoint qui renvoie l'arbre de départements (service orgacare)
+  protected resourceUrlDepartementHierarchy = this.applicationConfigService.getEndpointFor('api/departementshierarchy', 'orgacare');
 
   constructor(protected http: HttpClient, protected applicationConfigService: ApplicationConfigService) {}
 
@@ -101,6 +103,13 @@ export class CorrespService {
   queryOrgaDepsByCode(req?: any): Observable<HttpResponse<IDepartement>> {
     const options = createRequestOption(req);
     return this.http.get<IDepartement>(`${this.resourceUrlDepartementsFromOrgaCare}ByCode`, { params: options, observe: 'response' });
+  }
+
+  getDepartementHierarchyByOrganigramme(organigrammeCode: string): Observable<HttpResponse<DepartementTreeFeignDTO[]>> {
+    // on met observe: 'response' pour garder headers + status si besoin
+    return this.http.get<DepartementTreeFeignDTO[]>(`${this.resourceUrlDepartementHierarchy}/${encodeURIComponent(organigrammeCode)}`, {
+      observe: 'response',
+    });
   }
   queryOrgaById(req?: any): Observable<HttpResponse<organigrammeFeignDTO[]>> {
     const options = createRequestOption(req);
@@ -203,14 +212,40 @@ export class CorrespService {
     return this.http.post(`${this.resourceUrl}WithTasksAndPjs`, formData);
   }
 
-  addTaskToCorresp(tasksDTO: ITasks, correspId: number) {
-    const formData = new FormData();
+  //addTaskToCorresp(tasksDTO: ITasks, correspId: number) {
+  //  const formData = new FormData();
 
-    formData.append('correspId', correspId.toString());
+  // formData.append('correspId', correspId.toString());
 
-    formData.append('tasksDTO', new Blob([JSON.stringify(tasksDTO)], { type: 'application/json' }));
+  //  formData.append('tasksDTO', new Blob([JSON.stringify(tasksDTO)], { type: 'application/json' }));
 
-    return this.http.post(`${this.resourceUrl}AddTaskToCorresp`, formData);
+  //  return this.http.post(`${this.resourceUrl}AddTaskToCorresp`, formData);
+  // }
+
+  /**
+   * Convertit les champs date d'une tâche avant envoi au serveur (ISO string).
+   * Adapte les champs selon ton ITasks (ici on gère les dates les plus courantes).
+   */
+  protected convertTaskDateFromClient(task: ITasks): any {
+    return {
+      ...task,
+      creationDate: task.creationDate ? (task.creationDate as any).toJSON?.() ?? task.creationDate : null,
+      startDate: task.startDate ? (task.startDate as any).toJSON?.() ?? task.startDate : null,
+      dueDate: task.dueDate ? (task.dueDate as any).toJSON?.() ?? task.dueDate : null,
+      closeDate: task.closeDate ? (task.closeDate as any).toJSON?.() ?? task.closeDate : null,
+      updatedDate: task.updatedDate ? (task.updatedDate as any).toJSON?.() ?? task.updatedDate : null,
+    };
+  }
+
+  /**
+   * Appelle POST /api/corresps/{correspId}/tasks
+   * Envoie un TasksDTO (ITasks) en JSON. Retourne le Corresp mis à jour (avec headers si besoin).
+   */
+  addTaskToCorresp(tasksDTO: ITasks, correspId: number): Observable<HttpResponse<ICorresp>> {
+    const copy = this.convertTaskDateFromClient(tasksDTO);
+    return this.http
+      .post<RestCorresp>(`${this.resourceUrl}/${correspId}/tasks`, copy, { observe: 'response' })
+      .pipe(map(res => this.convertResponseFromServer(res)));
   }
 
   addPjToCorresp(pjDto: IPj, correspId: number) {
@@ -254,5 +289,37 @@ export class CorrespService {
     const options = createRequestOption(req);
 
     return this.http.patch(`${this.resourceUrl}/saveBodyToFile`, options);
+  }
+
+  getCorrespsByTask(taskId: number): Observable<EntityArrayResponseType> {
+    return this.http
+      .get<RestCorresp[]>(`${this.resourceUrl}/by-task/${taskId}`, { observe: 'response' })
+      .pipe(map(res => this.convertResponseArrayFromServer(res)));
+  }
+
+  /**
+   * Liste complète (non paginée) des corresps ayant une reference non-nulle.
+   * GET /api/corresps/with-reference/list
+   */
+  getAllWithReferenceList(): Observable<EntityArrayResponseType> {
+    return this.http
+      .get<RestCorresp[]>(`${this.resourceUrl}/with-reference/list`, { observe: 'response' })
+      .pipe(map(res => this.convertResponseArrayFromServer(res)));
+  }
+
+  /**
+   * Page des corresps ayant une reference non-nulle (paginée).
+   * GET /api/corresps/with-reference?page=1&size=20
+   * page = 1-based (comme dans ton service backend)
+   */
+  getAllWithReference(page: number = 1, size: number = 20): Observable<EntityArrayResponseType> {
+    const options = createRequestOption({ page, size });
+    return this.http
+      .get<RestCorresp[]>(`${this.resourceUrl}/with-reference`, { params: options, observe: 'response' })
+      .pipe(map(res => this.convertResponseArrayFromServer(res)));
+  }
+
+  getPermissions(correspId: number): Observable<CorrespPermissionsDTO> {
+    return this.http.get<CorrespPermissionsDTO>(`${this.resourceUrl}/${correspId}/permissions`);
   }
 }

@@ -1,0 +1,358 @@
+.contact-list {
+  .main-card {
+    border-radius: 0.6rem;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transition: transform 180ms ease, box-shadow 180ms ease;
+
+    .card-header {
+      padding: 1rem 1.25rem;
+      h1 {
+        font-size: 1.6rem;
+        font-weight: 600;
+      }
+      small {
+        color: rgba(255, 255, 255, 0.9);
+        display: block;
+        margin-top: 0.1rem;
+      }
+    }
+
+    .controls {
+      margin: 1rem 1.25rem 0;
+      padding-bottom: 0.6rem;
+      display: flex;
+      flex-direction: column;
+
+      @media (min-width: 768px) {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      gap: 0.5rem;
+
+      .search-wrapper {
+        flex: 1 1 auto;
+        min-width: 0;
+
+        .input-group {
+          width: 100%;
+
+          input.form-control {
+            min-width: 220px;
+            border-radius: 0.4rem 0 0 0.4rem;
+            height: 42px;
+            transition: box-shadow 140ms ease, transform 140ms ease;
+          }
+          button.btn {
+            border-radius: 0 0.4rem 0.4rem 0;
+            height: 42px;
+            transition: transform 120ms ease, box-shadow 120ms ease;
+          }
+        }
+
+        /* style spécifique du bouton export (conserve alignement et padding) */
+        > .btn.btn-light {
+          min-height: 42px;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding-left: 0.75rem;
+          padding-right: 0.75rem;
+        }
+      }
+
+      .actions {
+        margin-left: 0;
+        @media (min-width: 768px) {
+          margin-left: auto;
+        }
+
+        a.btn {
+          min-height: 42px;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          transition: transform 140ms ease, box-shadow 140ms ease;
+        }
+      }
+    }
+
+    .card-body {
+      padding: 1rem 1.25rem;
+    }
+  }
+
+  /* Shared animated button style */
+  /* applique la même animation à tous les éléments qui utilisent .btn-animated */
+  .btn-animated {
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-left: 0.65rem;
+    padding-right: 0.65rem;
+    transition: transform 140ms ease, box-shadow 140ms ease;
+    /* optional: légère bordure arrondie cohérente */
+    border-radius: 0.4rem;
+  }
+
+  /* Hover / focus effect partagé */
+  .btn-animated:hover,
+  .btn-animated:focus {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 6px 18px rgba(43, 109, 246, 0.12);
+    text-decoration: none;
+    outline: none;
+  }
+
+  /* ----- NOUVEAU: header au dessus de la liste des sociétés ----- */
+  .companies-header {
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+
+    .companies-icon {
+      font-size: 1.25rem;
+      color: #2b6df6;
+      transition: transform 180ms ease;
+    }
+
+    .companies-title {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 0.4rem;
+      font-size: 1.05rem;
+      margin: 0;
+      color: #111827;
+    }
+
+    .companies-count {
+      font-size: 0.9rem;
+      color: #6b7280;
+    }
+
+    .companies-controls {
+      button.btn {
+        padding: 0.35rem 0.6rem;
+        font-size: 0.85rem;
+      }
+    }
+  }
+
+  /* Cards internes */
+  .company-card {
+    border-radius: 0.55rem;
+    border: 1px solid #e6e9ef;
+    transition: transform 220ms cubic-bezier(0.2, 0.9, 0.2, 1), box-shadow 220ms cubic-bezier(0.2, 0.9, 0.2, 1), border-color 180ms;
+    overflow: hidden;
+    will-change: transform, box-shadow;
+
+    &:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 12px 30px rgba(17, 24, 39, 0.08);
+    }
+
+    &.card-active {
+      border-color: #2b6df6;
+      box-shadow: 0 6px 18px rgba(43, 109, 246, 0.09);
+      background: #f3f8ff;
+    }
+
+    .card-body {
+      padding: 1rem 1.25rem;
+    }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #e9eefc;
+      color: #2b6df6;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: transform 160ms ease, box-shadow 160ms ease;
+    }
+
+    .action-icons {
+      button {
+        color: #6b7280;
+        padding: 0.25rem;
+        transition: transform 120ms ease, color 120ms ease;
+      }
+      button:hover {
+        color: #111827;
+        transform: translateY(-2px) scale(1.03);
+      }
+    }
+
+    /* -------- PERSONS LIST (header + contenu) -------- */
+    .persons-list {
+      background: #ffffff;
+      border-top: 1px solid rgba(0, 0, 0, 0.03);
+      padding: 0.75rem 1.25rem;
+      transition: opacity 200ms ease, transform 200ms ease;
+      animation: slideFadeIn 210ms ease both;
+    }
+
+    /* rotate chevron when expanded */
+    .toggle-persons.expanded fa-icon,
+    .toggle-persons.expanded .fa-icon {
+      transform: rotate(180deg);
+      transition: transform 220ms ease;
+    }
+
+    .persons-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+      padding: 0.25rem 0;
+      gap: 0.5rem;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+
+      .persons-title {
+        h6 {
+          font-size: 1rem;
+          margin: 0;
+          color: #111827;
+        }
+        strong {
+          font-weight: 600;
+        }
+      }
+
+      button.btn {
+        padding: 0.35rem 0.6rem;
+        font-size: 0.85rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        transition: transform 140ms ease, box-shadow 140ms ease;
+      }
+
+      /* hover effect for the small add button (uses same .btn-animated style) */
+      button.btn-animated:hover {
+        /* inherited from .btn-animated:hover */
+      }
+    }
+
+    .person-item + .person-item {
+      border-top: 1px dashed rgba(0, 0, 0, 0.04);
+    }
+
+    .person-info {
+      .fw-semibold {
+        font-weight: 600;
+      }
+      .small {
+        color: #6b7280;
+      }
+
+      /* Badge d'état de la personne */
+      small.badge {
+        font-size: 0.65rem;
+        padding: 0.25rem 0.45rem;
+        line-height: 1;
+        border-radius: 0.45rem;
+        display: inline-block;
+      }
+    }
+
+    .person-actions button {
+      color: #6b7280;
+      transition: transform 120ms ease, color 120ms ease;
+    }
+    .person-actions button:hover {
+      transform: translateY(-2px);
+      color: #111827;
+    }
+
+    /* style pour personne "Delated" (soft-deleted) */
+    .person-item.delated {
+      opacity: 0.6;
+      background: rgba(255, 245, 245, 0.6);
+    }
+
+    .person-item.delated .person-actions a,
+    .person-item.delated .person-actions button {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+  }
+
+  /* make persons-list visually distinct for active card */
+  .company-card.card-active .persons-list {
+    background: rgba(243, 248, 255, 0.95);
+  }
+
+  /* small animation keyframes */
+  @keyframes slideFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Responsive */
+  @media (max-width: 767.98px) {
+    .controls {
+      flex-direction: column;
+      .search-wrapper,
+      .actions {
+        width: 100% !important;
+      }
+    }
+
+    .company-card {
+      .card-body {
+        padding: 0.85rem;
+      }
+      .persons-list {
+        padding: 0.5rem 0.75rem;
+      }
+      .persons-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+
+        button.btn {
+          width: 100%;
+        }
+      }
+    }
+
+    .companies-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+
+      .companies-controls {
+        width: 100%;
+        display: flex;
+        justify-content: flex-start;
+      }
+    }
+  }
+
+  /* Accessibility / focus */
+  .search-wrapper input:focus {
+    box-shadow: 0 0 0 0.15rem rgba(43, 109, 246, 0.12);
+    outline: none;
+  }
+
+  /* small utility */
+  .text-muted.small {
+    font-size: 0.85rem;
+  }
+}

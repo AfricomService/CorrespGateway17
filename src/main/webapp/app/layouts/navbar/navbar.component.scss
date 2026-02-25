@@ -16,12 +16,16 @@ Navbar
   width: 1.75em;
 }
 
-.navbar {
+.jh-navbar {
   padding: 0.2rem 1rem;
+  background-color: #1e40af; /* Fallback */
+  background: linear-gradient(90deg, #3b82f6 0%, #1e40af 100%) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+
   .dropdown-item.active,
   .dropdown-item.active:focus,
   .dropdown-item.active:hover {
-    background-color: $dark;
+    background-color: #1e40af;
   }
 
   a.nav-link {
