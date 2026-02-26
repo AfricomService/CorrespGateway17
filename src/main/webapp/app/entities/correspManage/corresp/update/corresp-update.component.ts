@@ -677,6 +677,7 @@ export class CorrespUpdateComponent implements OnInit {
         break;
     }
 
+    this.tasksToSave = [];
     this.tasks.forEach(t => {
       const taskModel: ITasks = {} as ITasks;
       taskModel.responsible = t.responsable;
@@ -714,6 +715,34 @@ export class CorrespUpdateComponent implements OnInit {
       .subscribe(() => {
         this.router.navigate(['/corresp']);
       });
+  }
+
+  generateReference(): void {
+    const typeStr = (() => {
+      switch (this.correspType) {
+        case 'Arrivée':
+          return CorrespType.INCOMING;
+        case 'Sortant':
+          return CorrespType.OUTGOING;
+        case 'Interne':
+          return CorrespType.INTERNAL;
+        default:
+          return '';
+      }
+    })() as unknown as string;
+    if (!typeStr) {
+      this.showNotification('Type de correspondance non défini', 'error');
+      return;
+    }
+    this.parentClassdefService.getNextNumber(typeStr).subscribe({
+      next: nextNumber => {
+        if (!this.corresp) this.corresp = {} as ICorresp;
+        this.corresp.reference = nextNumber || '';
+        const ref = this.corresp.reference ? ` Référence: ${this.corresp.reference}` : '';
+        this.showNotification(`Identifiant généré.${ref}`, 'success');
+      },
+      error: () => this.showNotification('Échec de la récupération du numéro suivant', 'error'),
+    });
   }
 
   validateInfoGeneralesForm(): boolean {
