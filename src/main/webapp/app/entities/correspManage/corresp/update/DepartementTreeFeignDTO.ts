@@ -6,6 +6,7 @@ export interface DepartementTreeFeignDTO {
   id: number;
   code?: string | null;
   nom?: string | null;
+  email?: string | null;
   children?: DepartementTreeFeignDTO[] | null;
   // version stricte : Partial<Record<TypeAffectation, PersonneFeignDTO[]>>
   affectationsByType?: Partial<Record<TypeAffectation, PersonneFeignDTO[]>> | null;

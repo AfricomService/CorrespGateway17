@@ -34,6 +34,7 @@ import { IDepartement } from '../../../orgacare/departement/departement.model';
 import { ContactCompanyService } from 'app/entities/configManage/contact-company/service/contact-company.service';
 import { IContactCompany } from 'app/entities/configManage/contact-company/contact-company.model';
 import { IPersonCompany } from 'app/entities/configManage/person-company/person-company.model';
+import { ParentClassdefService } from 'app/entities/configManage/parent-classdef/service/parent-classdef.service';
 
 // <-- NEW: import du DTO de l'arbre (vérifie le chemin si besoin)
 import { DepartementTreeFeignDTO } from './DepartementTreeFeignDTO';
@@ -61,6 +62,10 @@ export class CorrespUpdateComponent implements OnInit {
   isSaving = false;
   corresp!: ICorresp;
 
+  /** Référence générée par le bouton "Identifier" — sera utilisée lors de l'enregistrement */
+  generatedReference: string | null = null;
+  isGeneratingReference = false;
+
   tasksToSave: ITasks[] = [];
   pjsToSave: IPj[] = [];
   notificationMessage: string | null = null;
@@ -70,7 +75,7 @@ export class CorrespUpdateComponent implements OnInit {
   uploadProgress: Map<string, number> = new Map();
   isUploading = false;
 
-  htmlContent: string = 'Ajouter Votre Contenu !';
+  htmlContent: string = '';
 
   taskObject = '';
   responsable = '';
@@ -187,7 +192,8 @@ export class CorrespUpdateComponent implements OnInit {
     protected route: ActivatedRoute,
     protected typeDocumentService: TypedocumentService,
     public router: Router,
-    protected contactCompanyService: ContactCompanyService
+    protected contactCompanyService: ContactCompanyService,
+    protected parentClassdefService: ParentClassdefService
   ) {}
 
   // --------------------------------------------------------------------------
@@ -626,14 +632,54 @@ export class CorrespUpdateComponent implements OnInit {
   }
 
   // --------------------------------------------------------------------------
-  // Save correspondance (unchanged)
+  // Identifier : génère uniquement la référence sans sauvegarder
   // --------------------------------------------------------------------------
-  saveCorresp(withReference: boolean): void {
+  generateReference(): void {
+    // Déduire le corresptype selon la sélection courante
+    let correspTypeValue: string = '';
+    switch (this.correspType) {
+      case 'Arrivée':
+        correspTypeValue = CorrespType.INCOMING as unknown as string;
+        break;
+      case 'Sortant':
+        correspTypeValue = CorrespType.OUTGOING as unknown as string;
+        break;
+      case 'Interne':
+        correspTypeValue = CorrespType.INTERNAL as unknown as string;
+        break;
+    }
+
+    if (!correspTypeValue) {
+      this.showNotification("Veuillez sélectionner le type de correspondance avant d'identifier", 'error');
+      return;
+    }
+
+    this.isGeneratingReference = true;
+    this.parentClassdefService.getNextNumber(correspTypeValue).subscribe({
+      next: nextNumber => {
+        this.generatedReference = nextNumber || '';
+        this.isGeneratingReference = false;
+        this.showNotification(`Référence générée : ${this.generatedReference}`, 'success');
+      },
+      error: () => {
+        this.isGeneratingReference = false;
+        this.showNotification('Échec de la génération de la référence', 'error');
+      },
+    });
+  }
+
+  // --------------------------------------------------------------------------
+  // Save correspondance
+  // --------------------------------------------------------------------------
+  saveCorresp(withReference?: boolean): void {
     this.validationInfoGenErrors = {};
 
     if (!this.validateInfoGeneralesForm()) {
       return;
     }
+
+    // Réinitialiser les listes pour éviter l'accumulation lors de clics multiples
+    this.tasksToSave = [];
 
     if (!this.corresp) {
       this.corresp = {} as ICorresp;
@@ -651,7 +697,7 @@ export class CorrespUpdateComponent implements OnInit {
     this.corresp!.priority = this.priorite === 'Prioritaire';
     this.corresp!.body = this.htmlContent;
 
-    this.corresp!.dispatchType = (this.dispatchType as DispatchType) || DispatchType.EMAIL;
+    this.corresp!.dispatchType = (this.dispatchType as DispatchType) || DispatchType.LETTER;
 
     switch (this.correspType) {
       case 'Arrivée':
@@ -674,19 +720,15 @@ export class CorrespUpdateComponent implements OnInit {
       this.tasksToSave.push(taskModel);
     });
 
+    // Utiliser la référence générée par "Identifier" si disponible
+    if (this.generatedReference) {
+      this.corresp!.reference = this.generatedReference;
+    }
+
     this.correspService
-      .saveCorrespWithTasksAndPj(this.corresp, this.tasksToSave, this.pjsToSave, this.selectedTypeDocument, withReference)
-      .subscribe((res: any) => {
-        if (!withReference) {
-          this.router.navigate(['/corresp']);
-          return;
-        }
-        const body: any = res && res.body ? res.body : res;
-        if (body && typeof body === 'object') {
-          this.corresp = body as ICorresp;
-        }
-        const ref = body && body.reference ? ` Référence: ${body.reference}` : '';
-        this.showNotification(`Correspondance identifiée.${ref}`, 'success');
+      .saveCorrespWithTasksAndPj(this.corresp, this.tasksToSave, this.pjsToSave, this.selectedTypeDocument, false)
+      .subscribe(() => {
+        this.router.navigate(['/corresp']);
       });
   }
 

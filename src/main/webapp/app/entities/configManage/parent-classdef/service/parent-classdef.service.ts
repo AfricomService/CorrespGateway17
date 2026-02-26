@@ -55,6 +55,16 @@ export class ParentClassdefService {
     return o1 && o2 ? this.getParentClassdefIdentifier(o1) === this.getParentClassdefIdentifier(o2) : o1 === o2;
   }
 
+  /**
+   * Récupère le numéro suivant pour le type donné (renvoie une chaîne plain text).
+   * Exemple d'URL (via gateway) : /services/configmanage/api/parent-classdefs/next/INCOMING
+   */
+  getNextNumber(type: string): Observable<string> {
+    const url = `${this.resourceUrl}/next/${encodeURIComponent(type)}`;
+    // responseType: 'text' => HttpClient renverra Observable<string>
+    return this.http.get(url, { responseType: 'text' });
+  }
+
   addParentClassdefToCollectionIfMissing<Type extends Pick<IParentClassdef, 'id'>>(
     parentClassdefCollection: Type[],
     ...parentClassdefsToCheck: (Type | null | undefined)[]

@@ -33,11 +33,11 @@
       >
         {{ correspType }}
       </h5>
-      <div *ngIf="corresp?.reference" style="font-weight: bold; font-size: 1.1em; color: #2c3e50; font-style: italic">
-        {{ corresp?.reference }}
+      <div *ngIf="generatedReference" style="font-weight: bold; font-size: 1.1em; color: #2c3e50; font-style: italic">
+        {{ generatedReference }}
       </div>
       <button
-        *ngIf="!corresp?.reference"
+        *ngIf="!generatedReference"
         class="btn btn-outline-secondary btn-sm"
         style="
           font-weight: 600;
@@ -49,10 +49,12 @@
           align-items: center;
           justify-content: center;
         "
-        (click)="saveCorresp(true)"
+        [disabled]="isGeneratingReference"
+        (click)="generateReference()"
         [attr.title]="'correspCareApp.correspManageCorresp.update.identify' | translate"
       >
-        <fa-icon icon="id-badge"></fa-icon>
+        <fa-icon *ngIf="!isGeneratingReference" icon="id-badge"></fa-icon>
+        <span *ngIf="isGeneratingReference" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
       </button>
     </div>
 
