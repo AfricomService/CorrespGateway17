@@ -61,7 +61,7 @@
     <!-- Right Side Button -->
     <div style="display: flex; gap: 1em; align-items: center">
       <button
-        [disabled]="isUploading"
+        [disabled]="isUploading || isSaving"
         (click)="saveCorresp(false)"
         class="btn btn-primary btn-sm"
         style="

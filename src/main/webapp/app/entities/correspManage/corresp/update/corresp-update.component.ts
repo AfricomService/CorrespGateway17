@@ -672,11 +672,18 @@ export class CorrespUpdateComponent implements OnInit {
   // Save correspondance
   // --------------------------------------------------------------------------
   saveCorresp(withReference?: boolean): void {
+    // Protection contre le double-clic
+    if (this.isSaving) {
+      return;
+    }
+
     this.validationInfoGenErrors = {};
 
     if (!this.validateInfoGeneralesForm()) {
       return;
     }
+
+    this.isSaving = true;
 
     // Réinitialiser les listes pour éviter l'accumulation lors de clics multiples
     this.tasksToSave = [];
@@ -727,8 +734,14 @@ export class CorrespUpdateComponent implements OnInit {
 
     this.correspService
       .saveCorrespWithTasksAndPj(this.corresp, this.tasksToSave, this.pjsToSave, this.selectedTypeDocument, false)
-      .subscribe(() => {
-        this.router.navigate(['/corresp']);
+      .subscribe({
+        next: () => {
+          this.isSaving = false;
+          this.router.navigate(['/corresp']);
+        },
+        error: () => {
+          this.isSaving = false;
+        },
       });
   }
 

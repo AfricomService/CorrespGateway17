@@ -14,7 +14,8 @@ import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ITypedocument } from '../../../configManage/typedocument/typedocument.model';
 import { IDepartement } from '../../../orgacare/departement/departement.model';
 import { TypedocumentService } from '../../../configManage/typedocument/service/typedocument.service';
-import { switchMap } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { FilePreviewComponent } from '../../pj/file-preview/file-preview.component';
 import { saveAs } from 'file-saver';
 import { ContactCompanyService } from 'app/entities/configManage/contact-company/service/contact-company.service';
@@ -171,9 +172,14 @@ export class CorrespDetailComponent implements OnInit {
   taskPermissions: { [key: number]: PermissionDTO } = {};
   // tâches appartenant réellement à l'utilisateur (ACL)
   userAclTaskIds: Set<number> = new Set<number>();
+  // Cache complet des tâches ACL avec responsables résolus (venant de getAllTasksByUserAclAllStatuses)
+  private userAclTasksMap: Map<number, ITasks> = new Map();
   private currentAccountLogin: string | null = null;
   private currentUserId: number | null = null;
   isGlobalAdmin = false;
+
+  // Cache pour la résolution des noms de départements
+  private deptNameByCode: Map<string, string> = new Map();
 
   constructor(
     protected activatedRoute: ActivatedRoute,
@@ -237,9 +243,8 @@ export class CorrespDetailComponent implements OnInit {
       const list = res.body || [];
       this.taskService.enrichTasksWithCanModify(list).subscribe(enriched => {
         this.tachesAssociees = enriched || [];
-        console.log(this.tachesAssociees);
+        this.resolveResponsableNames();
         this.refreshUserAclEnablement();
-        // Re-vérifier les permissions si les tâches arrivent après loadPermissionsForCorresp
         this.recomputeCorrespPermsFromUserAclTasks();
         setTimeout(() => this.scrollToTaskIfRequested(), 0);
       });
@@ -417,7 +422,14 @@ export class CorrespDetailComponent implements OnInit {
         if (this.canReadCorresp || this.isGlobalAdmin) {
           console.log('[PERMISSIONS] Permissions resolved from backend directly');
           if (!(this.canAdminCorresp || this.isGlobalAdmin)) {
-            this.loadCurrentUserAndAclTasks();
+            // Charger les tâches ACL de l'utilisateur pour :
+            // 1) activer/désactiver les boutons sur les tâches individuelles
+            // 2) recalculer canWriteCorresp si pas encore résolu
+            this.loadCurrentUserAndAclTasks(() => {
+              if (!this.canWriteCorresp) {
+                this.recomputeCorrespPermsFromUserAclTasks();
+              }
+            });
           }
           return;
         }
@@ -438,13 +450,16 @@ export class CorrespDetailComponent implements OnInit {
         });
       },
       error: err => {
-        console.error('Erreur chargement permissions', err);
+        console.warn('Erreur chargement permissions, tentative fallback via ACL tasks', err);
         this.canReadCorresp = false;
         this.canWriteCorresp = false;
         this.canDeleteCorresp = false;
         this.canAdminCorresp = false;
 
-        this.showNotification('Impossible de récupérer vos droits. Accès en lecture interdit.', 'error');
+        // Fallback : tenter de résoudre les permissions via les tâches ACL de l'utilisateur
+        this.loadCurrentUserAndAclTasks(() => {
+          this.recomputeCorrespPermsFromUserAclTasks();
+        });
       },
     });
   }
@@ -459,25 +474,31 @@ export class CorrespDetailComponent implements OnInit {
           next: resp => {
             const list = resp.body || [];
             const ids = new Set<number>();
+            this.userAclTasksMap.clear();
             list.forEach(t => {
               const tid: any = (t as any)?.id;
               const numId = typeof tid === 'string' ? Number(tid) : tid;
               if (typeof numId === 'number' && !isNaN(numId)) {
                 ids.add(numId);
+                this.userAclTasksMap.set(numId, t);
               }
             });
             this.userAclTaskIds = ids;
             console.log('[PERMISSIONS] userAclTaskIds loaded:', Array.from(ids));
+            // Enrichir les tâches associées avec les responsables des tâches ACL
+            this.enrichTachesAssocieesFromAclTasks();
             this.refreshUserAclEnablement();
             if (callback) callback();
           },
           error: () => {
             this.userAclTaskIds.clear();
+            this.userAclTasksMap.clear();
             if (callback) callback();
           },
         });
       } else {
         this.userAclTaskIds.clear();
+        this.userAclTasksMap.clear();
         if (callback) callback();
       }
     });
@@ -488,14 +509,49 @@ export class CorrespDetailComponent implements OnInit {
   }
 
   /**
+   * Enrichit les tâches de tachesAssociees avec les responsables résolus
+   * provenant de l'endpoint getAllTasksByUserAclAllStatuses (qui contient
+   * les responsables[] avec deptName et personneName déjà résolus).
+   */
+  private enrichTachesAssocieesFromAclTasks(): void {
+    if (!this.tachesAssociees || this.tachesAssociees.length === 0 || this.userAclTasksMap.size === 0) return;
+    let enriched = false;
+    this.tachesAssociees.forEach(task => {
+      const aclTask = this.userAclTasksMap.get(task.id);
+      if (aclTask) {
+        const aclResponsables = (aclTask as any).responsables;
+        if (Array.isArray(aclResponsables) && aclResponsables.length > 0) {
+          // Copier les responsables résolus vers la tâche associée
+          (task as any).responsables = aclResponsables;
+          enriched = true;
+        }
+      }
+    });
+    if (enriched) {
+      // Re-construire les noms de responsables avec les données enrichies
+      this.resolveResponsableNames();
+    }
+  }
+  /**
    * Utilise userAclTaskIds (de l'endpoint SQL direct tasksByUserAclAllStatuses)
    * pour résoudre les permissions de la corresp quand le backend permissions
    * retourne tout false. Si le user a accès ACL à une tâche de cette corresp,
    * il a le droit de lire/écrire la corresp selon le taskType.
    */
   private recomputeCorrespPermsFromUserAclTasks(): void {
-    if (this.canReadCorresp || this.isGlobalAdmin) {
-      return; // Déjà OK
+    // Si admin global => déjà tout autorisé
+    if (this.isGlobalAdmin) {
+      return;
+    }
+
+    // Si déjà résolu (canRead ET canWrite) => pas besoin de recalculer
+    if (this.canReadCorresp && this.canWriteCorresp) {
+      return;
+    }
+
+    // Si les données ne sont pas encore chargées, on ne fait rien (sera rappelé plus tard)
+    if (!this.tachesAssociees || this.tachesAssociees.length === 0 || this.userAclTaskIds.size === 0) {
+      return;
     }
 
     // Trouver les tâches de cette corresp auxquelles le user a accès via ACL
@@ -512,7 +568,6 @@ export class CorrespDetailComponent implements OnInit {
     );
 
     if (accessibleTaskIds.length === 0) {
-      // Le user n'a accès à aucune tâche de cette corresp via ACL
       // Vérifier aussi via selectedTaskId (le taskId passé en query param depuis la page home)
       if (this.selectedTaskId != null && this.userAclTaskIds.has(this.selectedTaskId)) {
         accessibleTaskIds.push(this.selectedTaskId);
@@ -522,27 +577,186 @@ export class CorrespDetailComponent implements OnInit {
 
     if (accessibleTaskIds.length === 0) {
       console.warn('[PERMISSIONS] User has NO ACL access to any task of this corresp');
-      this.showNotification("Vous n'avez pas le droit de consulter cette correspondance", 'error');
       return;
     }
 
     // Le user a accès à au moins une tâche => il peut lire la corresp
-    this.canReadCorresp = true;
-    console.log('[PERMISSIONS] recompute: granted canRead from ACL task access');
+    if (!this.canReadCorresp) {
+      this.canReadCorresp = true;
+      console.log('[PERMISSIONS] recompute: granted canRead from ACL task access');
+    }
 
     // Vérifier si une tâche accessible a un taskType qui donne WRITE sur la corresp
-    const accessibleTasks = (this.tachesAssociees || []).filter(t => accessibleTaskIds.includes(t.id));
-    const hasWritableTask = accessibleTasks.some(t => {
-      const tt = (t.taskType || '').toLowerCase();
-      return tt === 'traitement' || tt === 'signature' || tt === 'validation';
-    });
+    if (!this.canWriteCorresp) {
+      const accessibleTasks = (this.tachesAssociees || []).filter(t => accessibleTaskIds.includes(t.id));
+      console.log(
+        '[PERMISSIONS] recompute: accessible tasks taskTypes=',
+        accessibleTasks.map(t => ({ id: t.id, taskType: t.taskType }))
+      );
+      const hasWritableTask = accessibleTasks.some(t => {
+        const tt = (t.taskType || '').toLowerCase();
+        return tt === 'traitement' || tt === 'signature' || tt === 'validation';
+      });
 
-    if (hasWritableTask) {
-      this.canWriteCorresp = true;
-      console.log('[PERMISSIONS] recompute: granted canWrite from task with taskType traitement/signature/validation');
+      if (hasWritableTask) {
+        this.canWriteCorresp = true;
+        console.log('[PERMISSIONS] recompute: granted canWrite from task with taskType traitement/signature/validation');
+      }
     }
 
     console.log('[PERMISSIONS] recompute final: canRead=' + this.canReadCorresp + ' canWrite=' + this.canWriteCorresp);
+  }
+
+  /**
+   * Résout le nom du responsable pour chaque tâche et le met dans task.responsableName.
+   * Utilise les champs responsables[].personneName, responsables[].deptName, ou résout
+   * responsables[].codeDept via OrgaCare si nécessaire.
+   */
+  private resolveResponsableNames(): void {
+    const tasks = this.tachesAssociees || [];
+    if (tasks.length === 0) return;
+
+    // 1) Collecter les codes de départements à résoudre
+    const codesToResolve = new Set<string>();
+    tasks.forEach(t => {
+      const responsables = (t as any).responsables;
+      if (Array.isArray(responsables) && responsables.length > 0) {
+        responsables.forEach((r: any) => {
+          if (!r) return;
+          // Si pas de personneName ni deptName, on doit résoudre le codeDept
+          if (!r.personneName && !r.deptName && r.codeDept) {
+            const code = r.codeDept.toString().trim();
+            if (code && !this.deptNameByCode.has(code)) {
+              codesToResolve.add(code);
+            }
+          }
+        });
+      } else if ((t as any).responsible) {
+        const code = ((t as any).responsible || '').toString().trim();
+        if (code && !this.deptNameByCode.has(code)) {
+          codesToResolve.add(code);
+        }
+      } else {
+        // Pas de responsables ni responsible => extraire depuis object
+        const extracted = this.extractResponsableFromObject(t.object);
+        if (extracted) {
+          // Le code extrait peut être un codeDept (ex: "Dept-00002") ou un matricule
+          // On essaie de le résoudre via OrgaCare
+          const code = extracted.trim();
+          if (code && !this.deptNameByCode.has(code)) {
+            codesToResolve.add(code);
+          }
+        }
+      }
+    });
+
+    // 2) Résoudre les codes manquants via OrgaCare puis construire les noms
+    const missing = Array.from(codesToResolve);
+    if (missing.length === 0) {
+      this.buildResponsableNamesForTasks();
+      return;
+    }
+
+    const calls = missing.map(code =>
+      this.correspService.queryOrgaDepsByCode({ code }).pipe(catchError(() => of(new HttpResponse({ body: null }))))
+    );
+
+    forkJoin(calls).subscribe({
+      next: responses => {
+        responses.forEach((res, idx) => {
+          const dep = res.body as any;
+          const code = missing[idx];
+          const name = dep ? dep.nom || dep.name || dep.libelle || dep.description || dep.code || code : code;
+          this.deptNameByCode.set(code, name || code);
+        });
+      },
+      complete: () => {
+        this.buildResponsableNamesForTasks();
+      },
+    });
+  }
+
+  /**
+   * Construit task.responsableName pour chaque tâche à partir des responsables résolus.
+   * Priorité :
+   *  1) responsables[] (personneName / deptName / codeDept résolu / matriculePers)
+   *  2) responsible (ancien champ string)
+   *  3) responsableName déjà rempli par le backend
+   *  4) Extraction depuis le champ 'object' ("NomResp effectuera la tâche de ...")
+   */
+  private buildResponsableNamesForTasks(): void {
+    (this.tachesAssociees || []).forEach(task => {
+      const displays: string[] = [];
+      const responsables = (task as any).responsables;
+
+      if (Array.isArray(responsables) && responsables.length > 0) {
+        responsables.forEach((r: any) => {
+          if (!r) return;
+          const pName = r.personneName;
+          const dName = r.deptName;
+          const codeDept = r.codeDept;
+          const matricule = r.matriculePers;
+
+          if (pName && pName.toString().trim()) {
+            displays.push(pName.toString().trim());
+          } else if (dName && dName.toString().trim()) {
+            displays.push(dName.toString().trim());
+          } else if (codeDept && codeDept.toString().trim()) {
+            const code = codeDept.toString().trim();
+            const resolved = this.deptNameByCode.get(code);
+            displays.push(resolved || code);
+          } else if (matricule && matricule.toString().trim()) {
+            displays.push(matricule.toString().trim());
+          }
+        });
+      } else if ((task as any).responsible) {
+        const code = ((task as any).responsible || '').toString().trim();
+        if (code) {
+          const name = this.deptNameByCode.get(code);
+          displays.push(name || code);
+        }
+      } else {
+        // Pas de responsables ni responsible => extraire depuis object et résoudre
+        const extracted = this.extractResponsableFromObject(task.object);
+        if (extracted) {
+          const code = extracted.trim();
+          const resolved = this.deptNameByCode.get(code);
+          displays.push(resolved || code);
+        }
+      }
+
+      // Dédoublonner et joindre
+      const uniq = Array.from(new Set(displays.map(d => (d || '').trim()).filter(s => !!s)));
+
+      if (uniq.length > 0) {
+        task.responsableName = uniq.join(', ');
+      } else if (task.responsableName && task.responsableName.trim()) {
+        // Le backend a déjà rempli responsableName (via getDepartementNomByCode) — on le garde
+      } else {
+        // Pas de données pour résoudre le nom
+        task.responsableName = null;
+      }
+    });
+  }
+
+  /**
+   * Extrait le nom du responsable depuis le champ 'object' de la tâche.
+   * Formats connus :
+   *   - "NomResponsable effectuera la tâche de TYPE ..."
+   *   - "Tâche de TYPE ..."  (pas de responsable)
+   */
+  private extractResponsableFromObject(object?: string | null): string | null {
+    if (!object) return null;
+    const obj = object.trim();
+
+    // Pattern: "XXX effectuera la tâche de ..."
+    const idx = obj.indexOf(' effectuera la tâche de ');
+    if (idx > 0) {
+      return obj.substring(0, idx).trim() || null;
+    }
+
+    // Pattern: "Tâche de ..." => pas de responsable nommé
+    return null;
   }
 
   private scrollToTaskIfRequested(): void {
