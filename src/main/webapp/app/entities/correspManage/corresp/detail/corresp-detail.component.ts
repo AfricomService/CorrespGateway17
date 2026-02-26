@@ -216,10 +216,14 @@ export class CorrespDetailComponent implements OnInit {
 
       //TODO - GET MESSAGE BY CORRESP ID AND GET PATH AND PASS IT BELOW
       //
-      this.correspService.loadBodyFromFile({ correspId: this.correspLoaded.id }).subscribe(res => {
-        console.log('res lazy body');
-        console.log(res);
-        this.htmlContent = res;
+      this.correspService.loadBodyFromFile({ correspId: this.correspLoaded.id }).subscribe({
+        next: res => {
+          this.htmlContent = res;
+        },
+        error: err => {
+          console.warn('Impossible de charger le corps du courrier (peut ne pas encore exister)', err.status);
+          this.htmlContent = '';
+        },
       });
 
       this.typeDocumentService.query({ page: 0, size: 1000 }).subscribe(res => {
@@ -234,8 +238,9 @@ export class CorrespDetailComponent implements OnInit {
       this.taskService.enrichTasksWithCanModify(list).subscribe(enriched => {
         this.tachesAssociees = enriched || [];
         console.log(this.tachesAssociees);
-        // si on a déjà les ACL, on ne fait rien, sinon on essayera après charge permissions
         this.refreshUserAclEnablement();
+        // Re-vérifier les permissions si les tâches arrivent après loadPermissionsForCorresp
+        this.recomputeCorrespPermsFromUserAclTasks();
         setTimeout(() => this.scrollToTaskIfRequested(), 0);
       });
     });
@@ -381,12 +386,13 @@ export class CorrespDetailComponent implements OnInit {
     if (!correspId) return;
     this.correspService.getPermissions(correspId).subscribe({
       next: (res: CorrespPermissionsDTO) => {
+        console.log('[PERMISSIONS] Raw response for correspId=' + correspId, JSON.stringify(res));
         const p = res?.corresp || { canRead: false, canWrite: false, canDelete: false, canAdmin: false };
 
-        this.canReadCorresp = !!p.canRead;
-        this.canWriteCorresp = !!p.canWrite;
-        this.canDeleteCorresp = !!p.canDelete;
-        this.canAdminCorresp = !!p.canAdmin;
+        this.canReadCorresp = p.canRead;
+        this.canWriteCorresp = p.canWrite;
+        this.canDeleteCorresp = p.canDelete;
+        this.canAdminCorresp = p.canAdmin;
 
         if (this.isGlobalAdmin) {
           this.canReadCorresp = true;
@@ -405,38 +411,45 @@ export class CorrespDetailComponent implements OnInit {
           }
         });
 
-        // If user has absolutely no read → show message and optionally redirect
-        if (!this.canReadCorresp && !this.isGlobalAdmin) {
-          this.showNotification('Vous n’avez pas le droit de consulter cette correspondance', 'error');
-          // optionnel : rediriger vers la liste pour éviter affichage page vide :
-          // this.router.navigate(['/corresp']);
+        console.log('[PERMISSIONS] After backend: canRead=' + this.canReadCorresp + ' canWrite=' + this.canWriteCorresp);
+
+        // Si le backend a déjà résolu les permissions => tout est OK
+        if (this.canReadCorresp || this.isGlobalAdmin) {
+          console.log('[PERMISSIONS] Permissions resolved from backend directly');
+          if (!(this.canAdminCorresp || this.isGlobalAdmin)) {
+            this.loadCurrentUserAndAclTasks();
+          }
+          return;
         }
 
-        // Charger la liste des tâches réellement accessibles par l'utilisateur si write
-        // Un admin peut tout faire; on utilise ACL pour tous les non-admins (qu'ils aient write corresp ou pas)
-        if (!(this.canAdminCorresp || this.isGlobalAdmin)) {
-          this.loadCurrentUserAndAclTasks();
-        }
+        // ---------------------------------------------------------------
+        // Le backend retourne canRead=false pour la corresp ET les tâches.
+        // Cela peut arriver car le backend vérifie les ACL avec PrincipalSid(login)
+        // mais les ACL ont été créées avec GrantedAuthoritySid(deptCode) et
+        // le service OrgaCare n'a pas pu résoudre les départements.
+        //
+        // SOLUTION : Utiliser l'endpoint getAllTasksByUserAclAllStatuses
+        // qui utilise une requête SQL directe sur les tables ACL.
+        // Si le user a accès à une tâche de cette corresp, il a le droit.
+        // ---------------------------------------------------------------
+        console.log('[PERMISSIONS] Backend returned all false - checking via user ACL tasks endpoint...');
+        this.loadCurrentUserAndAclTasks(() => {
+          this.recomputeCorrespPermsFromUserAclTasks();
+        });
       },
       error: err => {
-        // <-- ici : fallback strict (sécurité)
         console.error('Erreur chargement permissions', err);
-        // Par défaut on refuse toute modification et lecture si on ne sait pas.
         this.canReadCorresp = false;
         this.canWriteCorresp = false;
         this.canDeleteCorresp = false;
         this.canAdminCorresp = false;
 
-        // Indiquer à l'utilisateur (UX)
         this.showNotification('Impossible de récupérer vos droits. Accès en lecture interdit.', 'error');
-
-        // Optionnel selon ton UX : rediriger
-        // this.router.navigate(['/corresp']);
       },
     });
   }
 
-  private loadCurrentUserAndAclTasks(): void {
+  private loadCurrentUserAndAclTasks(callback?: () => void): void {
     this.accountService.identity().subscribe((acc: Account | null) => {
       const uid = acc != null ? (acc as any).id : null;
       this.currentAccountLogin = acc?.login ?? null;
@@ -454,20 +467,82 @@ export class CorrespDetailComponent implements OnInit {
               }
             });
             this.userAclTaskIds = ids;
+            console.log('[PERMISSIONS] userAclTaskIds loaded:', Array.from(ids));
             this.refreshUserAclEnablement();
+            if (callback) callback();
           },
           error: () => {
             this.userAclTaskIds.clear();
+            if (callback) callback();
           },
         });
       } else {
         this.userAclTaskIds.clear();
+        if (callback) callback();
       }
     });
   }
 
   private refreshUserAclEnablement(): void {
     // Hook pour déclencher la détection si nécessaire
+  }
+
+  /**
+   * Utilise userAclTaskIds (de l'endpoint SQL direct tasksByUserAclAllStatuses)
+   * pour résoudre les permissions de la corresp quand le backend permissions
+   * retourne tout false. Si le user a accès ACL à une tâche de cette corresp,
+   * il a le droit de lire/écrire la corresp selon le taskType.
+   */
+  private recomputeCorrespPermsFromUserAclTasks(): void {
+    if (this.canReadCorresp || this.isGlobalAdmin) {
+      return; // Déjà OK
+    }
+
+    // Trouver les tâches de cette corresp auxquelles le user a accès via ACL
+    const correspTaskIds = (this.tachesAssociees || []).map(t => t.id);
+    const accessibleTaskIds = correspTaskIds.filter(id => this.userAclTaskIds.has(id));
+
+    console.log(
+      '[PERMISSIONS] recompute: correspTaskIds=',
+      correspTaskIds,
+      ' userAclTaskIds=',
+      Array.from(this.userAclTaskIds),
+      ' intersection=',
+      accessibleTaskIds
+    );
+
+    if (accessibleTaskIds.length === 0) {
+      // Le user n'a accès à aucune tâche de cette corresp via ACL
+      // Vérifier aussi via selectedTaskId (le taskId passé en query param depuis la page home)
+      if (this.selectedTaskId != null && this.userAclTaskIds.has(this.selectedTaskId)) {
+        accessibleTaskIds.push(this.selectedTaskId);
+        console.log('[PERMISSIONS] recompute: found selectedTaskId', this.selectedTaskId, 'in userAclTaskIds');
+      }
+    }
+
+    if (accessibleTaskIds.length === 0) {
+      console.warn('[PERMISSIONS] User has NO ACL access to any task of this corresp');
+      this.showNotification("Vous n'avez pas le droit de consulter cette correspondance", 'error');
+      return;
+    }
+
+    // Le user a accès à au moins une tâche => il peut lire la corresp
+    this.canReadCorresp = true;
+    console.log('[PERMISSIONS] recompute: granted canRead from ACL task access');
+
+    // Vérifier si une tâche accessible a un taskType qui donne WRITE sur la corresp
+    const accessibleTasks = (this.tachesAssociees || []).filter(t => accessibleTaskIds.includes(t.id));
+    const hasWritableTask = accessibleTasks.some(t => {
+      const tt = (t.taskType || '').toLowerCase();
+      return tt === 'traitement' || tt === 'signature' || tt === 'validation';
+    });
+
+    if (hasWritableTask) {
+      this.canWriteCorresp = true;
+      console.log('[PERMISSIONS] recompute: granted canWrite from task with taskType traitement/signature/validation');
+    }
+
+    console.log('[PERMISSIONS] recompute final: canRead=' + this.canReadCorresp + ' canWrite=' + this.canWriteCorresp);
   }
 
   private scrollToTaskIfRequested(): void {

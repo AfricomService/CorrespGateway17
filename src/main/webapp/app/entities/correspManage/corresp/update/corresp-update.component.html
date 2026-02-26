@@ -33,11 +33,11 @@
       >
         {{ correspType }}
       </h5>
-      <div *ngIf="corresp?.reference" style="font-weight: bold; font-size: 1.1em; color: #2c3e50; font-style: italic">
-        {{ corresp?.reference }}
+      <div *ngIf="generatedReference" style="font-weight: bold; font-size: 1.1em; color: #2c3e50; font-style: italic">
+        {{ generatedReference }}
       </div>
       <button
-        *ngIf="!corresp?.reference"
+        *ngIf="!generatedReference"
         class="btn btn-outline-secondary btn-sm"
         style="
           font-weight: 600;
@@ -49,10 +49,12 @@
           align-items: center;
           justify-content: center;
         "
+        [disabled]="isGeneratingReference"
         (click)="generateReference()"
         [attr.title]="'correspCareApp.correspManageCorresp.update.identify' | translate"
       >
-        <fa-icon icon="id-badge"></fa-icon>
+        <fa-icon *ngIf="!isGeneratingReference" icon="id-badge"></fa-icon>
+        <span *ngIf="isGeneratingReference" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
       </button>
     </div>
 
@@ -282,8 +284,6 @@
                         class="form-control"
                         [class.is-invalid]="validationInfoGenErrors['destinataire']"
                         [(ngModel)]="destinataireLabel"
-                        [readonly]="true"
-                        [disabled]="!selectedTypeDocument"
                         (ngModelChange)="onRecipientOrCcChange()"
                         name="destinataire"
                         [placeholder]="'correspCareApp.correspManageCorresp.update.enterRecipient' | translate"
@@ -293,16 +293,7 @@
                       </div>
                     </div>
 
-                    <button
-                      type="button"
-                      class="btn btn-outline-secondary"
-                      (click)="openDestModal(SelectDestModal)"
-                      [attr.title]="'Choisir depuis l’organigramme'"
-                      [disabled]="!selectedTypeDocument"
-                      style="padding: 6px 8px; display: inline-flex; align-items: center; justify-content: center"
-                    >
-                      <fa-icon icon="plus"></fa-icon>
-                    </button>
+                    <!-- Button removed -->
                   </div>
                 </div>
 
@@ -405,7 +396,6 @@
                         [(ngModel)]="contactEmailCCLabel"
                         (ngModelChange)="onRecipientOrCcChange()"
                         name="contactEmailCC"
-                        [readonly]="true"
                         placeholder="Entrer le contact en copie"
                       />
                     </div>
@@ -1104,89 +1094,4 @@
       {{ isEditMode ? 'Mettre à jour' : 'Enregistrer' }}
     </button>
   </div>
-</ng-template>
-
-<ng-template #SelectDestModal let-SelectDestModal class="modal-dialog modal-lg modal-dialog-centered">
-  <div class="modal-header">
-    <h4 class="modal-title" style="color: #2c3e50; font-weight: bold; text-transform: uppercase; font-style: italic">
-      Choisir un destinataire
-    </h4>
-  </div>
-  <div class="modal-body">
-    <div class="container-fluid">
-      <div class="row" style="padding: 0.5em 0">
-        <div class="col-md-12">
-          <input
-            type="text"
-            class="form-control"
-            [(ngModel)]="destTreeSearchQuery"
-            name="destTreeSearchQuery"
-            (input)="destOnTreeSearchChange()"
-            placeholder="Rechercher un département"
-          />
-        </div>
-      </div>
-      <div class="row" style="padding: 0.5em 0">
-        <div class="col-md-12">
-          <div *ngIf="loadingDestTree" style="text-align: center; padding: 40px 0; color: #6c757d">Chargement…</div>
-          <ul *ngIf="!loadingDestTree && destTreeFiltered?.length" style="padding-left: 0; margin: 0; list-style: none">
-            <ng-container *ngFor="let node of destTreeFiltered">
-              <ng-template [ngTemplateOutlet]="destRenderNode" [ngTemplateOutletContext]="{ node: node, level: 0 }"></ng-template>
-            </ng-container>
-          </ul>
-          <div *ngIf="!loadingDestTree && (!destTreeFiltered || destTreeFiltered.length === 0)" style="text-align: center; color: #6c757d">
-            Aucun département disponible.
-          </div>
-        </div>
-      </div>
-      <div class="row" style="padding: 0.5em 0">
-        <div class="col-md-12" style="text-align: right">
-          <button type="button" class="btn btn-outline-secondary" (click)="SelectDestModal.dismiss('close')">Fermer</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</ng-template>
-
-<ng-template #destRenderNode let-node="node" let-level="level">
-  <li style="margin: 8px 0; list-style: none">
-    <div
-      (click)="toggleNodeExpand(node.id)"
-      style="
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 12px;
-        border: 1px solid #dee2e6;
-        border-radius: 8px;
-        padding: 8px 12px;
-        background-color: #fff;
-        cursor: pointer;
-      "
-    >
-      <div style="display: flex; align-items: center; gap: 10px">
-        <span
-          style="display: inline-block; width: 10px; height: 10px; border-radius: 50%"
-          [style.backgroundColor]="getLevelColor(level)"
-        ></span>
-        <strong style="color: #2c3e50">{{ node.nom || node.code }}</strong>
-        <span *ngIf="(node.children?.length || 0) > 0" class="badge bg-secondary rounded-pill" style="font-size: 10px">{{
-          node.children?.length
-        }}</span>
-      </div>
-      <div style="display: flex; gap: 8px; align-items: center">
-        <input
-          type="checkbox"
-          class="org-checkbox"
-          [checked]="isDestDeptSelected(node)"
-          (click)="toggleDestDeptSelection(node); $event.stopPropagation()"
-        />
-      </div>
-    </div>
-    <ul *ngIf="isNodeExpanded(node.id)" style="padding-left: 16px; margin: 8px 0 0 12px; border-left: 2px dashed #dee2e6">
-      <ng-container *ngFor="let c of node.children">
-        <ng-template [ngTemplateOutlet]="destRenderNode" [ngTemplateOutletContext]="{ node: c, level: level + 1 }"></ng-template>
-      </ng-container>
-    </ul>
-  </li>
 </ng-template>

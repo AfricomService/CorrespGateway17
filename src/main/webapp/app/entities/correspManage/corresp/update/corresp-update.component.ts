@@ -62,6 +62,10 @@ export class CorrespUpdateComponent implements OnInit {
   isSaving = false;
   corresp!: ICorresp;
 
+  /** Référence générée par le bouton "Identifier" — sera utilisée lors de l'enregistrement */
+  generatedReference: string | null = null;
+  isGeneratingReference = false;
+
   tasksToSave: ITasks[] = [];
   pjsToSave: IPj[] = [];
   notificationMessage: string | null = null;
@@ -152,12 +156,6 @@ export class CorrespUpdateComponent implements OnInit {
   objectKeys = Object.keys; // helper pour template
   treeSearchQuery = '';
   taskTreeFiltered: DepartementTreeFeignDTO[] = [];
-
-  destTree: DepartementTreeFeignDTO[] = [];
-  destTreeFiltered: DepartementTreeFeignDTO[] = [];
-  loadingDestTree = false;
-  selectedDestDept: DepartementTreeFeignDTO | null = null;
-  destTreeSearchQuery = '';
 
   // réintroduction des champs pour stocker la sélection (utilisés par saveTask)
   selectedDepartement: string = '';
@@ -378,11 +376,7 @@ export class CorrespUpdateComponent implements OnInit {
     }
     this.tasks = this.tasks.map(t => {
       if (t.typeTask === 'traitement') {
-        return {
-          ...t,
-          responsableName: this.destinataireLabel || t.responsableName || '',
-          responsable: this.destinataire || t.responsable,
-        };
+        return { ...t, responsableName: this.destinataireLabel || t.responsableName || '' };
       }
       if (t.typeTask === 'lecture') {
         return { ...t, responsableName: this.contactEmailCCLabel || t.responsableName || '' };
@@ -638,14 +632,54 @@ export class CorrespUpdateComponent implements OnInit {
   }
 
   // --------------------------------------------------------------------------
-  // Save correspondance (unchanged)
+  // Identifier : génère uniquement la référence sans sauvegarder
   // --------------------------------------------------------------------------
-  saveCorresp(withReference: boolean): void {
+  generateReference(): void {
+    // Déduire le corresptype selon la sélection courante
+    let correspTypeValue: string = '';
+    switch (this.correspType) {
+      case 'Arrivée':
+        correspTypeValue = CorrespType.INCOMING as unknown as string;
+        break;
+      case 'Sortant':
+        correspTypeValue = CorrespType.OUTGOING as unknown as string;
+        break;
+      case 'Interne':
+        correspTypeValue = CorrespType.INTERNAL as unknown as string;
+        break;
+    }
+
+    if (!correspTypeValue) {
+      this.showNotification("Veuillez sélectionner le type de correspondance avant d'identifier", 'error');
+      return;
+    }
+
+    this.isGeneratingReference = true;
+    this.parentClassdefService.getNextNumber(correspTypeValue).subscribe({
+      next: nextNumber => {
+        this.generatedReference = nextNumber || '';
+        this.isGeneratingReference = false;
+        this.showNotification(`Référence générée : ${this.generatedReference}`, 'success');
+      },
+      error: () => {
+        this.isGeneratingReference = false;
+        this.showNotification('Échec de la génération de la référence', 'error');
+      },
+    });
+  }
+
+  // --------------------------------------------------------------------------
+  // Save correspondance
+  // --------------------------------------------------------------------------
+  saveCorresp(withReference?: boolean): void {
     this.validationInfoGenErrors = {};
 
     if (!this.validateInfoGeneralesForm()) {
       return;
     }
+
+    // Réinitialiser les listes pour éviter l'accumulation lors de clics multiples
+    this.tasksToSave = [];
 
     if (!this.corresp) {
       this.corresp = {} as ICorresp;
@@ -677,7 +711,6 @@ export class CorrespUpdateComponent implements OnInit {
         break;
     }
 
-    this.tasksToSave = [];
     this.tasks.forEach(t => {
       const taskModel: ITasks = {} as ITasks;
       taskModel.responsible = t.responsable;
@@ -687,27 +720,9 @@ export class CorrespUpdateComponent implements OnInit {
       this.tasksToSave.push(taskModel);
     });
 
-    if (withReference) {
-      const typeStr = (this.corresp!.corresptype as unknown as string) || '';
-      this.parentClassdefService.getNextNumber(typeStr).subscribe({
-        next: nextNumber => {
-          this.corresp!.reference = nextNumber || '';
-          this.correspService
-            .saveCorrespWithTasksAndPj(this.corresp, this.tasksToSave, this.pjsToSave, this.selectedTypeDocument, false)
-            .subscribe((res: any) => {
-              const body: any = res && res.body ? res.body : res;
-              if (body && typeof body === 'object') {
-                this.corresp = body as ICorresp;
-              }
-              const ref = body && body.reference ? ` Référence: ${body.reference}` : '';
-              this.showNotification(`Correspondance identifiée.${ref}`, 'success');
-            });
-        },
-        error: () => {
-          this.showNotification('Échec de la récupération du numéro suivant', 'error');
-        },
-      });
-      return;
+    // Utiliser la référence générée par "Identifier" si disponible
+    if (this.generatedReference) {
+      this.corresp!.reference = this.generatedReference;
     }
 
     this.correspService
@@ -715,34 +730,6 @@ export class CorrespUpdateComponent implements OnInit {
       .subscribe(() => {
         this.router.navigate(['/corresp']);
       });
-  }
-
-  generateReference(): void {
-    const typeStr = (() => {
-      switch (this.correspType) {
-        case 'Arrivée':
-          return CorrespType.INCOMING;
-        case 'Sortant':
-          return CorrespType.OUTGOING;
-        case 'Interne':
-          return CorrespType.INTERNAL;
-        default:
-          return '';
-      }
-    })() as unknown as string;
-    if (!typeStr) {
-      this.showNotification('Type de correspondance non défini', 'error');
-      return;
-    }
-    this.parentClassdefService.getNextNumber(typeStr).subscribe({
-      next: nextNumber => {
-        if (!this.corresp) this.corresp = {} as ICorresp;
-        this.corresp.reference = nextNumber || '';
-        const ref = this.corresp.reference ? ` Référence: ${this.corresp.reference}` : '';
-        this.showNotification(`Identifiant généré.${ref}`, 'success');
-      },
-      error: () => this.showNotification('Échec de la récupération du numéro suivant', 'error'),
-    });
   }
 
   validateInfoGeneralesForm(): boolean {
@@ -970,109 +957,6 @@ export class CorrespUpdateComponent implements OnInit {
         this.loadingTree = false;
       },
     });
-  }
-
-  openDestModal(modal: any): void {
-    this.prepareAndLoadOrgaThenDestTree();
-    this.modalService.open(modal, { centered: true, size: 'lg' });
-  }
-
-  private prepareAndLoadOrgaThenDestTree(): void {
-    if (this.selectedOrgaCode) {
-      this.loadDestTreeForModal(this.selectedOrgaCode);
-      return;
-    }
-    this.correspService.queryOrga().subscribe({
-      next: (res: HttpResponse<any[]>) => {
-        this.orgaList = res.body || [];
-        const first = this.orgaList?.[0];
-        if (first) {
-          this.selectedOrgaCode = first.code ?? first.orgaCode ?? first.id?.toString() ?? null;
-        }
-        if (this.selectedOrgaCode) {
-          this.loadDestTreeForModal(this.selectedOrgaCode);
-        } else {
-          this.destTree = [];
-          this.destTreeFiltered = [];
-        }
-      },
-      error: () => {
-        this.destTree = [];
-        this.destTreeFiltered = [];
-      },
-    });
-  }
-
-  private loadDestTreeForModal(orgaCode: string): void {
-    if (!orgaCode) {
-      this.destTree = [];
-      this.destTreeFiltered = [];
-      return;
-    }
-    this.loadingDestTree = true;
-    this.correspService.getDepartementTreeOnlyByOrganigramme(orgaCode).subscribe({
-      next: (res: HttpResponse<DepartementTreeFeignDTO[]>) => {
-        const body = res.body || [];
-        this.destTree = this.normalizeTree(body);
-        this.destTreeFiltered = this.destTree;
-        this.loadingDestTree = false;
-      },
-      error: () => {
-        this.destTree = [];
-        this.destTreeFiltered = [];
-        this.loadingDestTree = false;
-      },
-    });
-  }
-
-  destOnTreeSearchChange(): void {
-    const q = (this.destTreeSearchQuery || '').trim().toLowerCase();
-    if (!q) {
-      this.destTreeFiltered = this.destTree;
-      return;
-    }
-    this.destTreeFiltered = this.destFilterTree(this.destTree, q);
-    this.expandedNodes.clear();
-    this.applyAutoExpand(this.destTreeFiltered);
-  }
-
-  private destFilterTree(nodes: DepartementTreeFeignDTO[], q: string): DepartementTreeFeignDTO[] {
-    return nodes.map(n => this.destFilterNode(n, q)).filter((n): n is DepartementTreeFeignDTO => n !== null);
-  }
-
-  private destFilterNode(node: DepartementTreeFeignDTO, q: string): DepartementTreeFeignDTO | null {
-    const name = (node.nom || '').toLowerCase();
-    const match = name.includes(q);
-    const filteredChildren =
-      (node.children || []).map(c => this.destFilterNode(c, q)).filter((c): c is DepartementTreeFeignDTO => c !== null) || [];
-    if (match || filteredChildren.length > 0) {
-      return { ...node, children: filteredChildren };
-    }
-    return null;
-  }
-
-  onSelectDestDept(node: DepartementTreeFeignDTO): void {
-    this.selectedDestDept = node;
-    this.destinataireLabel = node.nom || '';
-    this.destinataire = node.code || '';
-    // ne pas enregistrer l'email; on privilégie le nom du département
-    this.onRecipientOrCcChange();
-    this.modalService.dismissAll();
-  }
-
-  isDestDeptSelected(node: DepartementTreeFeignDTO): boolean {
-    const code = node.code ?? '';
-    return (this.selectedDestDept?.code ?? '') === code;
-  }
-
-  toggleDestDeptSelection(node: DepartementTreeFeignDTO): void {
-    const code = node.code ?? '';
-    if (!code) return;
-    if (this.isDestDeptSelected(node)) {
-      this.selectedDestDept = null;
-      return;
-    }
-    this.onSelectDestDept(node);
   }
 
   // --------------------------------------------------------------------------
