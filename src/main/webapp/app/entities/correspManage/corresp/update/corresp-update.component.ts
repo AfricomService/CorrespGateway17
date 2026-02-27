@@ -393,9 +393,8 @@ export class CorrespUpdateComponent implements OnInit {
       if (t.typeTask === 'traitement') {
         return { ...t, responsableName: this.destinataireLabel || t.responsableName || '' };
       }
-      if (t.typeTask === 'lecture') {
-        return { ...t, responsableName: this.contactEmailCCLabel || t.responsableName || '' };
-      }
+      // Pour les tâches "lecture", chaque tâche garde son propre responsableName (nom du département CC)
+      // On ne les écrase pas avec un label global car il y a plusieurs CC
       return t;
     });
   }
@@ -1359,6 +1358,22 @@ export class CorrespUpdateComponent implements OnInit {
     }
     this.destinataireLabel = this.recipientSelectedDept.nom || '';
     this.destinataire = this.recipientSelectedDept.email || '';
+
+    // Mettre à jour ou créer la tâche "traitement" associée au destinataire
+    const existingIdx = this.tasks.findIndex(t => t.typeTask === 'traitement');
+    const newTaskData = {
+      typeTask: 'traitement',
+      responsable: this.recipientSelectedDept.code ?? '',
+      dateLimite: existingIdx >= 0 ? this.tasks[existingIdx].dateLimite : '',
+      responsableName: this.recipientSelectedDept.nom ?? '',
+      commentaire: existingIdx >= 0 ? this.tasks[existingIdx].commentaire : '',
+    };
+    if (existingIdx >= 0) {
+      this.tasks[existingIdx] = newTaskData;
+    } else {
+      this.tasks.push(newTaskData);
+    }
+
     this.onRecipientOrCcChange();
     modalRef.close();
   }
@@ -1367,6 +1382,22 @@ export class CorrespUpdateComponent implements OnInit {
     this.recipientSelectedDept = node;
     this.destinataireLabel = node.nom || '';
     this.destinataire = node.email || '';
+
+    // Mettre à jour ou créer la tâche "traitement" associée au destinataire
+    const existingIdx = this.tasks.findIndex(t => t.typeTask === 'traitement');
+    const newTaskData = {
+      typeTask: 'traitement',
+      responsable: node.code ?? '',
+      dateLimite: existingIdx >= 0 ? this.tasks[existingIdx].dateLimite : '',
+      responsableName: node.nom ?? '',
+      commentaire: existingIdx >= 0 ? this.tasks[existingIdx].commentaire : '',
+    };
+    if (existingIdx >= 0) {
+      this.tasks[existingIdx] = newTaskData;
+    } else {
+      this.tasks.push(newTaskData);
+    }
+
     this.onRecipientOrCcChange();
     modalRef.close();
   }
@@ -1489,18 +1520,45 @@ export class CorrespUpdateComponent implements OnInit {
     if (idx >= 0) {
       this.selectedCcDepts.splice(idx, 1);
     }
+    // Retirer la tâche "lecture" associée à ce département
+    const taskIdx = this.tasks.findIndex(t => t.typeTask === 'lecture' && t.responsable === cc.codeDept);
+    if (taskIdx >= 0) {
+      this.tasks.splice(taskIdx, 1);
+    }
     this.updateCcLabelsFromSelection();
   }
 
   clearCcSelections(): void {
     this.selectedCcDepts = [];
+    // Retirer toutes les tâches "lecture"
+    this.tasks = this.tasks.filter(t => t.typeTask !== 'lecture');
     this.updateCcLabelsFromSelection();
   }
 
   confirmCcSelection(modalRef: any): void {
     this.updateCcLabelsFromSelection();
+    this.syncCcTasks();
     this.onRecipientOrCcChange();
     modalRef.close();
+  }
+
+  /**
+   * Supprime toutes les tâches "lecture" existantes et en recrée une par département CC sélectionné.
+   */
+  private syncCcTasks(): void {
+    // Retirer toutes les tâches "lecture"
+    this.tasks = this.tasks.filter(t => t.typeTask !== 'lecture');
+
+    // Créer une tâche "lecture" par département CC
+    for (const cc of this.selectedCcDepts) {
+      this.tasks.push({
+        typeTask: 'lecture',
+        responsable: cc.codeDept ?? '',
+        dateLimite: '',
+        responsableName: cc.nomDept ?? cc.codeDept ?? '',
+        commentaire: '',
+      });
+    }
   }
 
   private updateCcLabelsFromSelection(): void {
