@@ -143,6 +143,7 @@
                     >
                     <select
                       class="form-select"
+                      [class.is-invalid]="validationInfoGenErrors['typeDocument']"
                       [(ngModel)]="selectedTypeDocument"
                       name="typeDocument"
                       (ngModelChange)="onTypeDocumentChange()"
@@ -154,6 +155,9 @@
                         {{ type.nom }}
                       </option>
                     </select>
+                    <div class="invalid-feedback" *ngIf="validationInfoGenErrors['typeDocument']" style="display: block">
+                      {{ validationInfoGenErrors['typeDocument'] }}
+                    </div>
                   </div>
                   <div style="flex: 1">
                     <label class="form-label fw-semibold"
@@ -169,7 +173,7 @@
                       [attr.min]="minDate"
                       [attr.max]="maxDate"
                     />
-                    <div class="invalid-feedback" *ngIf="validationInfoGenErrors['date']">
+                    <div class="invalid-feedback" *ngIf="validationInfoGenErrors['date']" style="display: block">
                       {{ validationInfoGenErrors['date'] }}
                     </div>
                   </div>
@@ -186,7 +190,7 @@
                     name="objet"
                     [placeholder]="'correspCareApp.correspManageCorresp.update.enterSubjectPlaceholder' | translate"
                   />
-                  <div class="invalid-feedback" *ngIf="validationInfoGenErrors['objet']">
+                  <div class="invalid-feedback" *ngIf="validationInfoGenErrors['objet']" style="display: block">
                     {{ validationInfoGenErrors['objet'] }}
                   </div>
                 </div>
@@ -266,7 +270,7 @@
                         </button>
                       </div>
 
-                      <div class="invalid-feedback" *ngIf="validationInfoGenErrors['expediteur']">
+                      <div class="invalid-feedback" *ngIf="validationInfoGenErrors['expediteur']" style="display: block">
                         {{ validationInfoGenErrors['expediteur'] }}
                       </div>
                     </div>
@@ -343,7 +347,7 @@
                         </button>
                       </div>
 
-                      <div class="invalid-feedback" *ngIf="validationInfoGenErrors['contactEmail']">
+                      <div class="invalid-feedback" *ngIf="validationInfoGenErrors['contactEmail']" style="display: block">
                         {{ validationInfoGenErrors['contactEmail'] }}
                       </div>
 

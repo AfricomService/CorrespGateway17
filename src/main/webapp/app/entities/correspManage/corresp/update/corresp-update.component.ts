@@ -657,9 +657,16 @@ export class CorrespUpdateComponent implements OnInit {
   }
 
   // --------------------------------------------------------------------------
-  // Identifier : génère uniquement la référence sans sauvegarder
+  // Identifier : génère la référence puis sauvegarde et navigue vers le détail
   // --------------------------------------------------------------------------
   generateReference(): void {
+    // Valider les champs obligatoires AVANT de générer la référence
+    this.validationInfoGenErrors = {};
+    if (!this.validateInfoGeneralesForm()) {
+      this.showNotification("Veuillez remplir tous les champs obligatoires avant d'identifier", 'error');
+      return;
+    }
+
     // Déduire le corresptype selon la sélection courante
     let correspTypeValue: string = '';
     switch (this.correspType) {
@@ -685,6 +692,8 @@ export class CorrespUpdateComponent implements OnInit {
         this.generatedReference = nextNumber || '';
         this.isGeneratingReference = false;
         this.showNotification(`Référence générée : ${this.generatedReference}`, 'success');
+        // Après génération de la référence, sauvegarder et naviguer vers le détail
+        this.saveCorresp(false, true);
       },
       error: () => {
         this.isGeneratingReference = false;
@@ -696,7 +705,7 @@ export class CorrespUpdateComponent implements OnInit {
   // --------------------------------------------------------------------------
   // Save correspondance
   // --------------------------------------------------------------------------
-  saveCorresp(withReference?: boolean): void {
+  saveCorresp(withReference?: boolean, navigateToDetail?: boolean): void {
     // Protection contre le double-clic
     if (this.isSaving) {
       return;
@@ -761,9 +770,13 @@ export class CorrespUpdateComponent implements OnInit {
     this.correspService
       .saveCorrespWithTasksAndPj(this.corresp, this.tasksToSave, this.pjsToSave, this.selectedTypeDocument, false)
       .subscribe({
-        next: () => {
+        next: (savedCorresp: any) => {
           this.isSaving = false;
-          this.router.navigate(['/corresp']);
+          if (savedCorresp?.id) {
+            this.router.navigate(['/corresp', savedCorresp.id, 'view']);
+          } else {
+            this.router.navigate(['/corresp']);
+          }
         },
         error: () => {
           this.isSaving = false;
@@ -775,18 +788,23 @@ export class CorrespUpdateComponent implements OnInit {
     let isValid = true;
     this.validationInfoGenErrors = {};
 
+    if (!this.selectedTypeDocument) {
+      this.validationInfoGenErrors['typeDocument'] = 'Le type de document est obligatoire';
+      isValid = false;
+    }
+
     if (!this.objet?.trim()) {
       this.validationInfoGenErrors['objet'] = "L'objet est obligatoire";
       isValid = false;
     }
 
-    if (!this.selectedCompanyId && !this.expediteur?.trim()) {
-      this.validationInfoGenErrors['expediteur'] = "L'expéditeur est obligatoire";
+    if (!this.date) {
+      this.validationInfoGenErrors['date'] = 'La date est obligatoire';
       isValid = false;
     }
 
-    if (!this.date) {
-      this.validationInfoGenErrors['date'] = 'La date est obligatoire';
+    if (!this.selectedCompanyId && !this.expediteur?.trim()) {
+      this.validationInfoGenErrors['expediteur'] = "L'expéditeur est obligatoire";
       isValid = false;
     }
 
