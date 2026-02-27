@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 import { finalize } from 'rxjs/operators';
 
 import { CorrespFormService, CorrespFormGroup } from './corresp-form.service';
-import { ICorresp } from '../corresp.model';
+import { ICorresp, IContactCopieCorresp } from '../corresp.model';
 import { CorrespService } from '../service/corresp.service';
 import { AlertError } from 'app/shared/alert/alert-error.model';
 import { EventManager, EventWithContent } from 'app/core/util/event-manager.service';
@@ -175,6 +175,14 @@ export class CorrespUpdateComponent implements OnInit {
   recipientSelectedDept: DepartementTreeFeignDTO | null = null;
   recipientTreeSearchQuery = '';
   recipientExpandedNodes: Set<number> = new Set();
+
+  // === CC (Contact En Copie) Tree state – multi-select ===
+  ccTree: DepartementTreeFeignDTO[] = [];
+  ccTreeFiltered: DepartementTreeFeignDTO[] = [];
+  ccLoadingTree = false;
+  ccTreeSearchQuery = '';
+  ccExpandedNodes: Set<number> = new Set();
+  selectedCcDepts: IContactCopieCorresp[] = [];
 
   // Options de type d’envoi (UI)
   dispatchTypeOptions: Array<{ value: DispatchType; label: string }> = [
@@ -399,6 +407,7 @@ export class CorrespUpdateComponent implements OnInit {
       this.destinataireLabel = '';
       this.contactEmailCC = '';
       this.contactEmailCCLabel = '';
+      this.selectedCcDepts = [];
       return;
     }
 
@@ -444,8 +453,15 @@ export class CorrespUpdateComponent implements OnInit {
       this.correspService.queryOrgaDepsByCode({ code: this.selectedTypeDocument.defaultencopie }).subscribe({
         next: (res: HttpResponse<IDepartement>) => {
           if (res.body) {
-            this.contactEmailCC = res.body.email || '';
-            this.contactEmailCCLabel = res.body.nom || '';
+            this.selectedCcDepts = [
+              {
+                idDept: res.body.id ?? null,
+                codeDept: res.body.code ?? '',
+                nomDept: res.body.nom ?? '',
+                emailDept: res.body.email ?? '',
+              },
+            ];
+            this.updateCcLabelsFromSelection();
 
             const taskData = {
               typeTask: 'lecture',
@@ -458,16 +474,19 @@ export class CorrespUpdateComponent implements OnInit {
             this.tasks.push(taskData);
             this.syncDefaultTaskNames();
           } else {
+            this.selectedCcDepts = [];
             this.contactEmailCC = '';
             this.contactEmailCCLabel = '';
           }
         },
         error: () => {
+          this.selectedCcDepts = [];
           this.contactEmailCC = '';
           this.contactEmailCCLabel = '';
         },
       });
     } else {
+      this.selectedCcDepts = [];
       this.contactEmailCC = '';
       this.contactEmailCCLabel = '';
     }
@@ -706,6 +725,7 @@ export class CorrespUpdateComponent implements OnInit {
     this.corresp!.labelDestinataire = this.destinataireLabel;
     this.corresp!.contactEmail = this.contactEmail;
     this.corresp!.labelContactCC = this.contactEmailCCLabel;
+    this.corresp!.contactCopies = this.selectedCcDepts.length > 0 ? [...this.selectedCcDepts] : null;
     this.corresp!.responseTo = this.reponseSur;
     this.corresp!.senderReference = this.referenceEmetteur;
     this.corresp!.priority = this.priorite === 'Prioritaire';
@@ -1349,6 +1369,151 @@ export class CorrespUpdateComponent implements OnInit {
     this.destinataire = node.email || '';
     this.onRecipientOrCcChange();
     modalRef.close();
+  }
+
+  // --------------------------------------------------------------------------
+  // CC (Contact En Copie) – multi-select tree
+  // --------------------------------------------------------------------------
+  openCcModal(content: any): void {
+    this.prepareAndLoadOrgaThenCcTree();
+    this.modalService.open(content, { size: 'xl' });
+  }
+
+  private prepareAndLoadOrgaThenCcTree(): void {
+    if (this.selectedOrgaCode) {
+      this.loadCcTreeForModal(this.selectedOrgaCode);
+      return;
+    }
+    this.correspService.queryOrga().subscribe({
+      next: (res: HttpResponse<any[]>) => {
+        this.orgaList = res.body || [];
+        const first = this.orgaList?.[0];
+        if (first) {
+          this.selectedOrgaCode = first.code ?? first.orgaCode ?? first.id?.toString() ?? null;
+        }
+        if (this.selectedOrgaCode) {
+          this.loadCcTreeForModal(this.selectedOrgaCode);
+        } else {
+          this.ccTree = [];
+          this.ccTreeFiltered = [];
+        }
+      },
+      error: () => {
+        this.ccTree = [];
+        this.ccTreeFiltered = [];
+      },
+    });
+  }
+
+  private loadCcTreeForModal(orgaCode: string): void {
+    if (!orgaCode) {
+      this.ccTree = [];
+      this.ccTreeFiltered = [];
+      return;
+    }
+    this.ccLoadingTree = true;
+    this.correspService.getDepartementTreeOnlyByOrganigramme(orgaCode).subscribe({
+      next: (res: HttpResponse<DepartementTreeFeignDTO[]>) => {
+        const body = res.body || [];
+        this.ccTree = this.normalizeTree(body);
+        this.ccTreeFiltered = this.ccTree;
+        this.ccLoadingTree = false;
+      },
+      error: () => {
+        this.ccTree = [];
+        this.ccTreeFiltered = [];
+        this.ccLoadingTree = false;
+      },
+    });
+  }
+
+  onCcTreeSearchChange(): void {
+    const q = (this.ccTreeSearchQuery || '').trim().toLowerCase();
+    if (!q) {
+      this.ccTreeFiltered = this.ccTree;
+      return;
+    }
+    this.ccTreeFiltered = this.filterTree(this.ccTree, q);
+    this.applyCcAutoExpand(this.ccTreeFiltered);
+  }
+
+  private applyCcAutoExpand(nodes: DepartementTreeFeignDTO[]): void {
+    const nodesToExpand: number[] = [];
+    const visit = (n: DepartementTreeFeignDTO): void => {
+      const children = n.children || [];
+      if (children.length > 0) {
+        nodesToExpand.push(n.id);
+      }
+      children.forEach(c => visit(c));
+    };
+    nodes.forEach(n => visit(n));
+    nodesToExpand.forEach(id => this.ccExpandedNodes.add(id));
+  }
+
+  toggleCcNodeExpand(nodeId: number): void {
+    if (this.ccExpandedNodes.has(nodeId)) {
+      this.ccExpandedNodes.delete(nodeId);
+    } else {
+      this.ccExpandedNodes.add(nodeId);
+    }
+  }
+
+  isCcNodeExpanded(nodeId: number): boolean {
+    return this.ccExpandedNodes.has(nodeId);
+  }
+
+  toggleCcDeptSelection(node: DepartementTreeFeignDTO): void {
+    const code = node.code ?? '';
+    if (!code) return;
+    const idx = this.selectedCcDepts.findIndex(d => d.codeDept === code);
+    if (idx >= 0) {
+      this.selectedCcDepts.splice(idx, 1);
+    } else {
+      this.selectedCcDepts.push({
+        idDept: node.id,
+        codeDept: code,
+        nomDept: node.nom ?? code,
+        emailDept: node.email ?? '',
+      });
+    }
+    this.updateCcLabelsFromSelection();
+  }
+
+  isCcDeptSelected(node: DepartementTreeFeignDTO): boolean {
+    const code = node.code ?? '';
+    return !!this.selectedCcDepts.find(d => d.codeDept === code);
+  }
+
+  removeCcDept(cc: IContactCopieCorresp): void {
+    const idx = this.selectedCcDepts.findIndex(d => d.codeDept === cc.codeDept);
+    if (idx >= 0) {
+      this.selectedCcDepts.splice(idx, 1);
+    }
+    this.updateCcLabelsFromSelection();
+  }
+
+  clearCcSelections(): void {
+    this.selectedCcDepts = [];
+    this.updateCcLabelsFromSelection();
+  }
+
+  confirmCcSelection(modalRef: any): void {
+    this.updateCcLabelsFromSelection();
+    this.onRecipientOrCcChange();
+    modalRef.close();
+  }
+
+  private updateCcLabelsFromSelection(): void {
+    if (this.selectedCcDepts.length === 0) {
+      this.contactEmailCCLabel = '';
+      this.contactEmailCC = '';
+    } else {
+      this.contactEmailCCLabel = this.selectedCcDepts.map(d => d.nomDept || d.codeDept || '').join(', ');
+      this.contactEmailCC = this.selectedCcDepts
+        .map(d => d.emailDept || '')
+        .filter(Boolean)
+        .join(', ');
+    }
   }
 
   // --------------------------------------------------------------------------

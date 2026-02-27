@@ -7,6 +7,15 @@ import { CorrespStatus } from 'app/entities/enumerations/corresp-status.model';
 import { CorrespType } from 'app/entities/enumerations/corresp-type.model';
 import { DispatchType } from 'app/entities/enumerations/dispatch-type.model';
 
+export interface IContactCopieCorresp {
+  id?: number | null;
+  idCorrsp?: number | null;
+  idDept?: number | null;
+  codeDept?: string | null;
+  nomDept?: string | null;
+  emailDept?: string | null;
+}
+
 export interface ICorresp {
   id: number;
   idinstance?: string | null;
@@ -34,6 +43,7 @@ export interface ICorresp {
   contactAddress?: string | null;
   contactEmail?: string | null;
   contactEmailCc?: string | null;
+  contactCopies?: IContactCopieCorresp[] | null;
   createdBy?: string | null;
   updatedBy?: string | null;
   labelDestinataire?: string | null;
