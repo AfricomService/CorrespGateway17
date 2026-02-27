@@ -1,0 +1,308 @@
+/* Styles for the login component */
+
+jhi-login {
+  display: block;
+  margin: -1.5% !important;
+  margin-top: -20px !important;
+
+  .login-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 80px);
+    padding: 1.5rem 1rem;
+    background: linear-gradient(135deg, #f0f4ff 0%, #e8eeff 50%, #f8faff 100%);
+  }
+
+  .login-card {
+    width: 100%;
+    max-width: 420px;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 8px 40px rgba(30, 64, 175, 0.12), 0 2px 8px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    animation: loginSlideUp 0.4s ease-out;
+  }
+
+  @keyframes loginSlideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .login-header {
+    background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%) !important;
+    padding: 1.75rem 2rem 1.5rem !important;
+    text-align: center;
+    position: relative;
+  }
+
+  .login-logo {
+    width: 52px;
+    height: 52px;
+    background: rgba(255, 255, 255, 0.18) !important;
+    border-radius: 14px;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 0.75rem;
+
+    svg {
+      width: 26px;
+      height: 26px;
+      color: #fff !important;
+      stroke: #fff !important;
+    }
+  }
+
+  .login-title {
+    color: #ffffff !important;
+    font-size: 1.4rem !important;
+    font-weight: 700 !important;
+    margin: 0 0 0.2rem !important;
+    letter-spacing: -0.01em;
+  }
+
+  .login-subtitle {
+    color: rgba(255, 255, 255, 0.8) !important;
+    font-size: 0.85rem;
+    font-weight: 400;
+    margin: 0 !important;
+  }
+
+  .login-body {
+    padding: 1.75rem 2rem 1.25rem;
+  }
+
+  .login-error-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fef2f2 !important;
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 1rem;
+    color: #991b1b !important;
+    font-size: 0.85rem;
+    font-weight: 500;
+    animation: loginShake 0.4s ease;
+
+    .error-icon {
+      flex-shrink: 0;
+      width: 18px;
+      height: 18px;
+      color: #dc2626 !important;
+      fill: #dc2626 !important;
+    }
+  }
+
+  @keyframes loginShake {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    20% {
+      transform: translateX(-4px);
+    }
+    40% {
+      transform: translateX(4px);
+    }
+    60% {
+      transform: translateX(-3px);
+    }
+    80% {
+      transform: translateX(2px);
+    }
+  }
+
+  .form-group {
+    margin-bottom: 1.1rem;
+  }
+
+  .form-label-custom {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 5px;
+  }
+
+  .form-input {
+    width: 100%;
+    height: 42px;
+    padding: 0 14px;
+    border: 1.5px solid #e5e7eb !important;
+    border-radius: 10px !important;
+    font-size: 0.9375rem;
+    color: #1f2937 !important;
+    background: #f8fafc !important;
+    transition: all 0.2s ease;
+    outline: none !important;
+    box-shadow: none !important;
+
+    &::placeholder {
+      color: #9ca3af;
+    }
+
+    &:hover {
+      border-color: #93c5fd !important;
+    }
+
+    &:focus {
+      border-color: #3b82f6 !important;
+      background: #fff !important;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12) !important;
+    }
+  }
+
+  .remember-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+  }
+
+  .remember-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+
+    input[type='checkbox'] {
+      width: 16px;
+      height: 16px;
+      accent-color: #3b82f6;
+      cursor: pointer;
+    }
+
+    span {
+      font-size: 0.8125rem;
+      color: #6b7280;
+      user-select: none;
+    }
+  }
+
+  .forgot-link {
+    font-size: 0.8125rem;
+    color: #3b82f6 !important;
+    text-decoration: none !important;
+    font-weight: 500;
+    transition: color 0.2s;
+
+    &:hover {
+      color: #1e40af !important;
+      text-decoration: underline !important;
+    }
+  }
+
+  .login-btn {
+    width: 100%;
+    height: 46px;
+    border: none !important;
+    border-radius: 10px !important;
+    background: #1e40af !important;
+    background-image: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%) !important;
+    color: #ffffff !important;
+    font-size: 0.95rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 4px 14px rgba(30, 64, 175, 0.25) !important;
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 22px rgba(30, 64, 175, 0.35) !important;
+      background: #1d4ed8 !important;
+      background-image: linear-gradient(135deg, #60a5fa 0%, #1e40af 100%) !important;
+    }
+
+    &:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 8px rgba(30, 64, 175, 0.2) !important;
+    }
+
+    svg {
+      width: 18px;
+      height: 18px;
+      color: #fff !important;
+      stroke: #fff !important;
+    }
+  }
+
+  .login-footer {
+    padding: 0 2rem 1.5rem;
+    text-align: center;
+  }
+
+  .login-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 0.75rem;
+
+    &::before,
+    &::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #e5e7eb;
+    }
+
+    span {
+      font-size: 0.75rem;
+      color: #9ca3af;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 500;
+    }
+  }
+
+  .register-link {
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin: 0;
+
+    a {
+      color: #3b82f6 !important;
+      font-weight: 600;
+      text-decoration: none;
+
+      &:hover {
+        color: #1e40af !important;
+        text-decoration: underline;
+      }
+    }
+  }
+} // end jhi-login
+
+@media (max-width: 480px) {
+  jhi-login {
+    .login-card {
+      border-radius: 12px;
+      margin: 0 0.5rem;
+    }
+
+    .login-header {
+      padding: 1.25rem 1.25rem 1rem !important;
+    }
+
+    .login-body {
+      padding: 1.25rem 1.25rem 1rem;
+    }
+
+    .login-footer {
+      padding: 0 1.25rem 1.25rem;
+    }
+  }
+}
