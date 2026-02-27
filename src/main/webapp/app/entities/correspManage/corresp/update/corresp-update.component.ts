@@ -1402,6 +1402,18 @@ export class CorrespUpdateComponent implements OnInit {
     modalRef.close();
   }
 
+  clearRecipientDept(): void {
+    this.recipientSelectedDept = null;
+    this.destinataireLabel = '';
+    this.destinataire = '';
+    // Supprimer la tâche "traitement" associée au destinataire
+    const idx = this.tasks.findIndex(t => t.typeTask === 'traitement');
+    if (idx >= 0) {
+      this.tasks.splice(idx, 1);
+    }
+    this.onRecipientOrCcChange();
+  }
+
   // --------------------------------------------------------------------------
   // CC (Contact En Copie) – multi-select tree
   // --------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import dayjs from 'dayjs/esm';
-import { ICorresp } from '../corresp.model';
+import { ICorresp, IContactCopieCorresp } from '../corresp.model';
 import { CorrespService } from '../service/corresp.service';
 import { TasksService } from '../../tasks/service/tasks.service';
 import { ITasks } from '../../tasks/tasks.model';
@@ -155,6 +155,22 @@ export class CorrespDetailComponent implements OnInit {
   selectedTaskId: number | null = null;
   taskTreeFiltered: DepartementTreeFeignDTO[] = [];
 
+  // === Recipient (Destinataire) Tree state ===
+  recipientTree: DepartementTreeFeignDTO[] = [];
+  recipientTreeFiltered: DepartementTreeFeignDTO[] = [];
+  recipientLoadingTree = false;
+  recipientSelectedDept: DepartementTreeFeignDTO | null = null;
+  recipientTreeSearchQuery = '';
+  recipientExpandedNodes: Set<number> = new Set();
+
+  // === CC (Contact En Copie) Tree state – multi-select ===
+  ccTree: DepartementTreeFeignDTO[] = [];
+  ccTreeFiltered: DepartementTreeFeignDTO[] = [];
+  ccLoadingTree = false;
+  ccTreeSearchQuery = '';
+  ccExpandedNodes: Set<number> = new Set();
+  selectedCcDepts: IContactCopieCorresp[] = [];
+
   dispatchType: DispatchType | '' = '';
   dispatchTypeOptions: Array<{ value: DispatchType; label: string }> = [
     { value: DispatchType.LETTER, label: 'Lettre' },
@@ -214,6 +230,29 @@ export class CorrespDetailComponent implements OnInit {
       this.destinataireLabel = this.correspLoaded.labelDestinataire || '';
       this.contactEmail = this.correspLoaded.contactEmail || '';
       this.contactEmailCCLabel = this.correspLoaded.labelContactCC || '';
+
+      // Peupler les chips CC depuis les données persistées
+      if (this.correspLoaded.contactCopies && this.correspLoaded.contactCopies.length > 0) {
+        this.selectedCcDepts = this.correspLoaded.contactCopies.map(cc => ({
+          id: cc.id ?? null,
+          idCorrsp: cc.idCorrsp ?? null,
+          idDept: cc.idDept ?? null,
+          codeDept: cc.codeDept ?? null,
+          nomDept: cc.nomDept ?? null,
+          emailDept: cc.emailDept ?? null,
+        }));
+      } else if (this.contactEmailCCLabel) {
+        // Fallback : parser labelContactCC pour créer des chips
+        this.selectedCcDepts = this.contactEmailCCLabel
+          .split(',')
+          .map(s => s.trim())
+          .filter(s => s.length > 0)
+          .map(name => ({
+            nomDept: name,
+            codeDept: name,
+          }));
+      }
+
       this.date = this.correspLoaded.courrierDate ? dayjs(this.correspLoaded.courrierDate).format('YYYY-MM-DD') : '';
       this.reponseSur = this.correspLoaded.responseTo || '';
       this.referenceEmetteur = this.correspLoaded.senderReference || '';
@@ -282,8 +321,10 @@ export class CorrespDetailComponent implements OnInit {
       this.objet = '';
       this.destinataire = '';
       this.destinataireLabel = '';
+      this.recipientSelectedDept = null;
       this.contactEmailCC = '';
       this.contactEmailCCLabel = '';
+      this.selectedCcDepts = [];
       return;
     }
 
@@ -299,6 +340,7 @@ export class CorrespDetailComponent implements OnInit {
             this.destinataireLabel = res.body.nom || '';
           } else {
             this.destinataire = '';
+            this.destinataireLabel = '';
           }
         },
         error: () => {
@@ -318,19 +360,29 @@ export class CorrespDetailComponent implements OnInit {
           if (res.body) {
             this.contactEmailCC = res.body.email || '';
             this.contactEmailCCLabel = res.body.nom || '';
+            this.selectedCcDepts = [
+              {
+                codeDept: this.selectedTypeDocument.defaultencopie ?? null,
+                nomDept: res.body.nom || '',
+                emailDept: res.body.email || '',
+              },
+            ];
           } else {
             this.contactEmailCC = '';
             this.contactEmailCCLabel = '';
+            this.selectedCcDepts = [];
           }
         },
         error: () => {
           this.contactEmailCC = '';
           this.contactEmailCCLabel = '';
+          this.selectedCcDepts = [];
         },
       });
     } else {
       this.contactEmailCC = '';
       this.contactEmailCCLabel = '';
+      this.selectedCcDepts = [];
     }
   }
   private sanitize(obj: any): any {
@@ -1842,5 +1894,210 @@ export class CorrespDetailComponent implements OnInit {
         this.showNotification('Erreur lors de la suppression', 'error');
       },
     });
+  }
+
+  // --------------------------------------------------------------------------
+  // Recipient (Destinataire) – organigramme tree (single-select)
+  // --------------------------------------------------------------------------
+  openRecipientModal(content: any): void {
+    this.prepareAndLoadOrgaThenRecipientTree();
+    this.modalService.open(content, { size: 'xl' });
+  }
+
+  private prepareAndLoadOrgaThenRecipientTree(): void {
+    if (this.selectedOrgaCode) {
+      this.loadRecipientTree(this.selectedOrgaCode);
+    } else {
+      this.correspService.queryOrga().subscribe({
+        next: (res: HttpResponse<any[]>) => {
+          this.orgaList = res.body || [];
+          const first = this.orgaList?.[0];
+          if (first) {
+            this.selectedOrgaCode = first.code ?? first.orgaCode ?? first.id?.toString() ?? null;
+          }
+          if (this.selectedOrgaCode) {
+            this.loadRecipientTree(this.selectedOrgaCode);
+          }
+        },
+        error: () => {
+          this.recipientTree = [];
+        },
+      });
+    }
+  }
+
+  private loadRecipientTree(orgaCode: string): void {
+    this.recipientLoadingTree = true;
+    this.correspService.getDepartementHierarchyByOrganigramme(orgaCode).subscribe({
+      next: (res: HttpResponse<DepartementTreeFeignDTO[]>) => {
+        this.recipientTree = this.normalizeTree(res.body || []);
+        this.recipientTreeFiltered = this.recipientTree;
+        this.recipientLoadingTree = false;
+      },
+      error: () => {
+        this.recipientTree = [];
+        this.recipientTreeFiltered = [];
+        this.recipientLoadingTree = false;
+      },
+    });
+  }
+
+  filterRecipientTree(): void {
+    const q = (this.recipientTreeSearchQuery || '').trim().toLowerCase();
+    if (!q) {
+      this.recipientTreeFiltered = this.recipientTree;
+      return;
+    }
+    this.recipientTreeFiltered = this.filterTree(this.recipientTree, q);
+    this.expandAllFilteredNodes(this.recipientTreeFiltered, this.recipientExpandedNodes);
+  }
+
+  toggleRecipientNodeExpand(nodeId: number): void {
+    if (this.recipientExpandedNodes.has(nodeId)) {
+      this.recipientExpandedNodes.delete(nodeId);
+    } else {
+      this.recipientExpandedNodes.add(nodeId);
+    }
+  }
+
+  isRecipientNodeExpanded(nodeId: number): boolean {
+    return this.recipientExpandedNodes.has(nodeId);
+  }
+
+  selectRecipientDept(node: DepartementTreeFeignDTO, modalRef: any): void {
+    this.recipientSelectedDept = node;
+    this.destinataireLabel = node.nom || '';
+    this.destinataire = node.email || '';
+    modalRef.close();
+  }
+
+  clearRecipientDept(): void {
+    this.recipientSelectedDept = null;
+    this.destinataireLabel = '';
+    this.destinataire = '';
+  }
+
+  // --------------------------------------------------------------------------
+  // CC (Contact En Copie) – organigramme tree (multi-select)
+  // --------------------------------------------------------------------------
+  openCcModal(content: any): void {
+    this.prepareAndLoadOrgaThenCcTree();
+    this.modalService.open(content, { size: 'xl' });
+  }
+
+  private prepareAndLoadOrgaThenCcTree(): void {
+    if (this.selectedOrgaCode) {
+      this.loadCcTree(this.selectedOrgaCode);
+    } else {
+      this.correspService.queryOrga().subscribe({
+        next: (res: HttpResponse<any[]>) => {
+          this.orgaList = res.body || [];
+          const first = this.orgaList?.[0];
+          if (first) {
+            this.selectedOrgaCode = first.code ?? first.orgaCode ?? first.id?.toString() ?? null;
+          }
+          if (this.selectedOrgaCode) {
+            this.loadCcTree(this.selectedOrgaCode);
+          }
+        },
+        error: () => {
+          this.ccTree = [];
+        },
+      });
+    }
+  }
+
+  private loadCcTree(orgaCode: string): void {
+    this.ccLoadingTree = true;
+    this.correspService.getDepartementHierarchyByOrganigramme(orgaCode).subscribe({
+      next: (res: HttpResponse<DepartementTreeFeignDTO[]>) => {
+        this.ccTree = this.normalizeTree(res.body || []);
+        this.ccTreeFiltered = this.ccTree;
+        this.ccLoadingTree = false;
+      },
+      error: () => {
+        this.ccTree = [];
+        this.ccTreeFiltered = [];
+        this.ccLoadingTree = false;
+      },
+    });
+  }
+
+  filterCcTree(): void {
+    const q = (this.ccTreeSearchQuery || '').trim().toLowerCase();
+    if (!q) {
+      this.ccTreeFiltered = this.ccTree;
+      return;
+    }
+    this.ccTreeFiltered = this.filterTree(this.ccTree, q);
+    this.expandAllFilteredNodes(this.ccTreeFiltered, this.ccExpandedNodes);
+  }
+
+  toggleCcNodeExpand(nodeId: number): void {
+    if (this.ccExpandedNodes.has(nodeId)) {
+      this.ccExpandedNodes.delete(nodeId);
+    } else {
+      this.ccExpandedNodes.add(nodeId);
+    }
+  }
+
+  isCcNodeExpanded(nodeId: number): boolean {
+    return this.ccExpandedNodes.has(nodeId);
+  }
+
+  toggleCcDept(node: DepartementTreeFeignDTO): void {
+    const code = node.code ?? '';
+    const idx = this.selectedCcDepts.findIndex(d => d.codeDept === code);
+    if (idx >= 0) {
+      this.selectedCcDepts.splice(idx, 1);
+    } else {
+      this.selectedCcDepts.push({
+        idDept: node.id ?? null,
+        codeDept: code,
+        nomDept: node.nom ?? '',
+        emailDept: node.email ?? '',
+      });
+    }
+  }
+
+  isCcDeptSelected(node: DepartementTreeFeignDTO): boolean {
+    return !!this.selectedCcDepts.find(d => d.codeDept === (node.code ?? ''));
+  }
+
+  removeCcDept(cc: IContactCopieCorresp): void {
+    const idx = this.selectedCcDepts.findIndex(d => d.codeDept === cc.codeDept);
+    if (idx >= 0) {
+      this.selectedCcDepts.splice(idx, 1);
+    }
+    this.updateCcLabelsFromSelection();
+  }
+
+  confirmCcSelection(modalRef: any): void {
+    this.updateCcLabelsFromSelection();
+    modalRef.close();
+  }
+
+  private updateCcLabelsFromSelection(): void {
+    if (this.selectedCcDepts.length === 0) {
+      this.contactEmailCCLabel = '';
+      this.contactEmailCC = '';
+    } else {
+      this.contactEmailCCLabel = this.selectedCcDepts.map(d => d.nomDept || d.codeDept || '').join(', ');
+      this.contactEmailCC = this.selectedCcDepts
+        .map(d => d.emailDept || '')
+        .filter(Boolean)
+        .join(', ');
+    }
+  }
+
+  private expandAllFilteredNodes(nodes: DepartementTreeFeignDTO[], expandedSet: Set<number>): void {
+    for (const node of nodes) {
+      if (node.id != null) {
+        expandedSet.add(node.id);
+      }
+      if (node.children?.length) {
+        this.expandAllFilteredNodes(node.children, expandedSet);
+      }
+    }
   }
 }
