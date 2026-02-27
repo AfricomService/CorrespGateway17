@@ -169,6 +169,13 @@ export class CorrespUpdateComponent implements OnInit {
   orgaList: any[] = [];
   selectedOrgaCode: string | null = null;
 
+  recipientTree: DepartementTreeFeignDTO[] = [];
+  recipientTreeFiltered: DepartementTreeFeignDTO[] = [];
+  recipientLoadingTree = false;
+  recipientSelectedDept: DepartementTreeFeignDTO | null = null;
+  recipientTreeSearchQuery = '';
+  recipientExpandedNodes: Set<number> = new Set();
+
   // Options de type d’envoi (UI)
   dispatchTypeOptions: Array<{ value: DispatchType; label: string }> = [
     { value: DispatchType.LETTER, label: 'Lettre' },
@@ -915,6 +922,14 @@ export class CorrespUpdateComponent implements OnInit {
     this.modalService.open(content, { size: 'xl' });
   }
 
+  openRecipientModal(content: any): void {
+    if (!this.selectedTypeDocument) {
+      return;
+    }
+    this.prepareAndLoadOrgaThenRecipientTree();
+    this.modalService.open(content, { size: 'xl' });
+  }
+
   private prepareAndLoadOrgaThenTree(): void {
     // Si on a déjà un orgaCode sélectionné, on le charge directement
     if (this.selectedOrgaCode) {
@@ -946,6 +961,32 @@ export class CorrespUpdateComponent implements OnInit {
     });
   }
 
+  private prepareAndLoadOrgaThenRecipientTree(): void {
+    if (this.selectedOrgaCode) {
+      this.loadRecipientTreeForModal(this.selectedOrgaCode);
+      return;
+    }
+    this.correspService.queryOrga().subscribe({
+      next: (res: HttpResponse<any[]>) => {
+        this.orgaList = res.body || [];
+        const first = this.orgaList?.[0];
+        if (first) {
+          this.selectedOrgaCode = first.code ?? first.orgaCode ?? first.id?.toString() ?? null;
+        }
+        if (this.selectedOrgaCode) {
+          this.loadRecipientTreeForModal(this.selectedOrgaCode);
+        } else {
+          this.recipientTree = [];
+          this.recipientTreeFiltered = [];
+        }
+      },
+      error: () => {
+        this.recipientTree = [];
+        this.recipientTreeFiltered = [];
+      },
+    });
+  }
+
   // --------------------------------------------------------------------------
   // Load tree from backend and normalize it
   // --------------------------------------------------------------------------
@@ -968,6 +1009,28 @@ export class CorrespUpdateComponent implements OnInit {
         this.taskTree = [];
         this.taskTreeFiltered = [];
         this.loadingTree = false;
+      },
+    });
+  }
+
+  private loadRecipientTreeForModal(orgaCode: string): void {
+    if (!orgaCode) {
+      this.recipientTree = [];
+      this.recipientTreeFiltered = [];
+      return;
+    }
+    this.recipientLoadingTree = true;
+    this.correspService.getDepartementTreeOnlyByOrganigramme(orgaCode).subscribe({
+      next: (res: HttpResponse<DepartementTreeFeignDTO[]>) => {
+        const body = res.body || [];
+        this.recipientTree = this.normalizeTree(body);
+        this.recipientTreeFiltered = this.recipientTree;
+        this.recipientLoadingTree = false;
+      },
+      error: () => {
+        this.recipientTree = [];
+        this.recipientTreeFiltered = [];
+        this.recipientLoadingTree = false;
       },
     });
   }
@@ -1228,6 +1291,64 @@ export class CorrespUpdateComponent implements OnInit {
 
     nodesToExpand.forEach(id => this.expandedNodes.add(id));
     affectationsToExpand.forEach(key => this.expandedAffectations.add(key));
+  }
+
+  onRecipientTreeSearchChange(): void {
+    const q = (this.recipientTreeSearchQuery || '').trim().toLowerCase();
+    if (!q) {
+      this.recipientTreeFiltered = this.recipientTree;
+      return;
+    }
+    this.recipientTreeFiltered = this.filterTree(this.recipientTree, q);
+    this.applyRecipientAutoExpand(this.recipientTreeFiltered);
+  }
+
+  private applyRecipientAutoExpand(nodes: DepartementTreeFeignDTO[]): void {
+    const nodesToExpand: number[] = [];
+    const visit = (n: DepartementTreeFeignDTO): void => {
+      const id = n.id;
+      const children = n.children || [];
+      if (children.length > 0) {
+        nodesToExpand.push(id);
+      }
+      children.forEach(c => visit(c));
+    };
+    nodes.forEach(n => visit(n));
+    nodesToExpand.forEach(id => this.recipientExpandedNodes.add(id));
+  }
+
+  toggleRecipientNodeExpand(nodeId: number): void {
+    if (this.recipientExpandedNodes.has(nodeId)) {
+      this.recipientExpandedNodes.delete(nodeId);
+    } else {
+      this.recipientExpandedNodes.add(nodeId);
+    }
+  }
+
+  isRecipientNodeExpanded(nodeId: number): boolean {
+    return this.recipientExpandedNodes.has(nodeId);
+  }
+
+  onSelectRecipientDept(node: DepartementTreeFeignDTO): void {
+    this.recipientSelectedDept = node;
+  }
+
+  confirmRecipientSelection(modalRef: any): void {
+    if (!this.recipientSelectedDept) {
+      return;
+    }
+    this.destinataireLabel = this.recipientSelectedDept.nom || '';
+    this.destinataire = this.recipientSelectedDept.email || '';
+    this.onRecipientOrCcChange();
+    modalRef.close();
+  }
+
+  selectRecipientDept(node: DepartementTreeFeignDTO, modalRef: any): void {
+    this.recipientSelectedDept = node;
+    this.destinataireLabel = node.nom || '';
+    this.destinataire = node.email || '';
+    this.onRecipientOrCcChange();
+    modalRef.close();
   }
 
   // --------------------------------------------------------------------------
