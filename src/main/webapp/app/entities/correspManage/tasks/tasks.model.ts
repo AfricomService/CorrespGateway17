@@ -27,6 +27,10 @@ export interface ITasks {
 export type NewTasks = Omit<ITasks, 'id'> & { id: null };
 
 export interface ResponsableSelection {
+  id?: number | null;
+  tacheId?: number | null;
   codeDept?: string | null;
   matriculePers?: string | null;
+  deptName?: string | null;
+  personneName?: string | null;
 }

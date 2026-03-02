@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 import { finalize } from 'rxjs/operators';
 
 import { CorrespFormService, CorrespFormGroup } from './corresp-form.service';
-import { ICorresp } from '../corresp.model';
+import { ICorresp, IContactCopieCorresp } from '../corresp.model';
 import { CorrespService } from '../service/corresp.service';
 import { AlertError } from 'app/shared/alert/alert-error.model';
 import { EventManager, EventWithContent } from 'app/core/util/event-manager.service';
@@ -34,6 +34,7 @@ import { IDepartement } from '../../../orgacare/departement/departement.model';
 import { ContactCompanyService } from 'app/entities/configManage/contact-company/service/contact-company.service';
 import { IContactCompany } from 'app/entities/configManage/contact-company/contact-company.model';
 import { IPersonCompany } from 'app/entities/configManage/person-company/person-company.model';
+import { ParentClassdefService } from 'app/entities/configManage/parent-classdef/service/parent-classdef.service';
 
 // <-- NEW: import du DTO de l'arbre (vérifie le chemin si besoin)
 import { DepartementTreeFeignDTO } from './DepartementTreeFeignDTO';
@@ -61,6 +62,10 @@ export class CorrespUpdateComponent implements OnInit {
   isSaving = false;
   corresp!: ICorresp;
 
+  /** Référence générée par le bouton "Identifier" — sera utilisée lors de l'enregistrement */
+  generatedReference: string | null = null;
+  isGeneratingReference = false;
+
   tasksToSave: ITasks[] = [];
   pjsToSave: IPj[] = [];
   notificationMessage: string | null = null;
@@ -70,7 +75,7 @@ export class CorrespUpdateComponent implements OnInit {
   uploadProgress: Map<string, number> = new Map();
   isUploading = false;
 
-  htmlContent: string = 'Ajouter Votre Contenu !';
+  htmlContent: string = '';
 
   taskObject = '';
   responsable = '';
@@ -164,6 +169,21 @@ export class CorrespUpdateComponent implements OnInit {
   orgaList: any[] = [];
   selectedOrgaCode: string | null = null;
 
+  recipientTree: DepartementTreeFeignDTO[] = [];
+  recipientTreeFiltered: DepartementTreeFeignDTO[] = [];
+  recipientLoadingTree = false;
+  recipientSelectedDept: DepartementTreeFeignDTO | null = null;
+  recipientTreeSearchQuery = '';
+  recipientExpandedNodes: Set<number> = new Set();
+
+  // === CC (Contact En Copie) Tree state – multi-select ===
+  ccTree: DepartementTreeFeignDTO[] = [];
+  ccTreeFiltered: DepartementTreeFeignDTO[] = [];
+  ccLoadingTree = false;
+  ccTreeSearchQuery = '';
+  ccExpandedNodes: Set<number> = new Set();
+  selectedCcDepts: IContactCopieCorresp[] = [];
+
   // Options de type d’envoi (UI)
   dispatchTypeOptions: Array<{ value: DispatchType; label: string }> = [
     { value: DispatchType.LETTER, label: 'Lettre' },
@@ -187,7 +207,8 @@ export class CorrespUpdateComponent implements OnInit {
     protected route: ActivatedRoute,
     protected typeDocumentService: TypedocumentService,
     public router: Router,
-    protected contactCompanyService: ContactCompanyService
+    protected contactCompanyService: ContactCompanyService,
+    protected parentClassdefService: ParentClassdefService
   ) {}
 
   // --------------------------------------------------------------------------
@@ -372,9 +393,8 @@ export class CorrespUpdateComponent implements OnInit {
       if (t.typeTask === 'traitement') {
         return { ...t, responsableName: this.destinataireLabel || t.responsableName || '' };
       }
-      if (t.typeTask === 'lecture') {
-        return { ...t, responsableName: this.contactEmailCCLabel || t.responsableName || '' };
-      }
+      // Pour les tâches "lecture", chaque tâche garde son propre responsableName (nom du département CC)
+      // On ne les écrase pas avec un label global car il y a plusieurs CC
       return t;
     });
   }
@@ -386,6 +406,7 @@ export class CorrespUpdateComponent implements OnInit {
       this.destinataireLabel = '';
       this.contactEmailCC = '';
       this.contactEmailCCLabel = '';
+      this.selectedCcDepts = [];
       return;
     }
 
@@ -431,8 +452,15 @@ export class CorrespUpdateComponent implements OnInit {
       this.correspService.queryOrgaDepsByCode({ code: this.selectedTypeDocument.defaultencopie }).subscribe({
         next: (res: HttpResponse<IDepartement>) => {
           if (res.body) {
-            this.contactEmailCC = res.body.email || '';
-            this.contactEmailCCLabel = res.body.nom || '';
+            this.selectedCcDepts = [
+              {
+                idDept: res.body.id ?? null,
+                codeDept: res.body.code ?? '',
+                nomDept: res.body.nom ?? '',
+                emailDept: res.body.email ?? '',
+              },
+            ];
+            this.updateCcLabelsFromSelection();
 
             const taskData = {
               typeTask: 'lecture',
@@ -445,16 +473,19 @@ export class CorrespUpdateComponent implements OnInit {
             this.tasks.push(taskData);
             this.syncDefaultTaskNames();
           } else {
+            this.selectedCcDepts = [];
             this.contactEmailCC = '';
             this.contactEmailCCLabel = '';
           }
         },
         error: () => {
+          this.selectedCcDepts = [];
           this.contactEmailCC = '';
           this.contactEmailCCLabel = '';
         },
       });
     } else {
+      this.selectedCcDepts = [];
       this.contactEmailCC = '';
       this.contactEmailCCLabel = '';
     }
@@ -626,14 +657,70 @@ export class CorrespUpdateComponent implements OnInit {
   }
 
   // --------------------------------------------------------------------------
-  // Save correspondance (unchanged)
+  // Identifier : génère la référence puis sauvegarde et navigue vers le détail
   // --------------------------------------------------------------------------
-  saveCorresp(withReference: boolean): void {
+  generateReference(): void {
+    // Valider les champs obligatoires AVANT de générer la référence
+    this.validationInfoGenErrors = {};
+    if (!this.validateInfoGeneralesForm()) {
+      this.showNotification("Veuillez remplir tous les champs obligatoires avant d'identifier", 'error');
+      return;
+    }
+
+    // Déduire le corresptype selon la sélection courante
+    let correspTypeValue: string = '';
+    switch (this.correspType) {
+      case 'Arrivée':
+        correspTypeValue = CorrespType.INCOMING as unknown as string;
+        break;
+      case 'Sortant':
+        correspTypeValue = CorrespType.OUTGOING as unknown as string;
+        break;
+      case 'Interne':
+        correspTypeValue = CorrespType.INTERNAL as unknown as string;
+        break;
+    }
+
+    if (!correspTypeValue) {
+      this.showNotification("Veuillez sélectionner le type de correspondance avant d'identifier", 'error');
+      return;
+    }
+
+    this.isGeneratingReference = true;
+    this.parentClassdefService.getNextNumber(correspTypeValue).subscribe({
+      next: nextNumber => {
+        this.generatedReference = nextNumber || '';
+        this.isGeneratingReference = false;
+        this.showNotification(`Référence générée : ${this.generatedReference}`, 'success');
+        // Après génération de la référence, sauvegarder et naviguer vers le détail
+        this.saveCorresp(false, true);
+      },
+      error: () => {
+        this.isGeneratingReference = false;
+        this.showNotification('Échec de la génération de la référence', 'error');
+      },
+    });
+  }
+
+  // --------------------------------------------------------------------------
+  // Save correspondance
+  // --------------------------------------------------------------------------
+  saveCorresp(withReference?: boolean, navigateToDetail?: boolean): void {
+    // Protection contre le double-clic
+    if (this.isSaving) {
+      return;
+    }
+
     this.validationInfoGenErrors = {};
 
     if (!this.validateInfoGeneralesForm()) {
       return;
     }
+
+    this.isSaving = true;
+
+    // Réinitialiser les listes pour éviter l'accumulation lors de clics multiples
+    this.tasksToSave = [];
 
     if (!this.corresp) {
       this.corresp = {} as ICorresp;
@@ -646,12 +733,13 @@ export class CorrespUpdateComponent implements OnInit {
     this.corresp!.labelDestinataire = this.destinataireLabel;
     this.corresp!.contactEmail = this.contactEmail;
     this.corresp!.labelContactCC = this.contactEmailCCLabel;
+    this.corresp!.contactCopies = this.selectedCcDepts.length > 0 ? [...this.selectedCcDepts] : null;
     this.corresp!.responseTo = this.reponseSur;
     this.corresp!.senderReference = this.referenceEmetteur;
     this.corresp!.priority = this.priorite === 'Prioritaire';
     this.corresp!.body = this.htmlContent;
 
-    this.corresp!.dispatchType = (this.dispatchType as DispatchType) || DispatchType.EMAIL;
+    this.corresp!.dispatchType = (this.dispatchType as DispatchType) || DispatchType.LETTER;
 
     switch (this.correspType) {
       case 'Arrivée':
@@ -674,19 +762,25 @@ export class CorrespUpdateComponent implements OnInit {
       this.tasksToSave.push(taskModel);
     });
 
+    // Utiliser la référence générée par "Identifier" si disponible
+    if (this.generatedReference) {
+      this.corresp!.reference = this.generatedReference;
+    }
+
     this.correspService
-      .saveCorrespWithTasksAndPj(this.corresp, this.tasksToSave, this.pjsToSave, this.selectedTypeDocument, withReference)
-      .subscribe((res: any) => {
-        if (!withReference) {
-          this.router.navigate(['/corresp']);
-          return;
-        }
-        const body: any = res && res.body ? res.body : res;
-        if (body && typeof body === 'object') {
-          this.corresp = body as ICorresp;
-        }
-        const ref = body && body.reference ? ` Référence: ${body.reference}` : '';
-        this.showNotification(`Correspondance identifiée.${ref}`, 'success');
+      .saveCorrespWithTasksAndPj(this.corresp, this.tasksToSave, this.pjsToSave, this.selectedTypeDocument, false)
+      .subscribe({
+        next: (savedCorresp: any) => {
+          this.isSaving = false;
+          if (savedCorresp?.id) {
+            this.router.navigate(['/corresp', savedCorresp.id, 'view']);
+          } else {
+            this.router.navigate(['/corresp']);
+          }
+        },
+        error: () => {
+          this.isSaving = false;
+        },
       });
   }
 
@@ -694,18 +788,23 @@ export class CorrespUpdateComponent implements OnInit {
     let isValid = true;
     this.validationInfoGenErrors = {};
 
+    if (!this.selectedTypeDocument) {
+      this.validationInfoGenErrors['typeDocument'] = 'Le type de document est obligatoire';
+      isValid = false;
+    }
+
     if (!this.objet?.trim()) {
       this.validationInfoGenErrors['objet'] = "L'objet est obligatoire";
       isValid = false;
     }
 
-    if (!this.selectedCompanyId && !this.expediteur?.trim()) {
-      this.validationInfoGenErrors['expediteur'] = "L'expéditeur est obligatoire";
+    if (!this.date) {
+      this.validationInfoGenErrors['date'] = 'La date est obligatoire';
       isValid = false;
     }
 
-    if (!this.date) {
-      this.validationInfoGenErrors['date'] = 'La date est obligatoire';
+    if (!this.selectedCompanyId && !this.expediteur?.trim()) {
+      this.validationInfoGenErrors['expediteur'] = "L'expéditeur est obligatoire";
       isValid = false;
     }
 
@@ -860,6 +959,14 @@ export class CorrespUpdateComponent implements OnInit {
     this.modalService.open(content, { size: 'xl' });
   }
 
+  openRecipientModal(content: any): void {
+    if (!this.selectedTypeDocument) {
+      return;
+    }
+    this.prepareAndLoadOrgaThenRecipientTree();
+    this.modalService.open(content, { size: 'xl' });
+  }
+
   private prepareAndLoadOrgaThenTree(): void {
     // Si on a déjà un orgaCode sélectionné, on le charge directement
     if (this.selectedOrgaCode) {
@@ -891,6 +998,32 @@ export class CorrespUpdateComponent implements OnInit {
     });
   }
 
+  private prepareAndLoadOrgaThenRecipientTree(): void {
+    if (this.selectedOrgaCode) {
+      this.loadRecipientTreeForModal(this.selectedOrgaCode);
+      return;
+    }
+    this.correspService.queryOrga().subscribe({
+      next: (res: HttpResponse<any[]>) => {
+        this.orgaList = res.body || [];
+        const first = this.orgaList?.[0];
+        if (first) {
+          this.selectedOrgaCode = first.code ?? first.orgaCode ?? first.id?.toString() ?? null;
+        }
+        if (this.selectedOrgaCode) {
+          this.loadRecipientTreeForModal(this.selectedOrgaCode);
+        } else {
+          this.recipientTree = [];
+          this.recipientTreeFiltered = [];
+        }
+      },
+      error: () => {
+        this.recipientTree = [];
+        this.recipientTreeFiltered = [];
+      },
+    });
+  }
+
   // --------------------------------------------------------------------------
   // Load tree from backend and normalize it
   // --------------------------------------------------------------------------
@@ -913,6 +1046,28 @@ export class CorrespUpdateComponent implements OnInit {
         this.taskTree = [];
         this.taskTreeFiltered = [];
         this.loadingTree = false;
+      },
+    });
+  }
+
+  private loadRecipientTreeForModal(orgaCode: string): void {
+    if (!orgaCode) {
+      this.recipientTree = [];
+      this.recipientTreeFiltered = [];
+      return;
+    }
+    this.recipientLoadingTree = true;
+    this.correspService.getDepartementTreeOnlyByOrganigramme(orgaCode).subscribe({
+      next: (res: HttpResponse<DepartementTreeFeignDTO[]>) => {
+        const body = res.body || [];
+        this.recipientTree = this.normalizeTree(body);
+        this.recipientTreeFiltered = this.recipientTree;
+        this.recipientLoadingTree = false;
+      },
+      error: () => {
+        this.recipientTree = [];
+        this.recipientTreeFiltered = [];
+        this.recipientLoadingTree = false;
       },
     });
   }
@@ -1173,6 +1328,280 @@ export class CorrespUpdateComponent implements OnInit {
 
     nodesToExpand.forEach(id => this.expandedNodes.add(id));
     affectationsToExpand.forEach(key => this.expandedAffectations.add(key));
+  }
+
+  onRecipientTreeSearchChange(): void {
+    const q = (this.recipientTreeSearchQuery || '').trim().toLowerCase();
+    if (!q) {
+      this.recipientTreeFiltered = this.recipientTree;
+      return;
+    }
+    this.recipientTreeFiltered = this.filterTree(this.recipientTree, q);
+    this.applyRecipientAutoExpand(this.recipientTreeFiltered);
+  }
+
+  private applyRecipientAutoExpand(nodes: DepartementTreeFeignDTO[]): void {
+    const nodesToExpand: number[] = [];
+    const visit = (n: DepartementTreeFeignDTO): void => {
+      const id = n.id;
+      const children = n.children || [];
+      if (children.length > 0) {
+        nodesToExpand.push(id);
+      }
+      children.forEach(c => visit(c));
+    };
+    nodes.forEach(n => visit(n));
+    nodesToExpand.forEach(id => this.recipientExpandedNodes.add(id));
+  }
+
+  toggleRecipientNodeExpand(nodeId: number): void {
+    if (this.recipientExpandedNodes.has(nodeId)) {
+      this.recipientExpandedNodes.delete(nodeId);
+    } else {
+      this.recipientExpandedNodes.add(nodeId);
+    }
+  }
+
+  isRecipientNodeExpanded(nodeId: number): boolean {
+    return this.recipientExpandedNodes.has(nodeId);
+  }
+
+  onSelectRecipientDept(node: DepartementTreeFeignDTO): void {
+    this.recipientSelectedDept = node;
+  }
+
+  confirmRecipientSelection(modalRef: any): void {
+    if (!this.recipientSelectedDept) {
+      return;
+    }
+    this.destinataireLabel = this.recipientSelectedDept.nom || '';
+    this.destinataire = this.recipientSelectedDept.email || '';
+
+    // Mettre à jour ou créer la tâche "traitement" associée au destinataire
+    const existingIdx = this.tasks.findIndex(t => t.typeTask === 'traitement');
+    const newTaskData = {
+      typeTask: 'traitement',
+      responsable: this.recipientSelectedDept.code ?? '',
+      dateLimite: existingIdx >= 0 ? this.tasks[existingIdx].dateLimite : '',
+      responsableName: this.recipientSelectedDept.nom ?? '',
+      commentaire: existingIdx >= 0 ? this.tasks[existingIdx].commentaire : '',
+    };
+    if (existingIdx >= 0) {
+      this.tasks[existingIdx] = newTaskData;
+    } else {
+      this.tasks.push(newTaskData);
+    }
+
+    this.onRecipientOrCcChange();
+    modalRef.close();
+  }
+
+  selectRecipientDept(node: DepartementTreeFeignDTO, modalRef: any): void {
+    this.recipientSelectedDept = node;
+    this.destinataireLabel = node.nom || '';
+    this.destinataire = node.email || '';
+
+    // Mettre à jour ou créer la tâche "traitement" associée au destinataire
+    const existingIdx = this.tasks.findIndex(t => t.typeTask === 'traitement');
+    const newTaskData = {
+      typeTask: 'traitement',
+      responsable: node.code ?? '',
+      dateLimite: existingIdx >= 0 ? this.tasks[existingIdx].dateLimite : '',
+      responsableName: node.nom ?? '',
+      commentaire: existingIdx >= 0 ? this.tasks[existingIdx].commentaire : '',
+    };
+    if (existingIdx >= 0) {
+      this.tasks[existingIdx] = newTaskData;
+    } else {
+      this.tasks.push(newTaskData);
+    }
+
+    this.onRecipientOrCcChange();
+    modalRef.close();
+  }
+
+  clearRecipientDept(): void {
+    this.recipientSelectedDept = null;
+    this.destinataireLabel = '';
+    this.destinataire = '';
+    // Supprimer la tâche "traitement" associée au destinataire
+    const idx = this.tasks.findIndex(t => t.typeTask === 'traitement');
+    if (idx >= 0) {
+      this.tasks.splice(idx, 1);
+    }
+    this.onRecipientOrCcChange();
+  }
+
+  // --------------------------------------------------------------------------
+  // CC (Contact En Copie) – multi-select tree
+  // --------------------------------------------------------------------------
+  openCcModal(content: any): void {
+    this.prepareAndLoadOrgaThenCcTree();
+    this.modalService.open(content, { size: 'xl' });
+  }
+
+  private prepareAndLoadOrgaThenCcTree(): void {
+    if (this.selectedOrgaCode) {
+      this.loadCcTreeForModal(this.selectedOrgaCode);
+      return;
+    }
+    this.correspService.queryOrga().subscribe({
+      next: (res: HttpResponse<any[]>) => {
+        this.orgaList = res.body || [];
+        const first = this.orgaList?.[0];
+        if (first) {
+          this.selectedOrgaCode = first.code ?? first.orgaCode ?? first.id?.toString() ?? null;
+        }
+        if (this.selectedOrgaCode) {
+          this.loadCcTreeForModal(this.selectedOrgaCode);
+        } else {
+          this.ccTree = [];
+          this.ccTreeFiltered = [];
+        }
+      },
+      error: () => {
+        this.ccTree = [];
+        this.ccTreeFiltered = [];
+      },
+    });
+  }
+
+  private loadCcTreeForModal(orgaCode: string): void {
+    if (!orgaCode) {
+      this.ccTree = [];
+      this.ccTreeFiltered = [];
+      return;
+    }
+    this.ccLoadingTree = true;
+    this.correspService.getDepartementTreeOnlyByOrganigramme(orgaCode).subscribe({
+      next: (res: HttpResponse<DepartementTreeFeignDTO[]>) => {
+        const body = res.body || [];
+        this.ccTree = this.normalizeTree(body);
+        this.ccTreeFiltered = this.ccTree;
+        this.ccLoadingTree = false;
+      },
+      error: () => {
+        this.ccTree = [];
+        this.ccTreeFiltered = [];
+        this.ccLoadingTree = false;
+      },
+    });
+  }
+
+  onCcTreeSearchChange(): void {
+    const q = (this.ccTreeSearchQuery || '').trim().toLowerCase();
+    if (!q) {
+      this.ccTreeFiltered = this.ccTree;
+      return;
+    }
+    this.ccTreeFiltered = this.filterTree(this.ccTree, q);
+    this.applyCcAutoExpand(this.ccTreeFiltered);
+  }
+
+  private applyCcAutoExpand(nodes: DepartementTreeFeignDTO[]): void {
+    const nodesToExpand: number[] = [];
+    const visit = (n: DepartementTreeFeignDTO): void => {
+      const children = n.children || [];
+      if (children.length > 0) {
+        nodesToExpand.push(n.id);
+      }
+      children.forEach(c => visit(c));
+    };
+    nodes.forEach(n => visit(n));
+    nodesToExpand.forEach(id => this.ccExpandedNodes.add(id));
+  }
+
+  toggleCcNodeExpand(nodeId: number): void {
+    if (this.ccExpandedNodes.has(nodeId)) {
+      this.ccExpandedNodes.delete(nodeId);
+    } else {
+      this.ccExpandedNodes.add(nodeId);
+    }
+  }
+
+  isCcNodeExpanded(nodeId: number): boolean {
+    return this.ccExpandedNodes.has(nodeId);
+  }
+
+  toggleCcDeptSelection(node: DepartementTreeFeignDTO): void {
+    const code = node.code ?? '';
+    if (!code) return;
+    const idx = this.selectedCcDepts.findIndex(d => d.codeDept === code);
+    if (idx >= 0) {
+      this.selectedCcDepts.splice(idx, 1);
+    } else {
+      this.selectedCcDepts.push({
+        idDept: node.id,
+        codeDept: code,
+        nomDept: node.nom ?? code,
+        emailDept: node.email ?? '',
+      });
+    }
+    this.updateCcLabelsFromSelection();
+  }
+
+  isCcDeptSelected(node: DepartementTreeFeignDTO): boolean {
+    const code = node.code ?? '';
+    return !!this.selectedCcDepts.find(d => d.codeDept === code);
+  }
+
+  removeCcDept(cc: IContactCopieCorresp): void {
+    const idx = this.selectedCcDepts.findIndex(d => d.codeDept === cc.codeDept);
+    if (idx >= 0) {
+      this.selectedCcDepts.splice(idx, 1);
+    }
+    // Retirer la tâche "lecture" associée à ce département
+    const taskIdx = this.tasks.findIndex(t => t.typeTask === 'lecture' && t.responsable === cc.codeDept);
+    if (taskIdx >= 0) {
+      this.tasks.splice(taskIdx, 1);
+    }
+    this.updateCcLabelsFromSelection();
+  }
+
+  clearCcSelections(): void {
+    this.selectedCcDepts = [];
+    // Retirer toutes les tâches "lecture"
+    this.tasks = this.tasks.filter(t => t.typeTask !== 'lecture');
+    this.updateCcLabelsFromSelection();
+  }
+
+  confirmCcSelection(modalRef: any): void {
+    this.updateCcLabelsFromSelection();
+    this.syncCcTasks();
+    this.onRecipientOrCcChange();
+    modalRef.close();
+  }
+
+  /**
+   * Supprime toutes les tâches "lecture" existantes et en recrée une par département CC sélectionné.
+   */
+  private syncCcTasks(): void {
+    // Retirer toutes les tâches "lecture"
+    this.tasks = this.tasks.filter(t => t.typeTask !== 'lecture');
+
+    // Créer une tâche "lecture" par département CC
+    for (const cc of this.selectedCcDepts) {
+      this.tasks.push({
+        typeTask: 'lecture',
+        responsable: cc.codeDept ?? '',
+        dateLimite: '',
+        responsableName: cc.nomDept ?? cc.codeDept ?? '',
+        commentaire: '',
+      });
+    }
+  }
+
+  private updateCcLabelsFromSelection(): void {
+    if (this.selectedCcDepts.length === 0) {
+      this.contactEmailCCLabel = '';
+      this.contactEmailCC = '';
+    } else {
+      this.contactEmailCCLabel = this.selectedCcDepts.map(d => d.nomDept || d.codeDept || '').join(', ');
+      this.contactEmailCC = this.selectedCcDepts
+        .map(d => d.emailDept || '')
+        .filter(Boolean)
+        .join(', ');
+    }
   }
 
   // --------------------------------------------------------------------------

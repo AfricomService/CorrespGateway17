@@ -1,4 +1,4 @@
-import { Component, ViewChild, OnInit, AfterViewInit, ElementRef } from '@angular/core';
+import { Component, ViewChild, OnInit, AfterViewInit, ElementRef, ViewEncapsulation } from '@angular/core';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 
@@ -8,6 +8,8 @@ import { AccountService } from 'app/core/auth/account.service';
 @Component({
   selector: 'jhi-login',
   templateUrl: './login.component.html',
+  styleUrls: ['./login.component.scss'],
+  encapsulation: ViewEncapsulation.None,
 })
 export class LoginComponent implements OnInit, AfterViewInit {
   @ViewChild('username', { static: false })
