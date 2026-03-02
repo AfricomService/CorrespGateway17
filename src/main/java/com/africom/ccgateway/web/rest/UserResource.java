@@ -269,6 +269,7 @@ public class UserResource {
      * GET /api/users/by-login?login=xxx
      */
     @GetMapping("/users/by-login")
+    @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.USER + "', '" + AuthoritiesConstants.ADMIN + "')")
     public Mono<ResponseEntity<UserDTO>> getUserByLogin(@RequestParam("login") String login) {
         return userService.findUserByLogin(login).map(ResponseEntity::ok).defaultIfEmpty(ResponseEntity.notFound().build());
     }

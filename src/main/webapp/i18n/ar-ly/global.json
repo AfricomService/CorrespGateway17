@@ -6,7 +6,7 @@
       "home": "الصفحة الرئيسية",
       "jhipster-needle-menu-add-element": "JHipster will add additional menu entries here (do not translate!)",
       "entities": {
-        "main": "الكيانات",
+        "main": "إدارة",
         "rules": "Rules",
         "journauxHistConsult": "Hist Consult",
         "kafkaServiceMessage": "Message",

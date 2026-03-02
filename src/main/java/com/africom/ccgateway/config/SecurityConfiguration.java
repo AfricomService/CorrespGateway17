@@ -107,6 +107,9 @@ public class SecurityConfiguration {
             .pathMatchers("/api/account/reset-password/init").permitAll()
             .pathMatchers("/api/account/reset-password/finish").permitAll()
 
+            // Règle SPÉCIFIQUE : autorise ROLE_USER et ROLE_ADMIN pour GET /api/admin/users/by-login
+            .pathMatchers(HttpMethod.GET, "/api/admin/users/by-login").hasAnyAuthority(AuthoritiesConstants.USER, AuthoritiesConstants.ADMIN)
+
             // Règle SPÉCIFIQUE : autorise ROLE_USER et ROLE_ADMIN pour GET /api/admin/users/id/{id}
             .pathMatchers("/api/admin/users/id/**").hasAnyAuthority(AuthoritiesConstants.USER, AuthoritiesConstants.ADMIN)
 

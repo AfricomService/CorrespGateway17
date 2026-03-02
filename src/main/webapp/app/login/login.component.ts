@@ -15,9 +15,6 @@ export class LoginComponent implements OnInit, AfterViewInit {
   @ViewChild('username', { static: false })
   username!: ElementRef;
 
-  @ViewChild('passwordField', { static: false })
-  passwordField!: ElementRef;
-
   authenticationError = false;
 
   loginForm = new FormGroup({
@@ -38,35 +35,15 @@ export class LoginComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    setTimeout(() => {
-      this.syncAutofill();
-      this.username?.nativeElement?.focus();
-    }, 200);
-  }
-
-  /**
-   * Force la synchronisation des valeurs DOM (autofill navigateur) dans les FormControls.
-   */
-  private syncAutofill(): void {
-    const usernameEl = this.username?.nativeElement;
-    const passwordEl = this.passwordField?.nativeElement;
-
-    if (usernameEl?.value) {
-      this.loginForm.get('username')?.setValue(usernameEl.value);
-    }
-    if (passwordEl?.value) {
-      this.loginForm.get('password')?.setValue(passwordEl.value);
-    }
+    this.username.nativeElement.focus();
   }
 
   login(): void {
-    // Toujours sync les valeurs DOM avant envoi (autofill Chrome, Firefox, etc.)
-    this.syncAutofill();
-
     this.loginService.login(this.loginForm.getRawValue()).subscribe({
       next: () => {
         this.authenticationError = false;
         if (!this.router.getCurrentNavigation()) {
+          // There were no routing during login (eg from navigationToStoredUrl)
           this.router.navigate(['']);
         }
       },
