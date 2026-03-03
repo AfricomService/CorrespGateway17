@@ -543,8 +543,27 @@
                 <div style="display: flex; gap: 12px; margin-bottom: 1.5em; border-top: 1px dashed #5570a3">
                   <div style="flex: 1; display: flex; align-items: center; gap: 16px; padding-top: 30px">
                     <div style="flex: 1">
-                      <label class="form-label fw-semibold">Reponse Sur</label>
-                      <input [(ngModel)]="reponseSur" class="form-control" name="reponseSur" type="text" />
+                      <label class="form-label fw-semibold">Réponse Sur</label>
+                      <dx-select-box
+                        [(value)]="reponseSur"
+                        [dataSource]="correspsWithReference"
+                        [valueExpr]="'reference'"
+                        displayExpr="reference"
+                        [searchEnabled]="true"
+                        [searchExpr]="responseSearchExpr"
+                        placeholder="-- Choisir une correspondance (référence) --"
+                        class="w-100"
+                        [disabled]="loadingCorrespsWithRef"
+                        (onValueChanged)="onSelectReponseSur($event.value)"
+                      >
+                        <div *dxTemplate="let item of 'listItem'">
+                          <div>
+                            <strong>{{ item.reference || '(Sans référence)' }}</strong>
+                            <span *ngIf="item.subject"> — {{ item.subject }}</span>
+                            <span *ngIf="item.idinstance" class="text-muted"> — {{ item.idinstance }}</span>
+                          </div>
+                        </div>
+                      </dx-select-box>
                     </div>
 
                     <!-- <div style="flex: 1">
