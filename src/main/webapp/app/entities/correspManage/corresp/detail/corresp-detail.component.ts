@@ -24,17 +24,10 @@ import { IPersonCompany } from 'app/entities/configManage/person-company/person-
 import { PersonneFeignDTO } from '../update/PersonneFeignDTO';
 import { TypeAffectation } from '../update/enums';
 import { DispatchType } from 'app/entities/enumerations/dispatch-type.model';
+import { CorrespStatus } from 'app/entities/enumerations/corresp-status.model';
 import { CorrespPermissionsDTO, PermissionDTO } from '../../permissions.model';
 import { AccountService } from 'app/core/auth/account.service';
 import { Account } from 'app/core/auth/account.model';
-
-// Mocking the Interfaces locally for this example (or import them from your shared models)
-export enum CorrespStatus {
-  DRAFT = 'DRAFT',
-  IN_PROGRESS = 'IN_PROGRESS',
-  CLOSED = 'CLOSED',
-  CANCELLED = 'CANCELLED',
-}
 
 // export interface ITasks {
 //   id: number;
@@ -117,6 +110,15 @@ export class CorrespDetailComponent implements OnInit {
   };
   personSearchExpr = function (dataItem: IPersonCompany): string {
     return (dataItem.nom ? dataItem.nom + ' ' : '') + (dataItem.email ? dataItem.email + ' ' : '') + (dataItem.tel ? dataItem.tel : '');
+  };
+  correspsWithReference: ICorresp[] = [];
+  loadingCorrespsWithRef = false;
+  responseSearchExpr = function (dataItem: ICorresp): string {
+    return (
+      (dataItem.subject ? dataItem.subject + ' ' : '') +
+      (dataItem.reference ? dataItem.reference + ' ' : '') +
+      (dataItem.idinstance ? dataItem.idinstance : '')
+    );
   };
 
   // departements: DepartementTreeFeignDTO[] = [];
@@ -299,12 +301,29 @@ export class CorrespDetailComponent implements OnInit {
     //   this.orgaList = res.body!;
     // });
     this.loadActiveCompanies();
+    this.loadCorrespsWithReferenceList();
   }
   // loadCorresp(id: number): void {
   //   this.correspService.find(id).subscribe((res: HttpResponse<ICorresp>) => {
   //     this.correspLoaded = res.body!;
   //   });
   // }
+  loadCorrespsWithReferenceList(): void {
+    this.loadingCorrespsWithRef = true;
+    this.correspService.getAllWithReferenceList().subscribe({
+      next: (res: HttpResponse<ICorresp[]>) => {
+        this.correspsWithReference = res.body || [];
+        this.loadingCorrespsWithRef = false;
+      },
+      error: () => {
+        this.correspsWithReference = [];
+        this.loadingCorrespsWithRef = false;
+      },
+    });
+  }
+  onSelectReponseSur(reference: string | null): void {
+    this.reponseSur = reference ?? '';
+  }
 
   formatLongDate(date: dayjs.Dayjs | string | null | undefined): string {
     if (!date) return '';
