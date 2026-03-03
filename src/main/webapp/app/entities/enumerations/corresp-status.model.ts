@@ -3,6 +3,8 @@ export enum CorrespStatus {
 
   IN_PROGRESS = 'IN_PROGRESS',
 
+  DISPATCH = 'DISPATCH',
+
   CLOSED = 'CLOSED',
 
   CANCELLED = 'CANCELLED',

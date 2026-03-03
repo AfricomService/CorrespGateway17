@@ -1,7 +1,7 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import dayjs from 'dayjs/esm';
-import { ICorresp } from '../corresp.model';
+import { ICorresp, IContactCopieCorresp } from '../corresp.model';
 import { CorrespService } from '../service/corresp.service';
 import { TasksService } from '../../tasks/service/tasks.service';
 import { ITasks } from '../../tasks/tasks.model';
@@ -14,7 +14,8 @@ import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ITypedocument } from '../../../configManage/typedocument/typedocument.model';
 import { IDepartement } from '../../../orgacare/departement/departement.model';
 import { TypedocumentService } from '../../../configManage/typedocument/service/typedocument.service';
-import { switchMap } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { FilePreviewComponent } from '../../pj/file-preview/file-preview.component';
 import { saveAs } from 'file-saver';
 import { ContactCompanyService } from 'app/entities/configManage/contact-company/service/contact-company.service';
@@ -23,17 +24,10 @@ import { IPersonCompany } from 'app/entities/configManage/person-company/person-
 import { PersonneFeignDTO } from '../update/PersonneFeignDTO';
 import { TypeAffectation } from '../update/enums';
 import { DispatchType } from 'app/entities/enumerations/dispatch-type.model';
+import { CorrespStatus } from 'app/entities/enumerations/corresp-status.model';
 import { CorrespPermissionsDTO, PermissionDTO } from '../../permissions.model';
 import { AccountService } from 'app/core/auth/account.service';
 import { Account } from 'app/core/auth/account.model';
-
-// Mocking the Interfaces locally for this example (or import them from your shared models)
-export enum CorrespStatus {
-  DRAFT = 'DRAFT',
-  IN_PROGRESS = 'IN_PROGRESS',
-  CLOSED = 'CLOSED',
-  CANCELLED = 'CANCELLED',
-}
 
 // export interface ITasks {
 //   id: number;
@@ -117,6 +111,15 @@ export class CorrespDetailComponent implements OnInit {
   personSearchExpr = function (dataItem: IPersonCompany): string {
     return (dataItem.nom ? dataItem.nom + ' ' : '') + (dataItem.email ? dataItem.email + ' ' : '') + (dataItem.tel ? dataItem.tel : '');
   };
+  correspsWithReference: ICorresp[] = [];
+  loadingCorrespsWithRef = false;
+  responseSearchExpr = function (dataItem: ICorresp): string {
+    return (
+      (dataItem.subject ? dataItem.subject + ' ' : '') +
+      (dataItem.reference ? dataItem.reference + ' ' : '') +
+      (dataItem.idinstance ? dataItem.idinstance : '')
+    );
+  };
 
   // departements: DepartementTreeFeignDTO[] = [];
   selectedDepartement = '';
@@ -154,6 +157,22 @@ export class CorrespDetailComponent implements OnInit {
   selectedTaskId: number | null = null;
   taskTreeFiltered: DepartementTreeFeignDTO[] = [];
 
+  // === Recipient (Destinataire) Tree state ===
+  recipientTree: DepartementTreeFeignDTO[] = [];
+  recipientTreeFiltered: DepartementTreeFeignDTO[] = [];
+  recipientLoadingTree = false;
+  recipientSelectedDept: DepartementTreeFeignDTO | null = null;
+  recipientTreeSearchQuery = '';
+  recipientExpandedNodes: Set<number> = new Set();
+
+  // === CC (Contact En Copie) Tree state – multi-select ===
+  ccTree: DepartementTreeFeignDTO[] = [];
+  ccTreeFiltered: DepartementTreeFeignDTO[] = [];
+  ccLoadingTree = false;
+  ccTreeSearchQuery = '';
+  ccExpandedNodes: Set<number> = new Set();
+  selectedCcDepts: IContactCopieCorresp[] = [];
+
   dispatchType: DispatchType | '' = '';
   dispatchTypeOptions: Array<{ value: DispatchType; label: string }> = [
     { value: DispatchType.LETTER, label: 'Lettre' },
@@ -171,9 +190,14 @@ export class CorrespDetailComponent implements OnInit {
   taskPermissions: { [key: number]: PermissionDTO } = {};
   // tâches appartenant réellement à l'utilisateur (ACL)
   userAclTaskIds: Set<number> = new Set<number>();
+  // Cache complet des tâches ACL avec responsables résolus (venant de getAllTasksByUserAclAllStatuses)
+  private userAclTasksMap: Map<number, ITasks> = new Map();
   private currentAccountLogin: string | null = null;
   private currentUserId: number | null = null;
   isGlobalAdmin = false;
+
+  // Cache pour la résolution des noms de départements
+  private deptNameByCode: Map<string, string> = new Map();
 
   constructor(
     protected activatedRoute: ActivatedRoute,
@@ -208,6 +232,29 @@ export class CorrespDetailComponent implements OnInit {
       this.destinataireLabel = this.correspLoaded.labelDestinataire || '';
       this.contactEmail = this.correspLoaded.contactEmail || '';
       this.contactEmailCCLabel = this.correspLoaded.labelContactCC || '';
+
+      // Peupler les chips CC depuis les données persistées
+      if (this.correspLoaded.contactCopies && this.correspLoaded.contactCopies.length > 0) {
+        this.selectedCcDepts = this.correspLoaded.contactCopies.map(cc => ({
+          id: cc.id ?? null,
+          idCorrsp: cc.idCorrsp ?? null,
+          idDept: cc.idDept ?? null,
+          codeDept: cc.codeDept ?? null,
+          nomDept: cc.nomDept ?? null,
+          emailDept: cc.emailDept ?? null,
+        }));
+      } else if (this.contactEmailCCLabel) {
+        // Fallback : parser labelContactCC pour créer des chips
+        this.selectedCcDepts = this.contactEmailCCLabel
+          .split(',')
+          .map(s => s.trim())
+          .filter(s => s.length > 0)
+          .map(name => ({
+            nomDept: name,
+            codeDept: name,
+          }));
+      }
+
       this.date = this.correspLoaded.courrierDate ? dayjs(this.correspLoaded.courrierDate).format('YYYY-MM-DD') : '';
       this.reponseSur = this.correspLoaded.responseTo || '';
       this.referenceEmetteur = this.correspLoaded.senderReference || '';
@@ -216,10 +263,14 @@ export class CorrespDetailComponent implements OnInit {
 
       //TODO - GET MESSAGE BY CORRESP ID AND GET PATH AND PASS IT BELOW
       //
-      this.correspService.loadBodyFromFile({ correspId: this.correspLoaded.id }).subscribe(res => {
-        console.log('res lazy body');
-        console.log(res);
-        this.htmlContent = res;
+      this.correspService.loadBodyFromFile({ correspId: this.correspLoaded.id }).subscribe({
+        next: res => {
+          this.htmlContent = res;
+        },
+        error: err => {
+          console.warn('Impossible de charger le corps du courrier (peut ne pas encore exister)', err.status);
+          this.htmlContent = '';
+        },
       });
 
       this.typeDocumentService.query({ page: 0, size: 1000 }).subscribe(res => {
@@ -233,9 +284,9 @@ export class CorrespDetailComponent implements OnInit {
       const list = res.body || [];
       this.taskService.enrichTasksWithCanModify(list).subscribe(enriched => {
         this.tachesAssociees = enriched || [];
-        console.log(this.tachesAssociees);
-        // si on a déjà les ACL, on ne fait rien, sinon on essayera après charge permissions
+        this.resolveResponsableNames();
         this.refreshUserAclEnablement();
+        this.recomputeCorrespPermsFromUserAclTasks();
         setTimeout(() => this.scrollToTaskIfRequested(), 0);
       });
     });
@@ -250,12 +301,29 @@ export class CorrespDetailComponent implements OnInit {
     //   this.orgaList = res.body!;
     // });
     this.loadActiveCompanies();
+    this.loadCorrespsWithReferenceList();
   }
   // loadCorresp(id: number): void {
   //   this.correspService.find(id).subscribe((res: HttpResponse<ICorresp>) => {
   //     this.correspLoaded = res.body!;
   //   });
   // }
+  loadCorrespsWithReferenceList(): void {
+    this.loadingCorrespsWithRef = true;
+    this.correspService.getAllWithReferenceList().subscribe({
+      next: (res: HttpResponse<ICorresp[]>) => {
+        this.correspsWithReference = res.body || [];
+        this.loadingCorrespsWithRef = false;
+      },
+      error: () => {
+        this.correspsWithReference = [];
+        this.loadingCorrespsWithRef = false;
+      },
+    });
+  }
+  onSelectReponseSur(reference: string | null): void {
+    this.reponseSur = reference ?? '';
+  }
 
   formatLongDate(date: dayjs.Dayjs | string | null | undefined): string {
     if (!date) return '';
@@ -272,8 +340,10 @@ export class CorrespDetailComponent implements OnInit {
       this.objet = '';
       this.destinataire = '';
       this.destinataireLabel = '';
+      this.recipientSelectedDept = null;
       this.contactEmailCC = '';
       this.contactEmailCCLabel = '';
+      this.selectedCcDepts = [];
       return;
     }
 
@@ -289,6 +359,7 @@ export class CorrespDetailComponent implements OnInit {
             this.destinataireLabel = res.body.nom || '';
           } else {
             this.destinataire = '';
+            this.destinataireLabel = '';
           }
         },
         error: () => {
@@ -308,19 +379,29 @@ export class CorrespDetailComponent implements OnInit {
           if (res.body) {
             this.contactEmailCC = res.body.email || '';
             this.contactEmailCCLabel = res.body.nom || '';
+            this.selectedCcDepts = [
+              {
+                codeDept: this.selectedTypeDocument.defaultencopie ?? null,
+                nomDept: res.body.nom || '',
+                emailDept: res.body.email || '',
+              },
+            ];
           } else {
             this.contactEmailCC = '';
             this.contactEmailCCLabel = '';
+            this.selectedCcDepts = [];
           }
         },
         error: () => {
           this.contactEmailCC = '';
           this.contactEmailCCLabel = '';
+          this.selectedCcDepts = [];
         },
       });
     } else {
       this.contactEmailCC = '';
       this.contactEmailCCLabel = '';
+      this.selectedCcDepts = [];
     }
   }
   private sanitize(obj: any): any {
@@ -381,12 +462,13 @@ export class CorrespDetailComponent implements OnInit {
     if (!correspId) return;
     this.correspService.getPermissions(correspId).subscribe({
       next: (res: CorrespPermissionsDTO) => {
+        console.log('[PERMISSIONS] Raw response for correspId=' + correspId, JSON.stringify(res));
         const p = res?.corresp || { canRead: false, canWrite: false, canDelete: false, canAdmin: false };
 
-        this.canReadCorresp = !!p.canRead;
-        this.canWriteCorresp = !!p.canWrite;
-        this.canDeleteCorresp = !!p.canDelete;
-        this.canAdminCorresp = !!p.canAdmin;
+        this.canReadCorresp = p.canRead;
+        this.canWriteCorresp = p.canWrite;
+        this.canDeleteCorresp = p.canDelete;
+        this.canAdminCorresp = p.canAdmin;
 
         if (this.isGlobalAdmin) {
           this.canReadCorresp = true;
@@ -405,38 +487,55 @@ export class CorrespDetailComponent implements OnInit {
           }
         });
 
-        // If user has absolutely no read → show message and optionally redirect
-        if (!this.canReadCorresp && !this.isGlobalAdmin) {
-          this.showNotification('Vous n’avez pas le droit de consulter cette correspondance', 'error');
-          // optionnel : rediriger vers la liste pour éviter affichage page vide :
-          // this.router.navigate(['/corresp']);
+        console.log('[PERMISSIONS] After backend: canRead=' + this.canReadCorresp + ' canWrite=' + this.canWriteCorresp);
+
+        // Si le backend a déjà résolu les permissions => tout est OK
+        if (this.canReadCorresp || this.isGlobalAdmin) {
+          console.log('[PERMISSIONS] Permissions resolved from backend directly');
+          if (!(this.canAdminCorresp || this.isGlobalAdmin)) {
+            // Charger les tâches ACL de l'utilisateur pour :
+            // 1) activer/désactiver les boutons sur les tâches individuelles
+            // 2) recalculer canWriteCorresp si pas encore résolu
+            this.loadCurrentUserAndAclTasks(() => {
+              if (!this.canWriteCorresp) {
+                this.recomputeCorrespPermsFromUserAclTasks();
+              }
+            });
+          }
+          return;
         }
 
-        // Charger la liste des tâches réellement accessibles par l'utilisateur si write
-        // Un admin peut tout faire; on utilise ACL pour tous les non-admins (qu'ils aient write corresp ou pas)
-        if (!(this.canAdminCorresp || this.isGlobalAdmin)) {
-          this.loadCurrentUserAndAclTasks();
-        }
+        // ---------------------------------------------------------------
+        // Le backend retourne canRead=false pour la corresp ET les tâches.
+        // Cela peut arriver car le backend vérifie les ACL avec PrincipalSid(login)
+        // mais les ACL ont été créées avec GrantedAuthoritySid(deptCode) et
+        // le service OrgaCare n'a pas pu résoudre les départements.
+        //
+        // SOLUTION : Utiliser l'endpoint getAllTasksByUserAclAllStatuses
+        // qui utilise une requête SQL directe sur les tables ACL.
+        // Si le user a accès à une tâche de cette corresp, il a le droit.
+        // ---------------------------------------------------------------
+        console.log('[PERMISSIONS] Backend returned all false - checking via user ACL tasks endpoint...');
+        this.loadCurrentUserAndAclTasks(() => {
+          this.recomputeCorrespPermsFromUserAclTasks();
+        });
       },
       error: err => {
-        // <-- ici : fallback strict (sécurité)
-        console.error('Erreur chargement permissions', err);
-        // Par défaut on refuse toute modification et lecture si on ne sait pas.
+        console.warn('Erreur chargement permissions, tentative fallback via ACL tasks', err);
         this.canReadCorresp = false;
         this.canWriteCorresp = false;
         this.canDeleteCorresp = false;
         this.canAdminCorresp = false;
 
-        // Indiquer à l'utilisateur (UX)
-        this.showNotification('Impossible de récupérer vos droits. Accès en lecture interdit.', 'error');
-
-        // Optionnel selon ton UX : rediriger
-        // this.router.navigate(['/corresp']);
+        // Fallback : tenter de résoudre les permissions via les tâches ACL de l'utilisateur
+        this.loadCurrentUserAndAclTasks(() => {
+          this.recomputeCorrespPermsFromUserAclTasks();
+        });
       },
     });
   }
 
-  private loadCurrentUserAndAclTasks(): void {
+  private loadCurrentUserAndAclTasks(callback?: () => void): void {
     this.accountService.identity().subscribe((acc: Account | null) => {
       const uid = acc != null ? (acc as any).id : null;
       this.currentAccountLogin = acc?.login ?? null;
@@ -446,28 +545,289 @@ export class CorrespDetailComponent implements OnInit {
           next: resp => {
             const list = resp.body || [];
             const ids = new Set<number>();
+            this.userAclTasksMap.clear();
             list.forEach(t => {
               const tid: any = (t as any)?.id;
               const numId = typeof tid === 'string' ? Number(tid) : tid;
               if (typeof numId === 'number' && !isNaN(numId)) {
                 ids.add(numId);
+                this.userAclTasksMap.set(numId, t);
               }
             });
             this.userAclTaskIds = ids;
+            console.log('[PERMISSIONS] userAclTaskIds loaded:', Array.from(ids));
+            // Enrichir les tâches associées avec les responsables des tâches ACL
+            this.enrichTachesAssocieesFromAclTasks();
             this.refreshUserAclEnablement();
+            if (callback) callback();
           },
           error: () => {
             this.userAclTaskIds.clear();
+            this.userAclTasksMap.clear();
+            if (callback) callback();
           },
         });
       } else {
         this.userAclTaskIds.clear();
+        this.userAclTasksMap.clear();
+        if (callback) callback();
       }
     });
   }
 
   private refreshUserAclEnablement(): void {
     // Hook pour déclencher la détection si nécessaire
+  }
+
+  /**
+   * Enrichit les tâches de tachesAssociees avec les responsables résolus
+   * provenant de l'endpoint getAllTasksByUserAclAllStatuses (qui contient
+   * les responsables[] avec deptName et personneName déjà résolus).
+   */
+  private enrichTachesAssocieesFromAclTasks(): void {
+    if (!this.tachesAssociees || this.tachesAssociees.length === 0 || this.userAclTasksMap.size === 0) return;
+    let enriched = false;
+    this.tachesAssociees.forEach(task => {
+      const aclTask = this.userAclTasksMap.get(task.id);
+      if (aclTask) {
+        const aclResponsables = (aclTask as any).responsables;
+        if (Array.isArray(aclResponsables) && aclResponsables.length > 0) {
+          // Copier les responsables résolus vers la tâche associée
+          (task as any).responsables = aclResponsables;
+          enriched = true;
+        }
+      }
+    });
+    if (enriched) {
+      // Re-construire les noms de responsables avec les données enrichies
+      this.resolveResponsableNames();
+    }
+  }
+  /**
+   * Utilise userAclTaskIds (de l'endpoint SQL direct tasksByUserAclAllStatuses)
+   * pour résoudre les permissions de la corresp quand le backend permissions
+   * retourne tout false. Si le user a accès ACL à une tâche de cette corresp,
+   * il a le droit de lire/écrire la corresp selon le taskType.
+   */
+  private recomputeCorrespPermsFromUserAclTasks(): void {
+    // Si admin global => déjà tout autorisé
+    if (this.isGlobalAdmin) {
+      return;
+    }
+
+    // Si déjà résolu (canRead ET canWrite) => pas besoin de recalculer
+    if (this.canReadCorresp && this.canWriteCorresp) {
+      return;
+    }
+
+    // Si les données ne sont pas encore chargées, on ne fait rien (sera rappelé plus tard)
+    if (!this.tachesAssociees || this.tachesAssociees.length === 0 || this.userAclTaskIds.size === 0) {
+      return;
+    }
+
+    // Trouver les tâches de cette corresp auxquelles le user a accès via ACL
+    const correspTaskIds = (this.tachesAssociees || []).map(t => t.id);
+    const accessibleTaskIds = correspTaskIds.filter(id => this.userAclTaskIds.has(id));
+
+    console.log(
+      '[PERMISSIONS] recompute: correspTaskIds=',
+      correspTaskIds,
+      ' userAclTaskIds=',
+      Array.from(this.userAclTaskIds),
+      ' intersection=',
+      accessibleTaskIds
+    );
+
+    if (accessibleTaskIds.length === 0) {
+      // Vérifier aussi via selectedTaskId (le taskId passé en query param depuis la page home)
+      if (this.selectedTaskId != null && this.userAclTaskIds.has(this.selectedTaskId)) {
+        accessibleTaskIds.push(this.selectedTaskId);
+        console.log('[PERMISSIONS] recompute: found selectedTaskId', this.selectedTaskId, 'in userAclTaskIds');
+      }
+    }
+
+    if (accessibleTaskIds.length === 0) {
+      console.warn('[PERMISSIONS] User has NO ACL access to any task of this corresp');
+      return;
+    }
+
+    // Le user a accès à au moins une tâche => il peut lire la corresp
+    if (!this.canReadCorresp) {
+      this.canReadCorresp = true;
+      console.log('[PERMISSIONS] recompute: granted canRead from ACL task access');
+    }
+
+    // Vérifier si une tâche accessible a un taskType qui donne WRITE sur la corresp
+    if (!this.canWriteCorresp) {
+      const accessibleTasks = (this.tachesAssociees || []).filter(t => accessibleTaskIds.includes(t.id));
+      console.log(
+        '[PERMISSIONS] recompute: accessible tasks taskTypes=',
+        accessibleTasks.map(t => ({ id: t.id, taskType: t.taskType }))
+      );
+      const hasWritableTask = accessibleTasks.some(t => {
+        const tt = (t.taskType || '').toLowerCase();
+        return tt === 'traitement' || tt === 'signature' || tt === 'validation';
+      });
+
+      if (hasWritableTask) {
+        this.canWriteCorresp = true;
+        console.log('[PERMISSIONS] recompute: granted canWrite from task with taskType traitement/signature/validation');
+      }
+    }
+
+    console.log('[PERMISSIONS] recompute final: canRead=' + this.canReadCorresp + ' canWrite=' + this.canWriteCorresp);
+  }
+
+  /**
+   * Résout le nom du responsable pour chaque tâche et le met dans task.responsableName.
+   * Utilise les champs responsables[].personneName, responsables[].deptName, ou résout
+   * responsables[].codeDept via OrgaCare si nécessaire.
+   */
+  private resolveResponsableNames(): void {
+    const tasks = this.tachesAssociees || [];
+    if (tasks.length === 0) return;
+
+    // 1) Collecter les codes de départements à résoudre
+    const codesToResolve = new Set<string>();
+    tasks.forEach(t => {
+      const responsables = (t as any).responsables;
+      if (Array.isArray(responsables) && responsables.length > 0) {
+        responsables.forEach((r: any) => {
+          if (!r) return;
+          // Si pas de personneName ni deptName, on doit résoudre le codeDept
+          if (!r.personneName && !r.deptName && r.codeDept) {
+            const code = r.codeDept.toString().trim();
+            if (code && !this.deptNameByCode.has(code)) {
+              codesToResolve.add(code);
+            }
+          }
+        });
+      } else if ((t as any).responsible) {
+        const code = ((t as any).responsible || '').toString().trim();
+        if (code && !this.deptNameByCode.has(code)) {
+          codesToResolve.add(code);
+        }
+      } else {
+        // Pas de responsables ni responsible => extraire depuis object
+        const extracted = this.extractResponsableFromObject(t.object);
+        if (extracted) {
+          // Le code extrait peut être un codeDept (ex: "Dept-00002") ou un matricule
+          // On essaie de le résoudre via OrgaCare
+          const code = extracted.trim();
+          if (code && !this.deptNameByCode.has(code)) {
+            codesToResolve.add(code);
+          }
+        }
+      }
+    });
+
+    // 2) Résoudre les codes manquants via OrgaCare puis construire les noms
+    const missing = Array.from(codesToResolve);
+    if (missing.length === 0) {
+      this.buildResponsableNamesForTasks();
+      return;
+    }
+
+    const calls = missing.map(code =>
+      this.correspService.queryOrgaDepsByCode({ code }).pipe(catchError(() => of(new HttpResponse({ body: null }))))
+    );
+
+    forkJoin(calls).subscribe({
+      next: responses => {
+        responses.forEach((res, idx) => {
+          const dep = res.body as any;
+          const code = missing[idx];
+          const name = dep ? dep.nom || dep.name || dep.libelle || dep.description || dep.code || code : code;
+          this.deptNameByCode.set(code, name || code);
+        });
+      },
+      complete: () => {
+        this.buildResponsableNamesForTasks();
+      },
+    });
+  }
+
+  /**
+   * Construit task.responsableName pour chaque tâche à partir des responsables résolus.
+   * Priorité :
+   *  1) responsables[] (personneName / deptName / codeDept résolu / matriculePers)
+   *  2) responsible (ancien champ string)
+   *  3) responsableName déjà rempli par le backend
+   *  4) Extraction depuis le champ 'object' ("NomResp effectuera la tâche de ...")
+   */
+  private buildResponsableNamesForTasks(): void {
+    (this.tachesAssociees || []).forEach(task => {
+      const displays: string[] = [];
+      const responsables = (task as any).responsables;
+
+      if (Array.isArray(responsables) && responsables.length > 0) {
+        responsables.forEach((r: any) => {
+          if (!r) return;
+          const pName = r.personneName;
+          const dName = r.deptName;
+          const codeDept = r.codeDept;
+          const matricule = r.matriculePers;
+
+          if (pName && pName.toString().trim()) {
+            displays.push(pName.toString().trim());
+          } else if (dName && dName.toString().trim()) {
+            displays.push(dName.toString().trim());
+          } else if (codeDept && codeDept.toString().trim()) {
+            const code = codeDept.toString().trim();
+            const resolved = this.deptNameByCode.get(code);
+            displays.push(resolved || code);
+          } else if (matricule && matricule.toString().trim()) {
+            displays.push(matricule.toString().trim());
+          }
+        });
+      } else if ((task as any).responsible) {
+        const code = ((task as any).responsible || '').toString().trim();
+        if (code) {
+          const name = this.deptNameByCode.get(code);
+          displays.push(name || code);
+        }
+      } else {
+        // Pas de responsables ni responsible => extraire depuis object et résoudre
+        const extracted = this.extractResponsableFromObject(task.object);
+        if (extracted) {
+          const code = extracted.trim();
+          const resolved = this.deptNameByCode.get(code);
+          displays.push(resolved || code);
+        }
+      }
+
+      // Dédoublonner et joindre
+      const uniq = Array.from(new Set(displays.map(d => (d || '').trim()).filter(s => !!s)));
+
+      if (uniq.length > 0) {
+        task.responsableName = uniq.join(', ');
+      } else if (task.responsableName && task.responsableName.trim()) {
+        // Le backend a déjà rempli responsableName (via getDepartementNomByCode) — on le garde
+      } else {
+        // Pas de données pour résoudre le nom
+        task.responsableName = null;
+      }
+    });
+  }
+
+  /**
+   * Extrait le nom du responsable depuis le champ 'object' de la tâche.
+   * Formats connus :
+   *   - "NomResponsable effectuera la tâche de TYPE ..."
+   *   - "Tâche de TYPE ..."  (pas de responsable)
+   */
+  private extractResponsableFromObject(object?: string | null): string | null {
+    if (!object) return null;
+    const obj = object.trim();
+
+    // Pattern: "XXX effectuera la tâche de ..."
+    const idx = obj.indexOf(' effectuera la tâche de ');
+    if (idx > 0) {
+      return obj.substring(0, idx).trim() || null;
+    }
+
+    // Pattern: "Tâche de ..." => pas de responsable nommé
+    return null;
   }
 
   private scrollToTaskIfRequested(): void {
@@ -1553,5 +1913,210 @@ export class CorrespDetailComponent implements OnInit {
         this.showNotification('Erreur lors de la suppression', 'error');
       },
     });
+  }
+
+  // --------------------------------------------------------------------------
+  // Recipient (Destinataire) – organigramme tree (single-select)
+  // --------------------------------------------------------------------------
+  openRecipientModal(content: any): void {
+    this.prepareAndLoadOrgaThenRecipientTree();
+    this.modalService.open(content, { size: 'xl' });
+  }
+
+  private prepareAndLoadOrgaThenRecipientTree(): void {
+    if (this.selectedOrgaCode) {
+      this.loadRecipientTree(this.selectedOrgaCode);
+    } else {
+      this.correspService.queryOrga().subscribe({
+        next: (res: HttpResponse<any[]>) => {
+          this.orgaList = res.body || [];
+          const first = this.orgaList?.[0];
+          if (first) {
+            this.selectedOrgaCode = first.code ?? first.orgaCode ?? first.id?.toString() ?? null;
+          }
+          if (this.selectedOrgaCode) {
+            this.loadRecipientTree(this.selectedOrgaCode);
+          }
+        },
+        error: () => {
+          this.recipientTree = [];
+        },
+      });
+    }
+  }
+
+  private loadRecipientTree(orgaCode: string): void {
+    this.recipientLoadingTree = true;
+    this.correspService.getDepartementHierarchyByOrganigramme(orgaCode).subscribe({
+      next: (res: HttpResponse<DepartementTreeFeignDTO[]>) => {
+        this.recipientTree = this.normalizeTree(res.body || []);
+        this.recipientTreeFiltered = this.recipientTree;
+        this.recipientLoadingTree = false;
+      },
+      error: () => {
+        this.recipientTree = [];
+        this.recipientTreeFiltered = [];
+        this.recipientLoadingTree = false;
+      },
+    });
+  }
+
+  filterRecipientTree(): void {
+    const q = (this.recipientTreeSearchQuery || '').trim().toLowerCase();
+    if (!q) {
+      this.recipientTreeFiltered = this.recipientTree;
+      return;
+    }
+    this.recipientTreeFiltered = this.filterTree(this.recipientTree, q);
+    this.expandAllFilteredNodes(this.recipientTreeFiltered, this.recipientExpandedNodes);
+  }
+
+  toggleRecipientNodeExpand(nodeId: number): void {
+    if (this.recipientExpandedNodes.has(nodeId)) {
+      this.recipientExpandedNodes.delete(nodeId);
+    } else {
+      this.recipientExpandedNodes.add(nodeId);
+    }
+  }
+
+  isRecipientNodeExpanded(nodeId: number): boolean {
+    return this.recipientExpandedNodes.has(nodeId);
+  }
+
+  selectRecipientDept(node: DepartementTreeFeignDTO, modalRef: any): void {
+    this.recipientSelectedDept = node;
+    this.destinataireLabel = node.nom || '';
+    this.destinataire = node.email || '';
+    modalRef.close();
+  }
+
+  clearRecipientDept(): void {
+    this.recipientSelectedDept = null;
+    this.destinataireLabel = '';
+    this.destinataire = '';
+  }
+
+  // --------------------------------------------------------------------------
+  // CC (Contact En Copie) – organigramme tree (multi-select)
+  // --------------------------------------------------------------------------
+  openCcModal(content: any): void {
+    this.prepareAndLoadOrgaThenCcTree();
+    this.modalService.open(content, { size: 'xl' });
+  }
+
+  private prepareAndLoadOrgaThenCcTree(): void {
+    if (this.selectedOrgaCode) {
+      this.loadCcTree(this.selectedOrgaCode);
+    } else {
+      this.correspService.queryOrga().subscribe({
+        next: (res: HttpResponse<any[]>) => {
+          this.orgaList = res.body || [];
+          const first = this.orgaList?.[0];
+          if (first) {
+            this.selectedOrgaCode = first.code ?? first.orgaCode ?? first.id?.toString() ?? null;
+          }
+          if (this.selectedOrgaCode) {
+            this.loadCcTree(this.selectedOrgaCode);
+          }
+        },
+        error: () => {
+          this.ccTree = [];
+        },
+      });
+    }
+  }
+
+  private loadCcTree(orgaCode: string): void {
+    this.ccLoadingTree = true;
+    this.correspService.getDepartementHierarchyByOrganigramme(orgaCode).subscribe({
+      next: (res: HttpResponse<DepartementTreeFeignDTO[]>) => {
+        this.ccTree = this.normalizeTree(res.body || []);
+        this.ccTreeFiltered = this.ccTree;
+        this.ccLoadingTree = false;
+      },
+      error: () => {
+        this.ccTree = [];
+        this.ccTreeFiltered = [];
+        this.ccLoadingTree = false;
+      },
+    });
+  }
+
+  filterCcTree(): void {
+    const q = (this.ccTreeSearchQuery || '').trim().toLowerCase();
+    if (!q) {
+      this.ccTreeFiltered = this.ccTree;
+      return;
+    }
+    this.ccTreeFiltered = this.filterTree(this.ccTree, q);
+    this.expandAllFilteredNodes(this.ccTreeFiltered, this.ccExpandedNodes);
+  }
+
+  toggleCcNodeExpand(nodeId: number): void {
+    if (this.ccExpandedNodes.has(nodeId)) {
+      this.ccExpandedNodes.delete(nodeId);
+    } else {
+      this.ccExpandedNodes.add(nodeId);
+    }
+  }
+
+  isCcNodeExpanded(nodeId: number): boolean {
+    return this.ccExpandedNodes.has(nodeId);
+  }
+
+  toggleCcDept(node: DepartementTreeFeignDTO): void {
+    const code = node.code ?? '';
+    const idx = this.selectedCcDepts.findIndex(d => d.codeDept === code);
+    if (idx >= 0) {
+      this.selectedCcDepts.splice(idx, 1);
+    } else {
+      this.selectedCcDepts.push({
+        idDept: node.id ?? null,
+        codeDept: code,
+        nomDept: node.nom ?? '',
+        emailDept: node.email ?? '',
+      });
+    }
+  }
+
+  isCcDeptSelected(node: DepartementTreeFeignDTO): boolean {
+    return !!this.selectedCcDepts.find(d => d.codeDept === (node.code ?? ''));
+  }
+
+  removeCcDept(cc: IContactCopieCorresp): void {
+    const idx = this.selectedCcDepts.findIndex(d => d.codeDept === cc.codeDept);
+    if (idx >= 0) {
+      this.selectedCcDepts.splice(idx, 1);
+    }
+    this.updateCcLabelsFromSelection();
+  }
+
+  confirmCcSelection(modalRef: any): void {
+    this.updateCcLabelsFromSelection();
+    modalRef.close();
+  }
+
+  private updateCcLabelsFromSelection(): void {
+    if (this.selectedCcDepts.length === 0) {
+      this.contactEmailCCLabel = '';
+      this.contactEmailCC = '';
+    } else {
+      this.contactEmailCCLabel = this.selectedCcDepts.map(d => d.nomDept || d.codeDept || '').join(', ');
+      this.contactEmailCC = this.selectedCcDepts
+        .map(d => d.emailDept || '')
+        .filter(Boolean)
+        .join(', ');
+    }
+  }
+
+  private expandAllFilteredNodes(nodes: DepartementTreeFeignDTO[], expandedSet: Set<number>): void {
+    for (const node of nodes) {
+      if (node.id != null) {
+        expandedSet.add(node.id);
+      }
+      if (node.children?.length) {
+        this.expandAllFilteredNodes(node.children, expandedSet);
+      }
+    }
   }
 }

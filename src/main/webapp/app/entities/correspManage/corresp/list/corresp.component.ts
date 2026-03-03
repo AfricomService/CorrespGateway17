@@ -175,8 +175,9 @@ export class CorrespComponent implements OnInit {
   // }
 
   onRowPrepared(e: any) {
-    console.log(e); // eslint-disable-line no-console
-    // e.rowElement.style.fontWeight = 'bold';  // make text bold
+    if (e.rowType !== 'data') {
+      return;
+    }
     switch (e.data.corresptype) {
       case CorrespType.INCOMING:
         e.rowElement.style.backgroundColor = '#d1f7d6'; // light green

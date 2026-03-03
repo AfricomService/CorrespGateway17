@@ -338,25 +338,6 @@
                   </div>
 
                   <div style="flex: 1">
-                    <label class="form-label fw-semibold">Destinataire <span class="text-danger">*</span></label>
-                    <input
-                      [(ngModel)]="destinataireLabel"
-                      [class.is-invalid]="validationInfoGenErrors['destinataire']"
-                      [readonly]="destinataireLabel"
-                      class="form-control"
-                      name="destinataire"
-                      placeholder="Entrer le destinataire"
-                      type="text"
-                    />
-                    <div *ngIf="validationInfoGenErrors['destinataire']" class="invalid-feedback">
-                      {{ validationInfoGenErrors['destinataire'] }}
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Contact / CC -->
-                <div style="display: flex; gap: 12px; margin-bottom: 1.5em">
-                  <div style="flex: 1">
                     <label class="form-label fw-semibold">Contact <span class="text-danger">*</span></label>
                     <div *ngIf="!showManualContact" style="display: flex; gap: 8px; align-items: center">
                       <dx-select-box
@@ -419,17 +400,142 @@
                       </button>
                     </div>
                   </div>
+                </div>
 
+                <!-- ================= DESTINATAIRE + CONTACT EN COPIE (même ligne) ================= -->
+                <div style="display: flex; gap: 12px; margin-bottom: 1.5em">
+                  <!-- DESTINATAIRE -->
+                  <div style="flex: 1">
+                    <label class="form-label fw-semibold">Destinataire <span class="text-danger">*</span></label>
+                    <div style="display: flex; gap: 10px; align-items: center">
+                      <input
+                        [(ngModel)]="destinataireLabel"
+                        [class.is-invalid]="validationInfoGenErrors['destinataire']"
+                        [disabled]="true"
+                        class="form-control"
+                        name="destinataire"
+                        placeholder="Entrer le destinataire"
+                        type="text"
+                        style="flex: 1"
+                      />
+                      <button
+                        type="button"
+                        class="btn btn-outline-secondary"
+                        (click)="openRecipientModal(DestinataireModal)"
+                        title="Choisir via l'organigramme"
+                        style="padding: 6px 8px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                          <path
+                            d="M8 1a.5.5 0 0 1 .5.5V7.5H14a.5.5 0 0 1 0 1H8.5V14a.5.5 0 0 1-1 0V8.5H2a.5.5 0 0 1 0-1h5.5V1.5A.5.5 0 0 1 8 1z"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                    <div *ngIf="validationInfoGenErrors['destinataire']" class="invalid-feedback" style="display: block">
+                      {{ validationInfoGenErrors['destinataire'] }}
+                    </div>
+                    <!-- Chip du département destinataire sélectionné -->
+                    <div *ngIf="destinataireLabel" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px">
+                      <span
+                        style="
+                          display: inline-flex;
+                          align-items: center;
+                          gap: 4px;
+                          background: #e8f2ff;
+                          color: #1e7bff;
+                          border-radius: 16px;
+                          padding: 2px 10px;
+                          font-size: 13px;
+                          font-weight: 500;
+                        "
+                      >
+                        {{ destinataireLabel }}
+                        <button
+                          type="button"
+                          (click)="clearRecipientDept()"
+                          style="
+                            background: none;
+                            border: none;
+                            color: #1e7bff;
+                            font-size: 14px;
+                            cursor: pointer;
+                            padding: 0 2px;
+                            line-height: 1;
+                          "
+                          title="Retirer"
+                        >
+                          &times;
+                        </button>
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- CONTACT EN COPIE -->
                   <div style="flex: 1">
                     <label class="form-label fw-semibold">Contact En Copie</label>
-                    <input
-                      [(ngModel)]="contactEmailCCLabel"
-                      [readonly]="contactEmailCCLabel"
-                      class="form-control"
-                      name="contactEmailCC"
-                      placeholder="Entrer le contact en copie"
-                      type="text"
-                    />
+                    <div style="display: flex; gap: 10px; align-items: center">
+                      <input
+                        [value]="contactEmailCCLabel"
+                        [disabled]="true"
+                        class="form-control"
+                        name="contactEmailCC"
+                        placeholder="Sélectionner les contacts en copie"
+                        type="text"
+                        style="flex: 1"
+                      />
+                      <button
+                        type="button"
+                        class="btn btn-outline-secondary"
+                        (click)="openCcModal(ContactCopieModal)"
+                        title="Choisir les contacts en copie via l'organigramme"
+                        style="padding: 6px 8px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0"
+                        [disabled]="!selectedTypeDocument"
+                        [style.opacity]="!selectedTypeDocument ? '0.5' : '1'"
+                        [style.cursor]="!selectedTypeDocument ? 'not-allowed' : 'pointer'"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                          <path
+                            d="M8 1a.5.5 0 0 1 .5.5V7.5H14a.5.5 0 0 1 0 1H8.5V14a.5.5 0 0 1-1 0V8.5H2a.5.5 0 0 1 0-1h5.5V1.5A.5.5 0 0 1 8 1z"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                    <!-- Chips des départements CC sélectionnés -->
+                    <div *ngIf="selectedCcDepts.length > 0" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px">
+                      <span
+                        *ngFor="let cc of selectedCcDepts"
+                        style="
+                          display: inline-flex;
+                          align-items: center;
+                          gap: 4px;
+                          background: #e8f2ff;
+                          color: #1e7bff;
+                          border-radius: 16px;
+                          padding: 2px 10px;
+                          font-size: 13px;
+                          font-weight: 500;
+                        "
+                      >
+                        {{ cc.nomDept || cc.codeDept }}
+                        <button
+                          type="button"
+                          (click)="removeCcDept(cc)"
+                          style="
+                            background: none;
+                            border: none;
+                            color: #1e7bff;
+                            font-size: 14px;
+                            cursor: pointer;
+                            padding: 0 2px;
+                            line-height: 1;
+                          "
+                          title="Retirer"
+                        >
+                          &times;
+                        </button>
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -437,8 +543,27 @@
                 <div style="display: flex; gap: 12px; margin-bottom: 1.5em; border-top: 1px dashed #5570a3">
                   <div style="flex: 1; display: flex; align-items: center; gap: 16px; padding-top: 30px">
                     <div style="flex: 1">
-                      <label class="form-label fw-semibold">Reponse Sur</label>
-                      <input [(ngModel)]="reponseSur" class="form-control" name="reponseSur" type="text" />
+                      <label class="form-label fw-semibold">Réponse Sur</label>
+                      <dx-select-box
+                        [(value)]="reponseSur"
+                        [dataSource]="correspsWithReference"
+                        [valueExpr]="'reference'"
+                        displayExpr="reference"
+                        [searchEnabled]="true"
+                        [searchExpr]="responseSearchExpr"
+                        placeholder="-- Choisir une correspondance (référence) --"
+                        class="w-100"
+                        [disabled]="loadingCorrespsWithRef"
+                        (onValueChanged)="onSelectReponseSur($event.value)"
+                      >
+                        <div *dxTemplate="let item of 'listItem'">
+                          <div>
+                            <strong>{{ item.reference || '(Sans référence)' }}</strong>
+                            <span *ngIf="item.subject"> — {{ item.subject }}</span>
+                            <span *ngIf="item.idinstance" class="text-muted"> — {{ item.idinstance }}</span>
+                          </div>
+                        </div>
+                      </dx-select-box>
                     </div>
 
                     <!-- <div style="flex: 1">
@@ -1509,4 +1634,198 @@
       SUPPRIMER
     </button>
   </div>
+</ng-template>
+
+<!-- ==================== MODAL DESTINATAIRE (single-select) ==================== -->
+<ng-template #DestinataireModal let-DestinataireModal class="modal-dialog modal-lg modal-dialog-centered">
+  <div class="modal-header">
+    <h4 class="modal-title" style="color: #2c3e50; font-weight: bold; text-transform: uppercase; font-style: italic">
+      Organigramme des départements — Destinataire
+    </h4>
+  </div>
+  <div class="modal-body">
+    <div style="height: 420px; overflow: auto; border: 1px solid #e9ecef; border-radius: 8px; padding: 12px; background: #fff">
+      <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px">
+        <input
+          type="text"
+          class="form-control"
+          [(ngModel)]="recipientTreeSearchQuery"
+          name="recipientTreeSearchQueryDetail"
+          (input)="filterRecipientTree()"
+          placeholder="Rechercher un département..."
+        />
+      </div>
+      <div *ngIf="recipientLoadingTree" style="text-align: center; padding: 40px 0; color: #6c757d">Chargement de l'organigramme...</div>
+      <ul *ngIf="!recipientLoadingTree && recipientTreeFiltered?.length" style="padding-left: 0; margin: 0; list-style: none">
+        <ng-container *ngFor="let node of recipientTreeFiltered">
+          <ng-template [ngTemplateOutlet]="renderRecipientNodeDetail" [ngTemplateOutletContext]="{ node: node, level: 0 }"></ng-template>
+        </ng-container>
+      </ul>
+      <div
+        *ngIf="!recipientLoadingTree && (!recipientTreeFiltered || recipientTreeFiltered.length === 0)"
+        style="text-align: center; color: #6c757d"
+      >
+        Aucun département disponible.
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-light" (click)="DestinataireModal.close('Close click')">Annuler</button>
+  </div>
+  <ng-template #renderRecipientNodeDetail let-node="node" let-level="level">
+    <li style="margin: 8px 0; list-style: none">
+      <div
+        (click)="toggleRecipientNodeExpand(node.id)"
+        style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 8px;
+          padding: 8px;
+          border-radius: 8px;
+          cursor: pointer;
+        "
+        [style.borderStyle]="'solid'"
+        [style.borderWidth.px]="3"
+        [style.borderColor]="getLevelColor(level)"
+        [style.background]="recipientSelectedDept?.id === node.id ? '#e9f2ff' : '#ffffff'"
+      >
+        <div style="display: flex; align-items: center; gap: 8px">
+          <i
+            [class]="isRecipientNodeExpanded(node.id) ? 'fa fa-chevron-down' : 'fa fa-chevron-right'"
+            style="color: #6c757d; font-size: 12px"
+          ></i>
+          <span style="font-weight: 600; color: #2c3e50">{{ node.nom }}</span>
+        </div>
+        <div style="display: flex; gap: 12px; align-items: center">
+          <span *ngIf="(node.children?.length || 0) > 0" style="font-size: 13px; color: #6c757d">{{ node.children.length }}</span>
+          <input
+            type="checkbox"
+            [checked]="recipientSelectedDept?.id === node.id"
+            (change)="selectRecipientDept(node, DestinataireModal); $event.stopPropagation()"
+            style="width: 18px; height: 18px; cursor: pointer"
+          />
+        </div>
+      </div>
+      <ul
+        *ngIf="isRecipientNodeExpanded(node.id) && node.children?.length"
+        [style.marginLeft.px]="(level + 1) * 18"
+        style="margin: 6px 0 0 0; padding-left: 0; list-style: none"
+      >
+        <ng-container *ngFor="let c of node.children">
+          <ng-template
+            [ngTemplateOutlet]="renderRecipientNodeDetail"
+            [ngTemplateOutletContext]="{ node: c, level: level + 1 }"
+          ></ng-template>
+        </ng-container>
+      </ul>
+    </li>
+  </ng-template>
+</ng-template>
+
+<!-- ==================== MODAL CONTACT EN COPIE (multi-select) ==================== -->
+<ng-template #ContactCopieModal let-ContactCopieModal class="modal-dialog modal-lg modal-dialog-centered">
+  <div class="modal-header">
+    <h4 class="modal-title" style="color: #2c3e50; font-weight: bold; text-transform: uppercase; font-style: italic">
+      Contacts En Copie — Organigramme
+    </h4>
+  </div>
+  <div class="modal-body">
+    <div *ngIf="selectedCcDepts.length > 0" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px">
+      <span
+        *ngFor="let cc of selectedCcDepts"
+        style="
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          background: #e8f2ff;
+          color: #1e7bff;
+          border-radius: 16px;
+          padding: 4px 12px;
+          font-size: 13px;
+          font-weight: 500;
+        "
+      >
+        {{ cc.nomDept || cc.codeDept }}
+        <button
+          type="button"
+          (click)="removeCcDept(cc)"
+          style="background: none; border: none; color: #1e7bff; font-size: 14px; cursor: pointer; padding: 0 2px; line-height: 1"
+          title="Retirer"
+        >
+          &times;
+        </button>
+      </span>
+    </div>
+    <div style="height: 420px; overflow: auto; border: 1px solid #e9ecef; border-radius: 8px; padding: 12px; background: #fff">
+      <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px">
+        <input
+          type="text"
+          class="form-control"
+          [(ngModel)]="ccTreeSearchQuery"
+          name="ccTreeSearchQueryDetail"
+          (input)="filterCcTree()"
+          placeholder="Rechercher un département..."
+        />
+      </div>
+      <div *ngIf="ccLoadingTree" style="text-align: center; padding: 40px 0; color: #6c757d">Chargement de l'organigramme...</div>
+      <ul *ngIf="!ccLoadingTree && ccTreeFiltered?.length" style="padding-left: 0; margin: 0; list-style: none">
+        <ng-container *ngFor="let node of ccTreeFiltered">
+          <ng-template [ngTemplateOutlet]="renderCcNodeDetail" [ngTemplateOutletContext]="{ node: node, level: 0 }"></ng-template>
+        </ng-container>
+      </ul>
+      <div *ngIf="!ccLoadingTree && (!ccTreeFiltered || ccTreeFiltered.length === 0)" style="text-align: center; color: #6c757d">
+        Aucun département disponible.
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-light" (click)="ContactCopieModal.close('Close click')">Annuler</button>
+    <button type="button" class="btn btn-primary" (click)="confirmCcSelection(ContactCopieModal)">
+      Confirmer ({{ selectedCcDepts.length }})
+    </button>
+  </div>
+  <ng-template #renderCcNodeDetail let-node="node" let-level="level">
+    <li style="margin: 8px 0; list-style: none">
+      <div
+        (click)="toggleCcNodeExpand(node.id)"
+        style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 8px;
+          padding: 8px;
+          border-radius: 8px;
+          cursor: pointer;
+        "
+        [style.borderStyle]="'solid'"
+        [style.borderWidth.px]="3"
+        [style.borderColor]="getLevelColor(level)"
+        [style.background]="isCcDeptSelected(node) ? '#e9f2ff' : '#ffffff'"
+      >
+        <div style="display: flex; align-items: center; gap: 8px">
+          <i [class]="isCcNodeExpanded(node.id) ? 'fa fa-chevron-down' : 'fa fa-chevron-right'" style="color: #6c757d; font-size: 12px"></i>
+          <span style="font-weight: 600; color: #2c3e50">{{ node.nom }}</span>
+        </div>
+        <div style="display: flex; gap: 12px; align-items: center">
+          <span *ngIf="(node.children?.length || 0) > 0" style="font-size: 13px; color: #6c757d">{{ node.children.length }}</span>
+          <input
+            type="checkbox"
+            [checked]="isCcDeptSelected(node)"
+            (change)="toggleCcDept(node); $event.stopPropagation()"
+            style="width: 18px; height: 18px; cursor: pointer"
+          />
+        </div>
+      </div>
+      <ul
+        *ngIf="isCcNodeExpanded(node.id) && node.children?.length"
+        [style.marginLeft.px]="(level + 1) * 18"
+        style="margin: 6px 0 0 0; padding-left: 0; list-style: none"
+      >
+        <ng-container *ngFor="let c of node.children">
+          <ng-template [ngTemplateOutlet]="renderCcNodeDetail" [ngTemplateOutletContext]="{ node: c, level: level + 1 }"></ng-template>
+        </ng-container>
+      </ul>
+    </li>
+  </ng-template>
 </ng-template>
