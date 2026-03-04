@@ -543,8 +543,7 @@ export class CorrespComponent implements OnInit {
   // }
 
   onRowDoubleClick(e: any): void {
-    //const url = `/cc/corresp/${e.data.id}/view`;
-    const url = `/corresp/${e.data.id}/view`;
+    const url = `/cc/corresp/${e.data.id}/view`;
     window.open(url, '_blank');
   }
 
