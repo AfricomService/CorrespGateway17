@@ -199,6 +199,10 @@ export class CorrespDetailComponent implements OnInit {
   // Cache pour la résolution des noms de départements
   private deptNameByCode: Map<string, string> = new Map();
 
+  // === Message receiver / copyTo (provenant de N8N / email) ===
+  messageReceiverEmails: string[] = [];
+  messageCopyToEmails: string[] = [];
+
   constructor(
     protected activatedRoute: ActivatedRoute,
     protected router: Router,
@@ -295,6 +299,22 @@ export class CorrespDetailComponent implements OnInit {
       this.pjsLoaded = res.body || [];
     });
 
+    // Charger receiver et copyTo du message associé à cette correspondance
+    this.correspService.getMessageByCorrespId(Number(id)).subscribe({
+      next: res => {
+        const data = res.body;
+        if (data) {
+          this.messageReceiverEmails = this.extractEmails(data.receiver);
+          this.messageCopyToEmails = this.extractEmails(data.copyTo);
+        }
+      },
+      error: () => {
+        // Pas de message associé (404) ou erreur → on garde les tableaux vides
+        this.messageReceiverEmails = [];
+        this.messageCopyToEmails = [];
+      },
+    });
+
     this.correspType = 'Arrivée';
 
     // this.correspService.queryOrga().subscribe(res => {
@@ -323,6 +343,29 @@ export class CorrespDetailComponent implements OnInit {
   }
   onSelectReponseSur(reference: string | null): void {
     this.reponseSur = reference ?? '';
+  }
+
+  /**
+   * Extrait les adresses email depuis les données receiver/copyTo du message.
+   * Le backend peut renvoyer :
+   * - une liste d'objets [{email: "a@b.com"}, ...]
+   * - une chaîne brute "a@b.com, c@d.com"
+   * - null/undefined
+   */
+  extractEmails(data: any): string[] {
+    if (!data) {
+      return [];
+    }
+    if (Array.isArray(data)) {
+      return data.map((entry: any) => (typeof entry === 'object' && entry.email ? entry.email : String(entry))).filter((e: string) => !!e);
+    }
+    if (typeof data === 'string') {
+      return data
+        .split(/[,;]+/)
+        .map((s: string) => s.trim())
+        .filter((s: string) => s.length > 0);
+    }
+    return [String(data)];
   }
 
   formatLongDate(date: dayjs.Dayjs | string | null | undefined): string {

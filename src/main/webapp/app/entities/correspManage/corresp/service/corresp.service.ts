@@ -132,6 +132,12 @@ export class CorrespService {
     });
   }
 
+  getMessageByCorrespId(correspId: number) {
+    return this.http.get<{ receiver: any; copyTo: any }>(`${this.resourceUrl}/${correspId}/message`, {
+      observe: 'response',
+    });
+  }
+
   delete(id: number): Observable<HttpResponse<{}>> {
     return this.http.delete(`${this.resourceUrl}Delete/${id}`, { observe: 'response' });
   }

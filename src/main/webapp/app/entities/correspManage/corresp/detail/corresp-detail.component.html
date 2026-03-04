@@ -539,6 +539,62 @@
                   </div>
                 </div>
 
+                <!-- Receiver / CopyTo emails provenant du message (N8N / email) — visible en mode DRAFT -->
+                <div
+                  *ngIf="messageReceiverEmails.length > 0 || messageCopyToEmails.length > 0"
+                  style="
+                    display: flex;
+                    gap: 12px;
+                    margin-bottom: 1.5em;
+                    padding: 12px;
+                    background: #f8f9fa;
+                    border-radius: 8px;
+                    border: 1px solid #dee2e6;
+                  "
+                >
+                  <div *ngIf="messageReceiverEmails.length > 0" style="flex: 1">
+                    <label class="form-label fw-semibold" style="margin-bottom: 6px">À :</label>
+                    <div style="display: flex; flex-wrap: wrap; gap: 6px">
+                      <span
+                        *ngFor="let email of messageReceiverEmails"
+                        style="
+                          display: inline-flex;
+                          align-items: center;
+                          background: #e8f2ff;
+                          color: #1565c0;
+                          border-radius: 16px;
+                          border-radius: 16px;
+                          padding: 2px 10px;
+                          font-size: 13px;
+                          font-weight: 500;
+                        "
+                      >
+                        {{ email }}
+                      </span>
+                    </div>
+                  </div>
+                  <div *ngIf="messageCopyToEmails.length > 0" style="flex: 1">
+                    <label class="form-label fw-semibold" style="margin-bottom: 6px">CC :</label>
+                    <div style="display: flex; flex-wrap: wrap; gap: 6px">
+                      <span
+                        *ngFor="let email of messageCopyToEmails"
+                        style="
+                          display: inline-flex;
+                          align-items: center;
+                          background: #fff3e0;
+                          color: #e65100;
+                          border-radius: 16px;
+                          padding: 2px 10px;
+                          font-size: 13px;
+                          font-weight: 500;
+                        "
+                      >
+                        {{ email }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
                 <!-- Autres champs -->
                 <div style="display: flex; gap: 12px; margin-bottom: 1.5em; border-top: 1px dashed #5570a3">
                   <div style="flex: 1; display: flex; align-items: center; gap: 16px; padding-top: 30px">
@@ -614,6 +670,47 @@
                     <strong jhiTranslate="correspCareApp.correspManageCorresp.recipient">Destinataire</strong> :
                     {{ correspLoaded?.labelDestinataire }} | <strong jhiTranslate="correspCareApp.correspManageCorresp.cc">CC</strong> :
                     {{ correspLoaded?.labelContactCC }}
+                  </p>
+                  <!-- Receiver / CopyTo emails provenant du message (N8N / email) -->
+                  <p *ngIf="messageReceiverEmails.length > 0" style="margin-bottom: 6px">
+                    <strong>À :</strong>&nbsp;
+                    <span
+                      *ngFor="let email of messageReceiverEmails"
+                      style="
+                        display: inline-flex;
+                        align-items: center;
+                        background: #e8f2ff;
+                        color: #1565c0;
+                        border-radius: 16px;
+                        padding: 2px 10px;
+                        font-size: 13px;
+                        font-weight: 500;
+                        margin-right: 4px;
+                        margin-bottom: 2px;
+                      "
+                    >
+                      {{ email }}
+                    </span>
+                  </p>
+                  <p *ngIf="messageCopyToEmails.length > 0" style="margin-bottom: 6px">
+                    <strong>CC :</strong>&nbsp;
+                    <span
+                      *ngFor="let email of messageCopyToEmails"
+                      style="
+                        display: inline-flex;
+                        align-items: center;
+                        background: #fff3e0;
+                        color: #e65100;
+                        border-radius: 16px;
+                        padding: 2px 10px;
+                        font-size: 13px;
+                        font-weight: 500;
+                        margin-right: 4px;
+                        margin-bottom: 2px;
+                      "
+                    >
+                      {{ email }}
+                    </span>
                   </p>
                   <p>
                     <strong jhiTranslate="correspCareApp.correspManageCorresp.date">Date</strong> :
@@ -914,14 +1011,54 @@
                     {{ expediteur || correspLoaded?.sender || '-' }}
                   </div>
 
-                  <div class="hq-item" title="{{ destinataireLabel || 'Destinataire principal (à remplacer)' }}">
+                  <div class="hq-item" title="{{ destinataireLabel || 'Destinataire principal' }}">
                     <strong jhiTranslate="correspCareApp.correspManageCorresp.detail.to">À :</strong>
-                    {{ destinataireLabel || 'Destinataire principal (à remplacer)' }}
+                    <ng-container *ngIf="messageReceiverEmails.length > 0; else fallbackDestinataire">
+                      <span
+                        *ngFor="let email of messageReceiverEmails"
+                        style="
+                          display: inline-flex;
+                          align-items: center;
+                          background: #e8f2ff;
+                          color: #1565c0;
+                          border-radius: 16px;
+                          padding: 1px 8px;
+                          font-size: 12px;
+                          font-weight: 500;
+                          margin-left: 4px;
+                        "
+                      >
+                        {{ email }}
+                      </span>
+                    </ng-container>
+                    <ng-template #fallbackDestinataire>
+                      {{ destinataireLabel || '-' }}
+                    </ng-template>
                   </div>
 
-                  <div class="hq-item" title="{{ contactEmailCCLabel || 'Contact en copie (à remplacer)' }}">
+                  <div class="hq-item" title="{{ contactEmailCCLabel || 'Contact en copie' }}">
                     <strong jhiTranslate="correspCareApp.correspManageCorresp.cc">CC :</strong>
-                    {{ contactEmailCCLabel || 'Contact en copie (à remplacer)' }}
+                    <ng-container *ngIf="messageCopyToEmails.length > 0; else fallbackCC">
+                      <span
+                        *ngFor="let email of messageCopyToEmails"
+                        style="
+                          display: inline-flex;
+                          align-items: center;
+                          background: #fff3e0;
+                          color: #e65100;
+                          border-radius: 16px;
+                          padding: 1px 8px;
+                          font-size: 12px;
+                          font-weight: 500;
+                          margin-left: 4px;
+                        "
+                      >
+                        {{ email }}
+                      </span>
+                    </ng-container>
+                    <ng-template #fallbackCC>
+                      {{ contactEmailCCLabel || '-' }}
+                    </ng-template>
                   </div>
                 </div>
 
@@ -965,11 +1102,52 @@
                       {{ correspLoaded?.sender || '-' }}
                     </div>
                     <div style="font-size: 0.95em">
-                      <strong jhiTranslate="correspCareApp.correspManageCorresp.detail.to">À :</strong> Destinataire principal (hard-coded)
+                      <strong jhiTranslate="correspCareApp.correspManageCorresp.detail.to">À :</strong>
+                      <ng-container *ngIf="messageReceiverEmails.length > 0; else fallbackDestReadOnly">
+                        <span
+                          *ngFor="let email of messageReceiverEmails"
+                          style="
+                            display: inline-flex;
+                            align-items: center;
+                            background: #e8f2ff;
+                            color: #1565c0;
+                            border-radius: 16px;
+                            padding: 1px 8px;
+                            font-size: 12px;
+                            font-weight: 500;
+                            margin-left: 4px;
+                          "
+                        >
+                          {{ email }}
+                        </span>
+                      </ng-container>
+                      <ng-template #fallbackDestReadOnly>
+                        {{ destinataireLabel || '-' }}
+                      </ng-template>
                     </div>
                     <div style="font-size: 0.95em">
                       <strong jhiTranslate="correspCareApp.correspManageCorresp.cc">CC :</strong>
-                      {{ correspLoaded?.labelContactCC || 'Contact en copie (hard-coded)' }}
+                      <ng-container *ngIf="messageCopyToEmails.length > 0; else fallbackCCReadOnly">
+                        <span
+                          *ngFor="let email of messageCopyToEmails"
+                          style="
+                            display: inline-flex;
+                            align-items: center;
+                            background: #fff3e0;
+                            color: #e65100;
+                            border-radius: 16px;
+                            padding: 1px 8px;
+                            font-size: 12px;
+                            font-weight: 500;
+                            margin-left: 4px;
+                          "
+                        >
+                          {{ email }}
+                        </span>
+                      </ng-container>
+                      <ng-template #fallbackCCReadOnly>
+                        {{ correspLoaded?.labelContactCC || '-' }}
+                      </ng-template>
                     </div>
                   </div>
                 </div>
