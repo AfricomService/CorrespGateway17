@@ -138,6 +138,16 @@ export class CorrespService {
     });
   }
 
+  getCorrespsByUserAcl(userId: number): Observable<EntityArrayResponseType> {
+    const options = createRequestOption({ userId });
+    return this.http
+      .get<RestCorresp[]>(`${this.resourceUrl}/correspsByUserAcl`, {
+        params: options,
+        observe: 'response',
+      })
+      .pipe(map(res => this.convertResponseArrayFromServer(res)));
+  }
+
   delete(id: number): Observable<HttpResponse<{}>> {
     return this.http.delete(`${this.resourceUrl}Delete/${id}`, { observe: 'response' });
   }
