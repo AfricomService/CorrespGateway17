@@ -9,6 +9,7 @@ import { Title } from '@angular/platform-browser';
 
 import { AccountService } from 'app/core/auth/account.service';
 import { Account } from 'app/core/auth/account.model';
+import { Authority } from 'app/config/authority.constants';
 import { ITasks } from '../entities/correspManage/tasks/tasks.model';
 import { CorrespStatus } from 'app/entities/enumerations/corresp-status.model';
 import { HttpResponse } from '@angular/common/http';
@@ -50,6 +51,9 @@ export class HomeComponent implements OnInit, OnDestroy {
   loadPanel = { enabled: true };
   sorting = { mode: 'none' };
 
+  // ARRIVÉE : activé uniquement pour BOC ou ADMIN
+  canCreateArrivee = false;
+
   constructor(
     private accountService: AccountService,
     private router: Router,
@@ -67,6 +71,12 @@ export class HomeComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(account => {
         this.account = account;
+
+        // Vérifier si l'utilisateur a le rôle BOC ou ADMIN pour activer le bouton ARRIVÉE
+        this.canCreateArrivee =
+          account != null &&
+          account.authorities != null &&
+          (account.authorities.includes(Authority.BOC) || account.authorities.includes(Authority.ADMIN));
 
         const name = account && account.firstName ? account.firstName : '';
         this.translate.get('home.title', { firstName: name }).subscribe(translatedTitle => {

@@ -33,12 +33,16 @@
                 class="mail-option"
                 data-type="arrivee"
                 role="button"
-                tabindex="0"
+                [attr.tabindex]="canCreateArrivee ? 0 : -1"
                 [attr.aria-label]="'home.arrival' | translate"
-                (click)="onTypeClicked('Arrivée')"
-                (keydown.enter)="onTypeClicked('Arrivée')"
-                (keydown.space)="onTypeClicked('Arrivée')"
-                [attr.title]="'home.arrival' | translate"
+                (click)="canCreateArrivee && onTypeClicked('Arrivée')"
+                (keydown.enter)="canCreateArrivee && onTypeClicked('Arrivée')"
+                (keydown.space)="canCreateArrivee && onTypeClicked('Arrivée')"
+                [attr.title]="canCreateArrivee ? ('home.arrival' | translate) : 'Accès réservé aux rôles BOC et Admin'"
+                [class.disabled-option]="!canCreateArrivee"
+                [style.opacity]="canCreateArrivee ? 1 : 0.45"
+                [style.pointer-events]="canCreateArrivee ? 'auto' : 'none'"
+                [attr.aria-disabled]="!canCreateArrivee"
               >
                 <span class="option-icon" aria-hidden="true">
                   <!-- Icône Inbox (Arrivée) avec flèche rouge descendante -->
