@@ -1466,7 +1466,8 @@ export class CorrespUpdateComponent implements OnInit {
     this.destinataire = this.recipientSelectedDept.email || '';
 
     // Mettre à jour ou créer la tâche "traitement" associée au destinataire
-    const existingIdx = this.tasks.findIndex(t => t.typeTask === 'traitement');
+    // (ignorer la tâche BOC auto-créée qui est aussi de type 'traitement')
+    const existingIdx = this.tasks.findIndex(t => t.typeTask === 'traitement' && !t.autoBoc);
     const newTaskData = {
       typeTask: 'traitement',
       responsable: this.recipientSelectedDept.code ?? '',
@@ -1490,7 +1491,8 @@ export class CorrespUpdateComponent implements OnInit {
     this.destinataire = node.email || '';
 
     // Mettre à jour ou créer la tâche "traitement" associée au destinataire
-    const existingIdx = this.tasks.findIndex(t => t.typeTask === 'traitement');
+    // (ignorer la tâche BOC auto-créée qui est aussi de type 'traitement')
+    const existingIdx = this.tasks.findIndex(t => t.typeTask === 'traitement' && !t.autoBoc);
     const newTaskData = {
       typeTask: 'traitement',
       responsable: node.code ?? '',
@@ -1512,8 +1514,8 @@ export class CorrespUpdateComponent implements OnInit {
     this.recipientSelectedDept = null;
     this.destinataireLabel = '';
     this.destinataire = '';
-    // Supprimer la tâche "traitement" associée au destinataire
-    const idx = this.tasks.findIndex(t => t.typeTask === 'traitement');
+    // Supprimer la tâche "traitement" associée au destinataire (pas la tâche BOC)
+    const idx = this.tasks.findIndex(t => t.typeTask === 'traitement' && !t.autoBoc);
     if (idx >= 0) {
       this.tasks.splice(idx, 1);
     }
