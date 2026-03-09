@@ -300,12 +300,13 @@ export class CorrespDetailComponent implements OnInit {
     });
 
     // Charger receiver et copyTo du message associé à cette correspondance
-    this.correspService.getMessageByCorrespId(Number(id)).subscribe({
-      next: res => {
-        const data = res.body;
-        if (data) {
-          this.messageReceiverEmails = this.extractEmails(data.receiver);
-          this.messageCopyToEmails = this.extractEmails(data.copyTo);
+    this.correspService.getMessagesByCorrespId(Number(id)).subscribe({
+      next: (res: HttpResponse<any[]>) => {
+        const messages = res.body;
+        if (messages && messages.length > 0) {
+          const msg = messages[0];
+          this.messageReceiverEmails = this.extractEmails(msg.receiver);
+          this.messageCopyToEmails = this.extractEmails(msg.copyTo);
         }
       },
       error: () => {

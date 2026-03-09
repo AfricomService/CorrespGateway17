@@ -10,6 +10,7 @@ import { createRequestOption } from 'app/core/request/request-util';
 import { ICorresp, NewCorresp } from '../corresp.model';
 import { ITasks } from '../../tasks/tasks.model';
 import { IPj } from '../../pj/pj.model';
+import { IMessage } from '../../message/message.model';
 import { IOrga } from '../orga';
 import { DepartementTreeFeignDTO } from '../update/DepartementTreeFeignDTO';
 import { IDepartement } from '../../../orgacare/departement/departement.model';
@@ -53,6 +54,7 @@ export class CorrespService {
   // url pour l'endpoint qui renvoie l'arbre de départements (service orgacare)
   protected resourceUrlDepartementHierarchy = this.applicationConfigService.getEndpointFor('api/departementshierarchy', 'orgacare');
   protected resourceUrlDepartementTree = this.applicationConfigService.getEndpointFor('api/departements/tree', 'orgacare');
+  protected resourceUrlMessages = this.applicationConfigService.getEndpointFor('api/messages', 'correspmanage');
 
   constructor(protected http: HttpClient, protected applicationConfigService: ApplicationConfigService) {}
 
@@ -130,22 +132,6 @@ export class CorrespService {
       observe: 'response',
       responseType: 'text' as 'json',
     });
-  }
-
-  getMessageByCorrespId(correspId: number) {
-    return this.http.get<{ receiver: any; copyTo: any }>(`${this.resourceUrl}/${correspId}/message`, {
-      observe: 'response',
-    });
-  }
-
-  getCorrespsByUserAcl(userId: number): Observable<EntityArrayResponseType> {
-    const options = createRequestOption({ userId });
-    return this.http
-      .get<RestCorresp[]>(`${this.resourceUrl}/correspsByUserAcl`, {
-        params: options,
-        observe: 'response',
-      })
-      .pipe(map(res => this.convertResponseArrayFromServer(res)));
   }
 
   delete(id: number): Observable<HttpResponse<{}>> {
@@ -344,5 +330,16 @@ export class CorrespService {
 
   getPermissions(correspId: number): Observable<CorrespPermissionsDTO> {
     return this.http.get<CorrespPermissionsDTO>(`${this.resourceUrl}/${correspId}/permissions`);
+  }
+
+  getCorrespsByUserAcl(userId: number): Observable<EntityArrayResponseType> {
+    const params = createRequestOption({ userId });
+    return this.http
+      .get<RestCorresp[]>(`${this.resourceUrl}/correspsByUserAcl`, { params, observe: 'response' })
+      .pipe(map(res => this.convertResponseArrayFromServer(res)));
+  }
+
+  getMessagesByCorrespId(correspId: number): Observable<HttpResponse<IMessage[]>> {
+    return this.http.get<IMessage[]>(`${this.resourceUrlMessages}/by-corresp/${correspId}`, { observe: 'response' });
   }
 }

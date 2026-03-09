@@ -41,6 +41,10 @@ import { DepartementTreeFeignDTO } from './DepartementTreeFeignDTO';
 import { PersonneFeignDTO } from './PersonneFeignDTO';
 import { TypeAffectation } from 'app/entities/correspManage/corresp/update/enums';
 
+import { AccountService } from 'app/core/auth/account.service';
+import { Account } from 'app/core/auth/account.model';
+import { Authority } from 'app/config/authority.constants';
+
 // --------------------------------------------------------------------------
 // Small helper interfaces
 // --------------------------------------------------------------------------
@@ -125,7 +129,14 @@ export class CorrespUpdateComponent implements OnInit {
     pieces: true,
   };
 
-  tasks: Array<{ typeTask: string; responsable: any; dateLimite: string; responsableName: string; commentaire: string }> = [];
+  tasks: Array<{
+    typeTask: string;
+    responsable: any;
+    dateLimite: string;
+    responsableName: string;
+    commentaire: string;
+    autoBoc?: boolean;
+  }> = [];
 
   correspType!: string;
 
@@ -208,7 +219,8 @@ export class CorrespUpdateComponent implements OnInit {
     protected typeDocumentService: TypedocumentService,
     public router: Router,
     protected contactCompanyService: ContactCompanyService,
-    protected parentClassdefService: ParentClassdefService
+    protected parentClassdefService: ParentClassdefService,
+    protected accountService: AccountService
   ) {}
 
   // --------------------------------------------------------------------------
@@ -243,6 +255,38 @@ export class CorrespUpdateComponent implements OnInit {
 
     this.route.queryParams.subscribe(params => {
       this.correspType = params['type'];
+
+      // Auto-create a "traitement" task for BOC users creating an Arrivée corresp
+      if (this.correspType === 'Arrivée') {
+        this.accountService.getAuthenticationState().subscribe(account => {
+          if (
+            account &&
+            account.authorities &&
+            (account.authorities.includes(Authority.BOC) || account.authorities.includes(Authority.ADMIN))
+          ) {
+            const userLogin = account.login;
+            const userName = [account.firstName, account.lastName].filter(Boolean).join(' ') || userLogin;
+
+            // Avoid duplicate: only add if no traitement task for this user already exists
+            const alreadyExists = this.tasks.some(t => t.typeTask === 'traitement' && t.responsable === userLogin);
+            if (!alreadyExists) {
+              this.tasks.push({
+                typeTask: 'traitement',
+                responsable: userLogin,
+                dateLimite: '',
+                responsableName: userName,
+                commentaire: '',
+                autoBoc: true,
+              });
+
+              // Open the tasks accordion to show the auto-created task
+              if (!this.accordionStates['taches']) {
+                this.accordionStates['taches'] = true;
+              }
+            }
+          }
+        });
+      }
     });
 
     this.loadUsers();
@@ -390,7 +434,7 @@ export class CorrespUpdateComponent implements OnInit {
       return;
     }
     this.tasks = this.tasks.map(t => {
-      if (t.typeTask === 'traitement') {
+      if (t.typeTask === 'traitement' && !t.autoBoc) {
         return { ...t, responsableName: this.destinataireLabel || t.responsableName || '' };
       }
       // Pour les tâches "lecture", chaque tâche garde son propre responsableName (nom du département CC)
@@ -413,11 +457,11 @@ export class CorrespUpdateComponent implements OnInit {
     this.objet = this.selectedTypeDocument.defaultobject || '';
 
     if (this.selectedTypeDocument.nom === 'Autre') {
-      this.tasks = [];
+      this.tasks = this.tasks.filter(t => t.autoBoc === true);
     }
 
     if (this.selectedTypeDocument.defautdest) {
-      this.tasks = [];
+      this.tasks = this.tasks.filter(t => t.autoBoc === true);
 
       this.correspService.queryOrgaDepsByCode({ code: this.selectedTypeDocument.defautdest }).subscribe({
         next: (res: HttpResponse<IDepartement>) => {
@@ -759,6 +803,16 @@ export class CorrespUpdateComponent implements OnInit {
       taskModel.dueDate = dayjs(t.dateLimite);
       taskModel.taskType = t.typeTask;
       taskModel.commentaire = t.commentaire;
+
+      // Peupler responsables pour alimenter la table responsable_tache côté backend
+      if (t.autoBoc) {
+        // Tâche BOC auto-créée : le responsable est un matricule (login du user)
+        taskModel.responsables = [{ matriculePers: t.responsable }];
+      } else if (t.responsable) {
+        // Tâche standard : le responsable est un code département
+        taskModel.responsables = [{ codeDept: t.responsable }];
+      }
+
       this.tasksToSave.push(taskModel);
     });
 
