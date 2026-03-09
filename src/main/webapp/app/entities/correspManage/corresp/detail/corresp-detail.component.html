@@ -671,47 +671,6 @@
                     {{ correspLoaded?.labelDestinataire }} | <strong jhiTranslate="correspCareApp.correspManageCorresp.cc">CC</strong> :
                     {{ correspLoaded?.labelContactCC }}
                   </p>
-                  <!-- Receiver / CopyTo emails provenant du message (N8N / email) -->
-                  <p *ngIf="messageReceiverEmails.length > 0" style="margin-bottom: 6px">
-                    <strong>À :</strong>&nbsp;
-                    <span
-                      *ngFor="let email of messageReceiverEmails"
-                      style="
-                        display: inline-flex;
-                        align-items: center;
-                        background: #e8f2ff;
-                        color: #1565c0;
-                        border-radius: 16px;
-                        padding: 2px 10px;
-                        font-size: 13px;
-                        font-weight: 500;
-                        margin-right: 4px;
-                        margin-bottom: 2px;
-                      "
-                    >
-                      {{ email }}
-                    </span>
-                  </p>
-                  <p *ngIf="messageCopyToEmails.length > 0" style="margin-bottom: 6px">
-                    <strong>CC :</strong>&nbsp;
-                    <span
-                      *ngFor="let email of messageCopyToEmails"
-                      style="
-                        display: inline-flex;
-                        align-items: center;
-                        background: #fff3e0;
-                        color: #e65100;
-                        border-radius: 16px;
-                        padding: 2px 10px;
-                        font-size: 13px;
-                        font-weight: 500;
-                        margin-right: 4px;
-                        margin-bottom: 2px;
-                      "
-                    >
-                      {{ email }}
-                    </span>
-                  </p>
                   <p>
                     <strong jhiTranslate="correspCareApp.correspManageCorresp.date">Date</strong> :
                     {{ formatLongDate(correspLoaded?.courrierDate) }} |

@@ -310,8 +310,28 @@ export class CorrespDetailComponent implements OnInit {
         const messages = res.body;
         if (messages && messages.length > 0) {
           const msg = messages[0];
+          console.log('[CorrespDetail] Message reçu:', JSON.stringify(msg));
+          console.log(
+            '[CorrespDetail] receiver:',
+            JSON.stringify(msg.receiver),
+            '| type:',
+            typeof msg.receiver,
+            '| isArray:',
+            Array.isArray(msg.receiver)
+          );
+          console.log(
+            '[CorrespDetail] copyTo:',
+            JSON.stringify(msg.copyTo),
+            '| type:',
+            typeof msg.copyTo,
+            '| isArray:',
+            Array.isArray(msg.copyTo)
+          );
           this.messageReceiverEmails = this.extractEmails(msg.receiver);
           this.messageCopyToEmails = this.extractEmails(msg.copyTo);
+          console.log('[CorrespDetail] Emails extraits — receiver:', this.messageReceiverEmails, '| copyTo:', this.messageCopyToEmails);
+        } else {
+          console.warn('[CorrespDetail] Aucun message trouvé pour correspId:', id);
         }
       },
       error: () => {
@@ -355,6 +375,8 @@ export class CorrespDetailComponent implements OnInit {
    * Extrait les adresses email depuis les données receiver/copyTo du message.
    * Le backend peut renvoyer :
    * - une liste d'objets [{email: "a@b.com"}, ...]
+   * - une chaîne JSON stringifiée '[{"email":"a@b.com"}]'
+   * - le format Java toString '[{email=a@b.com}]'
    * - une chaîne brute "a@b.com, c@d.com"
    * - null/undefined
    */
@@ -362,16 +384,60 @@ export class CorrespDetailComponent implements OnInit {
     if (!data) {
       return [];
     }
+    // Cas 1 : déjà un tableau (JSON désérialisé par Angular/HttpClient)
     if (Array.isArray(data)) {
-      return data.map((entry: any) => (typeof entry === 'object' && entry.email ? entry.email : String(entry))).filter((e: string) => !!e);
+      return this.extractEmailsFromArray(data);
     }
     if (typeof data === 'string') {
-      return data
+      const trimmed = data.trim();
+      // Cas 2 : chaîne JSON stringifiée — ex: '[{"email":"a@b.com"}]'
+      if (trimmed.startsWith('[')) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          if (Array.isArray(parsed)) {
+            return this.extractEmailsFromArray(parsed);
+          }
+        } catch {
+          // Pas du JSON valide — essayer le format Java toString
+          // Format Java: [{email=a@b.com}, {email=b@c.com}]
+          const javaPattern = /\{[^}]*email\s*=\s*([^,}]+)/g;
+          let match: RegExpExecArray | null;
+          const results: string[] = [];
+          while ((match = javaPattern.exec(trimmed)) !== null) {
+            const email = match[1].trim();
+            if (email) {
+              results.push(email);
+            }
+          }
+          if (results.length > 0) {
+            return results;
+          }
+        }
+      }
+      // Cas 3 : chaîne brute séparée par virgules/points-virgules — ex: "a@b.com, c@d.com"
+      return trimmed
         .split(/[,;]+/)
         .map((s: string) => s.trim())
         .filter((s: string) => s.length > 0);
     }
     return [String(data)];
+  }
+
+  /**
+   * Extrait les emails depuis un tableau d'objets ou de chaînes.
+   */
+  private extractEmailsFromArray(arr: any[]): string[] {
+    return arr
+      .map((entry: any) => {
+        if (typeof entry === 'object' && entry !== null && entry.email) {
+          return entry.email;
+        }
+        if (typeof entry === 'string') {
+          return entry.trim();
+        }
+        return String(entry);
+      })
+      .filter((e: string) => !!e);
   }
 
   formatLongDate(date: dayjs.Dayjs | string | null | undefined): string {

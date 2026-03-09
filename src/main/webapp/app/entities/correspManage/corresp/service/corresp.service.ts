@@ -364,11 +364,20 @@ export class CorrespService {
       .pipe(map(res => this.convertResponseArrayFromServer(res)));
   }
 
+  /**
+   * GET /api/messages/by-corresp/{correspId}
+   * L'API backend retourne un seul MessageDTO (ou 404 si aucun message).
+   * On wrappe le résultat dans un tableau pour garder la compatibilité avec le composant.
+   */
   getMessagesByCorrespId(correspId: number): Observable<HttpResponse<IMessage[]>> {
-    return this.http.get<IMessage[]>(`${this.resourceUrlMessages}/by-corresp/${correspId}`, { observe: 'response' }).pipe(
-      catchError(() => {
-        // Retourner une réponse vide en cas de 404 ou toute autre erreur
-        // pour ne pas afficher d'erreur dans la console du navigateur
+    return this.http.get<IMessage>(`${this.resourceUrlMessages}/by-corresp/${correspId}`, { observe: 'response' }).pipe(
+      map(res => {
+        // Wrapper le message unique dans un tableau
+        const body: IMessage[] = res.body ? [res.body] : [];
+        return res.clone({ body });
+      }),
+      catchError(err => {
+        console.warn(`[CorrespService] Erreur chargement message pour correspId=${correspId}:`, err?.status, err?.message);
         return of(new HttpResponse<IMessage[]>({ body: [] }));
       })
     );
