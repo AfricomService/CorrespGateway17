@@ -1,7 +1,7 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { ActivatedRoute, Data, ParamMap, Router } from '@angular/router';
-import { combineLatest, filter, Observable, switchMap, tap } from 'rxjs';
+import { combineLatest, filter, firstValueFrom, Observable, switchMap, tap } from 'rxjs';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import moment from 'moment';
 
@@ -79,6 +79,7 @@ export class CorrespComponent implements OnInit {
   filterApplied = false;
 
   isAdmin = false;
+  isBoc = false;
   currentUserId: number | null = null;
 
   isSaving = false;
@@ -153,6 +154,7 @@ export class CorrespComponent implements OnInit {
     this.accountService.identity().subscribe((account: Account | null) => {
       if (account) {
         this.isAdmin = this.accountService.hasAnyAuthority(Authority.ADMIN);
+        this.isBoc = this.accountService.hasAnyAuthority(Authority.BOC);
         this.currentUserId = (account as any).id ?? null;
       }
       this.load();
@@ -262,10 +264,31 @@ export class CorrespComponent implements OnInit {
         return this.http
           .get(this.endpoint)
           .toPromise()
-          .then((data: any) => ({
-            data: data.content,
-            totalCount: data.totalElements,
-          }));
+          .then(async (data: any) => {
+            let content: any[] = data.content ?? [];
+            let totalCount: number = data.totalElements ?? 0;
+
+            // Si BOC ou ADMIN, fusionner les corresps dispatched (dédupliquées par id)
+            if (this.isAdmin || this.isBoc) {
+              try {
+                const dispatched = await firstValueFrom(this.correspService.getAllDispatchedList());
+                if (dispatched && dispatched.length > 0) {
+                  const existingIds = new Set(content.map((c: any) => c.id));
+                  const newDispatched = dispatched.filter(d => !existingIds.has(d.id));
+                  content = [...content, ...newDispatched];
+                  totalCount += newDispatched.length;
+                }
+              } catch (e) {
+                // En cas d'erreur, on continue sans les dispatched
+                console.error('Erreur lors du chargement des corresps dispatched', e);
+              }
+            }
+
+            return {
+              data: content,
+              totalCount,
+            };
+          });
       },
     });
   }
@@ -341,8 +364,8 @@ export class CorrespComponent implements OnInit {
   // }
 
   load(): void {
-    if (this.isAdmin) {
-      // Admin : charger toutes les corresps via le datasource paginé avec filtres
+    if (this.isAdmin || this.isBoc) {
+      // Admin ou BOC : charger toutes les corresps via le datasource paginé avec filtres + dispatched
       this.datasource = this.createDataSource();
     } else if (this.currentUserId != null) {
       // Simple user : charger uniquement les corresps par ACL
@@ -364,24 +387,35 @@ export class CorrespComponent implements OnInit {
   createDataSourceByUserAcl(userId: number): CustomStore {
     return new CustomStore({
       key: 'id',
-      load: (loadOptions: any) => {
-        return this.correspService
-          .getCorrespsByUserAcl(userId)
-          .toPromise()
-          .then((res: any) => {
-            const allData = res?.body ?? [];
-            const totalCount = allData.length;
+      load: async (loadOptions: any) => {
+        const res: any = await firstValueFrom(this.correspService.getCorrespsByUserAcl(userId));
+        let allData: any[] = res?.body ?? [];
 
-            // Pagination côté client (remoteOperations.paging = true)
-            const skip = loadOptions.skip ?? 0;
-            const take = loadOptions.take ?? totalCount;
-            const page = allData.slice(skip, skip + take);
+        // Si BOC ou ADMIN, fusionner les corresps dispatched (dédupliquées par id)
+        if (this.isAdmin || this.isBoc) {
+          try {
+            const dispatched = await firstValueFrom(this.correspService.getAllDispatchedList());
+            if (dispatched && dispatched.length > 0) {
+              const existingIds = new Set(allData.map((c: any) => c.id));
+              const newDispatched = dispatched.filter(d => !existingIds.has(d.id));
+              allData = [...allData, ...newDispatched];
+            }
+          } catch (e) {
+            console.error('Erreur lors du chargement des corresps dispatched', e);
+          }
+        }
 
-            return {
-              data: page,
-              totalCount,
-            };
-          });
+        const totalCount = allData.length;
+
+        // Pagination côté client (remoteOperations.paging = true)
+        const skip = loadOptions.skip ?? 0;
+        const take = loadOptions.take ?? totalCount;
+        const page = allData.slice(skip, skip + take);
+
+        return {
+          data: page,
+          totalCount,
+        };
       },
     });
   }
@@ -501,7 +535,7 @@ export class CorrespComponent implements OnInit {
 
   removeFilter(index: number) {
     this.activeFilters.splice(index, 1);
-    if (this.isAdmin) {
+    if (this.isAdmin || this.isBoc) {
       this.datasource = this.createDataSource(this.activeFilters);
     } else if (this.currentUserId != null) {
       this.datasource = this.createDataSourceByUserAcl(this.currentUserId);
@@ -513,7 +547,7 @@ export class CorrespComponent implements OnInit {
 
   applyFilters() {
     console.log('Filters applied:', this.activeFilters);
-    if (this.isAdmin) {
+    if (this.isAdmin || this.isBoc) {
       this.datasource = this.createDataSource(this.activeFilters);
     } else if (this.currentUserId != null) {
       this.datasource = this.createDataSourceByUserAcl(this.currentUserId);
@@ -681,13 +715,13 @@ export class CorrespComponent implements OnInit {
               displayValue: '',
             };
           });
-          if (this.isAdmin) {
+          if (this.isAdmin || this.isBoc) {
             this.datasource = this.createDataSource(filtersArray);
           } else if (this.currentUserId != null) {
             this.datasource = this.createDataSourceByUserAcl(this.currentUserId);
           }
         } else {
-          if (this.isAdmin) {
+          if (this.isAdmin || this.isBoc) {
             this.datasource = this.createDataSource();
           } else if (this.currentUserId != null) {
             this.datasource = this.createDataSourceByUserAcl(this.currentUserId);

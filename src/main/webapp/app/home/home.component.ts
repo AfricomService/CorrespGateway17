@@ -625,18 +625,8 @@ export class HomeComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // créer les appels HTTP (forkJoin) — chaque appel individuel gère sa propre erreur
-    // pour éviter que forkJoin échoue entièrement si un seul code est introuvable
-    const calls = missing.map(code =>
-      this.correspService.queryOrgaDepsByCode({ code }).pipe(
-        catchError(err => {
-          // eslint-disable-next-line no-console
-          console.warn(`Impossible de résoudre le département pour le code "${code}"`, err);
-          // Retourner une réponse vide pour que forkJoin continue
-          return of(new HttpResponse<IDepartement>({ body: null }));
-        })
-      )
-    );
+    // créer les appels HTTP (forkJoin)
+    const calls = missing.map(code => this.correspService.queryOrgaDepsByCode({ code }));
     forkJoin(calls)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
@@ -651,10 +641,9 @@ export class HomeComponent implements OnInit, OnDestroy {
           });
         },
         error: err => {
-          // si erreur réseau globale, on log et on continue — on affichera les codes/matricules bruts
+          // si erreur réseau, on log et on continue — on affichera les codes/matricules bruts
           // eslint-disable-next-line no-console
           console.warn('Erreur lors de la résolution des noms de départements', err);
-          this.buildResponsablesForTasks();
         },
         complete: () => {
           // une fois les resolvings faits (ou non), construire les responsables affichables

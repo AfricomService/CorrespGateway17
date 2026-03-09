@@ -134,6 +134,31 @@ export class CorrespService {
     });
   }
 
+  /**
+   * Appelle GET /api/corresps/dispatched
+   * Retourne la full HttpResponse contenant le tableau de Corresp (avec conversion des dates).
+   */
+  getAllDispatched(): Observable<EntityArrayResponseType> {
+    return this.http.get<RestCorresp[]>(`${this.resourceUrl}/dispatched`, { observe: 'response' }).pipe(
+      // conversion des dates du serveur vers dayjs (réutilise ton helper)
+      map(res => this.convertResponseArrayFromServer(res)),
+      // en cas d'erreur, renvoyer une réponse vide afin de ne pas casser l'UI
+      catchError(() => of(new HttpResponse<ICorresp[]>({ body: [] })))
+    );
+  }
+
+  /**
+   * Variante pratique — renvoie directement la liste (ICorresp[]) sans HttpResponse,
+   * plus simple à consommer dans les composants.
+   */
+  getAllDispatchedList(): Observable<ICorresp[]> {
+    return this.getAllDispatched().pipe(
+      map(resp => resp.body ?? []),
+      // si tu préfères une valeur par défaut vide en cas d'erreur
+      catchError(() => of([]))
+    );
+  }
+
   delete(id: number): Observable<HttpResponse<{}>> {
     return this.http.delete(`${this.resourceUrl}Delete/${id}`, { observe: 'response' });
   }
