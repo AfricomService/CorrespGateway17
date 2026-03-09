@@ -28,6 +28,7 @@ import { CorrespStatus } from 'app/entities/enumerations/corresp-status.model';
 import { CorrespPermissionsDTO, PermissionDTO } from '../../permissions.model';
 import { AccountService } from 'app/core/auth/account.service';
 import { Account } from 'app/core/auth/account.model';
+import { Authority } from 'app/config/authority.constants';
 
 // export interface ITasks {
 //   id: number;
@@ -196,6 +197,9 @@ export class CorrespDetailComponent implements OnInit {
   private currentUserId: number | null = null;
   isGlobalAdmin = false;
 
+  /** true si l'utilisateur courant a le rôle ADMIN et/ou BOC */
+  isAdminOrBoc = false;
+
   // Cache pour la résolution des noms de départements
   private deptNameByCode: Map<string, string> = new Map();
 
@@ -219,6 +223,7 @@ export class CorrespDetailComponent implements OnInit {
     this.accountService.identity().subscribe(acc => {
       const roles = acc?.authorities ?? [];
       this.isGlobalAdmin = Array.isArray(roles) && roles.includes('ROLE_ADMIN');
+      this.isAdminOrBoc = Array.isArray(roles) && (roles.includes(Authority.ADMIN) || roles.includes(Authority.BOC));
     });
     const qp = this.activatedRoute.snapshot.queryParamMap.get('taskId');
     this.selectedTaskId = qp != null && qp !== '' ? Number(qp) : null;

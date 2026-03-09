@@ -1364,7 +1364,7 @@
         </button>
         <button
           (click)="soumettreCorresp(correspLoaded?.id!)"
-          *ngIf="correspLoaded?.status === CorrespStatus.DRAFT"
+          *ngIf="isAdminOrBoc && correspLoaded?.status === CorrespStatus.DRAFT"
           [disabled]="!(canWriteCorresp || canAdminCorresp)"
           class="btn btn-success"
           style="font-weight: 600; text-transform: uppercase; min-width: 120px"
@@ -1377,7 +1377,7 @@
         </button>
         <button
           (click)="cloturerCorresp(correspLoaded?.id!)"
-          *ngIf="correspLoaded?.status === CorrespStatus.IN_PROGRESS"
+          *ngIf="isAdminOrBoc && correspLoaded?.status === CorrespStatus.IN_PROGRESS"
           [disabled]="!(canWriteCorresp || canAdminCorresp)"
           class="btn btn-danger"
           style="font-weight: 600; text-transform: uppercase; min-width: 120px"

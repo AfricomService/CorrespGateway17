@@ -66,6 +66,9 @@ export class CorrespUpdateComponent implements OnInit {
   isSaving = false;
   corresp!: ICorresp;
 
+  /** true si l'utilisateur courant a le rôle ADMIN et/ou BOC */
+  isAdminOrBoc = false;
+
   /** Référence générée par le bouton "Identifier" — sera utilisée lors de l'enregistrement */
   generatedReference: string | null = null;
   isGeneratingReference = false;
@@ -227,6 +230,13 @@ export class CorrespUpdateComponent implements OnInit {
   // ngOnInit
   // --------------------------------------------------------------------------
   ngOnInit(): void {
+    // Vérifier si l'utilisateur a le rôle ADMIN ou BOC
+    this.accountService.getAuthenticationState().subscribe(account => {
+      if (account && account.authorities) {
+        this.isAdminOrBoc = account.authorities.includes(Authority.ADMIN) || account.authorities.includes(Authority.BOC);
+      }
+    });
+
     // charger types de documents
     this.typeDocumentService.query({ page: 0, size: 1000 }).subscribe(res => {
       this.typedocuments = res.body || [];
@@ -870,6 +880,50 @@ export class CorrespUpdateComponent implements OnInit {
           this.isSaving = false;
         },
       });
+  }
+
+  // --------------------------------------------------------------------------
+  // Soumettre correspondance (ADMIN / BOC uniquement)
+  // --------------------------------------------------------------------------
+  soumettreCorresp(): void {
+    if (!this.corresp?.id) {
+      this.showNotification("Veuillez d'abord enregistrer la correspondance avant de la soumettre.", 'error');
+      return;
+    }
+    this.isSaving = true;
+    this.correspService.soumettreCorresp({ correspId: this.corresp.id }).subscribe({
+      next: () => {
+        this.isSaving = false;
+        this.showNotification('Correspondance soumise avec succès.', 'success');
+        this.router.navigate(['/corresp', this.corresp.id, 'view']);
+      },
+      error: () => {
+        this.isSaving = false;
+        this.showNotification('Échec de la soumission de la correspondance.', 'error');
+      },
+    });
+  }
+
+  // --------------------------------------------------------------------------
+  // Clôturer correspondance (ADMIN / BOC uniquement)
+  // --------------------------------------------------------------------------
+  cloturerCorresp(): void {
+    if (!this.corresp?.id) {
+      this.showNotification("Veuillez d'abord enregistrer la correspondance avant de la clôturer.", 'error');
+      return;
+    }
+    this.isSaving = true;
+    this.correspService.cloturerCorresp({ correspId: this.corresp.id }).subscribe({
+      next: () => {
+        this.isSaving = false;
+        this.showNotification('Correspondance clôturée avec succès.', 'success');
+        this.router.navigate(['/corresp', this.corresp.id, 'view']);
+      },
+      error: () => {
+        this.isSaving = false;
+        this.showNotification('Échec de la clôture de la correspondance.', 'error');
+      },
+    });
   }
 
   validateInfoGeneralesForm(): boolean {
