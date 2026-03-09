@@ -821,12 +821,46 @@ export class CorrespUpdateComponent implements OnInit {
       this.corresp!.reference = this.generatedReference;
     }
 
+    // Mémoriser si une tâche BOC auto-créée existe avant le save
+    const hasAutoBocTask = this.tasks.some(t => t.autoBoc === true);
+
     this.correspService
       .saveCorrespWithTasksAndPj(this.corresp, this.tasksToSave, this.pjsToSave, this.selectedTypeDocument, false)
       .subscribe({
         next: (savedCorresp: any) => {
           this.isSaving = false;
-          if (savedCorresp?.id) {
+
+          // Si l'utilisateur BOC a une tâche de traitement auto-créée,
+          // on change son statut en IN_PROGRESS après la sauvegarde
+          if (hasAutoBocTask && savedCorresp?.id) {
+            this.tasksService.getAllTasksByCorrespId({ correspId: savedCorresp.id }).subscribe({
+              next: (tasksRes: HttpResponse<ITasks[]>) => {
+                const savedTasks = tasksRes.body || [];
+                const bocTask = savedTasks.find(t => t.taskType === 'traitement');
+                if (bocTask && bocTask.id) {
+                  this.correspService
+                    .changeTaskStatus({ correspId: savedCorresp.id, taskId: bocTask.id, status: 'IN_PROGRESS' })
+                    .subscribe({
+                      next: () => {
+                        // Navigation après le changement de statut réussi
+                        this.router.navigate(['/corresp', savedCorresp.id, 'view']);
+                      },
+                      error: () => {
+                        // En cas d'erreur du changeTaskStatus, on navigue quand même
+                        this.router.navigate(['/corresp', savedCorresp.id, 'view']);
+                      },
+                    });
+                } else {
+                  // Pas de tâche traitement trouvée, navigation normale
+                  this.router.navigate(['/corresp', savedCorresp.id, 'view']);
+                }
+              },
+              error: () => {
+                // Erreur lors de la récupération des tâches, navigation normale
+                this.router.navigate(['/corresp', savedCorresp.id, 'view']);
+              },
+            });
+          } else if (savedCorresp?.id) {
             this.router.navigate(['/corresp', savedCorresp.id, 'view']);
           } else {
             this.router.navigate(['/corresp']);
