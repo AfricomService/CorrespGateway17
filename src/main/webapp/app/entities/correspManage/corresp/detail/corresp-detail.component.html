@@ -1031,9 +1031,7 @@
                         {{ email }}
                       </span>
                     </ng-container>
-                    <ng-template #fallbackDestinataire>
-                      {{ destinataireLabel || '-' }}
-                    </ng-template>
+                    <ng-template #fallbackDestinataire> - </ng-template>
                   </div>
 
                   <div class="hq-item" title="{{ contactEmailCCLabel || 'Contact en copie' }}">
@@ -1056,9 +1054,7 @@
                         {{ email }}
                       </span>
                     </ng-container>
-                    <ng-template #fallbackCC>
-                      {{ contactEmailCCLabel || '-' }}
-                    </ng-template>
+                    <ng-template #fallbackCC> - </ng-template>
                   </div>
                 </div>
 
@@ -1121,9 +1117,7 @@
                           {{ email }}
                         </span>
                       </ng-container>
-                      <ng-template #fallbackDestReadOnly>
-                        {{ destinataireLabel || '-' }}
-                      </ng-template>
+                      <ng-template #fallbackDestReadOnly> - </ng-template>
                     </div>
                     <div style="font-size: 0.95em">
                       <strong jhiTranslate="correspCareApp.correspManageCorresp.cc">CC :</strong>
@@ -1145,9 +1139,7 @@
                           {{ email }}
                         </span>
                       </ng-container>
-                      <ng-template #fallbackCCReadOnly>
-                        {{ correspLoaded?.labelContactCC || '-' }}
-                      </ng-template>
+                      <ng-template #fallbackCCReadOnly> - </ng-template>
                     </div>
                   </div>
                 </div>

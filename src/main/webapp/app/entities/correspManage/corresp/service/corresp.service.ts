@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpResponse } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 import dayjs from 'dayjs/esm';
 
 import { isPresent } from 'app/core/util/operators';
@@ -340,6 +340,12 @@ export class CorrespService {
   }
 
   getMessagesByCorrespId(correspId: number): Observable<HttpResponse<IMessage[]>> {
-    return this.http.get<IMessage[]>(`${this.resourceUrlMessages}/by-corresp/${correspId}`, { observe: 'response' });
+    return this.http.get<IMessage[]>(`${this.resourceUrlMessages}/by-corresp/${correspId}`, { observe: 'response' }).pipe(
+      catchError(() => {
+        // Retourner une réponse vide en cas de 404 ou toute autre erreur
+        // pour ne pas afficher d'erreur dans la console du navigateur
+        return of(new HttpResponse<IMessage[]>({ body: [] }));
+      })
+    );
   }
 }
