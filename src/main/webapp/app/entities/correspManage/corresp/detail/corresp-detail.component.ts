@@ -28,6 +28,7 @@ import { CorrespStatus } from 'app/entities/enumerations/corresp-status.model';
 import { CorrespPermissionsDTO, PermissionDTO } from '../../permissions.model';
 import { AccountService } from 'app/core/auth/account.service';
 import { Account } from 'app/core/auth/account.model';
+import { Authority } from 'app/config/authority.constants';
 
 // export interface ITasks {
 //   id: number;
@@ -196,12 +197,25 @@ export class CorrespDetailComponent implements OnInit {
   private currentUserId: number | null = null;
   isGlobalAdmin = false;
 
+  /** true si l'utilisateur courant a le rôle ADMIN et/ou BOC */
+  isAdminOrBoc = false;
+
   // Cache pour la résolution des noms de départements
   private deptNameByCode: Map<string, string> = new Map();
 
   // === Message receiver / copyTo (provenant de N8N / email) ===
   messageReceiverEmails: string[] = [];
   messageCopyToEmails: string[] = [];
+
+  /**
+   * Vrai si la correspondance est dans un état qui rend la partie gauche
+   * (infos générales, tâches, PJ, boutons) éditable : DRAFT ou DISPATCH.
+   * La partie droite (corps) reste non-éditable pour DISPATCH.
+   */
+  get isEditableLeft(): boolean {
+    const st = this.correspLoaded?.status;
+    return st === CorrespStatus.DRAFT || st === CorrespStatus.DISPATCH;
+  }
 
   constructor(
     protected activatedRoute: ActivatedRoute,
@@ -219,6 +233,9 @@ export class CorrespDetailComponent implements OnInit {
     this.accountService.identity().subscribe(acc => {
       const roles = acc?.authorities ?? [];
       this.isGlobalAdmin = Array.isArray(roles) && roles.includes('ROLE_ADMIN');
+      this.isAdminOrBoc = Array.isArray(roles) && (roles.includes(Authority.ADMIN) || roles.includes(Authority.BOC));
+      // Si la corresp est déjà chargée et en DISPATCH, recalculer les permissions
+      this.applyDispatchPermissionsForAdminOrBoc();
     });
     const qp = this.activatedRoute.snapshot.queryParamMap.get('taskId');
     this.selectedTaskId = qp != null && qp !== '' ? Number(qp) : null;
@@ -300,12 +317,33 @@ export class CorrespDetailComponent implements OnInit {
     });
 
     // Charger receiver et copyTo du message associé à cette correspondance
-    this.correspService.getMessageByCorrespId(Number(id)).subscribe({
-      next: res => {
-        const data = res.body;
-        if (data) {
-          this.messageReceiverEmails = this.extractEmails(data.receiver);
-          this.messageCopyToEmails = this.extractEmails(data.copyTo);
+    this.correspService.getMessagesByCorrespId(Number(id)).subscribe({
+      next: (res: HttpResponse<any[]>) => {
+        const messages = res.body;
+        if (messages && messages.length > 0) {
+          const msg = messages[0];
+          console.log('[CorrespDetail] Message reçu:', JSON.stringify(msg));
+          console.log(
+            '[CorrespDetail] receiver:',
+            JSON.stringify(msg.receiver),
+            '| type:',
+            typeof msg.receiver,
+            '| isArray:',
+            Array.isArray(msg.receiver)
+          );
+          console.log(
+            '[CorrespDetail] copyTo:',
+            JSON.stringify(msg.copyTo),
+            '| type:',
+            typeof msg.copyTo,
+            '| isArray:',
+            Array.isArray(msg.copyTo)
+          );
+          this.messageReceiverEmails = this.extractEmails(msg.receiver);
+          this.messageCopyToEmails = this.extractEmails(msg.copyTo);
+          console.log('[CorrespDetail] Emails extraits — receiver:', this.messageReceiverEmails, '| copyTo:', this.messageCopyToEmails);
+        } else {
+          console.warn('[CorrespDetail] Aucun message trouvé pour correspId:', id);
         }
       },
       error: () => {
@@ -349,6 +387,8 @@ export class CorrespDetailComponent implements OnInit {
    * Extrait les adresses email depuis les données receiver/copyTo du message.
    * Le backend peut renvoyer :
    * - une liste d'objets [{email: "a@b.com"}, ...]
+   * - une chaîne JSON stringifiée '[{"email":"a@b.com"}]'
+   * - le format Java toString '[{email=a@b.com}]'
    * - une chaîne brute "a@b.com, c@d.com"
    * - null/undefined
    */
@@ -356,16 +396,60 @@ export class CorrespDetailComponent implements OnInit {
     if (!data) {
       return [];
     }
+    // Cas 1 : déjà un tableau (JSON désérialisé par Angular/HttpClient)
     if (Array.isArray(data)) {
-      return data.map((entry: any) => (typeof entry === 'object' && entry.email ? entry.email : String(entry))).filter((e: string) => !!e);
+      return this.extractEmailsFromArray(data);
     }
     if (typeof data === 'string') {
-      return data
+      const trimmed = data.trim();
+      // Cas 2 : chaîne JSON stringifiée — ex: '[{"email":"a@b.com"}]'
+      if (trimmed.startsWith('[')) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          if (Array.isArray(parsed)) {
+            return this.extractEmailsFromArray(parsed);
+          }
+        } catch {
+          // Pas du JSON valide — essayer le format Java toString
+          // Format Java: [{email=a@b.com}, {email=b@c.com}]
+          const javaPattern = /\{[^}]*email\s*=\s*([^,}]+)/g;
+          let match: RegExpExecArray | null;
+          const results: string[] = [];
+          while ((match = javaPattern.exec(trimmed)) !== null) {
+            const email = match[1].trim();
+            if (email) {
+              results.push(email);
+            }
+          }
+          if (results.length > 0) {
+            return results;
+          }
+        }
+      }
+      // Cas 3 : chaîne brute séparée par virgules/points-virgules — ex: "a@b.com, c@d.com"
+      return trimmed
         .split(/[,;]+/)
         .map((s: string) => s.trim())
         .filter((s: string) => s.length > 0);
     }
     return [String(data)];
+  }
+
+  /**
+   * Extrait les emails depuis un tableau d'objets ou de chaînes.
+   */
+  private extractEmailsFromArray(arr: any[]): string[] {
+    return arr
+      .map((entry: any) => {
+        if (typeof entry === 'object' && entry !== null && entry.email) {
+          return entry.email;
+        }
+        if (typeof entry === 'string') {
+          return entry.trim();
+        }
+        return String(entry);
+      })
+      .filter((e: string) => !!e);
   }
 
   formatLongDate(date: dayjs.Dayjs | string | null | undefined): string {
@@ -520,6 +604,15 @@ export class CorrespDetailComponent implements OnInit {
           this.canAdminCorresp = true;
         }
 
+        // DISPATCH + ADMIN/BOC => accorder toutes les permissions
+        if (this.isAdminOrBoc && this.correspLoaded?.status === CorrespStatus.DISPATCH) {
+          this.canReadCorresp = true;
+          this.canWriteCorresp = true;
+          this.canDeleteCorresp = true;
+          this.canAdminCorresp = true;
+          console.log('[PERMISSIONS] DISPATCH + ADMIN/BOC => all permissions granted');
+        }
+
         // normaliser keys tasksPermissions (backend peut renvoyer des clefs string)
         this.taskPermissions = {};
         const rawTasks = (res && (res as any).tasksPermissions) || {};
@@ -570,12 +663,30 @@ export class CorrespDetailComponent implements OnInit {
         this.canDeleteCorresp = false;
         this.canAdminCorresp = false;
 
+        // DISPATCH + ADMIN/BOC => accorder les permissions même en cas d'erreur
+        this.applyDispatchPermissionsForAdminOrBoc();
+
         // Fallback : tenter de résoudre les permissions via les tâches ACL de l'utilisateur
         this.loadCurrentUserAndAclTasks(() => {
           this.recomputeCorrespPermsFromUserAclTasks();
         });
       },
     });
+  }
+
+  /**
+   * Accorde toutes les permissions si l'utilisateur est ADMIN ou BOC
+   * et que la correspondance est en statut DISPATCH.
+   * Appelée quand l'identité ou la corresp est chargée (gestion du timing asynchrone).
+   */
+  private applyDispatchPermissionsForAdminOrBoc(): void {
+    if (this.isAdminOrBoc && this.correspLoaded?.status === CorrespStatus.DISPATCH) {
+      this.canReadCorresp = true;
+      this.canWriteCorresp = true;
+      this.canDeleteCorresp = true;
+      this.canAdminCorresp = true;
+      console.log('[PERMISSIONS] applyDispatchPermissionsForAdminOrBoc => all permissions granted');
+    }
   }
 
   private loadCurrentUserAndAclTasks(callback?: () => void): void {
@@ -655,6 +766,16 @@ export class CorrespDetailComponent implements OnInit {
   private recomputeCorrespPermsFromUserAclTasks(): void {
     // Si admin global => déjà tout autorisé
     if (this.isGlobalAdmin) {
+      return;
+    }
+
+    // DISPATCH + ADMIN/BOC => accorder toutes les permissions
+    if (this.isAdminOrBoc && this.correspLoaded?.status === CorrespStatus.DISPATCH) {
+      this.canReadCorresp = true;
+      this.canWriteCorresp = true;
+      this.canDeleteCorresp = true;
+      this.canAdminCorresp = true;
+      console.log('[PERMISSIONS] recompute: DISPATCH + ADMIN/BOC => all permissions granted');
       return;
     }
 
@@ -1082,6 +1203,8 @@ export class CorrespDetailComponent implements OnInit {
         return 'deeppink'; // Pink
       case CorrespStatus.IN_PROGRESS:
         return '#0d6efd'; // Blue
+      case CorrespStatus.DISPATCH:
+        return '#6c757d'; // Grey (dispatch)
       case CorrespStatus.CLOSED:
         return '#198754'; // Green
       case CorrespStatus.CANCELLED:
@@ -1097,12 +1220,14 @@ export class CorrespDetailComponent implements OnInit {
         return 'brouillon'; // Pink
       case CorrespStatus.IN_PROGRESS:
         return 'En cours'; // Blue
+      case CorrespStatus.DISPATCH:
+        return 'Dispatch';
       case CorrespStatus.CLOSED:
         return 'achevée'; // Green
       case CorrespStatus.CANCELLED:
         return 'annulée'; // Red
       default:
-        return '#6c757d'; // Grey default
+        return status ? String(status) : '';
     }
   }
 
@@ -1682,7 +1807,7 @@ export class CorrespDetailComponent implements OnInit {
   }
 
   cloturerCorresp(correspId: number): void {
-    if (!this.canWriteCorresp) {
+    if (!(this.canWriteCorresp || this.canAdminCorresp || this.isAdminOrBoc)) {
       this.showNotification('Vous n’avez pas le droit de clôturer ce courrier', 'error');
       return;
     }

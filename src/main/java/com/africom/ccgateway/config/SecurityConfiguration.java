@@ -110,6 +110,9 @@ public class SecurityConfiguration {
             // Règle SPÉCIFIQUE : autorise ROLE_USER et ROLE_ADMIN pour GET /api/admin/users/by-login
             .pathMatchers(HttpMethod.GET, "/api/admin/users/by-login").hasAnyAuthority(AuthoritiesConstants.USER, AuthoritiesConstants.ADMIN)
 
+            // Règle SPÉCIFIQUE : autorise ROLE_USER et ROLE_ADMIN pour POST /api/admin/users/by-logins
+            .pathMatchers(HttpMethod.POST, "/api/admin/users/by-logins").hasAnyAuthority(AuthoritiesConstants.USER, AuthoritiesConstants.ADMIN, AuthoritiesConstants.BOC)
+
             // Règle SPÉCIFIQUE : autorise ROLE_USER et ROLE_ADMIN pour GET /api/admin/users/id/{id}
             .pathMatchers("/api/admin/users/id/**").hasAnyAuthority(AuthoritiesConstants.USER, AuthoritiesConstants.ADMIN)
 
