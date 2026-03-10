@@ -1337,11 +1337,13 @@
         <button
           (click)="cloturerCorresp(correspLoaded?.id!)"
           *ngIf="isAdminOrBoc && correspLoaded?.status === CorrespStatus.IN_PROGRESS"
-          [disabled]="!(canWriteCorresp || canAdminCorresp)"
+          [disabled]="!(canWriteCorresp || canAdminCorresp || isAdminOrBoc)"
           class="btn btn-danger"
           style="font-weight: 600; text-transform: uppercase; min-width: 120px"
           [attr.title]="
-            canWriteCorresp || canAdminCorresp ? '' : ('correspCareApp.correspManageCorresp.actions.insufficientRights' | translate)
+            canWriteCorresp || canAdminCorresp || isAdminOrBoc
+              ? ''
+              : ('correspCareApp.correspManageCorresp.actions.insufficientRights' | translate)
           "
           jhiTranslate="correspCareApp.correspManageCorresp.actions.close"
         >

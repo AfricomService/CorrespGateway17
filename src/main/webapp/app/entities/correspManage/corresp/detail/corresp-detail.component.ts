@@ -1803,7 +1803,7 @@ export class CorrespDetailComponent implements OnInit {
   }
 
   cloturerCorresp(correspId: number): void {
-    if (!this.canWriteCorresp) {
+    if (!(this.canWriteCorresp || this.canAdminCorresp || this.isAdminOrBoc)) {
       this.showNotification('Vous n’avez pas le droit de clôturer ce courrier', 'error');
       return;
     }
