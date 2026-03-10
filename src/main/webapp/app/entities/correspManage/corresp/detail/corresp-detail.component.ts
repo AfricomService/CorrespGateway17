@@ -234,6 +234,8 @@ export class CorrespDetailComponent implements OnInit {
       const roles = acc?.authorities ?? [];
       this.isGlobalAdmin = Array.isArray(roles) && roles.includes('ROLE_ADMIN');
       this.isAdminOrBoc = Array.isArray(roles) && (roles.includes(Authority.ADMIN) || roles.includes(Authority.BOC));
+      // Si la corresp est déjà chargée et en DISPATCH, recalculer les permissions
+      this.applyDispatchPermissionsForAdminOrBoc();
     });
     const qp = this.activatedRoute.snapshot.queryParamMap.get('taskId');
     this.selectedTaskId = qp != null && qp !== '' ? Number(qp) : null;
@@ -602,6 +604,15 @@ export class CorrespDetailComponent implements OnInit {
           this.canAdminCorresp = true;
         }
 
+        // DISPATCH + ADMIN/BOC => accorder toutes les permissions
+        if (this.isAdminOrBoc && this.correspLoaded?.status === CorrespStatus.DISPATCH) {
+          this.canReadCorresp = true;
+          this.canWriteCorresp = true;
+          this.canDeleteCorresp = true;
+          this.canAdminCorresp = true;
+          console.log('[PERMISSIONS] DISPATCH + ADMIN/BOC => all permissions granted');
+        }
+
         // normaliser keys tasksPermissions (backend peut renvoyer des clefs string)
         this.taskPermissions = {};
         const rawTasks = (res && (res as any).tasksPermissions) || {};
@@ -652,12 +663,30 @@ export class CorrespDetailComponent implements OnInit {
         this.canDeleteCorresp = false;
         this.canAdminCorresp = false;
 
+        // DISPATCH + ADMIN/BOC => accorder les permissions même en cas d'erreur
+        this.applyDispatchPermissionsForAdminOrBoc();
+
         // Fallback : tenter de résoudre les permissions via les tâches ACL de l'utilisateur
         this.loadCurrentUserAndAclTasks(() => {
           this.recomputeCorrespPermsFromUserAclTasks();
         });
       },
     });
+  }
+
+  /**
+   * Accorde toutes les permissions si l'utilisateur est ADMIN ou BOC
+   * et que la correspondance est en statut DISPATCH.
+   * Appelée quand l'identité ou la corresp est chargée (gestion du timing asynchrone).
+   */
+  private applyDispatchPermissionsForAdminOrBoc(): void {
+    if (this.isAdminOrBoc && this.correspLoaded?.status === CorrespStatus.DISPATCH) {
+      this.canReadCorresp = true;
+      this.canWriteCorresp = true;
+      this.canDeleteCorresp = true;
+      this.canAdminCorresp = true;
+      console.log('[PERMISSIONS] applyDispatchPermissionsForAdminOrBoc => all permissions granted');
+    }
   }
 
   private loadCurrentUserAndAclTasks(callback?: () => void): void {
@@ -737,6 +766,16 @@ export class CorrespDetailComponent implements OnInit {
   private recomputeCorrespPermsFromUserAclTasks(): void {
     // Si admin global => déjà tout autorisé
     if (this.isGlobalAdmin) {
+      return;
+    }
+
+    // DISPATCH + ADMIN/BOC => accorder toutes les permissions
+    if (this.isAdminOrBoc && this.correspLoaded?.status === CorrespStatus.DISPATCH) {
+      this.canReadCorresp = true;
+      this.canWriteCorresp = true;
+      this.canDeleteCorresp = true;
+      this.canAdminCorresp = true;
+      console.log('[PERMISSIONS] recompute: DISPATCH + ADMIN/BOC => all permissions granted');
       return;
     }
 
