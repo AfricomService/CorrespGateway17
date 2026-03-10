@@ -1203,6 +1203,8 @@ export class CorrespDetailComponent implements OnInit {
         return 'deeppink'; // Pink
       case CorrespStatus.IN_PROGRESS:
         return '#0d6efd'; // Blue
+      case CorrespStatus.DISPATCH:
+        return '#6c757d'; // Grey (dispatch)
       case CorrespStatus.CLOSED:
         return '#198754'; // Green
       case CorrespStatus.CANCELLED:
@@ -1218,12 +1220,14 @@ export class CorrespDetailComponent implements OnInit {
         return 'brouillon'; // Pink
       case CorrespStatus.IN_PROGRESS:
         return 'En cours'; // Blue
+      case CorrespStatus.DISPATCH:
+        return 'Dispatch';
       case CorrespStatus.CLOSED:
         return 'achevée'; // Green
       case CorrespStatus.CANCELLED:
         return 'annulée'; // Red
       default:
-        return '#6c757d'; // Grey default
+        return status ? String(status) : '';
     }
   }
 
