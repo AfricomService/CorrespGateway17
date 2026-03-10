@@ -147,7 +147,7 @@
       </button>
       <button
         (click)="saveDraft()"
-        *ngIf="correspLoaded?.status === 'DRAFT'"
+        *ngIf="isEditableLeft"
         [disabled]="isSaving || !(canWriteCorresp || canAdminCorresp)"
         class="btn btn-primary btn-sm"
         style="
@@ -213,9 +213,9 @@
               </svg>
             </div>
 
-            <!-- 🟢 SI DRAFT : afficher le formulaire -->
+            <!-- 🟢 SI DRAFT ou DISPATCH : afficher le formulaire -->
             <div
-              *ngIf="correspLoaded?.status === 'DRAFT' && (canWriteCorresp || canAdminCorresp); else lectureInfoGen"
+              *ngIf="isEditableLeft && (canWriteCorresp || canAdminCorresp); else lectureInfoGen"
               [style.max-height]="accordionStates['infoGen'] ? '2000px' : '0'"
               [style.padding]="accordionStates['infoGen'] ? '16px' : '0 16px'"
               style="overflow: hidden; transition: max-height 0.5s ease, padding 0.5s ease"
@@ -1134,7 +1134,7 @@
               <div style="display: flex; align-items: center; gap: 12px">
                 <button
                   (click)="fileInput.click(); $event.stopPropagation()"
-                  *ngIf="correspLoaded?.status === CorrespStatus.DRAFT"
+                  *ngIf="isEditableLeft"
                   [disabled]="isUploading || !(canWriteCorresp || canAdminCorresp)"
                   [style.cursor]="isUploading ? 'not-allowed' : 'pointer'"
                   [style.opacity]="isUploading || !(canWriteCorresp || canAdminCorresp) ? '0.5' : '1'"
@@ -1323,7 +1323,7 @@
         </button>
         <button
           (click)="soumettreCorresp(correspLoaded?.id!)"
-          *ngIf="isAdminOrBoc && correspLoaded?.status === CorrespStatus.DRAFT"
+          *ngIf="isAdminOrBoc && isEditableLeft"
           [disabled]="!(canWriteCorresp || canAdminCorresp)"
           class="btn btn-success"
           style="font-weight: 600; text-transform: uppercase; min-width: 120px"

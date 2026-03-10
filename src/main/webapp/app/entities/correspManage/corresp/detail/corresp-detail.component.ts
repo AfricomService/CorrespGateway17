@@ -207,6 +207,16 @@ export class CorrespDetailComponent implements OnInit {
   messageReceiverEmails: string[] = [];
   messageCopyToEmails: string[] = [];
 
+  /**
+   * Vrai si la correspondance est dans un état qui rend la partie gauche
+   * (infos générales, tâches, PJ, boutons) éditable : DRAFT ou DISPATCH.
+   * La partie droite (corps) reste non-éditable pour DISPATCH.
+   */
+  get isEditableLeft(): boolean {
+    const st = this.correspLoaded?.status;
+    return st === CorrespStatus.DRAFT || st === CorrespStatus.DISPATCH;
+  }
+
   constructor(
     protected activatedRoute: ActivatedRoute,
     protected router: Router,
