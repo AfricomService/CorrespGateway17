@@ -310,7 +310,7 @@ export class CorrespDetailComponent implements OnInit {
         const found = this.typedocuments.find(td => td.id === Number(this.correspLoaded.typeDocumentId));
         this.selectedTypeDocument = found ?? null;
         console.log(this.selectedTypeDocument);
-        this.onTypeDocumentChange();
+        this.applyTypeDefaultsIfMissing(this.selectedTypeDocument);
       });
     });
 
@@ -556,6 +556,80 @@ export class CorrespDetailComponent implements OnInit {
       this.selectedCcDepts = [];
       this.contactEmailCC = '';
       this.contactEmailCCLabel = td.labelDCC || '';
+    }
+  }
+  private applyTypeDefaultsIfMissing(td: ITypedocument | null): void {
+    if (!td) return;
+    if (!this.objet || this.objet.trim().length === 0) {
+      this.objet = td.defaultobject || '';
+    }
+    const hasRecipient =
+      (this.destinataire && this.destinataire.trim().length > 0) ||
+      (this.destinataireLabel && this.destinataireLabel.trim().length > 0) ||
+      this.recipientSelectedDept != null;
+    if (!hasRecipient) {
+      if (td.defautdest) {
+        this.correspService.queryOrgaDepsByCode({ code: td.defautdest }).subscribe({
+          next: (res: HttpResponse<IDepartement>) => {
+            if (!this.destinataire && !this.destinataireLabel) {
+              if (res.body) {
+                this.destinataire = res.body.email || '';
+                this.destinataireLabel = res.body.nom || '';
+              } else {
+                this.destinataire = '';
+                this.destinataireLabel = td.labelDD || '';
+              }
+            }
+          },
+          error: () => {
+            if (!this.destinataire && !this.destinataireLabel) {
+              this.destinataire = '';
+              this.destinataireLabel = td.labelDD || '';
+            }
+          },
+        });
+      } else {
+        this.destinataire = '';
+        this.destinataireLabel = td.labelDD || '';
+      }
+    }
+    const hasCc =
+      (this.selectedCcDepts && this.selectedCcDepts.length > 0) || (this.contactEmailCCLabel && this.contactEmailCCLabel.trim().length > 0);
+    if (!hasCc) {
+      if (td.defaultencopie) {
+        this.correspService.queryOrgaDepsByCode({ code: td.defaultencopie }).subscribe({
+          next: (res: HttpResponse<IDepartement>) => {
+            if (this.selectedCcDepts.length === 0 && !this.contactEmailCCLabel) {
+              if (res.body) {
+                this.selectedCcDepts = [
+                  {
+                    idDept: res.body.id ?? null,
+                    codeDept: res.body.code ?? '',
+                    nomDept: res.body.nom ?? '',
+                    emailDept: res.body.email ?? '',
+                  },
+                ];
+                this.updateCcLabelsFromSelection();
+              } else {
+                this.selectedCcDepts = [];
+                this.contactEmailCC = '';
+                this.contactEmailCCLabel = td.labelDCC || '';
+              }
+            }
+          },
+          error: () => {
+            if (this.selectedCcDepts.length === 0 && !this.contactEmailCCLabel) {
+              this.selectedCcDepts = [];
+              this.contactEmailCC = '';
+              this.contactEmailCCLabel = td.labelDCC || '';
+            }
+          },
+        });
+      } else {
+        this.selectedCcDepts = [];
+        this.contactEmailCC = '';
+        this.contactEmailCCLabel = td.labelDCC || '';
+      }
     }
   }
   private sanitize(obj: any): any {
