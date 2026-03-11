@@ -89,7 +89,7 @@ export class CorrespDetailComponent implements OnInit {
 
   correspLoaded!: ICorresp;
   formattedDate = '';
-  selectedTypeDocument!: ITypedocument;
+  selectedTypeDocument: ITypedocument | null = null;
   tachesAssociees: ITasks[] = [];
 
   pjsLoaded: IPj[] = [];
@@ -295,9 +295,22 @@ export class CorrespDetailComponent implements OnInit {
       });
 
       this.typeDocumentService.query({ page: 0, size: 1000 }).subscribe(res => {
-        this.typedocuments = res.body!;
-        this.selectedTypeDocument = this.typedocuments.find(td => td.id === Number(this.correspLoaded.typeDocumentId))!;
+        this.typedocuments = res.body || [];
+        const autre: ITypedocument = {
+          id: 0,
+          nom: 'Autre',
+          defautdest: null,
+          defaultobject: null,
+          defaultencopie: null,
+          labelDD: null,
+          labelDCC: null,
+          usualstatus: null,
+        };
+        this.typedocuments.push(autre);
+        const found = this.typedocuments.find(td => td.id === Number(this.correspLoaded.typeDocumentId));
+        this.selectedTypeDocument = found ?? null;
         console.log(this.selectedTypeDocument);
+        this.onTypeDocumentChange();
       });
     });
 
@@ -461,10 +474,16 @@ export class CorrespDetailComponent implements OnInit {
     if (!date) return '';
     return dayjs(date).format('dddd DD MMMM YYYY - HH:mm').toUpperCase();
   }
-  onTypeDocumentChange(): void {
-    if (!this.selectedTypeDocument) {
+  onTypeDocumentChange(newSelected?: ITypedocument | undefined): void {
+    this.selectedTypeDocument = newSelected ?? null;
+    const td = this.selectedTypeDocument;
+    if (!td) {
       // Réinitialiser si aucun type document sélectionné
       this.objet = '';
+      this.expediteur = '';
+      this.selectedCompanyId = null;
+      this.selectedPersonId = null;
+      this.contactEmail = '';
       this.destinataire = '';
       this.destinataireLabel = '';
       this.recipientSelectedDept = null;
@@ -474,10 +493,18 @@ export class CorrespDetailComponent implements OnInit {
       return;
     }
 
-    this.objet = this.selectedTypeDocument.defaultobject || '';
+    this.objet = td.defaultobject || '';
 
-    if (this.selectedTypeDocument.defautdest) {
-      this.correspService.queryOrgaDepsByCode({ code: this.selectedTypeDocument.defautdest }).subscribe({
+    // Réinitialiser avant d'appliquer les valeurs par défaut du type
+    this.destinataire = '';
+    this.destinataireLabel = '';
+    this.recipientSelectedDept = null;
+    this.contactEmailCC = '';
+    this.contactEmailCCLabel = '';
+    this.selectedCcDepts = [];
+
+    if (td.defautdest) {
+      this.correspService.queryOrgaDepsByCode({ code: td.defautdest }).subscribe({
         next: (res: HttpResponse<IDepartement>) => {
           if (res.body) {
             console.log('res body');
@@ -486,49 +513,49 @@ export class CorrespDetailComponent implements OnInit {
             this.destinataireLabel = res.body.nom || '';
           } else {
             this.destinataire = '';
-            this.destinataireLabel = '';
+            this.destinataireLabel = td.labelDD || '';
           }
         },
         error: () => {
           this.destinataire = '';
-          this.destinataireLabel = '';
+          this.destinataireLabel = td.labelDD || '';
         },
       });
     } else {
       this.destinataire = '';
-      this.destinataireLabel = '';
+      this.destinataireLabel = td.labelDD || '';
     }
 
     // 3️⃣ Contact en copie (CC)
-    if (this.selectedTypeDocument.defaultencopie) {
-      this.correspService.queryOrgaDepsByCode({ code: this.selectedTypeDocument.defaultencopie }).subscribe({
+    if (td.defaultencopie) {
+      this.correspService.queryOrgaDepsByCode({ code: td.defaultencopie }).subscribe({
         next: (res: HttpResponse<IDepartement>) => {
           if (res.body) {
-            this.contactEmailCC = res.body.email || '';
-            this.contactEmailCCLabel = res.body.nom || '';
             this.selectedCcDepts = [
               {
-                codeDept: this.selectedTypeDocument.defaultencopie ?? null,
-                nomDept: res.body.nom || '',
-                emailDept: res.body.email || '',
+                idDept: res.body.id ?? null,
+                codeDept: res.body.code ?? '',
+                nomDept: res.body.nom ?? '',
+                emailDept: res.body.email ?? '',
               },
             ];
+            this.updateCcLabelsFromSelection();
           } else {
-            this.contactEmailCC = '';
-            this.contactEmailCCLabel = '';
             this.selectedCcDepts = [];
+            this.contactEmailCC = '';
+            this.contactEmailCCLabel = td.labelDCC || '';
           }
         },
         error: () => {
-          this.contactEmailCC = '';
-          this.contactEmailCCLabel = '';
           this.selectedCcDepts = [];
+          this.contactEmailCC = '';
+          this.contactEmailCCLabel = td.labelDCC || '';
         },
       });
     } else {
-      this.contactEmailCC = '';
-      this.contactEmailCCLabel = '';
       this.selectedCcDepts = [];
+      this.contactEmailCC = '';
+      this.contactEmailCCLabel = td.labelDCC || '';
     }
   }
   private sanitize(obj: any): any {
@@ -1088,7 +1115,7 @@ export class CorrespDetailComponent implements OnInit {
       labelContactCC: this.contactEmailCCLabel || '',
     };
 
-    const typeDocumentDTO = this.selectedTypeDocument;
+    const typeDocumentDTO = this.selectedTypeDocument!;
 
     this.isSaving = true;
 

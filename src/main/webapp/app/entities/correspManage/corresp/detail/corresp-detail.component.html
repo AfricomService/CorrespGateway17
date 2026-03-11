@@ -226,12 +226,12 @@
                   <div style="flex: 1">
                     <label class="form-label fw-semibold">Type de document <span class="text-danger">*</span></label>
                     <select
-                      (ngModelChange)="onTypeDocumentChange()"
+                      (ngModelChange)="onTypeDocumentChange($event)"
                       [(ngModel)]="selectedTypeDocument"
                       class="form-select"
                       name="typeDocument"
                     >
-                      <option [ngValue]="undefined">-- Sélectionner un type --</option>
+                      <option [ngValue]="null">-- Sélectionner un type --</option>
                       <option *ngFor="let type of typedocuments" [ngValue]="type">
                         {{ type.nom }}
                       </option>
