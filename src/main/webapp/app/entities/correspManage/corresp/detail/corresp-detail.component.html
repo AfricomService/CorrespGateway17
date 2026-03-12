@@ -231,7 +231,7 @@
                       class="form-select"
                       name="typeDocument"
                     >
-                      <option [ngValue]="null">-- Sélectionner un type --</option>
+                      <option [ngValue]="null" disabled hidden>-- Sélectionner un type --</option>
                       <option *ngFor="let type of typedocuments" [ngValue]="type">
                         {{ type.nom }}
                       </option>
@@ -338,7 +338,7 @@
                   </div>
 
                   <div style="flex: 1">
-                    <label class="form-label fw-semibold">Contact <span class="text-danger">*</span></label>
+                    <label class="form-label fw-semibold">Contact</label>
                     <div *ngIf="!showManualContact" style="display: flex; gap: 8px; align-items: center">
                       <dx-select-box
                         [(value)]="selectedPersonId"
