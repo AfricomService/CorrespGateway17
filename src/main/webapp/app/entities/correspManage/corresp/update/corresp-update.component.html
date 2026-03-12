@@ -78,52 +78,6 @@
       >
         <fa-icon icon="save"></fa-icon>
       </button>
-
-      <!-- Bouton Soumettre (ADMIN / BOC uniquement) -->
-      <button
-        *ngIf="isAdminOrBoc"
-        [disabled]="isUploading || isSaving || !corresp?.id"
-        (click)="soumettreCorresp()"
-        class="btn btn-success btn-sm"
-        style="
-          font-weight: 600;
-          text-transform: uppercase;
-          min-width: 32px;
-          height: 32px;
-          padding: 0 8px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 4px;
-        "
-        title="Soumettre"
-      >
-        <fa-icon icon="paper-plane"></fa-icon>
-        <span>Soumettre</span>
-      </button>
-
-      <!-- Bouton Clôturer (ADMIN / BOC uniquement) -->
-      <button
-        *ngIf="isAdminOrBoc"
-        [disabled]="isUploading || isSaving || !corresp?.id"
-        (click)="cloturerCorresp()"
-        class="btn btn-warning btn-sm"
-        style="
-          font-weight: 600;
-          text-transform: uppercase;
-          min-width: 32px;
-          height: 32px;
-          padding: 0 8px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 4px;
-        "
-        title="Clôturer"
-      >
-        <fa-icon icon="lock"></fa-icon>
-        <span>Clôturer</span>
-      </button>
     </div>
   </div>
 

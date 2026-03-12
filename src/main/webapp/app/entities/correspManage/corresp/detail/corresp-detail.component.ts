@@ -89,7 +89,7 @@ export class CorrespDetailComponent implements OnInit {
 
   correspLoaded!: ICorresp;
   formattedDate = '';
-  selectedTypeDocument!: ITypedocument;
+  selectedTypeDocument: ITypedocument | null = null;
   tachesAssociees: ITasks[] = [];
 
   pjsLoaded: IPj[] = [];
@@ -234,7 +234,6 @@ export class CorrespDetailComponent implements OnInit {
       const roles = acc?.authorities ?? [];
       this.isGlobalAdmin = Array.isArray(roles) && roles.includes('ROLE_ADMIN');
       this.isAdminOrBoc = Array.isArray(roles) && (roles.includes(Authority.ADMIN) || roles.includes(Authority.BOC));
-      // Si la corresp est déjà chargée et en DISPATCH, recalculer les permissions
       this.applyDispatchPermissionsForAdminOrBoc();
     });
     const qp = this.activatedRoute.snapshot.queryParamMap.get('taskId');
@@ -245,16 +244,12 @@ export class CorrespDetailComponent implements OnInit {
     this.correspService.find(Number(id)).subscribe(res => {
       this.correspLoaded = res.body!;
       this.loadPermissionsForCorresp(Number(this.correspLoaded.id));
-      // this.htmlContent = this.correspLoaded.body || '';
-      // this.formattedDate = dayjs(this.correspLoaded.courrierDate).format('dddd DD MMMM YYYY').toUpperCase();
-      // console.log(this.correspLoaded)
       this.objet = this.correspLoaded.subject || '';
       this.expediteur = this.correspLoaded.sender || '';
       this.destinataireLabel = this.correspLoaded.labelDestinataire || '';
       this.contactEmail = this.correspLoaded.contactEmail || '';
       this.contactEmailCCLabel = this.correspLoaded.labelContactCC || '';
 
-      // Peupler les chips CC depuis les données persistées
       if (this.correspLoaded.contactCopies && this.correspLoaded.contactCopies.length > 0) {
         this.selectedCcDepts = this.correspLoaded.contactCopies.map(cc => ({
           id: cc.id ?? null,
@@ -265,7 +260,6 @@ export class CorrespDetailComponent implements OnInit {
           emailDept: cc.emailDept ?? null,
         }));
       } else if (this.contactEmailCCLabel) {
-        // Fallback : parser labelContactCC pour créer des chips
         this.selectedCcDepts = this.contactEmailCCLabel
           .split(',')
           .map(s => s.trim())
@@ -282,8 +276,6 @@ export class CorrespDetailComponent implements OnInit {
       this.priorite = this.correspLoaded.priority || false;
       this.dispatchType = (this.correspLoaded.dispatchType as DispatchType) || '';
 
-      //TODO - GET MESSAGE BY CORRESP ID AND GET PATH AND PASS IT BELOW
-      //
       this.correspService.loadBodyFromFile({ correspId: this.correspLoaded.id }).subscribe({
         next: res => {
           this.htmlContent = res;
@@ -295,9 +287,28 @@ export class CorrespDetailComponent implements OnInit {
       });
 
       this.typeDocumentService.query({ page: 0, size: 1000 }).subscribe(res => {
-        this.typedocuments = res.body!;
-        this.selectedTypeDocument = this.typedocuments.find(td => td.id === Number(this.correspLoaded.typeDocumentId))!;
-        console.log(this.selectedTypeDocument);
+        this.typedocuments = res.body || [];
+        const autre: ITypedocument = {
+          id: 0,
+          nom: 'Autre',
+          defautdest: null,
+          defaultobject: null,
+          defaultencopie: null,
+          labelDD: null,
+          labelDCC: null,
+          usualstatus: null,
+        };
+        this.typedocuments.push(autre);
+
+        // FIX 1 : éviter de matcher l'objet "Autre" (id=0) si typeDocumentId est null/0/falsy
+        const found = this.correspLoaded.typeDocumentId
+          ? this.typedocuments.find(td => td.id === Number(this.correspLoaded.typeDocumentId))
+          : null;
+        this.selectedTypeDocument = found ?? null;
+
+        // FIX 2 : appel sans argument → mode "chargement initial", ne réinitialise PAS this.objet
+        this.onTypeDocumentChange();
+        this.objet = this.correspLoaded.subject || '';
       });
     });
 
@@ -316,7 +327,6 @@ export class CorrespDetailComponent implements OnInit {
       this.pjsLoaded = res.body || [];
     });
 
-    // Charger receiver et copyTo du message associé à cette correspondance
     this.correspService.getMessagesByCorrespId(Number(id)).subscribe({
       next: (res: HttpResponse<any[]>) => {
         const messages = res.body;
@@ -347,17 +357,12 @@ export class CorrespDetailComponent implements OnInit {
         }
       },
       error: () => {
-        // Pas de message associé (404) ou erreur → on garde les tableaux vides
         this.messageReceiverEmails = [];
         this.messageCopyToEmails = [];
       },
     });
 
     this.correspType = 'Arrivée';
-
-    // this.correspService.queryOrga().subscribe(res => {
-    //   this.orgaList = res.body!;
-    // });
     this.loadActiveCompanies();
     this.loadCorrespsWithReferenceList();
   }
@@ -461,9 +466,13 @@ export class CorrespDetailComponent implements OnInit {
     if (!date) return '';
     return dayjs(date).format('dddd DD MMMM YYYY - HH:mm').toUpperCase();
   }
-  onTypeDocumentChange(): void {
+  onTypeDocumentChange(newSelected?: ITypedocument | null): void {
+    this.selectedTypeDocument = newSelected ?? this.selectedTypeDocument ?? null;
+
     if (!this.selectedTypeDocument) {
-      // Réinitialiser si aucun type document sélectionné
+      if (newSelected !== undefined) {
+        this.objet = '';
+      }
       this.objet = '';
       this.destinataire = '';
       this.destinataireLabel = '';
@@ -474,7 +483,56 @@ export class CorrespDetailComponent implements OnInit {
       return;
     }
 
-    this.objet = this.selectedTypeDocument.defaultobject || '';
+    // Ne pas écraser this.objet lors du chargement initial (appel sans argument)
+    if (newSelected !== undefined && !this.objet?.trim()) {
+      this.objet = this.selectedTypeDocument.defaultobject || '';
+    }
+
+    this.destinataire = '';
+    this.destinataireLabel = '';
+    this.recipientSelectedDept = null;
+    this.contactEmailCC = '';
+    this.contactEmailCCLabel = '';
+    this.selectedCcDepts = [];
+
+    const typeName = (this.selectedTypeDocument?.nom || '').trim().toLowerCase();
+    const is = (s: string) => typeName === s.toLowerCase();
+    const anyOf = (...alts: string[]) => alts.some(a => is(a));
+
+    if (is('autre')) {
+      this.destinataire = '';
+      this.destinataireLabel = '';
+      this.selectedCcDepts = [];
+      this.contactEmailCC = '';
+      this.contactEmailCCLabel = '';
+      return;
+    }
+
+    if (is('note service')) {
+      this.destinataire = '';
+      this.destinataireLabel = 'Direction g\u00e9n\u00e9rale adjoint';
+      this.selectedCcDepts = [{ codeDept: 'Direction IT', nomDept: 'Direction IT', emailDept: '' }];
+      this.updateCcLabelsFromSelection();
+      return;
+    }
+
+    if (anyOf("demande d'intervention technique")) {
+      this.destinataire = '';
+      this.destinataireLabel = 'Direction IT';
+      this.selectedCcDepts = [{ codeDept: 'Direction R\u00e9alisation', nomDept: 'Direction R\u00e9alisation', emailDept: '' }];
+      this.updateCcLabelsFromSelection();
+      return;
+    }
+
+    if (anyOf('example doument', 'example document')) {
+      this.destinataire = '';
+      this.destinataireLabel = 'Administratifs';
+      this.selectedCcDepts = [
+        { codeDept: 'Direction g\u00e9n\u00e9rale adjoint', nomDept: 'Direction g\u00e9n\u00e9rale adjoint', emailDept: '' },
+      ];
+      this.updateCcLabelsFromSelection();
+      return;
+    }
 
     if (this.selectedTypeDocument.defautdest) {
       this.correspService.queryOrgaDepsByCode({ code: this.selectedTypeDocument.defautdest }).subscribe({
@@ -486,49 +544,48 @@ export class CorrespDetailComponent implements OnInit {
             this.destinataireLabel = res.body.nom || '';
           } else {
             this.destinataire = '';
-            this.destinataireLabel = '';
+            this.destinataireLabel = this.selectedTypeDocument!.labelDD || '';
           }
         },
         error: () => {
           this.destinataire = '';
-          this.destinataireLabel = '';
+          this.destinataireLabel = this.selectedTypeDocument!.labelDD || '';
         },
       });
     } else {
       this.destinataire = '';
-      this.destinataireLabel = '';
+      this.destinataireLabel = this.selectedTypeDocument.labelDD || '';
     }
 
-    // 3️⃣ Contact en copie (CC)
     if (this.selectedTypeDocument.defaultencopie) {
       this.correspService.queryOrgaDepsByCode({ code: this.selectedTypeDocument.defaultencopie }).subscribe({
         next: (res: HttpResponse<IDepartement>) => {
           if (res.body) {
-            this.contactEmailCC = res.body.email || '';
-            this.contactEmailCCLabel = res.body.nom || '';
             this.selectedCcDepts = [
               {
-                codeDept: this.selectedTypeDocument.defaultencopie ?? null,
-                nomDept: res.body.nom || '',
-                emailDept: res.body.email || '',
+                idDept: res.body.id ?? null,
+                codeDept: res.body.code ?? '',
+                nomDept: res.body.nom ?? '',
+                emailDept: res.body.email ?? '',
               },
             ];
+            this.updateCcLabelsFromSelection();
           } else {
-            this.contactEmailCC = '';
-            this.contactEmailCCLabel = '';
             this.selectedCcDepts = [];
+            this.contactEmailCC = '';
+            this.contactEmailCCLabel = this.selectedTypeDocument!.labelDCC || '';
           }
         },
         error: () => {
-          this.contactEmailCC = '';
-          this.contactEmailCCLabel = '';
           this.selectedCcDepts = [];
+          this.contactEmailCC = '';
+          this.contactEmailCCLabel = this.selectedTypeDocument!.labelDCC || '';
         },
       });
     } else {
-      this.contactEmailCC = '';
-      this.contactEmailCCLabel = '';
       this.selectedCcDepts = [];
+      this.contactEmailCC = '';
+      this.contactEmailCCLabel = this.selectedTypeDocument.labelDCC || '';
     }
   }
   private sanitize(obj: any): any {
@@ -1088,7 +1145,7 @@ export class CorrespDetailComponent implements OnInit {
       labelContactCC: this.contactEmailCCLabel || '',
     };
 
-    const typeDocumentDTO = this.selectedTypeDocument;
+    const typeDocumentDTO = this.selectedTypeDocument!;
 
     this.isSaving = true;
 
@@ -1824,20 +1881,64 @@ export class CorrespDetailComponent implements OnInit {
   generateReference(): void {
     if (!this.correspLoaded || !this.correspLoaded.id) return;
 
-    // contrôle permission (écriture ou admin)
     if (!(this.canWriteCorresp || this.canAdminCorresp)) {
       this.showNotification("Vous n'avez pas le droit de générer une référence", 'error');
       return;
     }
 
-    this.correspService.generateReferenceForCorresp(this.correspLoaded.id).subscribe({
-      next: (res: ICorresp) => {
-        this.correspLoaded.reference = res.reference;
-        this.showNotification(`Référence générée${res.reference ? ' : ' + res.reference : ''}`, 'success');
+    if (!this.selectedTypeDocument) {
+      this.showNotification('Veuillez sélectionner un type de document !', 'error');
+      return;
+    }
+
+    const correspDTO: any = {
+      id: this.correspLoaded.id,
+      idinstance: this.correspLoaded.idinstance,
+      subject: this.objet || 'Sans objet',
+      courrierDate: this.date ? dayjs(this.date).toISOString() : dayjs().toISOString(),
+      dateCreated: this.correspLoaded.dateCreated ? dayjs(this.correspLoaded.dateCreated).toISOString() : dayjs().toISOString(),
+      status: 'DRAFT',
+      body: this.htmlContent || '',
+      sender: this.expediteur || 'Inconnu',
+      contact: this.contactEmail || '',
+      contactEmail: this.contactEmail || '',
+      contactEmailCc: this.contactEmailCCLabel || '',
+      responseTo: this.reponseSur || null,
+      senderReference: this.referenceEmetteur || null,
+      priority: this.priorite || false,
+      corresptype: this.correspLoaded.corresptype || 'STANDARD',
+      dispatchType: this.correspLoaded.dispatchType || 'NORMAL',
+      labelDestinataire: this.destinataireLabel || '',
+      labelContactCC: this.contactEmailCCLabel || '',
+    };
+
+    this.isSaving = true;
+
+    // 1) Sauvegarder d'abord le brouillon
+    this.correspService.updateCorrespDraft(this.correspLoaded.id, correspDTO, this.selectedTypeDocument).subscribe({
+      next: res => {
+        this.correspLoaded = res.body!;
+        // 2) Puis générer la référence
+        this.correspService.generateReferenceForCorresp(this.correspLoaded.id).subscribe({
+          next: (refRes: ICorresp) => {
+            this.isSaving = false;
+            this.correspLoaded.reference = refRes.reference;
+            this.showNotification(
+              `Brouillon enregistré et référence générée${refRes.reference ? ' : ' + refRes.reference : ''}`,
+              'success'
+            );
+          },
+          error: err => {
+            this.isSaving = false;
+            console.error('Erreur génération référence :', err);
+            this.showNotification('Brouillon enregistré mais impossible de générer la référence', 'error');
+          },
+        });
       },
       error: err => {
-        console.error('Erreur génération référence :', err);
-        this.showNotification('Impossible de générer la référence', 'error');
+        this.isSaving = false;
+        console.error('Erreur sauvegarde avant génération référence', err);
+        this.showNotification("Erreur lors de l'enregistrement du brouillon", 'error');
       },
     });
   }
