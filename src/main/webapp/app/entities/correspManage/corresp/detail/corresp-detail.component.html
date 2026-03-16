@@ -1126,7 +1126,7 @@
                 </div>
 
                 <div style="background: #fff; padding: 10px; border: 1px solid #eee; border-radius: 4px; min-height: 100px">
-                  <div [innerHTML]="htmlContent || correspLoaded?.body"></div>
+                  <div class="email-body-content" [innerHTML]="safeHtmlContent"></div>
                 </div>
               </ng-template>
             </div>

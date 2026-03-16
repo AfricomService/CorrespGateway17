@@ -29,6 +29,7 @@ import { CorrespPermissionsDTO, PermissionDTO } from '../../permissions.model';
 import { AccountService } from 'app/core/auth/account.service';
 import { Account } from 'app/core/auth/account.model';
 import { Authority } from 'app/config/authority.constants';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 // export interface ITasks {
 //   id: number;
@@ -234,8 +235,30 @@ export class CorrespDetailComponent implements OnInit {
     private pjService: PjService,
     private modalService: NgbModal,
     protected contactCompanyService: ContactCompanyService,
-    private accountService: AccountService
+    private accountService: AccountService,
+    private sanitizer: DomSanitizer
   ) {}
+
+  get safeHtmlContent(): SafeHtml {
+    let raw = this.htmlContent || this.correspLoaded?.body || '';
+
+    // Supprimer les balises <style> et leur contenu
+    raw = raw.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+
+    // Supprimer les balises <head> et leur contenu
+    raw = raw.replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '');
+
+    // Supprimer les commentaires conditionnels Outlook <!--[if ...]>...<![endif]-->
+    raw = raw.replace(/<!--\[if[\s\S]*?<!\[endif\]-->/gi, '');
+
+    // Extraire uniquement le contenu du <body> si présent
+    const bodyMatch = raw.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+    if (bodyMatch) {
+      raw = bodyMatch[1];
+    }
+
+    return this.sanitizer.bypassSecurityTrustHtml(raw);
+  }
 
   ngOnInit(): void {
     this.accountService.identity().subscribe(acc => {
