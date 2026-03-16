@@ -174,6 +174,14 @@ export class CorrespDetailComponent implements OnInit {
   ccExpandedNodes: Set<number> = new Set();
   selectedCcDepts: IContactCopieCorresp[] = [];
 
+  pendingTasks: Array<{
+    typeTask: string;
+    responsable: string;
+    dateLimite: string;
+    responsableName: string;
+    commentaire: string;
+  }> = [];
+
   dispatchType: DispatchType | '' = '';
   dispatchTypeOptions: Array<{ value: DispatchType; label: string }> = [
     { value: DispatchType.LETTER, label: 'Lettre' },
@@ -480,6 +488,7 @@ export class CorrespDetailComponent implements OnInit {
       this.contactEmailCC = '';
       this.contactEmailCCLabel = '';
       this.selectedCcDepts = [];
+      this.pendingTasks = [];
       return;
     }
 
@@ -494,6 +503,13 @@ export class CorrespDetailComponent implements OnInit {
     this.contactEmailCC = '';
     this.contactEmailCCLabel = '';
     this.selectedCcDepts = [];
+    this.pendingTasks = [];
+
+    // Appel initial lors du chargement de la page (sans argument newSelected) :
+    // les tâches existent déjà en base → ne pas recréer de pendingTasks
+    if (newSelected === undefined) {
+      return;
+    }
 
     const typeName = (this.selectedTypeDocument?.nom || '').trim().toLowerCase();
     const is = (s: string) => typeName === s.toLowerCase();
@@ -510,27 +526,67 @@ export class CorrespDetailComponent implements OnInit {
 
     if (is('note service')) {
       this.destinataire = '';
-      this.destinataireLabel = 'Direction g\u00e9n\u00e9rale adjoint';
+      this.destinataireLabel = 'Direction générale adjoint';
       this.selectedCcDepts = [{ codeDept: 'Direction IT', nomDept: 'Direction IT', emailDept: '' }];
       this.updateCcLabelsFromSelection();
+      this.pendingTasks.push({
+        typeTask: 'traitement',
+        responsable: 'Direction générale adjoint',
+        dateLimite: '',
+        responsableName: 'Direction générale adjoint',
+        commentaire: '',
+      });
+      this.pendingTasks.push({
+        typeTask: 'lecture',
+        responsable: 'Direction IT',
+        dateLimite: '',
+        responsableName: 'Direction IT',
+        commentaire: '',
+      });
       return;
     }
 
     if (anyOf("demande d'intervention technique")) {
       this.destinataire = '';
       this.destinataireLabel = 'Direction IT';
-      this.selectedCcDepts = [{ codeDept: 'Direction R\u00e9alisation', nomDept: 'Direction R\u00e9alisation', emailDept: '' }];
+      this.selectedCcDepts = [{ codeDept: 'Direction Réalisation', nomDept: 'Direction Réalisation', emailDept: '' }];
       this.updateCcLabelsFromSelection();
+      this.pendingTasks.push({
+        typeTask: 'traitement',
+        responsable: 'Direction IT',
+        dateLimite: '',
+        responsableName: 'Direction IT',
+        commentaire: '',
+      });
+      this.pendingTasks.push({
+        typeTask: 'lecture',
+        responsable: 'Direction Réalisation',
+        dateLimite: '',
+        responsableName: 'Direction Réalisation',
+        commentaire: '',
+      });
       return;
     }
 
     if (anyOf('example doument', 'example document')) {
       this.destinataire = '';
       this.destinataireLabel = 'Administratifs';
-      this.selectedCcDepts = [
-        { codeDept: 'Direction g\u00e9n\u00e9rale adjoint', nomDept: 'Direction g\u00e9n\u00e9rale adjoint', emailDept: '' },
-      ];
+      this.selectedCcDepts = [{ codeDept: 'Direction générale adjoint', nomDept: 'Direction générale adjoint', emailDept: '' }];
       this.updateCcLabelsFromSelection();
+      this.pendingTasks.push({
+        typeTask: 'traitement',
+        responsable: 'Administratifs',
+        dateLimite: '',
+        responsableName: 'Administratifs',
+        commentaire: '',
+      });
+      this.pendingTasks.push({
+        typeTask: 'lecture',
+        responsable: 'Direction générale adjoint',
+        dateLimite: '',
+        responsableName: 'Direction générale adjoint',
+        commentaire: '',
+      });
       return;
     }
 
@@ -538,23 +594,33 @@ export class CorrespDetailComponent implements OnInit {
       this.correspService.queryOrgaDepsByCode({ code: this.selectedTypeDocument.defautdest }).subscribe({
         next: (res: HttpResponse<IDepartement>) => {
           if (res.body) {
-            console.log('res body');
-            console.log(res.body);
             this.destinataire = res.body.email || '';
             this.destinataireLabel = res.body.nom || '';
+
+            this.pendingTasks = this.pendingTasks.filter(t => t.typeTask !== 'traitement');
+            this.pendingTasks.push({
+              typeTask: 'traitement',
+              responsable: res.body.code ?? '',
+              dateLimite: '',
+              responsableName: res.body.nom ?? '',
+              commentaire: '',
+            });
           } else {
             this.destinataire = '';
             this.destinataireLabel = this.selectedTypeDocument!.labelDD || '';
+            this.pendingTasks = this.pendingTasks.filter(t => t.typeTask !== 'traitement');
           }
         },
         error: () => {
           this.destinataire = '';
           this.destinataireLabel = this.selectedTypeDocument!.labelDD || '';
+          this.pendingTasks = this.pendingTasks.filter(t => t.typeTask !== 'traitement');
         },
       });
     } else {
       this.destinataire = '';
       this.destinataireLabel = this.selectedTypeDocument.labelDD || '';
+      this.pendingTasks = this.pendingTasks.filter(t => t.typeTask !== 'traitement');
     }
 
     if (this.selectedTypeDocument.defaultencopie) {
@@ -570,22 +636,34 @@ export class CorrespDetailComponent implements OnInit {
               },
             ];
             this.updateCcLabelsFromSelection();
+
+            this.pendingTasks = this.pendingTasks.filter(t => t.typeTask !== 'lecture');
+            this.pendingTasks.push({
+              typeTask: 'lecture',
+              responsable: res.body.code ?? '',
+              dateLimite: '',
+              responsableName: res.body.nom ?? '',
+              commentaire: '',
+            });
           } else {
             this.selectedCcDepts = [];
             this.contactEmailCC = '';
             this.contactEmailCCLabel = this.selectedTypeDocument!.labelDCC || '';
+            this.pendingTasks = this.pendingTasks.filter(t => t.typeTask !== 'lecture');
           }
         },
         error: () => {
           this.selectedCcDepts = [];
           this.contactEmailCC = '';
           this.contactEmailCCLabel = this.selectedTypeDocument!.labelDCC || '';
+          this.pendingTasks = this.pendingTasks.filter(t => t.typeTask !== 'lecture');
         },
       });
     } else {
       this.selectedCcDepts = [];
       this.contactEmailCC = '';
       this.contactEmailCCLabel = this.selectedTypeDocument.labelDCC || '';
+      this.pendingTasks = this.pendingTasks.filter(t => t.typeTask !== 'lecture');
     }
   }
   private sanitize(obj: any): any {
@@ -1153,10 +1231,54 @@ export class CorrespDetailComponent implements OnInit {
       next: res => {
         this.isSaving = false;
         this.correspLoaded = res.body!;
+
         this.correspService.loadBodyFromFile({ correspId: this.correspLoaded.id }).subscribe(body => {
           this.htmlContent = body;
         });
-        this.showNotification('Brouillon enregistré avec succès !', 'success');
+
+        // Envoyer les tâches pendingTasks en lot séquentiellement
+        if (this.pendingTasks.length > 0) {
+          const tasksToSend = [...this.pendingTasks];
+          this.pendingTasks = []; // vider immédiatement pour éviter double envoi
+
+          const sendNext = (index: number): void => {
+            if (index >= tasksToSend.length) {
+              // Toutes les tâches envoyées → rafraîchir la liste affichée et vider l'aperçu
+              this.taskService.getAllTasksByCorrespId({ correspId: this.correspLoaded.id }).subscribe(r => {
+                const list = r.body || [];
+                this.taskService.enrichTasksWithCanModify(list).subscribe(enriched => {
+                  this.tachesAssociees = enriched || [];
+                  this.pendingTasks = []; // vider ici après rafraîchissement confirmé
+                  this.resolveResponsableNames();
+                });
+              });
+              this.showNotification('Brouillon et tâches enregistrés avec succès !', 'success');
+              return;
+            }
+
+            const t = tasksToSend[index];
+            const taskModel: any = {
+              object: `${t.responsableName} effectuera la tâche de ${t.typeTask.toUpperCase()}`,
+              taskType: t.typeTask,
+              commentaire: t.commentaire || null,
+              responsible: t.responsable,
+              dueDate: t.dateLimite ? dayjs(t.dateLimite).toISOString() : null,
+              responsables: t.responsable ? [{ codeDept: t.responsable }] : [],
+            };
+
+            this.correspService.addTaskToCorresp(taskModel, this.correspLoaded.id).subscribe({
+              next: () => sendNext(index + 1),
+              error: err => {
+                console.warn(`Erreur envoi tâche auto (${t.typeTask})`, err);
+                sendNext(index + 1); // continuer même en cas d'erreur
+              },
+            });
+          };
+
+          sendNext(0);
+        } else {
+          this.showNotification('Brouillon enregistré avec succès !', 'success');
+        }
       },
       error: err => {
         this.isSaving = false;
