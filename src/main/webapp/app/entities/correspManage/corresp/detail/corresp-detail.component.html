@@ -173,7 +173,7 @@
 
   <div style="display: flex; flex-direction: column; flex-grow: 1">
     <div style="display: flex; flex-grow: 1; gap: 16px; padding-bottom: 1em">
-      <div style="flex: 1">
+      <div style="flex: 1 1 400px; min-width: 0">
         <div
           style="padding: 16px; border: 1px solid #ccc; border-radius: 12px; height: 100%; display: flex; flex-direction: column; gap: 16px"
         >
@@ -942,7 +942,7 @@
         </div>
       </div>
 
-      <div style="flex: 1">
+      <div style="flex: 1 1 400px; min-width: 0">
         <div
           style="padding: 16px; border: 1px solid #ccc; border-radius: 12px; height: 100%; display: flex; flex-direction: column; gap: 16px"
         >
@@ -1243,7 +1243,7 @@
               <!--                <span *ngIf="pjsLoaded.length === 0" style="color: #999; font-style: italic"> Aucune pièce jointe. </span>-->
               <!--              </div>-->
 
-              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; align-items: stretch">
+              <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; align-items: stretch">
                 <div
                   (click)="togglePreview(pj)"
                   *ngFor="let pj of pjsLoaded"
@@ -1296,7 +1296,7 @@
                 <!-- Empty state -->
                 <span
                   *ngIf="pjsLoaded.length === 0"
-                  style="grid-column: span 2; color: #999; font-style: italic"
+                  style="grid-column: 1 / -1; color: #999; font-style: italic"
                   jhiTranslate="correspCareApp.correspManageCorresp.detail.noAttachments"
                 >
                   Aucune pièce jointe.

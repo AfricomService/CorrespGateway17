@@ -497,6 +497,15 @@ export class CorrespDetailComponent implements OnInit {
       this.objet = this.selectedTypeDocument.defaultobject || '';
     }
 
+    // ✅ FIX : en mode chargement initial (newSelected === undefined),
+    // NE PAS réinitialiser les champs déjà chargés depuis la base
+    // (destinataireLabel, contactEmailCCLabel, selectedCcDepts)
+    if (newSelected === undefined) {
+      this.pendingTasks = [];
+      return;
+    }
+
+    // Ces réinitialisations ne s'exécutent QUE lors d'un vrai changement utilisateur
     this.destinataire = '';
     this.destinataireLabel = '';
     this.recipientSelectedDept = null;
@@ -504,12 +513,6 @@ export class CorrespDetailComponent implements OnInit {
     this.contactEmailCCLabel = '';
     this.selectedCcDepts = [];
     this.pendingTasks = [];
-
-    // Appel initial lors du chargement de la page (sans argument newSelected) :
-    // les tâches existent déjà en base → ne pas recréer de pendingTasks
-    if (newSelected === undefined) {
-      return;
-    }
 
     const typeName = (this.selectedTypeDocument?.nom || '').trim().toLowerCase();
     const is = (s: string) => typeName === s.toLowerCase();
@@ -2040,27 +2043,71 @@ export class CorrespDetailComponent implements OnInit {
     this.correspService.updateCorrespDraft(this.correspLoaded.id, correspDTO, this.selectedTypeDocument).subscribe({
       next: res => {
         this.correspLoaded = res.body!;
-        // 2) Puis générer la référence
-        this.correspService.generateReferenceForCorresp(this.correspLoaded.id).subscribe({
-          next: (refRes: ICorresp) => {
-            this.isSaving = false;
-            this.correspLoaded.reference = refRes.reference;
-            this.showNotification(
-              `Brouillon enregistré et référence générée${refRes.reference ? ' : ' + refRes.reference : ''}`,
-              'success'
-            );
-          },
-          error: err => {
-            this.isSaving = false;
-            console.error('Erreur génération référence :', err);
-            this.showNotification('Brouillon enregistré mais impossible de générer la référence', 'error');
-          },
-        });
+
+        // 2) Envoyer les pendingTasks séquentiellement avant de générer la référence
+        if (this.pendingTasks.length > 0) {
+          const tasksToSend = [...this.pendingTasks];
+          this.pendingTasks = []; // vider immédiatement pour éviter double envoi
+
+          const sendNext = (index: number): void => {
+            if (index >= tasksToSend.length) {
+              // Toutes les tâches envoyées → générer la référence
+              this.doGenerateReference();
+              return;
+            }
+
+            const t = tasksToSend[index];
+            const taskModel: any = {
+              object: `${t.responsableName} effectuera la tâche de ${t.typeTask.toUpperCase()}`,
+              taskType: t.typeTask,
+              commentaire: t.commentaire || null,
+              responsible: t.responsable,
+              dueDate: t.dateLimite ? dayjs(t.dateLimite).toISOString() : null,
+              responsables: t.responsable ? [{ codeDept: t.responsable }] : [],
+            };
+
+            this.correspService.addTaskToCorresp(taskModel, this.correspLoaded.id).subscribe({
+              next: () => sendNext(index + 1),
+              error: err => {
+                console.warn(`Erreur envoi tâche auto (${t.typeTask})`, err);
+                sendNext(index + 1); // continuer même en cas d'erreur
+              },
+            });
+          };
+
+          sendNext(0);
+        } else {
+          // Pas de pendingTasks → générer directement la référence
+          this.doGenerateReference();
+        }
       },
       error: err => {
         this.isSaving = false;
         console.error('Erreur sauvegarde avant génération référence', err);
         this.showNotification("Erreur lors de l'enregistrement du brouillon", 'error');
+      },
+    });
+  }
+
+  private doGenerateReference(): void {
+    this.correspService.generateReferenceForCorresp(this.correspLoaded.id).subscribe({
+      next: (refRes: ICorresp) => {
+        this.isSaving = false;
+        this.correspLoaded.reference = refRes.reference;
+        // Rafraîchir la liste des tâches affichées
+        this.taskService.getAllTasksByCorrespId({ correspId: this.correspLoaded.id }).subscribe(r => {
+          const list = r.body || [];
+          this.taskService.enrichTasksWithCanModify(list).subscribe(enriched => {
+            this.tachesAssociees = enriched || [];
+            this.resolveResponsableNames();
+          });
+        });
+        this.showNotification(`Brouillon enregistré et référence générée${refRes.reference ? ' : ' + refRes.reference : ''}`, 'success');
+      },
+      error: err => {
+        this.isSaving = false;
+        console.error('Erreur génération référence :', err);
+        this.showNotification('Brouillon enregistré mais impossible de générer la référence', 'error');
       },
     });
   }
