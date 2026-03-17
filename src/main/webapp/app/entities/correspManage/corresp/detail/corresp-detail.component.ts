@@ -29,6 +29,7 @@ import { CorrespPermissionsDTO, PermissionDTO } from '../../permissions.model';
 import { AccountService } from 'app/core/auth/account.service';
 import { Account } from 'app/core/auth/account.model';
 import { Authority } from 'app/config/authority.constants';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 // export interface ITasks {
 //   id: number;
@@ -174,6 +175,14 @@ export class CorrespDetailComponent implements OnInit {
   ccExpandedNodes: Set<number> = new Set();
   selectedCcDepts: IContactCopieCorresp[] = [];
 
+  pendingTasks: Array<{
+    typeTask: string;
+    responsable: string;
+    dateLimite: string;
+    responsableName: string;
+    commentaire: string;
+  }> = [];
+
   dispatchType: DispatchType | '' = '';
   dispatchTypeOptions: Array<{ value: DispatchType; label: string }> = [
     { value: DispatchType.LETTER, label: 'Lettre' },
@@ -226,8 +235,30 @@ export class CorrespDetailComponent implements OnInit {
     private pjService: PjService,
     private modalService: NgbModal,
     protected contactCompanyService: ContactCompanyService,
-    private accountService: AccountService
+    private accountService: AccountService,
+    private sanitizer: DomSanitizer
   ) {}
+
+  get safeHtmlContent(): SafeHtml {
+    let raw = this.htmlContent || this.correspLoaded?.body || '';
+
+    // Supprimer les balises <style> et leur contenu
+    raw = raw.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+
+    // Supprimer les balises <head> et leur contenu
+    raw = raw.replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '');
+
+    // Supprimer les commentaires conditionnels Outlook <!--[if ...]>...<![endif]-->
+    raw = raw.replace(/<!--\[if[\s\S]*?<!\[endif\]-->/gi, '');
+
+    // Extraire uniquement le contenu du <body> si présent
+    const bodyMatch = raw.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+    if (bodyMatch) {
+      raw = bodyMatch[1];
+    }
+
+    return this.sanitizer.bypassSecurityTrustHtml(raw);
+  }
 
   ngOnInit(): void {
     this.accountService.identity().subscribe(acc => {
@@ -480,6 +511,7 @@ export class CorrespDetailComponent implements OnInit {
       this.contactEmailCC = '';
       this.contactEmailCCLabel = '';
       this.selectedCcDepts = [];
+      this.pendingTasks = [];
       return;
     }
 
@@ -488,12 +520,22 @@ export class CorrespDetailComponent implements OnInit {
       this.objet = this.selectedTypeDocument.defaultobject || '';
     }
 
+    // ✅ FIX : en mode chargement initial (newSelected === undefined),
+    // NE PAS réinitialiser les champs déjà chargés depuis la base
+    // (destinataireLabel, contactEmailCCLabel, selectedCcDepts)
+    if (newSelected === undefined) {
+      this.pendingTasks = [];
+      return;
+    }
+
+    // Ces réinitialisations ne s'exécutent QUE lors d'un vrai changement utilisateur
     this.destinataire = '';
     this.destinataireLabel = '';
     this.recipientSelectedDept = null;
     this.contactEmailCC = '';
     this.contactEmailCCLabel = '';
     this.selectedCcDepts = [];
+    this.pendingTasks = [];
 
     const typeName = (this.selectedTypeDocument?.nom || '').trim().toLowerCase();
     const is = (s: string) => typeName === s.toLowerCase();
@@ -510,27 +552,67 @@ export class CorrespDetailComponent implements OnInit {
 
     if (is('note service')) {
       this.destinataire = '';
-      this.destinataireLabel = 'Direction g\u00e9n\u00e9rale adjoint';
+      this.destinataireLabel = 'Direction générale adjoint';
       this.selectedCcDepts = [{ codeDept: 'Direction IT', nomDept: 'Direction IT', emailDept: '' }];
       this.updateCcLabelsFromSelection();
+      this.pendingTasks.push({
+        typeTask: 'traitement',
+        responsable: 'Direction générale adjoint',
+        dateLimite: '',
+        responsableName: 'Direction générale adjoint',
+        commentaire: '',
+      });
+      this.pendingTasks.push({
+        typeTask: 'lecture',
+        responsable: 'Direction IT',
+        dateLimite: '',
+        responsableName: 'Direction IT',
+        commentaire: '',
+      });
       return;
     }
 
     if (anyOf("demande d'intervention technique")) {
       this.destinataire = '';
       this.destinataireLabel = 'Direction IT';
-      this.selectedCcDepts = [{ codeDept: 'Direction R\u00e9alisation', nomDept: 'Direction R\u00e9alisation', emailDept: '' }];
+      this.selectedCcDepts = [{ codeDept: 'Direction Réalisation', nomDept: 'Direction Réalisation', emailDept: '' }];
       this.updateCcLabelsFromSelection();
+      this.pendingTasks.push({
+        typeTask: 'traitement',
+        responsable: 'Direction IT',
+        dateLimite: '',
+        responsableName: 'Direction IT',
+        commentaire: '',
+      });
+      this.pendingTasks.push({
+        typeTask: 'lecture',
+        responsable: 'Direction Réalisation',
+        dateLimite: '',
+        responsableName: 'Direction Réalisation',
+        commentaire: '',
+      });
       return;
     }
 
     if (anyOf('example doument', 'example document')) {
       this.destinataire = '';
       this.destinataireLabel = 'Administratifs';
-      this.selectedCcDepts = [
-        { codeDept: 'Direction g\u00e9n\u00e9rale adjoint', nomDept: 'Direction g\u00e9n\u00e9rale adjoint', emailDept: '' },
-      ];
+      this.selectedCcDepts = [{ codeDept: 'Direction générale adjoint', nomDept: 'Direction générale adjoint', emailDept: '' }];
       this.updateCcLabelsFromSelection();
+      this.pendingTasks.push({
+        typeTask: 'traitement',
+        responsable: 'Administratifs',
+        dateLimite: '',
+        responsableName: 'Administratifs',
+        commentaire: '',
+      });
+      this.pendingTasks.push({
+        typeTask: 'lecture',
+        responsable: 'Direction générale adjoint',
+        dateLimite: '',
+        responsableName: 'Direction générale adjoint',
+        commentaire: '',
+      });
       return;
     }
 
@@ -538,23 +620,33 @@ export class CorrespDetailComponent implements OnInit {
       this.correspService.queryOrgaDepsByCode({ code: this.selectedTypeDocument.defautdest }).subscribe({
         next: (res: HttpResponse<IDepartement>) => {
           if (res.body) {
-            console.log('res body');
-            console.log(res.body);
             this.destinataire = res.body.email || '';
             this.destinataireLabel = res.body.nom || '';
+
+            this.pendingTasks = this.pendingTasks.filter(t => t.typeTask !== 'traitement');
+            this.pendingTasks.push({
+              typeTask: 'traitement',
+              responsable: res.body.code ?? '',
+              dateLimite: '',
+              responsableName: res.body.nom ?? '',
+              commentaire: '',
+            });
           } else {
             this.destinataire = '';
             this.destinataireLabel = this.selectedTypeDocument!.labelDD || '';
+            this.pendingTasks = this.pendingTasks.filter(t => t.typeTask !== 'traitement');
           }
         },
         error: () => {
           this.destinataire = '';
           this.destinataireLabel = this.selectedTypeDocument!.labelDD || '';
+          this.pendingTasks = this.pendingTasks.filter(t => t.typeTask !== 'traitement');
         },
       });
     } else {
       this.destinataire = '';
       this.destinataireLabel = this.selectedTypeDocument.labelDD || '';
+      this.pendingTasks = this.pendingTasks.filter(t => t.typeTask !== 'traitement');
     }
 
     if (this.selectedTypeDocument.defaultencopie) {
@@ -570,22 +662,34 @@ export class CorrespDetailComponent implements OnInit {
               },
             ];
             this.updateCcLabelsFromSelection();
+
+            this.pendingTasks = this.pendingTasks.filter(t => t.typeTask !== 'lecture');
+            this.pendingTasks.push({
+              typeTask: 'lecture',
+              responsable: res.body.code ?? '',
+              dateLimite: '',
+              responsableName: res.body.nom ?? '',
+              commentaire: '',
+            });
           } else {
             this.selectedCcDepts = [];
             this.contactEmailCC = '';
             this.contactEmailCCLabel = this.selectedTypeDocument!.labelDCC || '';
+            this.pendingTasks = this.pendingTasks.filter(t => t.typeTask !== 'lecture');
           }
         },
         error: () => {
           this.selectedCcDepts = [];
           this.contactEmailCC = '';
           this.contactEmailCCLabel = this.selectedTypeDocument!.labelDCC || '';
+          this.pendingTasks = this.pendingTasks.filter(t => t.typeTask !== 'lecture');
         },
       });
     } else {
       this.selectedCcDepts = [];
       this.contactEmailCC = '';
       this.contactEmailCCLabel = this.selectedTypeDocument.labelDCC || '';
+      this.pendingTasks = this.pendingTasks.filter(t => t.typeTask !== 'lecture');
     }
   }
   private sanitize(obj: any): any {
@@ -1153,10 +1257,54 @@ export class CorrespDetailComponent implements OnInit {
       next: res => {
         this.isSaving = false;
         this.correspLoaded = res.body!;
+
         this.correspService.loadBodyFromFile({ correspId: this.correspLoaded.id }).subscribe(body => {
           this.htmlContent = body;
         });
-        this.showNotification('Brouillon enregistré avec succès !', 'success');
+
+        // Envoyer les tâches pendingTasks en lot séquentiellement
+        if (this.pendingTasks.length > 0) {
+          const tasksToSend = [...this.pendingTasks];
+          this.pendingTasks = []; // vider immédiatement pour éviter double envoi
+
+          const sendNext = (index: number): void => {
+            if (index >= tasksToSend.length) {
+              // Toutes les tâches envoyées → rafraîchir la liste affichée et vider l'aperçu
+              this.taskService.getAllTasksByCorrespId({ correspId: this.correspLoaded.id }).subscribe(r => {
+                const list = r.body || [];
+                this.taskService.enrichTasksWithCanModify(list).subscribe(enriched => {
+                  this.tachesAssociees = enriched || [];
+                  this.pendingTasks = []; // vider ici après rafraîchissement confirmé
+                  this.resolveResponsableNames();
+                });
+              });
+              this.showNotification('Brouillon et tâches enregistrés avec succès !', 'success');
+              return;
+            }
+
+            const t = tasksToSend[index];
+            const taskModel: any = {
+              object: `${t.responsableName} effectuera la tâche de ${t.typeTask.toUpperCase()}`,
+              taskType: t.typeTask,
+              commentaire: t.commentaire || null,
+              responsible: t.responsable,
+              dueDate: t.dateLimite ? dayjs(t.dateLimite).toISOString() : null,
+              responsables: t.responsable ? [{ codeDept: t.responsable }] : [],
+            };
+
+            this.correspService.addTaskToCorresp(taskModel, this.correspLoaded.id).subscribe({
+              next: () => sendNext(index + 1),
+              error: err => {
+                console.warn(`Erreur envoi tâche auto (${t.typeTask})`, err);
+                sendNext(index + 1); // continuer même en cas d'erreur
+              },
+            });
+          };
+
+          sendNext(0);
+        } else {
+          this.showNotification('Brouillon enregistré avec succès !', 'success');
+        }
       },
       error: err => {
         this.isSaving = false;
@@ -1918,27 +2066,71 @@ export class CorrespDetailComponent implements OnInit {
     this.correspService.updateCorrespDraft(this.correspLoaded.id, correspDTO, this.selectedTypeDocument).subscribe({
       next: res => {
         this.correspLoaded = res.body!;
-        // 2) Puis générer la référence
-        this.correspService.generateReferenceForCorresp(this.correspLoaded.id).subscribe({
-          next: (refRes: ICorresp) => {
-            this.isSaving = false;
-            this.correspLoaded.reference = refRes.reference;
-            this.showNotification(
-              `Brouillon enregistré et référence générée${refRes.reference ? ' : ' + refRes.reference : ''}`,
-              'success'
-            );
-          },
-          error: err => {
-            this.isSaving = false;
-            console.error('Erreur génération référence :', err);
-            this.showNotification('Brouillon enregistré mais impossible de générer la référence', 'error');
-          },
-        });
+
+        // 2) Envoyer les pendingTasks séquentiellement avant de générer la référence
+        if (this.pendingTasks.length > 0) {
+          const tasksToSend = [...this.pendingTasks];
+          this.pendingTasks = []; // vider immédiatement pour éviter double envoi
+
+          const sendNext = (index: number): void => {
+            if (index >= tasksToSend.length) {
+              // Toutes les tâches envoyées → générer la référence
+              this.doGenerateReference();
+              return;
+            }
+
+            const t = tasksToSend[index];
+            const taskModel: any = {
+              object: `${t.responsableName} effectuera la tâche de ${t.typeTask.toUpperCase()}`,
+              taskType: t.typeTask,
+              commentaire: t.commentaire || null,
+              responsible: t.responsable,
+              dueDate: t.dateLimite ? dayjs(t.dateLimite).toISOString() : null,
+              responsables: t.responsable ? [{ codeDept: t.responsable }] : [],
+            };
+
+            this.correspService.addTaskToCorresp(taskModel, this.correspLoaded.id).subscribe({
+              next: () => sendNext(index + 1),
+              error: err => {
+                console.warn(`Erreur envoi tâche auto (${t.typeTask})`, err);
+                sendNext(index + 1); // continuer même en cas d'erreur
+              },
+            });
+          };
+
+          sendNext(0);
+        } else {
+          // Pas de pendingTasks → générer directement la référence
+          this.doGenerateReference();
+        }
       },
       error: err => {
         this.isSaving = false;
         console.error('Erreur sauvegarde avant génération référence', err);
         this.showNotification("Erreur lors de l'enregistrement du brouillon", 'error');
+      },
+    });
+  }
+
+  private doGenerateReference(): void {
+    this.correspService.generateReferenceForCorresp(this.correspLoaded.id).subscribe({
+      next: (refRes: ICorresp) => {
+        this.isSaving = false;
+        this.correspLoaded.reference = refRes.reference;
+        // Rafraîchir la liste des tâches affichées
+        this.taskService.getAllTasksByCorrespId({ correspId: this.correspLoaded.id }).subscribe(r => {
+          const list = r.body || [];
+          this.taskService.enrichTasksWithCanModify(list).subscribe(enriched => {
+            this.tachesAssociees = enriched || [];
+            this.resolveResponsableNames();
+          });
+        });
+        this.showNotification(`Brouillon enregistré et référence générée${refRes.reference ? ' : ' + refRes.reference : ''}`, 'success');
+      },
+      error: err => {
+        this.isSaving = false;
+        console.error('Erreur génération référence :', err);
+        this.showNotification('Brouillon enregistré mais impossible de générer la référence', 'error');
       },
     });
   }
