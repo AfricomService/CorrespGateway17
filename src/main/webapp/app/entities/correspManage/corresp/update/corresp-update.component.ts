@@ -44,6 +44,7 @@ import { TypeAffectation } from 'app/entities/correspManage/corresp/update/enums
 import { AccountService } from 'app/core/auth/account.service';
 import { Account } from 'app/core/auth/account.model';
 import { Authority } from 'app/config/authority.constants';
+import { PjCareService, PjCareScanResult } from 'app/entities/correspManage/pj/service/pjcare.service';
 
 // --------------------------------------------------------------------------
 // Small helper interfaces
@@ -223,7 +224,8 @@ export class CorrespUpdateComponent implements OnInit {
     public router: Router,
     protected contactCompanyService: ContactCompanyService,
     protected parentClassdefService: ParentClassdefService,
-    protected accountService: AccountService
+    protected accountService: AccountService,
+    private pjCareService: PjCareService
   ) {}
 
   // --------------------------------------------------------------------------
@@ -1811,6 +1813,130 @@ export class CorrespUpdateComponent implements OnInit {
   toggleAccordion(section: string): void {
     this.accordionStates[section] = !this.accordionStates[section];
   }
+
+  // ── PjCare methods ─────────────────────────────────────────────────────────
+
+  openScanModal(content: any): void {
+    this.scanPreview = null;
+    this.scanError = null;
+    this.lastScanResult = null;
+    this.checkPjCare();
+    this.modalService.open(content, { size: 'lg' });
+  }
+
+  checkPjCare(): void {
+    this.loadingScanners = true;
+    this.pjCareService.getHealth().subscribe({
+      next: res => {
+        if (res && res.status === 200) {
+          this.pjcareAvailable = true;
+          this.pjCareService.getScanners().subscribe({
+            next: scanRes => {
+              this.scanners = scanRes.scanners || [];
+              if (this.scanners.length > 0) {
+                this.selectedScanner = this.scanners[0];
+              }
+              this.loadingScanners = false;
+            },
+            error: () => {
+              this.scanners = [];
+              this.loadingScanners = false;
+            },
+          });
+        } else {
+          this.pjcareAvailable = false;
+          this.loadingScanners = false;
+        }
+      },
+      error: () => {
+        this.pjcareAvailable = false;
+        this.loadingScanners = false;
+      },
+    });
+  }
+
+  launchScan(): void {
+    this.isScanning = true;
+    this.scanError = null;
+
+    this.pjCareService
+      .scan({
+        source: this.selectedScanner,
+        format: this.scanFormat,
+        dpi: this.scanDpi,
+        jpegquality: this.scanQuality,
+        name: this.objet || 'scan',
+      })
+      .subscribe({
+        next: result => {
+          this.isScanning = false;
+          if (result.status === 200) {
+            this.lastScanResult = result;
+            if (this.scanFormat !== 'pdf') {
+              this.scanPreview = `data:image/${this.scanFormat};base64,${result.data}`;
+            } else {
+              this.scanPreview = 'pdf';
+            }
+          } else {
+            this.scanError = result.error || 'Erreur inconnue';
+          }
+        },
+        error: () => {
+          this.isScanning = false;
+          this.scanError = 'PjCare inaccessible. Vérifiez que le service tourne.';
+        },
+      });
+  }
+
+  attachScanResult(modal: any): void {
+    if (!this.lastScanResult) return;
+
+    const base64 = this.lastScanResult.data;
+    const filename = this.lastScanResult.file;
+    const mimeType = this.scanFormat === 'pdf' ? 'application/pdf' : `image/${this.scanFormat}`;
+
+    // Convertir base64 → File
+    const byteString = atob(base64);
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i);
+    }
+    const blob = new Blob([ab], { type: mimeType });
+    const file = new File([blob], filename, { type: mimeType });
+
+    // Réutiliser la logique d'upload existante
+    this.uploadedFiles.push(file);
+    const uniquePjName = this.generateRandomId(10);
+    const pjModel: IPj = {} as IPj;
+    const parts = filename.split('.');
+    pjModel.name = parts.slice(0, -1).join('.');
+    pjModel.fileType = parts[parts.length - 1];
+    pjModel.uniqueName = uniquePjName;
+
+    this.fileLinks.push({ index: this.uploadedFiles.length - 1, uniqueName: uniquePjName });
+    this.uploadProgress.set(uniquePjName, 0);
+    this.uploadFileWithProgress(file, uniquePjName, pjModel);
+    this.pjsToSave.push(pjModel);
+
+    // Ouvrir l'accordéon pièces jointes
+    this.accordionStates['pieces'] = true;
+
+    modal.close();
+  }
+
+  // ── PjCare scan state ──────────────────────────────────────────────────────
+  pjcareAvailable = false;
+  scanners: string[] = [];
+  selectedScanner = '';
+  scanFormat: 'jpg' | 'png' | 'pdf' = 'jpg';
+  scanDpi = 150;
+  scanQuality = 75;
+  isScanning = false;
+  scanPreview: string | null = null;
+  scanError: string | null = null;
+  loadingScanners = false;
+  private lastScanResult: PjCareScanResult | null = null;
 
   protected readonly console = console;
   protected readonly CorrespType = CorrespType;

@@ -830,9 +830,31 @@
                   [disabled]="isUploading"
                   [style.opacity]="isUploading ? '0.5' : '1'"
                   [style.cursor]="isUploading ? 'not-allowed' : 'pointer'"
-                  style="font-weight: bold; font-size: 1.2em; padding: 0 0.5em"
+                  style="
+                    font-weight: bold;
+                    font-size: 1.2em;
+                    width: 32px;
+                    height: 32px;
+                    padding: 0;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                  "
                 >
                   +
+                </button>
+
+                <!-- ✅ BOUTON SCAN PJCARE -->
+                <button
+                  class="btn btn-outline-primary btn-sm"
+                  (click)="openScanModal(ScanModal); $event.stopPropagation()"
+                  [disabled]="isUploading"
+                  [style.opacity]="isUploading ? '0.5' : '1'"
+                  [style.cursor]="isUploading ? 'not-allowed' : 'pointer'"
+                  style="font-size: 1em; width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center"
+                  title="Numériser avec PjCare"
+                >
+                  📠
                 </button>
                 <svg
                   [style.transform]="accordionStates['pieces'] ? 'rotate(180deg)' : 'rotate(0deg)'"
@@ -1407,4 +1429,89 @@
       </ul>
     </li>
   </ng-template>
+</ng-template>
+<!-- ==================== MODAL SCAN PJCARE ==================== -->
+<ng-template #ScanModal let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title" style="font-weight: bold; color: #2c3e50; text-transform: uppercase; font-style: italic">
+      Numérisation via PjCare
+    </h4>
+  </div>
+
+  <div class="modal-body">
+    <!-- PjCare non détecté -->
+    <div *ngIf="!pjcareAvailable" class="alert alert-warning">
+      ⚠️ PjCare n'est pas démarré. Lancez PjCare sur ce poste puis réessayez.
+      <button class="btn btn-sm btn-warning ms-2" (click)="checkPjCare()">Réessayer</button>
+    </div>
+
+    <div *ngIf="pjcareAvailable">
+      <!-- Chargement en cours -->
+      <div *ngIf="loadingScanners" class="text-center py-4">
+        <span class="spinner-border spinner-border-sm me-2"></span>
+        Recherche des scanners...
+      </div>
+
+      <!-- Aucun scanner trouvé -->
+      <div *ngIf="!loadingScanners && scanners.length === 0" class="alert alert-info">
+        ℹ️ PjCare est actif mais aucun scanner TWAIN n'est détecté.<br />
+        Installez le pilote TWAIN DSM depuis
+        <a href="https://github.com/twain/twain-dsm/releases" target="_blank">twain.org</a>
+        puis redémarrez PjCare.
+      </div>
+
+      <!-- UI scan normale -->
+      <div *ngIf="!loadingScanners && scanners.length > 0">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Scanner</label>
+          <select class="form-select" [(ngModel)]="selectedScanner" name="selectedScanner">
+            <option *ngFor="let s of scanners" [value]="s">{{ s }}</option>
+          </select>
+        </div>
+        <div class="row g-2 mb-3">
+          <div class="col">
+            <label class="form-label fw-semibold">Format</label>
+            <select class="form-select" [(ngModel)]="scanFormat" name="scanFormat">
+              <option value="jpg">JPEG</option>
+              <option value="png">PNG</option>
+              <option value="pdf">PDF</option>
+            </select>
+          </div>
+          <div class="col">
+            <label class="form-label fw-semibold">DPI</label>
+            <input type="number" class="form-control" [(ngModel)]="scanDpi" name="scanDpi" />
+          </div>
+          <div class="col" *ngIf="scanFormat === 'jpg'">
+            <label class="form-label fw-semibold">Qualité JPG</label>
+            <input type="number" class="form-control" [(ngModel)]="scanQuality" name="scanQuality" min="1" max="100" />
+          </div>
+        </div>
+        <div *ngIf="scanPreview && scanPreview !== 'pdf'" class="mb-3 text-center">
+          <img [src]="scanPreview" style="max-width: 100%; border-radius: 8px; max-height: 300px" />
+        </div>
+        <div *ngIf="scanPreview === 'pdf'" class="mb-3 text-center">
+          <div style="padding: 24px; background: #f8f9fa; border-radius: 8px; border: 2px dashed #dee2e6">
+            <p style="margin: 0; color: #6c757d">📄 PDF scanné prêt à être attaché</p>
+          </div>
+        </div>
+        <div *ngIf="scanError" class="alert alert-danger">{{ scanError }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-footer">
+    <button class="btn btn-light" (click)="modal.close()">Annuler</button>
+    <button
+      *ngIf="pjcareAvailable && scanners.length > 0 && !scanPreview"
+      class="btn btn-primary"
+      (click)="launchScan()"
+      [disabled]="isScanning || !selectedScanner"
+    >
+      <span *ngIf="isScanning" class="spinner-border spinner-border-sm me-1"></span>
+      📠 Numériser
+    </button>
+
+    <button *ngIf="scanPreview" class="btn btn-success" (click)="attachScanResult(modal)">✅ Attacher au document</button>
+    <button *ngIf="scanPreview" class="btn btn-outline-secondary" (click)="scanPreview = null">🔄 Rescanner</button>
+  </div>
 </ng-template>
