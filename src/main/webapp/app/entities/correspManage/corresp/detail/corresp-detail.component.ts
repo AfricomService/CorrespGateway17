@@ -244,25 +244,57 @@ export class CorrespDetailComponent implements OnInit {
   get safeHtmlContent(): SafeHtml {
     let raw = this.htmlContent || this.correspLoaded?.body || '';
 
-    // ✅ Corriger l'encodage Windows-1256 → Unicode
     raw = this.fixWindows1256(raw);
-
-    // Supprimer les balises <style> et leur contenu
     raw = raw.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
-
-    // Supprimer les balises <head> et leur contenu
     raw = raw.replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '');
-
-    // Supprimer les commentaires conditionnels Outlook
     raw = raw.replace(/<!--\[if[\s\S]*?<!\[endif\]-->/gi, '');
 
-    // Extraire uniquement le contenu du <body>
     const bodyMatch = raw.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
     if (bodyMatch) {
       raw = bodyMatch[1];
     }
 
+    // ✅ Fixer la direction RTL pour les paragraphes/spans contenant de l'arabe
+    raw = this.fixArabicDirection(raw);
+
     return this.sanitizer.bypassSecurityTrustHtml(raw);
+  }
+
+  private fixArabicDirection(html: string): string {
+    const arabicRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/;
+
+    html = html.replace(/<(p|div|td|li)([^>]*)>([\s\S]*?)<\/\1>/gi, (match, tag, attrs, content) => {
+      const textOnly = content.replace(/<[^>]+>/g, '').trim();
+      if (!textOnly) return match;
+
+      const arabicChars = (textOnly.match(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/g) || []).length;
+      const latinChars = (textOnly.match(/[a-zA-ZÀ-ÿ]/g) || []).length;
+      const isArabicDominant = arabicChars > latinChars && arabicChars > 0;
+
+      if (isArabicDominant) {
+        if (/dir\s*=/i.test(attrs)) return match;
+        // Remplacer ou ajouter le style text-align
+        const attrsClean = attrs.replace(/style\s*=\s*["'][^"']*["']/gi, '');
+        return `<${tag}${attrsClean} dir="rtl" style="text-align: right; unicode-bidi: embed; direction: rtl;">${content}</${tag}>`;
+      }
+      return match;
+    });
+
+    // Wrapper les lignes de texte brut arabes (hors balises)
+    html = html.replace(/(?<=>|^)([^<]+)(?=<|$)/g, match => {
+      const trimmed = match.trim();
+      if (!trimmed) return match;
+
+      const arabicChars = (trimmed.match(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/g) || []).length;
+      const latinChars = (trimmed.match(/[a-zA-ZÀ-ÿ]/g) || []).length;
+
+      if (arabicChars > latinChars && arabicChars > 0) {
+        return `<span dir="rtl" style="display: block; text-align: right; unicode-bidi: embed; direction: rtl;">${match}</span>`;
+      }
+      return match;
+    });
+
+    return html;
   }
 
   ngOnInit(): void {
@@ -1854,7 +1886,12 @@ export class CorrespDetailComponent implements OnInit {
     if (idx >= 0) {
       this.selectedResponsables.splice(idx, 1);
     } else {
-      this.selectedResponsables.push({ codeDept: code, displayName: node.nom ?? code });
+      // En mode édition pending : remplacer la sélection existante
+      if (this.editingPendingTaskIndex >= 0) {
+        this.selectedResponsables = [{ codeDept: code, displayName: node.nom ?? code }];
+      } else {
+        this.selectedResponsables.push({ codeDept: code, displayName: node.nom ?? code });
+      }
     }
   }
 
@@ -1871,7 +1908,12 @@ export class CorrespDetailComponent implements OnInit {
     if (idx >= 0) {
       this.selectedResponsables.splice(idx, 1);
     } else {
-      this.selectedResponsables.push({ codeDept: code || null, matriculePers: matricule, displayName: person.nomPrenom ?? matricule });
+      // En mode édition pending : remplacer la sélection existante
+      if (this.editingPendingTaskIndex >= 0) {
+        this.selectedResponsables = [{ codeDept: code || null, matriculePers: matricule, displayName: person.nomPrenom ?? matricule }];
+      } else {
+        this.selectedResponsables.push({ codeDept: code || null, matriculePers: matricule, displayName: person.nomPrenom ?? matricule });
+      }
     }
   }
 
