@@ -61,6 +61,9 @@ export interface ScanParams {
   name?: string;
   bitdepth?: ScanBitdepth;
   duplex?: boolean;
+  excludeBlank?: boolean;
+  blankThreshold?: number;
+  coverageThreshold?: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -131,6 +134,12 @@ export class PjCareService {
 
     if (params.duplex === true) {
       queryParams.duplex = 'true';
+    }
+
+    if (params.excludeBlank === true) {
+      queryParams.excludeblank = 'true';
+      queryParams.blankthreshold = params.blankThreshold ?? 70;
+      queryParams.coveragethreshold = params.coverageThreshold ?? 25;
     }
 
     return this.http

@@ -44,7 +44,7 @@ import { TypeAffectation } from 'app/entities/correspManage/corresp/update/enums
 import { AccountService } from 'app/core/auth/account.service';
 import { Account } from 'app/core/auth/account.model';
 import { Authority } from 'app/config/authority.constants';
-import { PjCareService, PjCareScanResult } from 'app/entities/correspManage/pj/service/pjcare.service';
+import { PjCareService, PjCareScanResult, PjCareDriverInfo, ScanDriver } from 'app/entities/correspManage/pj/service/pjcare.service';
 
 // --------------------------------------------------------------------------
 // Small helper interfaces
@@ -1826,33 +1826,65 @@ export class CorrespUpdateComponent implements OnInit {
 
   checkPjCare(): void {
     this.loadingScanners = true;
+    this.loadingDrivers = true;
+
     this.pjCareService.getHealth().subscribe({
       next: res => {
         if (res && res.status === 200) {
           this.pjcareAvailable = true;
-          this.pjCareService.getScanners().subscribe({
-            next: scanRes => {
-              this.scanners = scanRes.scanners || [];
-              if (this.scanners.length > 0) {
-                this.selectedScanner = this.scanners[0];
-              }
-              this.loadingScanners = false;
+          this.pjCareService.getDrivers().subscribe({
+            next: driverRes => {
+              this.availableDrivers = driverRes.drivers || [];
+              const defaultKey = res.defaultDriver || (this.availableDrivers[0]?.key ?? '');
+              this.selectedDriver = defaultKey as ScanDriver;
+              this.loadingDrivers = false;
+              this.loadScannersForDriver(this.selectedDriver as ScanDriver);
             },
             error: () => {
-              this.scanners = [];
-              this.loadingScanners = false;
+              this.availableDrivers = [];
+              this.loadingDrivers = false;
+              this.loadScannersForDriver(undefined);
             },
           });
         } else {
           this.pjcareAvailable = false;
           this.loadingScanners = false;
+          this.loadingDrivers = false;
         }
       },
       error: () => {
         this.pjcareAvailable = false;
         this.loadingScanners = false;
+        this.loadingDrivers = false;
       },
     });
+  }
+
+  loadScannersForDriver(driver?: ScanDriver): void {
+    this.loadingScanners = true;
+    this.scanners = [];
+    this.selectedScanner = '';
+
+    this.pjCareService.getScanners(driver).subscribe({
+      next: scanRes => {
+        this.scanners = scanRes.scanners || [];
+        if (this.scanners.length > 0) {
+          this.selectedScanner = this.scanners[0];
+        }
+        this.loadingScanners = false;
+      },
+      error: () => {
+        this.scanners = [];
+        this.loadingScanners = false;
+      },
+    });
+  }
+
+  onDriverChange(): void {
+    this.scanPreview = null;
+    this.scanError = null;
+    this.lastScanResult = null;
+    this.loadScannersForDriver((this.selectedDriver as ScanDriver) || undefined);
   }
 
   launchScan(): void {
@@ -1862,10 +1894,16 @@ export class CorrespUpdateComponent implements OnInit {
     this.pjCareService
       .scan({
         source: this.selectedScanner,
-        format: this.scanFormat,
+        driver: (this.selectedDriver as ScanDriver) || undefined,
+        format: this.scanFormat as any,
         dpi: this.scanDpi,
         jpegquality: this.scanQuality,
+        bitdepth: this.scanBitdepth,
+        duplex: this.scanDuplex,
         name: this.objet || 'scan',
+        excludeBlank: this.scanExcludeBlank,
+        blankThreshold: this.scanBlankThreshold,
+        coverageThreshold: this.scanCoverageThreshold,
       })
       .subscribe({
         next: result => {
@@ -1929,14 +1967,22 @@ export class CorrespUpdateComponent implements OnInit {
   pjcareAvailable = false;
   scanners: string[] = [];
   selectedScanner = '';
-  scanFormat: 'jpg' | 'png' | 'pdf' = 'jpg';
+  scanFormat: 'jpg' | 'png' | 'pdf' | 'tiff' = 'pdf';
   scanDpi = 150;
   scanQuality = 75;
+  scanBitdepth: 'color' | 'gray' | 'bw' = 'color';
+  scanDuplex = false;
   isScanning = false;
   scanPreview: string | null = null;
   scanError: string | null = null;
   loadingScanners = false;
+  availableDrivers: PjCareDriverInfo[] = [];
+  selectedDriver: ScanDriver | '' = '';
+  loadingDrivers = false;
   private lastScanResult: PjCareScanResult | null = null;
+  scanExcludeBlank = false;
+  scanBlankThreshold = 70;
+  scanCoverageThreshold = 25;
 
   protected readonly console = console;
   protected readonly CorrespType = CorrespType;
