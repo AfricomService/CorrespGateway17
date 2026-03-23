@@ -917,15 +917,69 @@
                   ⚠️ {{ pendingTasks.length }} tâche(s) en attente — cliquez sur <strong>Enregistrer</strong> pour les sauvegarder.
                 </div>
                 <div
-                  *ngFor="let pt of pendingTasks"
+                  *ngFor="let pt of pendingTasks; let i = index"
                   [style.background-color]="getTaskTypeBg(pt.typeTask)"
-                  style="padding: 10px 12px; border-radius: 6px; border-left: 4px solid #ffc107; opacity: 0.75"
+                  style="
+                    padding: 12px;
+                    border-radius: 6px;
+                    border-left: 4px solid #ffc107;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 1em;
+                  "
                 >
-                  <p style="margin: 0; font-size: 0.9em; color: #495057">
-                    <strong>{{ pt.responsableName }}</strong> — tâche de
-                    <strong style="text-transform: uppercase">{{ pt.typeTask }}</strong>
-                    <span style="margin-left: 8px; font-size: 0.8em; color: #856404; font-style: italic">(non sauvegardée)</span>
-                  </p>
+                  <div style="display: flex; flex-direction: column; gap: 0.3em; flex: 1">
+                    <p style="margin: 0; font-size: 0.9em; color: #495057; line-height: 1.5">
+                      <strong>{{ pt.responsableName }}</strong> effectuera la tâche de
+                      <strong style="text-transform: uppercase">{{ pt.typeTask }}</strong>
+                      <span *ngIf="pt.dateLimite">
+                        en ne dépassant pas la date limite du <strong>{{ pt.dateLimite }}</strong></span
+                      >
+                      <span style="margin-left: 8px; font-size: 0.8em; color: #856404; font-style: italic">(non sauvegardée)</span>
+                    </p>
+                    <p *ngIf="pt.commentaire" style="margin: 0; font-size: 0.85em; color: #6c757d">Commentaire : {{ pt.commentaire }}</p>
+                  </div>
+                  <div style="display: flex; gap: 0.5em; flex-shrink: 0">
+                    <button
+                      class="btn btn-warning btn-sm"
+                      (click)="openEditPendingTaskModal(i, AddTaskModal)"
+                      style="
+                        min-width: 32px;
+                        height: 32px;
+                        padding: 0;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        color: white;
+                      "
+                      title="Modifier la tâche"
+                      type="button"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                        <path
+                          d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293z"
+                        />
+                      </svg>
+                    </button>
+                    <button
+                      class="btn btn-danger btn-sm"
+                      (click)="removePendingTask(i)"
+                      style="
+                        min-width: 32px;
+                        height: 32px;
+                        padding: 0;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        color: white;
+                      "
+                      title="Supprimer la tâche"
+                      type="button"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
               </div>
 

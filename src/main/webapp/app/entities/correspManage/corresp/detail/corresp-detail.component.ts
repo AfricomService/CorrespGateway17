@@ -1501,6 +1501,65 @@ export class CorrespDetailComponent implements OnInit {
     return parts.join(', ');
   }
 
+  removePendingTask(index: number): void {
+    const task = this.pendingTasks[index];
+
+    // Supprimer la tâche
+    this.pendingTasks.splice(index, 1);
+
+    // Synchroniser les champs selon le type de tâche
+    if (task.typeTask === 'traitement') {
+      // Vider le destinataire si aucune autre tâche traitement ne reste
+      const hasOtherTraitement = this.pendingTasks.some(t => t.typeTask === 'traitement');
+      if (!hasOtherTraitement) {
+        this.destinataire = '';
+        this.destinataireLabel = '';
+        this.recipientSelectedDept = null;
+      }
+    } else if (task.typeTask === 'lecture') {
+      // Retirer le département CC correspondant
+      this.selectedCcDepts = this.selectedCcDepts.filter(cc => cc.codeDept !== task.responsable && cc.nomDept !== task.responsableName);
+      this.updateCcLabelsFromSelection();
+    }
+  }
+
+  openEditPendingTaskModal(index: number, modal: any): void {
+    const task = this.pendingTasks[index];
+
+    // Pré-remplir les champs du modal avec les données de la tâche
+    this.selectedType = task.typeTask;
+    this.dateLimite = task.dateLimite || '';
+    this.commentaire = task.commentaire || '';
+    this.selectedDepartement = task.responsable;
+    this.selectedDepartementName = task.responsableName;
+
+    // Restaurer la sélection dans l'arbre
+    this.selectedResponsables = task.responsable ? [{ codeDept: task.responsable, displayName: task.responsableName }] : [];
+
+    // Charger l'arbre si pas encore chargé
+    this.prepareAndLoadOrgaThenTree();
+
+    // Ouvrir le modal en mode édition
+    this.modalService.open(modal, { size: 'xl' }).result.then(
+      () => {
+        // Confirmer : mettre à jour la pendingTask
+        const updated = {
+          typeTask: this.selectedType,
+          responsable: this.selectedResponsables[0]?.codeDept || this.selectedDepartement || '',
+          dateLimite: this.dateLimite,
+          responsableName: this.selectedResponsables[0]?.displayName || this.selectedDepartementName || '',
+          commentaire: this.commentaire,
+        };
+        this.pendingTasks[index] = updated;
+        this.resetForm();
+      },
+      () => {
+        // Annulé — reset sans modifier
+        this.resetForm();
+      }
+    );
+  }
+
   // --- replace existing saveTask() with this ---
   saveTask(): void {
     if (!this.canWriteCorresp) {
@@ -2451,13 +2510,32 @@ export class CorrespDetailComponent implements OnInit {
     this.recipientSelectedDept = node;
     this.destinataireLabel = node.nom || '';
     this.destinataire = node.email || '';
+
+    // Mettre à jour ou créer la pendingTask traitement
+    const existingIdx = this.pendingTasks.findIndex(t => t.typeTask === 'traitement');
+    const newTask = {
+      typeTask: 'traitement',
+      responsable: node.code ?? '',
+      dateLimite: existingIdx >= 0 ? this.pendingTasks[existingIdx].dateLimite : '',
+      responsableName: node.nom ?? '',
+      commentaire: existingIdx >= 0 ? this.pendingTasks[existingIdx].commentaire : '',
+    };
+    if (existingIdx >= 0) {
+      this.pendingTasks[existingIdx] = newTask;
+    } else {
+      this.pendingTasks.push(newTask);
+    }
+
     modalRef.close();
   }
 
   clearRecipientDept(): void {
     this.recipientSelectedDept = null;
-    this.destinataireLabel = '';
     this.destinataire = '';
+    this.destinataireLabel = '';
+
+    // Supprimer la pendingTask de type traitement associée
+    this.pendingTasks = this.pendingTasks.filter(t => t.typeTask !== 'traitement');
   }
 
   // --------------------------------------------------------------------------
@@ -2553,10 +2631,31 @@ export class CorrespDetailComponent implements OnInit {
       this.selectedCcDepts.splice(idx, 1);
     }
     this.updateCcLabelsFromSelection();
+
+    // Supprimer la pendingTask de type lecture associée à ce département
+    this.pendingTasks = this.pendingTasks.filter(
+      t => !(t.typeTask === 'lecture' && (t.responsable === cc.codeDept || t.responsableName === cc.nomDept))
+    );
   }
 
   confirmCcSelection(modalRef: any): void {
     this.updateCcLabelsFromSelection();
+
+    // Resynchroniser les pendingTasks lecture avec la sélection CC actuelle
+    // Supprimer toutes les tâches lecture existantes
+    this.pendingTasks = this.pendingTasks.filter(t => t.typeTask !== 'lecture');
+
+    // Recréer une tâche lecture par département CC sélectionné
+    for (const cc of this.selectedCcDepts) {
+      this.pendingTasks.push({
+        typeTask: 'lecture',
+        responsable: cc.codeDept ?? '',
+        dateLimite: '',
+        responsableName: cc.nomDept ?? cc.codeDept ?? '',
+        commentaire: '',
+      });
+    }
+
     modalRef.close();
   }
 
