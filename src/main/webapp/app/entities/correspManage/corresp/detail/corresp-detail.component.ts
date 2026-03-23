@@ -153,6 +153,8 @@ export class CorrespDetailComponent implements OnInit {
 
   selectedPjToDelete!: IPj;
 
+  editingPendingTaskIndex: number = -1;
+
   @ViewChild('filePreview') filePreview!: FilePreviewComponent;
 
   treeSearchQuery = '';
@@ -1526,6 +1528,8 @@ export class CorrespDetailComponent implements OnInit {
   openEditPendingTaskModal(index: number, modal: any): void {
     const task = this.pendingTasks[index];
 
+    this.editingPendingTaskIndex = index;
+
     // Pré-remplir les champs du modal avec les données de la tâche
     this.selectedType = task.typeTask;
     this.dateLimite = task.dateLimite || '';
@@ -1562,42 +1566,69 @@ export class CorrespDetailComponent implements OnInit {
 
   // --- replace existing saveTask() with this ---
   saveTask(): void {
-    if (!this.canWriteCorresp) {
-      this.showNotification('Vous n’avez pas le droit d’ajouter une tâche sur ce courrier', 'error');
-      return;
-    }
-    if (this.btnSaveTaskDisabled) {
-      return;
-    }
-    // reset client-side errors
-    this.validationErrors = {};
+    if (this.btnSaveTaskDisabled) return;
 
-    if (!this.validateForm()) {
+    this.validationErrors = {};
+    if (!this.validateForm()) return;
+
+    // ✅ MODE ÉDITION PENDING : mise à jour locale uniquement, pas de backend
+    if (this.editingPendingTaskIndex >= 0) {
+      const updated = {
+        typeTask: this.selectedType,
+        responsable: this.selectedResponsables[0]?.codeDept ?? this.selectedDepartement ?? '',
+        dateLimite: this.dateLimite,
+        responsableName: this.selectedResponsables[0]?.displayName ?? this.selectedDepartementName ?? '',
+        commentaire: this.commentaire,
+      };
+
+      const oldTask = this.pendingTasks[this.editingPendingTaskIndex];
+
+      if (updated.typeTask === 'traitement' && updated.responsable !== oldTask.responsable) {
+        this.destinataireLabel = updated.responsableName;
+        this.destinataire = '';
+      }
+
+      if (updated.typeTask === 'lecture' && updated.responsable !== oldTask.responsable) {
+        const ccIdx = this.selectedCcDepts.findIndex(cc => cc.codeDept === oldTask.responsable || cc.nomDept === oldTask.responsableName);
+        if (ccIdx >= 0) {
+          this.selectedCcDepts[ccIdx] = {
+            ...this.selectedCcDepts[ccIdx],
+            codeDept: updated.responsable,
+            nomDept: updated.responsableName,
+          };
+          this.updateCcLabelsFromSelection();
+        }
+      }
+
+      this.pendingTasks[this.editingPendingTaskIndex] = updated;
+      this.editingPendingTaskIndex = -1;
+      this.resetForm();
+      this.modalService.dismissAll();
+      return;
+    }
+
+    // ✅ MODE NOUVELLE TÂCHE : sauvegarde backend normale
+    if (!this.canWriteCorresp) {
+      this.showNotification("Vous n'avez pas le droit d'ajouter une tâche sur ce courrier", 'error');
       return;
     }
 
     this.btnSaveTaskDisabled = true;
 
-    // build 'object' (server requires non-null)
     const responsibleText = this.getResponsablesSummary() || this.selectedDepartement || '';
     const taskTypeText = this.selectedType ? this.selectedType.toUpperCase() : 'N/A';
 
     let objectBuilder = `${responsibleText} effectuera la tâche de ${taskTypeText}`;
     if (this.dateLimite) {
-      const formatted = dayjs(this.dateLimite).format('DD/MM/YYYY');
-      objectBuilder += ` en ne dépassant pas la date limite du ${formatted}`;
+      objectBuilder += ` en ne dépassant pas la date limite du ${dayjs(this.dateLimite).format('DD/MM/YYYY')}`;
     }
 
-    // prepare payload
     const taskModel: any = {
       object: objectBuilder,
       taskType: this.selectedType || null,
       commentaire: this.commentaire || null,
-      // responsible for display (optional) — keep readable label
       responsible: responsibleText || this.selectedDepartement || null,
-      // dueDate as ISO string (server expects String or date)
       dueDate: this.dateLimite ? this.toIso(dayjs(this.dateLimite)) : null,
-      // responsables: only include fields that actually exist (no empty keys)
       responsables: (this.selectedResponsables || [])
         .map(r => {
           const out: any = {};
@@ -1608,16 +1639,11 @@ export class CorrespDetailComponent implements OnInit {
         .filter(x => Object.keys(x).length > 0),
     };
 
-    // debug
-    console.log('POST /api/corresps/{id}/tasks payload =', taskModel);
-
-    // call service: your CorrespService.addTaskToCorresp expects ITasks and converts dates
     this.correspService.addTaskToCorresp(taskModel, this.correspLoaded.id).subscribe({
-      next: resp => {
+      next: () => {
         this.btnSaveTaskDisabled = false;
         this.resetForm();
         this.modalService.dismissAll();
-        // refresh local tasks list (without full reload) + enrich with canModify
         this.taskService.getAllTasksByCorrespId({ correspId: this.correspLoaded.id }).subscribe(r => {
           const list = r.body || [];
           this.taskService.enrichTasksWithCanModify(list).subscribe(enriched => {
@@ -1629,28 +1655,14 @@ export class CorrespDetailComponent implements OnInit {
       error: err => {
         this.btnSaveTaskDisabled = false;
         console.error('Erreur ajout tâche', err);
-
-        // Try to parse JHipster / Problem JSON with fieldErrors
-        if (err && err.error) {
-          const payload = err.error;
-          // if fieldErrors present, map to validationErrors
-          if (Array.isArray(payload.fieldErrors) && payload.fieldErrors.length) {
-            payload.fieldErrors.forEach((fe: any) => {
-              // fe.field may be 'object' etc.
-              this.validationErrors[fe.field] = fe.message || 'Valeur invalide';
-            });
-            this.showNotification('Erreur de validation : corrigez les champs indiqués', 'error');
-            return;
-          }
-          // generic message
-          if (payload.message) {
-            this.showNotification(payload.message, 'error');
-            return;
-          }
+        if (err?.error?.fieldErrors?.length) {
+          err.error.fieldErrors.forEach((fe: any) => {
+            this.validationErrors[fe.field] = fe.message || 'Valeur invalide';
+          });
+          this.showNotification('Erreur de validation : corrigez les champs indiqués', 'error');
+        } else {
+          this.showNotification("Erreur lors de l'ajout de la tâche (serveur)", 'error');
         }
-
-        // fallback
-        this.showNotification("Erreur lors de l'ajout de la tâche (serveur)", 'error');
       },
     });
   }
@@ -1691,6 +1703,7 @@ export class CorrespDetailComponent implements OnInit {
       this.showNotification('Vous êtes en lecture seule pour ce courrier', 'error');
       return;
     }
+    this.editingPendingTaskIndex = -1;
     // this.selectedOrga = null;
     this.selectedDepartement = '';
     this.resetForm();

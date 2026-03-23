@@ -905,18 +905,6 @@
               <!-- Aperçu des tâches en attente (pendingTasks non encore sauvegardées) -->
               <div *ngIf="pendingTasks.length > 0" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px">
                 <div
-                  style="
-                    font-size: 0.8em;
-                    color: #856404;
-                    background: #fff3cd;
-                    border: 1px solid #ffc107;
-                    border-radius: 6px;
-                    padding: 6px 10px;
-                  "
-                >
-                  ⚠️ {{ pendingTasks.length }} tâche(s) en attente — cliquez sur <strong>Enregistrer</strong> pour les sauvegarder.
-                </div>
-                <div
                   *ngFor="let pt of pendingTasks; let i = index"
                   [style.background-color]="getTaskTypeBg(pt.typeTask)"
                   style="
@@ -936,7 +924,6 @@
                       <span *ngIf="pt.dateLimite">
                         en ne dépassant pas la date limite du <strong>{{ pt.dateLimite }}</strong></span
                       >
-                      <span style="margin-left: 8px; font-size: 0.8em; color: #856404; font-style: italic">(non sauvegardée)</span>
                     </p>
                     <p *ngIf="pt.commentaire" style="margin: 0; font-size: 0.85em; color: #6c757d">Commentaire : {{ pt.commentaire }}</p>
                   </div>
