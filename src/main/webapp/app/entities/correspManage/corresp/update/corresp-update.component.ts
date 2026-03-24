@@ -45,6 +45,7 @@ import { AccountService } from 'app/core/auth/account.service';
 import { Account } from 'app/core/auth/account.model';
 import { Authority } from 'app/config/authority.constants';
 import { PjCareService, PjCareScanResult, PjCareDriverInfo, ScanDriver } from 'app/entities/correspManage/pj/service/pjcare.service';
+import { ScanSettingsService } from 'app/entities/correspManage/pj/service/scan-settings.service';
 
 // --------------------------------------------------------------------------
 // Small helper interfaces
@@ -233,7 +234,8 @@ export class CorrespUpdateComponent implements OnInit {
     protected contactCompanyService: ContactCompanyService,
     protected parentClassdefService: ParentClassdefService,
     protected accountService: AccountService,
-    private pjCareService: PjCareService
+    private pjCareService: PjCareService,
+    private scanSettingsService: ScanSettingsService
   ) {}
 
   // --------------------------------------------------------------------------
@@ -1828,9 +1830,59 @@ export class CorrespUpdateComponent implements OnInit {
     this.scanPreview = null;
     this.scanError = null;
     this.lastScanResult = null;
-    this.batchScans = []; // vider la file à chaque ouverture du modal
+    this.batchScans = [];
+
+    // ── Charger les paramètres sauvegardés ──
+    this.loadScanSettings();
+
     this.checkPjCare();
     this.modalService.open(content, { size: 'lg' });
+  }
+
+  private loadScanSettings(): void {
+    const s = this.scanSettingsService.load();
+    this.scanFormat = s.scanFormat;
+    this.scanDpi = s.scanDpi;
+    this.scanQuality = s.scanQuality;
+    this.scanBitdepth = s.scanBitdepth;
+    this.scanDuplex = s.scanDuplex;
+    this.scanExcludeBlank = s.scanExcludeBlank;
+    this.scanBlankThreshold = s.scanBlankThreshold;
+    this.scanCoverageThreshold = s.scanCoverageThreshold;
+    // selectedDriver : sera écrasé par checkPjCare() si le driver sauvegardé
+    // est encore disponible — on le stocke temporairement
+    this._pendingDriverFromCookie = s.selectedDriver;
+  }
+
+  // Stockage temporaire du driver lu depuis le cookie
+  // (sera appliqué après le chargement de la liste des drivers)
+  private _pendingDriverFromCookie: string = '';
+
+  saveScanSettings(): void {
+    this.scanSettingsService.save({
+      scanFormat: this.scanFormat,
+      scanDpi: this.scanDpi,
+      scanQuality: this.scanQuality,
+      scanBitdepth: this.scanBitdepth,
+      scanDuplex: this.scanDuplex,
+      scanExcludeBlank: this.scanExcludeBlank,
+      scanBlankThreshold: this.scanBlankThreshold,
+      scanCoverageThreshold: this.scanCoverageThreshold,
+      selectedDriver: this.selectedDriver as string,
+    });
+  }
+
+  resetScanSettings(): void {
+    this.scanSettingsService.reset();
+    // Remettre les valeurs par défaut dans la vue
+    this.scanFormat = 'pdf';
+    this.scanDpi = 150;
+    this.scanQuality = 75;
+    this.scanBitdepth = 'color';
+    this.scanDuplex = false;
+    this.scanExcludeBlank = false;
+    this.scanBlankThreshold = 70;
+    this.scanCoverageThreshold = 25;
   }
 
   checkPjCare(): void {
@@ -1845,7 +1897,13 @@ export class CorrespUpdateComponent implements OnInit {
             next: driverRes => {
               this.availableDrivers = driverRes.drivers || [];
               const defaultKey = res.defaultDriver || (this.availableDrivers[0]?.key ?? '');
-              this.selectedDriver = defaultKey as ScanDriver;
+
+              // Restaurer le driver depuis le cookie s'il est encore disponible
+              const cookieDriver = this._pendingDriverFromCookie;
+              const cookieDriverExists = cookieDriver ? this.availableDrivers.some(d => d.key === cookieDriver) : false;
+
+              this.selectedDriver = (cookieDriverExists ? cookieDriver : defaultKey) as ScanDriver;
+              this._pendingDriverFromCookie = ''; // vider après usage
               this.loadingDrivers = false;
               this.loadScannersForDriver(this.selectedDriver as ScanDriver);
             },
@@ -1900,6 +1958,9 @@ export class CorrespUpdateComponent implements OnInit {
     this.isScanning = true;
     this.scanError = null;
     this.scanPreview = null;
+
+    // ── Sauvegarder les paramètres courants ──
+    this.saveScanSettings();
 
     this.pjCareService
       .scan({

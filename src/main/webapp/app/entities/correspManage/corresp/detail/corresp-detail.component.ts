@@ -31,6 +31,7 @@ import { Account } from 'app/core/auth/account.model';
 import { Authority } from 'app/config/authority.constants';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { PjCareService, PjCareScanResult, PjCareDriverInfo, ScanDriver } from 'app/entities/correspManage/pj/service/pjcare.service';
+import { ScanSettingsService } from 'app/entities/correspManage/pj/service/scan-settings.service';
 
 // export interface ITasks {
 //   id: number;
@@ -176,6 +177,7 @@ export class CorrespDetailComponent implements OnInit {
   scanExcludeBlank = false;
   scanBlankThreshold = 240;
   scanCoverageThreshold = 5;
+  private _pendingDriverFromCookie: string = '';
 
   uploadProgress: Map<string, number> = new Map(); // Per-file progress tracking
 
@@ -269,7 +271,8 @@ export class CorrespDetailComponent implements OnInit {
     protected contactCompanyService: ContactCompanyService,
     private accountService: AccountService,
     private sanitizer: DomSanitizer,
-    private pjCareService: PjCareService
+    private pjCareService: PjCareService,
+    private scanSettingsService: ScanSettingsService
   ) {}
 
   get safeHtmlContent(): SafeHtml {
@@ -2659,8 +2662,48 @@ export class CorrespDetailComponent implements OnInit {
     this.scanError = null;
     this.lastScanResult = null;
     this.batchScans = [];
+    this.loadScanSettings();
     this.checkPjCare();
     this.modalService.open(content, { size: 'lg' });
+  }
+
+  private loadScanSettings(): void {
+    const s = this.scanSettingsService.load();
+    this.scanFormat = s.scanFormat;
+    this.scanDpi = s.scanDpi;
+    this.scanQuality = s.scanQuality;
+    this.scanBitdepth = s.scanBitdepth;
+    this.scanDuplex = s.scanDuplex;
+    this.scanExcludeBlank = s.scanExcludeBlank;
+    this.scanBlankThreshold = s.scanBlankThreshold;
+    this.scanCoverageThreshold = s.scanCoverageThreshold;
+    this._pendingDriverFromCookie = s.selectedDriver;
+  }
+
+  saveScanSettings(): void {
+    this.scanSettingsService.save({
+      scanFormat: this.scanFormat,
+      scanDpi: this.scanDpi,
+      scanQuality: this.scanQuality,
+      scanBitdepth: this.scanBitdepth,
+      scanDuplex: this.scanDuplex,
+      scanExcludeBlank: this.scanExcludeBlank,
+      scanBlankThreshold: this.scanBlankThreshold,
+      scanCoverageThreshold: this.scanCoverageThreshold,
+      selectedDriver: this.selectedDriver as string,
+    });
+  }
+
+  resetScanSettings(): void {
+    this.scanSettingsService.reset();
+    this.scanFormat = 'pdf';
+    this.scanDpi = 150;
+    this.scanQuality = 75;
+    this.scanBitdepth = 'color';
+    this.scanDuplex = false;
+    this.scanExcludeBlank = false;
+    this.scanBlankThreshold = 70;
+    this.scanCoverageThreshold = 25;
   }
 
   checkPjCare(): void {
@@ -2674,7 +2717,14 @@ export class CorrespDetailComponent implements OnInit {
             next: driverRes => {
               this.availableDrivers = driverRes.drivers || [];
               const defaultKey = res.defaultDriver || (this.availableDrivers[0]?.key ?? '');
-              this.selectedDriver = defaultKey as ScanDriver;
+
+              // Restaurer le driver depuis le cookie s'il est encore disponible
+              const cookieDriver = this._pendingDriverFromCookie;
+              const cookieDriverExists = cookieDriver ? this.availableDrivers.some(d => d.key === cookieDriver) : false;
+
+              this.selectedDriver = (cookieDriverExists ? cookieDriver : defaultKey) as ScanDriver;
+              this._pendingDriverFromCookie = ''; // vider après usage
+
               this.loadingDrivers = false;
               this.loadScannersForDriver(this.selectedDriver as ScanDriver);
             },
@@ -2727,6 +2777,7 @@ export class CorrespDetailComponent implements OnInit {
   launchScan(): void {
     this.isScanning = true;
     this.scanError = null;
+    this.saveScanSettings();
     this.pjCareService
       .scan({
         source: this.selectedScanner,

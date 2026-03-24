@@ -2246,9 +2246,14 @@
               user-select: none;
             "
           >
-            <p style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #64748b; margin: 0">
-              ⚙️ Paramètres
-            </p>
+            <div style="display: flex; align-items: center; gap: 8px">
+              <p style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #64748b; margin: 0">
+                ⚙️ Paramètres
+              </p>
+              <span style="font-size: 10px; background: #dcfce7; color: #166534; border-radius: 10px; padding: 2px 8px; font-weight: 600">
+                mémorisés
+              </span>
+            </div>
             <svg
               [style.transform]="accordionStates['scanParams'] !== false ? 'rotate(180deg)' : 'rotate(0deg)'"
               style="transition: transform 0.3s ease; width: 16px; height: 16px; color: #64748b"
@@ -2608,6 +2613,15 @@
   <!-- Footer -->
   <div class="modal-footer" style="border-top: 2px solid #e9ecef; padding: 14px 20px; gap: 8px">
     <button class="btn btn-light" (click)="modal.close()" style="font-weight: 600; border-radius: 8px">Annuler</button>
+
+    <button
+      class="btn btn-outline-secondary btn-sm"
+      (click)="resetScanSettings()"
+      style="font-weight: 600; border-radius: 8px; margin-right: auto"
+      title="Réinitialiser les paramètres de numérisation"
+    >
+      ↺ Paramètres par défaut
+    </button>
 
     <!-- Numériser (toujours visible si scanner dispo) -->
     <button
