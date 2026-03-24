@@ -905,27 +905,68 @@
               <!-- Aperçu des tâches en attente (pendingTasks non encore sauvegardées) -->
               <div *ngIf="pendingTasks.length > 0" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px">
                 <div
+                  *ngFor="let pt of pendingTasks; let i = index"
+                  [style.background-color]="getTaskTypeBg(pt.typeTask)"
                   style="
-                    font-size: 0.8em;
-                    color: #856404;
-                    background: #fff3cd;
-                    border: 1px solid #ffc107;
+                    padding: 12px;
                     border-radius: 6px;
-                    padding: 6px 10px;
+                    border-left: 4px solid #ffc107;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 1em;
                   "
                 >
-                  ⚠️ {{ pendingTasks.length }} tâche(s) en attente — cliquez sur <strong>Enregistrer</strong> pour les sauvegarder.
-                </div>
-                <div
-                  *ngFor="let pt of pendingTasks"
-                  [style.background-color]="getTaskTypeBg(pt.typeTask)"
-                  style="padding: 10px 12px; border-radius: 6px; border-left: 4px solid #ffc107; opacity: 0.75"
-                >
-                  <p style="margin: 0; font-size: 0.9em; color: #495057">
-                    <strong>{{ pt.responsableName }}</strong> — tâche de
-                    <strong style="text-transform: uppercase">{{ pt.typeTask }}</strong>
-                    <span style="margin-left: 8px; font-size: 0.8em; color: #856404; font-style: italic">(non sauvegardée)</span>
-                  </p>
+                  <div style="display: flex; flex-direction: column; gap: 0.3em; flex: 1">
+                    <p style="margin: 0; font-size: 0.9em; color: #495057; line-height: 1.5">
+                      <strong>{{ pt.responsableName }}</strong> effectuera la tâche de
+                      <strong style="text-transform: uppercase">{{ pt.typeTask }}</strong>
+                      <span *ngIf="pt.dateLimite">
+                        en ne dépassant pas la date limite du <strong>{{ pt.dateLimite }}</strong></span
+                      >
+                    </p>
+                    <p *ngIf="pt.commentaire" style="margin: 0; font-size: 0.85em; color: #6c757d">Commentaire : {{ pt.commentaire }}</p>
+                  </div>
+                  <div style="display: flex; gap: 0.5em; flex-shrink: 0">
+                    <button
+                      class="btn btn-warning btn-sm"
+                      (click)="openEditPendingTaskModal(i, AddTaskModal)"
+                      style="
+                        min-width: 32px;
+                        height: 32px;
+                        padding: 0;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        color: white;
+                      "
+                      title="Modifier la tâche"
+                      type="button"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                        <path
+                          d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293z"
+                        />
+                      </svg>
+                    </button>
+                    <button
+                      class="btn btn-danger btn-sm"
+                      (click)="removePendingTask(i)"
+                      style="
+                        min-width: 32px;
+                        height: 32px;
+                        padding: 0;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        color: white;
+                      "
+                      title="Supprimer la tâche"
+                      type="button"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -1126,7 +1167,7 @@
                 </div>
 
                 <div style="background: #fff; padding: 10px; border: 1px solid #eee; border-radius: 4px; min-height: 100px">
-                  <div class="email-body-content" [innerHTML]="safeHtmlContent"></div>
+                  <div class="email-body-content" [innerHTML]="safeHtmlContent" style="line-height: 1.8"></div>
                 </div>
               </ng-template>
             </div>
@@ -1165,6 +1206,19 @@
                   title="{{ canWriteCorresp || canAdminCorresp ? '' : 'Droit insuffisant' }}"
                 >
                   +
+                </button>
+                <!-- ✅ BOUTON SCAN PJCARE -->
+                <button
+                  class="btn btn-outline-primary btn-sm"
+                  (click)="openScanModal(ScanModal); $event.stopPropagation()"
+                  *ngIf="isEditableLeft"
+                  [disabled]="isUploading || !(canWriteCorresp || canAdminCorresp)"
+                  [style.opacity]="isUploading || !(canWriteCorresp || canAdminCorresp) ? '0.5' : '1'"
+                  [style.cursor]="isUploading || !(canWriteCorresp || canAdminCorresp) ? 'not-allowed' : 'pointer'"
+                  style="font-size: 1em; width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center"
+                  title="Numériser avec PjCare"
+                >
+                  📠
                 </button>
                 <svg
                   [style.transform]="accordionStates['pieces'] ? 'rotate(180deg)' : 'rotate(0deg)'"
@@ -1983,4 +2037,613 @@
       </ul>
     </li>
   </ng-template>
+</ng-template>
+<!-- ==================== MODAL SCAN PJCARE ==================== -->
+<ng-template #ScanModal let-modal>
+  <div class="modal-header" style="border-bottom: 2px solid #e9ecef; padding: 16px 20px">
+    <div style="display: flex; align-items: center; gap: 10px">
+      <span style="font-size: 20px">📠</span>
+      <h4
+        class="modal-title"
+        style="font-weight: 700; color: #1a2332; margin: 0; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px"
+      >
+        Numérisation via PjCare
+      </h4>
+    </div>
+    <!-- Badge compteur batch -->
+    <span
+      *ngIf="batchScans.length > 0"
+      style="margin-left: auto; background: #0f172a; color: #fff; border-radius: 20px; padding: 4px 14px; font-size: 13px; font-weight: 700"
+    >
+      {{ batchScans.length }} scan{{ batchScans.length > 1 ? 's' : '' }} en attente
+    </span>
+  </div>
+
+  <div class="modal-body" style="padding: 20px; background: #f8fafc">
+    <!-- PjCare non détecté -->
+    <div
+      *ngIf="!pjcareAvailable"
+      style="
+        background: #fff8e1;
+        border: 1px solid #f59e0b;
+        border-radius: 10px;
+        padding: 16px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+      "
+    >
+      <span style="font-size: 22px; flex-shrink: 0">⚠️</span>
+      <div>
+        <p style="font-weight: 600; color: #92400e; margin: 0 0 6px">PjCare n'est pas démarré</p>
+        <p style="color: #78350f; margin: 0 0 10px; font-size: 14px">
+          Lancez l'application PjCare sur ce poste puis cliquez sur Réessayer.
+        </p>
+        <button class="btn btn-sm btn-warning" (click)="checkPjCare()" style="font-weight: 600">🔄 Réessayer</button>
+      </div>
+    </div>
+
+    <div *ngIf="pjcareAvailable">
+      <!-- Chargement initial -->
+      <div *ngIf="loadingDrivers || loadingScanners" style="text-align: center; padding: 40px 0; color: #6c757d">
+        <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+        <span>{{ loadingDrivers ? 'Chargement des drivers...' : 'Recherche des scanners...' }}</span>
+      </div>
+
+      <div *ngIf="!loadingDrivers">
+        <!-- ── BLOC 1 : Source ── -->
+        <div style="border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 14px; overflow: hidden">
+          <div
+            (click)="accordionStates['scanSource'] = !accordionStates['scanSource']"
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              padding: 12px 16px;
+              background: #f1f5f9;
+              cursor: pointer;
+              user-select: none;
+            "
+          >
+            <p style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #64748b; margin: 0">
+              📡 Source de numérisation
+            </p>
+            <svg
+              [style.transform]="accordionStates['scanSource'] ? 'rotate(180deg)' : 'rotate(0deg)'"
+              style="transition: transform 0.3s ease; width: 16px; height: 16px; color: #64748b"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+          <div
+            [style.max-height]="accordionStates['scanSource'] !== false ? '1000px' : '0'"
+            style="overflow: hidden; transition: max-height 0.4s ease; background: #fff"
+            [style.padding]="accordionStates['scanSource'] !== false ? '16px' : '0 16px'"
+          >
+            <!-- Drivers multiples -->
+            <div *ngIf="availableDrivers.length > 1" style="margin-bottom: 14px">
+              <label class="form-label fw-semibold" style="font-size: 13px; color: #374151; margin-bottom: 8px; display: block">
+                Pilote (driver)
+              </label>
+              <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px">
+                <button
+                  *ngFor="let d of availableDrivers"
+                  type="button"
+                  (click)="selectedDriver = $any(d.key); onDriverChange()"
+                  [title]="d.description"
+                  style="
+                    padding: 8px 16px;
+                    border-radius: 8px;
+                    font-size: 13px;
+                    font-weight: 700;
+                    cursor: pointer;
+                    transition: all 0.15s;
+                    border-width: 2px;
+                    border-style: solid;
+                    letter-spacing: 0.3px;
+                  "
+                  [style.background]="selectedDriver === d.key ? '#1e40af' : '#f1f5f9'"
+                  [style.color]="selectedDriver === d.key ? '#fff' : '#374151'"
+                  [style.border-color]="selectedDriver === d.key ? '#1e40af' : '#e2e8f0'"
+                >
+                  {{ d.key.toUpperCase() }}
+                </button>
+              </div>
+              <ng-container *ngFor="let d of availableDrivers">
+                <p
+                  *ngIf="d.key === selectedDriver"
+                  style="
+                    margin: 0;
+                    font-size: 12px;
+                    color: #64748b;
+                    padding: 6px 10px;
+                    background: #eff6ff;
+                    border-radius: 6px;
+                    border-left: 3px solid #1e40af;
+                  "
+                >
+                  {{ d.description }}
+                </p>
+              </ng-container>
+            </div>
+
+            <!-- Driver unique -->
+            <div
+              *ngIf="availableDrivers.length === 1"
+              style="
+                margin-bottom: 14px;
+                padding: 8px 12px;
+                background: #eff6ff;
+                border-radius: 8px;
+                border: 1px solid #bfdbfe;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+              "
+            >
+              <span style="font-weight: 700; color: #1e40af; font-size: 13px">{{ availableDrivers[0].key.toUpperCase() }}</span>
+              <span style="color: #3b82f6; font-size: 12px">— {{ availableDrivers[0].description }}</span>
+            </div>
+
+            <!-- Chargement scanners -->
+            <div *ngIf="loadingScanners" style="padding: 12px 0; color: #6c757d; font-size: 13px">
+              <span class="spinner-border spinner-border-sm me-2"></span>
+              Recherche des scanners avec le driver <strong>{{ selectedDriver || '...' }}</strong
+              >…
+            </div>
+
+            <!-- Aucun scanner -->
+            <div
+              *ngIf="!loadingScanners && scanners.length === 0"
+              style="
+                background: #fef3c7;
+                border: 1px solid #fcd34d;
+                border-radius: 8px;
+                padding: 12px 14px;
+                font-size: 13px;
+                color: #78350f;
+              "
+            >
+              ℹ️ Aucun scanner détecté avec le driver <strong>{{ selectedDriver }}</strong
+              >. Essayez un autre driver ou vérifiez la connexion du scanner.
+            </div>
+
+            <!-- Select scanner -->
+            <div *ngIf="!loadingScanners && scanners.length > 0">
+              <label class="form-label fw-semibold" style="font-size: 13px; color: #374151; margin-bottom: 6px; display: block">
+                Scanner
+              </label>
+              <select
+                class="form-select"
+                [(ngModel)]="selectedScanner"
+                name="selectedScannerDetail"
+                style="font-size: 14px; border-radius: 8px; border-color: #e2e8f0"
+              >
+                <option *ngFor="let s of scanners" [value]="s">{{ s }}</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── BLOC 2 : Paramètres ── -->
+        <div
+          *ngIf="!loadingScanners && scanners.length > 0"
+          style="border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 14px; overflow: hidden"
+        >
+          <div
+            (click)="accordionStates['scanParams'] = !accordionStates['scanParams']"
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              padding: 12px 16px;
+              background: #f1f5f9;
+              cursor: pointer;
+              user-select: none;
+            "
+          >
+            <div style="display: flex; align-items: center; gap: 8px">
+              <p style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #64748b; margin: 0">
+                ⚙️ Paramètres
+              </p>
+              <span style="font-size: 10px; background: #dcfce7; color: #166534; border-radius: 10px; padding: 2px 8px; font-weight: 600">
+                mémorisés
+              </span>
+            </div>
+            <svg
+              [style.transform]="accordionStates['scanParams'] !== false ? 'rotate(180deg)' : 'rotate(0deg)'"
+              style="transition: transform 0.3s ease; width: 16px; height: 16px; color: #64748b"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+          <div
+            [style.max-height]="accordionStates['scanParams'] !== false ? '1000px' : '0'"
+            style="overflow: hidden; transition: max-height 0.4s ease; background: #fff"
+            [style.padding]="accordionStates['scanParams'] !== false ? '16px' : '0 16px'"
+          >
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px">
+              <!-- Format -->
+              <div>
+                <label class="form-label" style="font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; display: block">
+                  Format de sortie
+                </label>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap">
+                  <button
+                    *ngFor="
+                      let fmt of [
+                        { val: 'jpg', lbl: 'JPEG' },
+                        { val: 'png', lbl: 'PNG' },
+                        { val: 'pdf', lbl: 'PDF' },
+                        { val: 'tiff', lbl: 'TIFF' }
+                      ]
+                    "
+                    type="button"
+                    (click)="scanFormat = $any(fmt.val)"
+                    style="
+                      padding: 5px 12px;
+                      border-radius: 6px;
+                      font-size: 12px;
+                      font-weight: 600;
+                      cursor: pointer;
+                      border-width: 1.5px;
+                      border-style: solid;
+                    "
+                    [style.background]="scanFormat === fmt.val ? '#0f172a' : '#f8fafc'"
+                    [style.color]="scanFormat === fmt.val ? '#fff' : '#475569'"
+                    [style.border-color]="scanFormat === fmt.val ? '#0f172a' : '#e2e8f0'"
+                  >
+                    {{ fmt.lbl }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Mode couleur -->
+              <div>
+                <label class="form-label" style="font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; display: block">
+                  Mode couleur
+                </label>
+                <div style="display: flex; gap: 6px">
+                  <button
+                    *ngFor="
+                      let bd of [
+                        { val: 'color', lbl: 'Couleur' },
+                        { val: 'gray', lbl: 'Gris' },
+                        { val: 'bw', lbl: 'N/B' }
+                      ]
+                    "
+                    type="button"
+                    (click)="scanBitdepth = $any(bd.val)"
+                    style="
+                      padding: 5px 12px;
+                      border-radius: 6px;
+                      font-size: 12px;
+                      font-weight: 600;
+                      cursor: pointer;
+                      border-width: 1.5px;
+                      border-style: solid;
+                    "
+                    [style.background]="scanBitdepth === bd.val ? '#0f172a' : '#f8fafc'"
+                    [style.color]="scanBitdepth === bd.val ? '#fff' : '#475569'"
+                    [style.border-color]="scanBitdepth === bd.val ? '#0f172a' : '#e2e8f0'"
+                  >
+                    {{ bd.lbl }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- DPI -->
+              <div>
+                <label class="form-label" style="font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; display: block">
+                  Résolution — <strong style="color: #1e40af">{{ scanDpi }} DPI</strong>
+                </label>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap">
+                  <button
+                    *ngFor="let dpiVal of [75, 150, 200, 300, 600]"
+                    type="button"
+                    (click)="scanDpi = dpiVal"
+                    style="
+                      padding: 5px 12px;
+                      border-radius: 6px;
+                      font-size: 12px;
+                      font-weight: 600;
+                      cursor: pointer;
+                      border-width: 1.5px;
+                      border-style: solid;
+                    "
+                    [style.background]="scanDpi === dpiVal ? '#0f172a' : '#f8fafc'"
+                    [style.color]="scanDpi === dpiVal ? '#fff' : '#475569'"
+                    [style.border-color]="scanDpi === dpiVal ? '#0f172a' : '#e2e8f0'"
+                  >
+                    {{ dpiVal }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Qualité JPEG -->
+              <div *ngIf="scanFormat === 'jpg'">
+                <label class="form-label" style="font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; display: block">
+                  Qualité JPEG — <strong style="color: #1e40af">{{ scanQuality }}%</strong>
+                </label>
+                <input
+                  type="range"
+                  class="form-range"
+                  [(ngModel)]="scanQuality"
+                  name="scanQualityDetail"
+                  min="10"
+                  max="100"
+                  step="5"
+                  style="width: 100%"
+                />
+                <div style="display: flex; justify-content: space-between; font-size: 11px; color: #94a3b8; margin-top: 2px">
+                  <span>Léger</span><span>Équilibré</span><span>Maximum</span>
+                </div>
+              </div>
+
+              <!-- Duplex -->
+              <div style="display: flex; align-items: center; gap: 10px; padding-top: 4px; grid-column: 1 / -1">
+                <div
+                  (click)="scanDuplex = !scanDuplex"
+                  style="
+                    width: 40px;
+                    height: 22px;
+                    border-radius: 11px;
+                    cursor: pointer;
+                    position: relative;
+                    transition: background 0.2s;
+                    flex-shrink: 0;
+                  "
+                  [style.background]="scanDuplex ? '#1e40af' : '#cbd5e1'"
+                >
+                  <div
+                    style="
+                      width: 18px;
+                      height: 18px;
+                      border-radius: 50%;
+                      background: #fff;
+                      position: absolute;
+                      top: 2px;
+                      transition: left 0.2s;
+                      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+                    "
+                    [style.left]="scanDuplex ? '20px' : '2px'"
+                  ></div>
+                </div>
+                <div>
+                  <p style="margin: 0; font-size: 13px; font-weight: 600; color: #374151">Recto-verso (duplex)</p>
+                  <p style="margin: 0; font-size: 11px; color: #94a3b8">Scanner les deux faces automatiquement</p>
+                </div>
+              </div>
+
+              <!-- Pages blanches -->
+              <div style="grid-column: 1 / -1; border-top: 1px solid #e2e8f0; padding-top: 14px; margin-top: 4px">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px">
+                  <div
+                    (click)="scanExcludeBlank = !scanExcludeBlank"
+                    style="
+                      width: 40px;
+                      height: 22px;
+                      border-radius: 11px;
+                      cursor: pointer;
+                      position: relative;
+                      transition: background 0.2s;
+                      flex-shrink: 0;
+                    "
+                    [style.background]="scanExcludeBlank ? '#1e40af' : '#cbd5e1'"
+                  >
+                    <div
+                      style="
+                        width: 18px;
+                        height: 18px;
+                        border-radius: 50%;
+                        background: #fff;
+                        position: absolute;
+                        top: 2px;
+                        transition: left 0.2s;
+                        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+                      "
+                      [style.left]="scanExcludeBlank ? '20px' : '2px'"
+                    ></div>
+                  </div>
+                  <div>
+                    <p style="margin: 0; font-size: 13px; font-weight: 600; color: #374151">Exclure les pages blanches</p>
+                    <p style="margin: 0; font-size: 11px; color: #94a3b8">Supprimer automatiquement les pages vides</p>
+                  </div>
+                </div>
+                <div *ngIf="scanExcludeBlank" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px">
+                  <div>
+                    <label class="form-label" style="font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; display: block">
+                      Seuil du blanc — <strong style="color: #1e40af">{{ scanBlankThreshold }}</strong>
+                    </label>
+                    <input
+                      type="range"
+                      class="form-range"
+                      [(ngModel)]="scanBlankThreshold"
+                      name="scanBlankThresholdDetail"
+                      min="0"
+                      max="255"
+                      step="1"
+                      style="width: 100%"
+                    />
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; color: #94a3b8; margin-top: 2px">
+                      <span>0</span><span>50</span><span>100</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="form-label" style="font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; display: block">
+                      Seuil de couverture — <strong style="color: #1e40af">{{ scanCoverageThreshold }}</strong>
+                    </label>
+                    <input
+                      type="range"
+                      class="form-range"
+                      [(ngModel)]="scanCoverageThreshold"
+                      name="scanCoverageThresholdDetail"
+                      min="0"
+                      max="100"
+                      step="1"
+                      style="width: 100%"
+                    />
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; color: #94a3b8; margin-top: 2px">
+                      <span>0</span><span>50</span><span>100</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- /!loadingDrivers -->
+    </div>
+    <!-- /pjcareAvailable -->
+
+    <!-- ── BLOC 3 : Erreur courante ── -->
+    <div
+      *ngIf="scanError"
+      style="
+        background: #fef2f2;
+        border: 1px solid #fca5a5;
+        border-radius: 8px;
+        padding: 12px 14px;
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        margin-top: 10px;
+      "
+    >
+      <span style="font-size: 18px; flex-shrink: 0">❌</span>
+      <div>
+        <p style="margin: 0; font-weight: 600; color: #991b1b; font-size: 14px">Erreur de numérisation</p>
+        <p style="margin: 4px 0 0; font-size: 13px; color: #b91c1c">{{ scanError }}</p>
+      </div>
+    </div>
+
+    <!-- ── BLOC 4 : File des scans en attente ── -->
+    <div
+      *ngIf="batchScans.length > 0"
+      style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-top: 14px"
+    >
+      <p style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; margin: 0 0 12px">
+        📂 Documents numérisés ({{ batchScans.length }})
+      </p>
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <div
+          *ngFor="let item of batchScans; let i = index"
+          style="
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+          "
+        >
+          <!-- Miniature -->
+          <div
+            style="
+              width: 52px;
+              height: 52px;
+              flex-shrink: 0;
+              border-radius: 6px;
+              overflow: hidden;
+              background: #e2e8f0;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            "
+          >
+            <img *ngIf="item.preview !== 'pdf'" [src]="item.preview" style="width: 100%; height: 100%; object-fit: cover" />
+            <span *ngIf="item.preview === 'pdf'" style="font-size: 24px">📄</span>
+          </div>
+          <!-- Infos -->
+          <div style="flex: 1; min-width: 0">
+            <p
+              style="
+                margin: 0;
+                font-weight: 600;
+                color: #1e293b;
+                font-size: 13px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+              "
+            >
+              {{ item.name }}
+            </p>
+            <p style="margin: 2px 0 0; font-size: 11px; color: #64748b; text-transform: uppercase">{{ item.format }} · scan {{ i + 1 }}</p>
+          </div>
+          <!-- Supprimer -->
+          <button
+            type="button"
+            (click)="removeBatchScan(item.id)"
+            style="
+              width: 28px;
+              height: 28px;
+              border-radius: 50%;
+              border: 1px solid #fca5a5;
+              background: #fef2f2;
+              color: #dc2626;
+              font-size: 14px;
+              font-weight: 700;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              flex-shrink: 0;
+            "
+            title="Retirer ce scan"
+          >
+            ×
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- /modal-body -->
+
+  <!-- Footer -->
+  <div class="modal-footer" style="border-top: 2px solid #e9ecef; padding: 14px 20px; gap: 8px">
+    <button class="btn btn-light" (click)="modal.close()" style="font-weight: 600; border-radius: 8px">Annuler</button>
+
+    <button
+      class="btn btn-outline-secondary btn-sm"
+      (click)="resetScanSettings()"
+      style="font-weight: 600; border-radius: 8px; margin-right: auto"
+      title="Réinitialiser les paramètres de numérisation"
+    >
+      ↺ Paramètres par défaut
+    </button>
+
+    <!-- Numériser (toujours visible si scanner dispo) -->
+    <button
+      *ngIf="pjcareAvailable && !loadingScanners && scanners.length > 0"
+      class="btn btn-primary"
+      (click)="launchScan()"
+      [disabled]="isScanning || !selectedScanner"
+      style="font-weight: 600; border-radius: 8px; min-width: 130px"
+    >
+      <span *ngIf="isScanning" class="spinner-border spinner-border-sm me-2" role="status"></span>
+      <span *ngIf="!isScanning" style="margin-right: 4px">📠</span>
+      {{ isScanning ? 'Numérisation...' : batchScans.length > 0 ? 'Numériser encore' : 'Numériser' }}
+    </button>
+
+    <!-- Attacher tout -->
+    <button
+      *ngIf="batchScans.length > 0"
+      class="btn btn-success"
+      (click)="attachScanResult(modal)"
+      style="font-weight: 600; border-radius: 8px; min-width: 180px"
+    >
+      ✅ Attacher {{ batchScans.length > 1 ? batchScans.length + ' documents' : 'le document' }}
+    </button>
+  </div>
 </ng-template>

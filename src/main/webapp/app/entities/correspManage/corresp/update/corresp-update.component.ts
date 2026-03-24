@@ -44,6 +44,8 @@ import { TypeAffectation } from 'app/entities/correspManage/corresp/update/enums
 import { AccountService } from 'app/core/auth/account.service';
 import { Account } from 'app/core/auth/account.model';
 import { Authority } from 'app/config/authority.constants';
+import { PjCareService, PjCareScanResult, PjCareDriverInfo, ScanDriver } from 'app/entities/correspManage/pj/service/pjcare.service';
+import { ScanSettingsService } from 'app/entities/correspManage/pj/service/scan-settings.service';
 
 // --------------------------------------------------------------------------
 // Small helper interfaces
@@ -51,6 +53,14 @@ import { Authority } from 'app/config/authority.constants';
 interface FileIndexLink {
   index: number;
   uniqueName: string;
+}
+
+interface BatchScanItem {
+  id: string; // identifiant unique (generateRandomId)
+  preview: string; // data-URI image OU 'pdf'
+  format: string;
+  result: PjCareScanResult;
+  name: string; // nom affiché
 }
 
 // --------------------------------------------------------------------------
@@ -223,7 +233,9 @@ export class CorrespUpdateComponent implements OnInit {
     public router: Router,
     protected contactCompanyService: ContactCompanyService,
     protected parentClassdefService: ParentClassdefService,
-    protected accountService: AccountService
+    protected accountService: AccountService,
+    private pjCareService: PjCareService,
+    private scanSettingsService: ScanSettingsService
   ) {}
 
   // --------------------------------------------------------------------------
@@ -1811,6 +1823,273 @@ export class CorrespUpdateComponent implements OnInit {
   toggleAccordion(section: string): void {
     this.accordionStates[section] = !this.accordionStates[section];
   }
+
+  // ── PjCare methods ─────────────────────────────────────────────────────────
+
+  openScanModal(content: any): void {
+    this.scanPreview = null;
+    this.scanError = null;
+    this.lastScanResult = null;
+    this.batchScans = [];
+
+    // ── Charger les paramètres sauvegardés ──
+    this.loadScanSettings();
+
+    this.checkPjCare();
+    this.modalService.open(content, { size: 'lg' });
+  }
+
+  private loadScanSettings(): void {
+    const s = this.scanSettingsService.load();
+    this.scanFormat = s.scanFormat;
+    this.scanDpi = s.scanDpi;
+    this.scanQuality = s.scanQuality;
+    this.scanBitdepth = s.scanBitdepth;
+    this.scanDuplex = s.scanDuplex;
+    this.scanExcludeBlank = s.scanExcludeBlank;
+    this.scanBlankThreshold = s.scanBlankThreshold;
+    this.scanCoverageThreshold = s.scanCoverageThreshold;
+    // selectedDriver : sera écrasé par checkPjCare() si le driver sauvegardé
+    // est encore disponible — on le stocke temporairement
+    this._pendingDriverFromCookie = s.selectedDriver;
+  }
+
+  // Stockage temporaire du driver lu depuis le cookie
+  // (sera appliqué après le chargement de la liste des drivers)
+  private _pendingDriverFromCookie: string = '';
+
+  saveScanSettings(): void {
+    this.scanSettingsService.save({
+      scanFormat: this.scanFormat,
+      scanDpi: this.scanDpi,
+      scanQuality: this.scanQuality,
+      scanBitdepth: this.scanBitdepth,
+      scanDuplex: this.scanDuplex,
+      scanExcludeBlank: this.scanExcludeBlank,
+      scanBlankThreshold: this.scanBlankThreshold,
+      scanCoverageThreshold: this.scanCoverageThreshold,
+      selectedDriver: this.selectedDriver as string,
+    });
+  }
+
+  resetScanSettings(): void {
+    this.scanSettingsService.reset();
+    // Remettre les valeurs par défaut dans la vue
+    this.scanFormat = 'pdf';
+    this.scanDpi = 150;
+    this.scanQuality = 75;
+    this.scanBitdepth = 'color';
+    this.scanDuplex = false;
+    this.scanExcludeBlank = false;
+    this.scanBlankThreshold = 70;
+    this.scanCoverageThreshold = 25;
+  }
+
+  checkPjCare(): void {
+    this.loadingScanners = true;
+    this.loadingDrivers = true;
+
+    this.pjCareService.getHealth().subscribe({
+      next: res => {
+        if (res && res.status === 200) {
+          this.pjcareAvailable = true;
+          this.pjCareService.getDrivers().subscribe({
+            next: driverRes => {
+              this.availableDrivers = driverRes.drivers || [];
+              const defaultKey = res.defaultDriver || (this.availableDrivers[0]?.key ?? '');
+
+              // Restaurer le driver depuis le cookie s'il est encore disponible
+              const cookieDriver = this._pendingDriverFromCookie;
+              const cookieDriverExists = cookieDriver ? this.availableDrivers.some(d => d.key === cookieDriver) : false;
+
+              this.selectedDriver = (cookieDriverExists ? cookieDriver : defaultKey) as ScanDriver;
+              this._pendingDriverFromCookie = ''; // vider après usage
+              this.loadingDrivers = false;
+              this.loadScannersForDriver(this.selectedDriver as ScanDriver);
+            },
+            error: () => {
+              this.availableDrivers = [];
+              this.loadingDrivers = false;
+              this.loadScannersForDriver(undefined);
+            },
+          });
+        } else {
+          this.pjcareAvailable = false;
+          this.loadingScanners = false;
+          this.loadingDrivers = false;
+        }
+      },
+      error: () => {
+        this.pjcareAvailable = false;
+        this.loadingScanners = false;
+        this.loadingDrivers = false;
+      },
+    });
+  }
+
+  loadScannersForDriver(driver?: ScanDriver): void {
+    this.loadingScanners = true;
+    this.scanners = [];
+    this.selectedScanner = '';
+
+    this.pjCareService.getScanners(driver).subscribe({
+      next: scanRes => {
+        this.scanners = scanRes.scanners || [];
+        if (this.scanners.length > 0) {
+          this.selectedScanner = this.scanners[0];
+        }
+        this.loadingScanners = false;
+      },
+      error: () => {
+        this.scanners = [];
+        this.loadingScanners = false;
+      },
+    });
+  }
+
+  onDriverChange(): void {
+    this.scanPreview = null;
+    this.scanError = null;
+    this.lastScanResult = null;
+    this.loadScannersForDriver((this.selectedDriver as ScanDriver) || undefined);
+  }
+
+  launchScan(): void {
+    this.isScanning = true;
+    this.scanError = null;
+    this.scanPreview = null;
+
+    // ── Sauvegarder les paramètres courants ──
+    this.saveScanSettings();
+
+    this.pjCareService
+      .scan({
+        source: this.selectedScanner,
+        driver: (this.selectedDriver as ScanDriver) || undefined,
+        format: this.scanFormat as any,
+        dpi: this.scanDpi,
+        jpegquality: this.scanQuality,
+        bitdepth: this.scanBitdepth,
+        duplex: this.scanDuplex,
+        name: this.objet || 'scan',
+        excludeBlank: this.scanExcludeBlank,
+        blankThreshold: this.scanBlankThreshold,
+        coverageThreshold: this.scanCoverageThreshold,
+      })
+      .subscribe({
+        next: result => {
+          this.isScanning = false;
+          if (result.status === 200) {
+            this.lastScanResult = result;
+
+            const preview = this.scanFormat !== 'pdf' ? `data:image/${this.scanFormat};base64,${result.data}` : 'pdf';
+
+            this.scanPreview = preview; // aperçu du dernier scan
+
+            // Ajouter dans la liste batch
+            const item: BatchScanItem = {
+              id: this.generateRandomId(10),
+              preview,
+              format: this.scanFormat,
+              result,
+              name: result.file,
+            };
+            this.batchScans.push(item);
+          } else {
+            this.scanError = result.error || 'Erreur inconnue';
+          }
+        },
+        error: () => {
+          this.isScanning = false;
+          this.scanError = 'PjCare inaccessible. Vérifiez que le service tourne.';
+        },
+      });
+  }
+
+  removeBatchScan(id: string): void {
+    this.batchScans = this.batchScans.filter(s => s.id !== id);
+    // Si on retire le dernier, on réinitialise aussi l'aperçu courant
+    if (this.batchScans.length === 0) {
+      this.scanPreview = null;
+      this.lastScanResult = null;
+    }
+  }
+
+  attachScanResult(modal: any): void {
+    const items =
+      this.batchScans.length > 0
+        ? this.batchScans
+        : this.lastScanResult
+        ? [
+            {
+              id: 'single',
+              preview: this.scanPreview ?? '',
+              format: this.scanFormat,
+              result: this.lastScanResult,
+              name: this.lastScanResult.file,
+            } as BatchScanItem,
+          ]
+        : [];
+
+    if (items.length === 0) return;
+
+    for (const item of items) {
+      const base64 = item.result.data;
+      const filename = item.result.file;
+      const mimeType = item.format === 'pdf' ? 'application/pdf' : `image/${item.format}`;
+
+      const byteString = atob(base64);
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+      }
+      const blob = new Blob([ab], { type: mimeType });
+      const file = new File([blob], filename, { type: mimeType });
+
+      this.uploadedFiles.push(file);
+      const uniquePjName = this.generateRandomId(10);
+      const pjModel: IPj = {} as IPj;
+      const parts = filename.split('.');
+      pjModel.name = parts.slice(0, -1).join('.');
+      pjModel.fileType = parts[parts.length - 1];
+      pjModel.uniqueName = uniquePjName;
+
+      this.fileLinks.push({
+        index: this.uploadedFiles.length - 1,
+        uniqueName: uniquePjName,
+      });
+      this.uploadProgress.set(uniquePjName, 0);
+      this.uploadFileWithProgress(file, uniquePjName, pjModel);
+      this.pjsToSave.push(pjModel);
+    }
+
+    this.accordionStates['pieces'] = true;
+    modal.close();
+  }
+
+  // ── PjCare scan state ──────────────────────────────────────────────────────
+  pjcareAvailable = false;
+  scanners: string[] = [];
+  selectedScanner = '';
+  scanFormat: 'jpg' | 'png' | 'pdf' | 'tiff' = 'pdf';
+  scanDpi = 150;
+  scanQuality = 75;
+  scanBitdepth: 'color' | 'gray' | 'bw' = 'color';
+  scanDuplex = false;
+  isScanning = false;
+  scanPreview: string | null = null; // preview du DERNIER scan uniquement
+  scanError: string | null = null;
+  loadingScanners = false;
+  availableDrivers: PjCareDriverInfo[] = [];
+  selectedDriver: ScanDriver | '' = '';
+  loadingDrivers = false;
+  private lastScanResult: PjCareScanResult | null = null;
+  scanExcludeBlank = false;
+  scanBlankThreshold = 240;
+  scanCoverageThreshold = 5;
+
+  batchScans: BatchScanItem[] = [];
 
   protected readonly console = console;
   protected readonly CorrespType = CorrespType;
