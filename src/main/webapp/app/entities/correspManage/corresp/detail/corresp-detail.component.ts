@@ -30,6 +30,7 @@ import { AccountService } from 'app/core/auth/account.service';
 import { Account } from 'app/core/auth/account.model';
 import { Authority } from 'app/config/authority.constants';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { PjCareService, PjCareScanResult, PjCareDriverInfo, ScanDriver } from 'app/entities/correspManage/pj/service/pjcare.service';
 
 // export interface ITasks {
 //   id: number;
@@ -147,6 +148,26 @@ export class CorrespDetailComponent implements OnInit {
 
   isUploading = false; // Prevents new uploads while one is in progress
 
+  pjcareAvailable = false;
+  scanners: string[] = [];
+  selectedScanner = '';
+  scanFormat: 'jpg' | 'png' | 'pdf' | 'tiff' = 'pdf';
+  scanDpi = 150;
+  scanQuality = 75;
+  scanBitdepth: 'color' | 'gray' | 'bw' = 'color';
+  scanDuplex = false;
+  isScanning = false;
+  scanPreview: string | null = null;
+  scanError: string | null = null;
+  loadingScanners = false;
+  availableDrivers: PjCareDriverInfo[] = [];
+  selectedDriver: ScanDriver | '' = '';
+  loadingDrivers = false;
+  private lastScanResult: PjCareScanResult | null = null;
+  scanExcludeBlank = false;
+  scanBlankThreshold = 70;
+  scanCoverageThreshold = 25;
+
   uploadProgress: Map<string, number> = new Map(); // Per-file progress tracking
 
   bodyHtmlContent = '';
@@ -238,7 +259,8 @@ export class CorrespDetailComponent implements OnInit {
     private modalService: NgbModal,
     protected contactCompanyService: ContactCompanyService,
     private accountService: AccountService,
-    private sanitizer: DomSanitizer
+    private sanitizer: DomSanitizer,
+    private pjCareService: PjCareService
   ) {}
 
   get safeHtmlContent(): SafeHtml {
@@ -2621,6 +2643,144 @@ export class CorrespDetailComponent implements OnInit {
         },
       });
     }
+  }
+
+  openScanModal(content: any): void {
+    this.scanPreview = null;
+    this.scanError = null;
+    this.lastScanResult = null;
+    this.checkPjCare();
+    this.modalService.open(content, { size: 'lg' });
+  }
+
+  checkPjCare(): void {
+    this.loadingScanners = true;
+    this.loadingDrivers = true;
+    this.pjCareService.getHealth().subscribe({
+      next: res => {
+        if (res && res.status === 200) {
+          this.pjcareAvailable = true;
+          this.pjCareService.getDrivers().subscribe({
+            next: driverRes => {
+              this.availableDrivers = driverRes.drivers || [];
+              const defaultKey = res.defaultDriver || (this.availableDrivers[0]?.key ?? '');
+              this.selectedDriver = defaultKey as ScanDriver;
+              this.loadingDrivers = false;
+              this.loadScannersForDriver(this.selectedDriver as ScanDriver);
+            },
+            error: () => {
+              this.availableDrivers = [];
+              this.loadingDrivers = false;
+              this.loadScannersForDriver(undefined);
+            },
+          });
+        } else {
+          this.pjcareAvailable = false;
+          this.loadingScanners = false;
+          this.loadingDrivers = false;
+        }
+      },
+      error: () => {
+        this.pjcareAvailable = false;
+        this.loadingScanners = false;
+        this.loadingDrivers = false;
+      },
+    });
+  }
+
+  loadScannersForDriver(driver?: ScanDriver): void {
+    this.loadingScanners = true;
+    this.scanners = [];
+    this.selectedScanner = '';
+    this.pjCareService.getScanners(driver).subscribe({
+      next: scanRes => {
+        this.scanners = scanRes.scanners || [];
+        if (this.scanners.length > 0) {
+          this.selectedScanner = this.scanners[0];
+        }
+        this.loadingScanners = false;
+      },
+      error: () => {
+        this.scanners = [];
+        this.loadingScanners = false;
+      },
+    });
+  }
+
+  onDriverChange(): void {
+    this.scanPreview = null;
+    this.scanError = null;
+    this.lastScanResult = null;
+    this.loadScannersForDriver((this.selectedDriver as ScanDriver) || undefined);
+  }
+
+  launchScan(): void {
+    this.isScanning = true;
+    this.scanError = null;
+    this.pjCareService
+      .scan({
+        source: this.selectedScanner,
+        driver: (this.selectedDriver as ScanDriver) || undefined,
+        format: this.scanFormat as any,
+        dpi: this.scanDpi,
+        jpegquality: this.scanQuality,
+        bitdepth: this.scanBitdepth,
+        duplex: this.scanDuplex,
+        name: this.objet || 'scan',
+        excludeBlank: this.scanExcludeBlank,
+        blankThreshold: this.scanBlankThreshold,
+        coverageThreshold: this.scanCoverageThreshold,
+      })
+      .subscribe({
+        next: result => {
+          this.isScanning = false;
+          if (result.status === 200) {
+            this.lastScanResult = result;
+            if (this.scanFormat !== 'pdf') {
+              this.scanPreview = `data:image/${this.scanFormat};base64,${result.data}`;
+            } else {
+              this.scanPreview = 'pdf';
+            }
+          } else {
+            this.scanError = result.error || 'Erreur inconnue';
+          }
+        },
+        error: () => {
+          this.isScanning = false;
+          this.scanError = 'PjCare inaccessible. Vérifiez que le service tourne.';
+        },
+      });
+  }
+
+  attachScanResult(modal: any): void {
+    if (!this.lastScanResult) return;
+
+    const base64 = this.lastScanResult.data;
+    const filename = this.lastScanResult.file;
+    const mimeType = this.scanFormat === 'pdf' ? 'application/pdf' : `image/${this.scanFormat}`;
+
+    const byteString = atob(base64);
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i);
+    }
+    const blob = new Blob([ab], { type: mimeType });
+    const file = new File([blob], filename, { type: mimeType });
+
+    // Réutiliser la logique d'upload existante dans corresp-detail
+    const uniquePjName = this.generateRandomId(10);
+    const pjModel: IPj = {} as IPj;
+    const parts = filename.split('.');
+    pjModel.name = parts.slice(0, -1).join('.');
+    pjModel.fileType = parts[parts.length - 1];
+    pjModel.uniqueName = uniquePjName;
+
+    this.accordionStates['pieces'] = true;
+    this.uploadProgress.set(uniquePjName, 0);
+    this.uploadFileWithProgress(file, uniquePjName, pjModel);
+
+    modal.close();
   }
 
   private loadCcTree(orgaCode: string): void {
