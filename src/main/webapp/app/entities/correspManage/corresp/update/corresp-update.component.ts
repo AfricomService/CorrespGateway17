@@ -54,6 +54,14 @@ interface FileIndexLink {
   uniqueName: string;
 }
 
+interface BatchScanItem {
+  id: string; // identifiant unique (generateRandomId)
+  preview: string; // data-URI image OU 'pdf'
+  format: string;
+  result: PjCareScanResult;
+  name: string; // nom affiché
+}
+
 // --------------------------------------------------------------------------
 // Component
 // --------------------------------------------------------------------------
@@ -1820,6 +1828,7 @@ export class CorrespUpdateComponent implements OnInit {
     this.scanPreview = null;
     this.scanError = null;
     this.lastScanResult = null;
+    this.batchScans = []; // vider la file à chaque ouverture du modal
     this.checkPjCare();
     this.modalService.open(content, { size: 'lg' });
   }
@@ -1890,6 +1899,7 @@ export class CorrespUpdateComponent implements OnInit {
   launchScan(): void {
     this.isScanning = true;
     this.scanError = null;
+    this.scanPreview = null;
 
     this.pjCareService
       .scan({
@@ -1910,11 +1920,20 @@ export class CorrespUpdateComponent implements OnInit {
           this.isScanning = false;
           if (result.status === 200) {
             this.lastScanResult = result;
-            if (this.scanFormat !== 'pdf') {
-              this.scanPreview = `data:image/${this.scanFormat};base64,${result.data}`;
-            } else {
-              this.scanPreview = 'pdf';
-            }
+
+            const preview = this.scanFormat !== 'pdf' ? `data:image/${this.scanFormat};base64,${result.data}` : 'pdf';
+
+            this.scanPreview = preview; // aperçu du dernier scan
+
+            // Ajouter dans la liste batch
+            const item: BatchScanItem = {
+              id: this.generateRandomId(10),
+              preview,
+              format: this.scanFormat,
+              result,
+              name: result.file,
+            };
+            this.batchScans.push(item);
           } else {
             this.scanError = result.error || 'Erreur inconnue';
           }
@@ -1926,40 +1945,65 @@ export class CorrespUpdateComponent implements OnInit {
       });
   }
 
-  attachScanResult(modal: any): void {
-    if (!this.lastScanResult) return;
-
-    const base64 = this.lastScanResult.data;
-    const filename = this.lastScanResult.file;
-    const mimeType = this.scanFormat === 'pdf' ? 'application/pdf' : `image/${this.scanFormat}`;
-
-    // Convertir base64 → File
-    const byteString = atob(base64);
-    const ab = new ArrayBuffer(byteString.length);
-    const ia = new Uint8Array(ab);
-    for (let i = 0; i < byteString.length; i++) {
-      ia[i] = byteString.charCodeAt(i);
+  removeBatchScan(id: string): void {
+    this.batchScans = this.batchScans.filter(s => s.id !== id);
+    // Si on retire le dernier, on réinitialise aussi l'aperçu courant
+    if (this.batchScans.length === 0) {
+      this.scanPreview = null;
+      this.lastScanResult = null;
     }
-    const blob = new Blob([ab], { type: mimeType });
-    const file = new File([blob], filename, { type: mimeType });
+  }
 
-    // Réutiliser la logique d'upload existante
-    this.uploadedFiles.push(file);
-    const uniquePjName = this.generateRandomId(10);
-    const pjModel: IPj = {} as IPj;
-    const parts = filename.split('.');
-    pjModel.name = parts.slice(0, -1).join('.');
-    pjModel.fileType = parts[parts.length - 1];
-    pjModel.uniqueName = uniquePjName;
+  attachScanResult(modal: any): void {
+    const items =
+      this.batchScans.length > 0
+        ? this.batchScans
+        : this.lastScanResult
+        ? [
+            {
+              id: 'single',
+              preview: this.scanPreview ?? '',
+              format: this.scanFormat,
+              result: this.lastScanResult,
+              name: this.lastScanResult.file,
+            } as BatchScanItem,
+          ]
+        : [];
 
-    this.fileLinks.push({ index: this.uploadedFiles.length - 1, uniqueName: uniquePjName });
-    this.uploadProgress.set(uniquePjName, 0);
-    this.uploadFileWithProgress(file, uniquePjName, pjModel);
-    this.pjsToSave.push(pjModel);
+    if (items.length === 0) return;
 
-    // Ouvrir l'accordéon pièces jointes
+    for (const item of items) {
+      const base64 = item.result.data;
+      const filename = item.result.file;
+      const mimeType = item.format === 'pdf' ? 'application/pdf' : `image/${item.format}`;
+
+      const byteString = atob(base64);
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+      }
+      const blob = new Blob([ab], { type: mimeType });
+      const file = new File([blob], filename, { type: mimeType });
+
+      this.uploadedFiles.push(file);
+      const uniquePjName = this.generateRandomId(10);
+      const pjModel: IPj = {} as IPj;
+      const parts = filename.split('.');
+      pjModel.name = parts.slice(0, -1).join('.');
+      pjModel.fileType = parts[parts.length - 1];
+      pjModel.uniqueName = uniquePjName;
+
+      this.fileLinks.push({
+        index: this.uploadedFiles.length - 1,
+        uniqueName: uniquePjName,
+      });
+      this.uploadProgress.set(uniquePjName, 0);
+      this.uploadFileWithProgress(file, uniquePjName, pjModel);
+      this.pjsToSave.push(pjModel);
+    }
+
     this.accordionStates['pieces'] = true;
-
     modal.close();
   }
 
@@ -1973,7 +2017,7 @@ export class CorrespUpdateComponent implements OnInit {
   scanBitdepth: 'color' | 'gray' | 'bw' = 'color';
   scanDuplex = false;
   isScanning = false;
-  scanPreview: string | null = null;
+  scanPreview: string | null = null; // preview du DERNIER scan uniquement
   scanError: string | null = null;
   loadingScanners = false;
   availableDrivers: PjCareDriverInfo[] = [];
@@ -1981,8 +2025,10 @@ export class CorrespUpdateComponent implements OnInit {
   loadingDrivers = false;
   private lastScanResult: PjCareScanResult | null = null;
   scanExcludeBlank = false;
-  scanBlankThreshold = 70;
-  scanCoverageThreshold = 25;
+  scanBlankThreshold = 240;
+  scanCoverageThreshold = 5;
+
+  batchScans: BatchScanItem[] = [];
 
   protected readonly console = console;
   protected readonly CorrespType = CorrespType;
