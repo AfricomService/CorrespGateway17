@@ -22,8 +22,8 @@ const DEFAULTS: ScanSettings = {
   scanBitdepth: 'color',
   scanDuplex: false,
   scanExcludeBlank: false,
-  scanBlankThreshold: 70,
-  scanCoverageThreshold: 25,
+  scanBlankThreshold: 240,
+  scanCoverageThreshold: 5,
   selectedDriver: '',
 };
 
