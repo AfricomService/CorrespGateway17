@@ -388,33 +388,18 @@ export class CorrespComponent implements OnInit {
     return new CustomStore({
       key: 'id',
       load: async (loadOptions: any) => {
-        const res: any = await firstValueFrom(this.correspService.getCorrespsByUserAcl(userId));
-        let allData: any[] = res?.body ?? [];
-
-        // Si BOC ou ADMIN, fusionner les corresps dispatched (dédupliquées par id)
-        if (this.isAdmin || this.isBoc) {
-          try {
-            const dispatched = await firstValueFrom(this.correspService.getAllDispatchedList());
-            if (dispatched && dispatched.length > 0) {
-              const existingIds = new Set(allData.map((c: any) => c.id));
-              const newDispatched = dispatched.filter(d => !existingIds.has(d.id));
-              allData = [...allData, ...newDispatched];
-            }
-          } catch (e) {
-            console.error('Erreur lors du chargement des corresps dispatched', e);
-          }
-        }
-
-        const totalCount = allData.length;
-
-        // Pagination côté client (remoteOperations.paging = true)
         const skip = loadOptions.skip ?? 0;
-        const take = loadOptions.take ?? totalCount;
-        const page = allData.slice(skip, skip + take);
+        const take = loadOptions.take ?? 15;
+
+        // pageIndex commence à 1 (convention backend)
+        const pageIndex = Math.floor(skip / take) + 1;
+        const pageSize = take;
+
+        const response = await firstValueFrom(this.correspService.getCorrespsByUserAclPaged(userId, pageIndex, pageSize));
 
         return {
-          data: page,
-          totalCount,
+          data: response.content,
+          totalCount: response.totalItems,
         };
       },
     });

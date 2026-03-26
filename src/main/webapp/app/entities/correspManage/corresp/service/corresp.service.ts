@@ -30,6 +30,17 @@ interface IFileUpload {
   uniqueFileName: string;
 }
 
+// Interface pour la réponse paginée
+export interface PagedCorrespResponse {
+  content: ICorresp[];
+  currentPage: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+}
+
 export type RestCorresp = RestOf<ICorresp>;
 
 export type NewRestCorresp = RestOf<NewCorresp>;
@@ -362,6 +373,33 @@ export class CorrespService {
     return this.http
       .get<RestCorresp[]>(`${this.resourceUrl}/correspsByUserAcl`, { params, observe: 'response' })
       .pipe(map(res => this.convertResponseArrayFromServer(res)));
+  }
+
+  // Dans la classe CorrespService, ajouter cette méthode :
+  getCorrespsByUserAclPaged(userId: number, page: number = 1, size: number = 15): Observable<PagedCorrespResponse> {
+    const params = createRequestOption({ userId, page, size });
+    return this.http.get<any>(`${this.resourceUrl}/correspsByUserAclPaged`, { params }).pipe(
+      map(response => ({
+        content: (response.content ?? []).map((item: RestCorresp) => this.convertDateFromServer(item)),
+        currentPage: response.currentPage,
+        pageSize: response.pageSize,
+        totalItems: response.totalItems,
+        totalPages: response.totalPages,
+        hasNext: response.hasNext,
+        hasPrevious: response.hasPrevious,
+      })),
+      catchError(() =>
+        of({
+          content: [],
+          currentPage: page,
+          pageSize: size,
+          totalItems: 0,
+          totalPages: 0,
+          hasNext: false,
+          hasPrevious: false,
+        })
+      )
+    );
   }
 
   /**

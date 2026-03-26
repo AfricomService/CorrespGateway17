@@ -66,6 +66,22 @@ export interface ScanParams {
   coverageThreshold?: number;
 }
 
+/** Une page individuelle dans le buffer multi-pages */
+export interface ScannedPage {
+  data: string; // base64 brut
+  format: string; // format de la page
+  preview: string | null; // data-URI ou null pour PDF
+  pageNumber: number; // numéro 1-based
+}
+
+/** Corps de POST /api/MergePages */
+export interface MergePagesRequest {
+  pages: Array<{ data: string; format: string }>;
+  outputFormat: ScanFormat;
+  jpegquality?: number;
+  name?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class PjCareService {
   private readonly BASE_URL = 'http://127.0.0.1:7777/api';
@@ -159,5 +175,20 @@ export class PjCareService {
           })
         )
       );
+  }
+  mergePages(request: MergePagesRequest): Observable<PjCareScanResult> {
+    return this.http.post<PjCareScanResult>(`${this.BASE_URL}/MergePages`, request).pipe(
+      catchError(err =>
+        of({
+          status: 500,
+          driver: 'merge',
+          data: '',
+          file: '',
+          format: request.outputFormat,
+          bitdepth: 'color',
+          error: err?.error?.error ?? 'Erreur lors de la fusion des pages',
+        })
+      )
+    );
   }
 }
