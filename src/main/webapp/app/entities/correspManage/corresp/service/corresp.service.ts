@@ -170,6 +170,60 @@ export class CorrespService {
     );
   }
 
+  /**
+   * GET /api/corresps-filter?userId=...&pageIndex=...&pageSize=...&...filtres
+   * Remplace findAllCorrespByFilter + findAllByStatusDispatch (unifié côté backend)
+   */
+  getCorrespsFiltered(
+    userId: number,
+    pageIndex: number = 1,
+    pageSize: number = 15,
+    filters?: {
+      reference?: string;
+      status?: string;
+      dispatchType?: string;
+      startDate?: string;
+      endDate?: string;
+    }
+  ): Observable<PagedCorrespResponse> {
+    let params: any = { userId, pageIndex, pageSize };
+
+    if (filters) {
+      if (filters.reference) params['reference'] = filters.reference;
+      if (filters.status) params['status'] = filters.status;
+      if (filters.dispatchType) params['dispatchType'] = filters.dispatchType;
+      if (filters.startDate) params['startDate'] = filters.startDate;
+      if (filters.endDate) params['endDate'] = filters.endDate;
+    }
+
+    const httpParams = createRequestOption(params);
+
+    return this.http
+      .get<any>(`${this.applicationConfigService.getEndpointFor('api/corresps-filter', 'correspmanage')}`, { params: httpParams })
+      .pipe(
+        map(response => ({
+          content: (response.content ?? []).map((item: RestCorresp) => this.convertDateFromServer(item)),
+          currentPage: response.currentPage,
+          pageSize: response.pageSize,
+          totalItems: response.totalItems,
+          totalPages: response.totalPages,
+          hasNext: response.hasNext,
+          hasPrevious: response.hasPrevious,
+        })),
+        catchError(() =>
+          of({
+            content: [],
+            currentPage: pageIndex,
+            pageSize: pageSize,
+            totalItems: 0,
+            totalPages: 0,
+            hasNext: false,
+            hasPrevious: false,
+          })
+        )
+      );
+  }
+
   delete(id: number): Observable<HttpResponse<{}>> {
     return this.http.delete(`${this.resourceUrl}Delete/${id}`, { observe: 'response' });
   }

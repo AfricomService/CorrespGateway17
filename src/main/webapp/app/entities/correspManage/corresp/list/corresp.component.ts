@@ -211,84 +211,46 @@ export class CorrespComponent implements OnInit {
   createDataSource(filter?: Filter[]): CustomStore {
     return new CustomStore({
       key: 'id',
-      load: (loadOptions: any) => {
-        const params: any = {
-          ...loadOptions,
-          $paging: this.constructPage(loadOptions.skip, loadOptions.take),
-        };
+      load: async (loadOptions: any) => {
+        const skip = loadOptions.skip ?? 0;
+        const take = loadOptions.take ?? 15;
+        const pageIndex = Math.floor(skip / take) + 1;
+        const pageSize = take;
 
-        // // append active filters
-        // this.activeFilters.forEach(f => {
-        //   if (f.key === 'courrierDate') {
-        //     params.startDate = this.dateRange.startDate;
-        //     params.endDate = this.dateRange.endDate;
-        //   } else {
-        //     params[f.key] = f.value;
-        //   }
-        // });
-
-        this.endpoint = `${this.resourceUrl}-filter?${params.$paging}`;
-
-        console.log('filter from inside');
-        console.log(filter);
-
+        // Construire les filtres depuis activeFilters
+        const filters: any = {};
         if (filter && filter.length > 0) {
           filter.forEach(f => {
             switch (f.field) {
               case 'reference':
-                this.endpoint += `&reference=${f.value}`;
+                filters.reference = f.value;
                 break;
               case 'status':
-                this.endpoint += `&status=${f.value}`;
+                filters.status = f.value;
                 break;
               case 'dispatchType':
-                this.endpoint += `&dispatchType=${f.value}`;
+                filters.dispatchType = f.value;
                 break;
               case 'courrierDate':
-                this.endpoint += `&startDate=${f.value.startDate}&endDate=${f.value.endDate}`;
+                filters.startDate = f.value.startDate;
+                filters.endDate = f.value.endDate;
                 break;
-              default:
-                console.log('No Filter');
             }
           });
         }
 
-        // if (params.reference) endpoint += `&reference=${params.reference}`;
-        // if (params.status) endpoint += `&status=${params.status}`;
-        // if (params.dispatchType) endpoint += `&dispatchType=${params.dispatchType}`;
-        // if (params.startDate && params.endDate) endpoint += `&startDate=${params.startDate}&endDate=${params.endDate}`;
-        //
-        // console.log("endpoint", params);
-        // console.log("endpoint", this.dateRange);
+        // Construire l'URL pour la sauvegarde de filtre (compatibilité saveCustomFilters)
+        this.endpoint = `${this.resourceUrl}-filter?pageIndex=${pageIndex}&pageSize=${pageSize}&userId=${this.currentUserId ?? ''}`;
+        Object.entries(filters).forEach(([k, v]) => {
+          this.endpoint += `&${k}=${v}`;
+        });
 
-        return this.http
-          .get(this.endpoint)
-          .toPromise()
-          .then(async (data: any) => {
-            let content: any[] = data.content ?? [];
-            let totalCount: number = data.totalElements ?? 0;
+        const response = await firstValueFrom(this.correspService.getCorrespsFiltered(this.currentUserId!, pageIndex, pageSize, filters));
 
-            // Si BOC ou ADMIN, fusionner les corresps dispatched (dédupliquées par id)
-            if (this.isAdmin || this.isBoc) {
-              try {
-                const dispatched = await firstValueFrom(this.correspService.getAllDispatchedList());
-                if (dispatched && dispatched.length > 0) {
-                  const existingIds = new Set(content.map((c: any) => c.id));
-                  const newDispatched = dispatched.filter(d => !existingIds.has(d.id));
-                  content = [...content, ...newDispatched];
-                  totalCount += newDispatched.length;
-                }
-              } catch (e) {
-                // En cas d'erreur, on continue sans les dispatched
-                console.error('Erreur lors du chargement des corresps dispatched', e);
-              }
-            }
-
-            return {
-              data: content,
-              totalCount,
-            };
-          });
+        return {
+          data: response.content,
+          totalCount: response.totalItems,
+        };
       },
     });
   }
