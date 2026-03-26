@@ -824,5 +824,27 @@ $container-max: 1800px; // largeur raisonnable
     min-width: 100%;
   }
 }
+/* ---- Refresh button ---- */
+:host .refresh-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%); // vert distinct de l'export
+  box-shadow: 0 8px 20px rgba(5, 150, 105, 0.15);
+}
+:host .refresh-btn:hover {
+  box-shadow: 0 14px 28px rgba(5, 150, 105, 0.25);
+}
+
+/* Animation rotation pendant le chargement */
+:host .refresh-btn.spinning svg {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 /* End of improved SCSS 111*/
