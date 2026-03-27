@@ -22,6 +22,7 @@
     "exportExcel": "Excel",
     "exportTasks": "Export tasks",
     "exportCsv": "CSV",
+    "refresh": "Refresh",
     "objet": "Object",
     "reference": "Reference",
     "creation": "Creation",

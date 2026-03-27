@@ -16,7 +16,7 @@ strong {
 }
 
 .form-check-input[type='radio'] {
-  accent-color: #c1121f; // custom red color
+  accent-color: #c1121f;
   transition: transform 0.2s ease;
 }
 
@@ -29,8 +29,6 @@ strong {
   user-select: none;
 }
 
-/* Existing styles can stay... */
-
 /* --- Modal Overlay Styles --- */
 .modal-overlay {
   position: fixed;
@@ -38,20 +36,20 @@ strong {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(0, 0, 0, 0.6); /* Dimmed background */
-  z-index: 1050; /* High z-index to sit on top */
+  background-color: rgba(0, 0, 0, 0.6);
+  z-index: 1050;
   display: flex;
   justify-content: center;
   align-items: center;
-  backdrop-filter: blur(2px); /* Optional nice blur effect */
+  backdrop-filter: blur(2px);
 }
 
 .modal-content {
   background-color: #fff;
   border-radius: 8px;
   width: 90%;
-  max-width: 1000px; /* Large width for document viewing */
-  height: 90vh; /* Take up most of the screen height */
+  max-width: 1000px;
+  height: 90vh;
   display: flex;
   flex-direction: column;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
@@ -75,7 +73,7 @@ strong {
 
 .modal-body {
   flex: 1;
-  overflow: auto; /* Allows scrolling if the preview is huge */
+  overflow: auto;
   background-color: #f5f5f5;
 }
 
@@ -129,7 +127,7 @@ strong {
 }
 
 .preview-content {
-  padding: 0; /* No padding to let the preview take full width */
+  padding: 0;
   background: #fafafa;
   min-height: 300px;
 }
@@ -261,6 +259,7 @@ strong {
   border-color: #16a34a;
   color: #166534;
 }
+
 .assign-controls .form-control {
   border-radius: 10px;
   border-color: #cfd8e3;
@@ -269,4 +268,53 @@ strong {
 .assign-controls .form-control:focus {
   border-color: #0d6efd;
   box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+}
+
+/* --- Email Body Content (RTL + styles) --- */
+:host ::ng-deep .email-body-content {
+  b,
+  strong {
+    font-weight: bold !important;
+  }
+
+  i,
+  em {
+    font-style: italic !important;
+  }
+
+  u {
+    text-decoration: underline !important;
+  }
+
+  span[style*='background'] {
+    background: revert !important;
+  }
+
+  *[style*='color:'] {
+    color: unset;
+  }
+
+  // Isolation de chaque bloc pour éviter la contamination de direction
+  p,
+  div,
+  span,
+  td,
+  li {
+    unicode-bidi: isolate;
+  }
+
+  // RTL forcé uniquement sur les éléments explicitement marqués dir="rtl"
+  *[dir='rtl'] {
+    direction: rtl !important;
+    text-align: right !important;
+    unicode-bidi: embed !important;
+  }
+
+  // Span bloc pour le texte brut arabe wrappé par fixArabicDirection()
+  span[dir='rtl'] {
+    display: block !important;
+    text-align: right !important;
+    direction: rtl !important;
+    unicode-bidi: embed !important;
+  }
 }

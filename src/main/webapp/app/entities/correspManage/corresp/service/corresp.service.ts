@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpResponse } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 import dayjs from 'dayjs/esm';
 
 import { isPresent } from 'app/core/util/operators';
@@ -10,6 +10,7 @@ import { createRequestOption } from 'app/core/request/request-util';
 import { ICorresp, NewCorresp } from '../corresp.model';
 import { ITasks } from '../../tasks/tasks.model';
 import { IPj } from '../../pj/pj.model';
+import { IMessage } from '../../message/message.model';
 import { IOrga } from '../orga';
 import { DepartementTreeFeignDTO } from '../update/DepartementTreeFeignDTO';
 import { IDepartement } from '../../../orgacare/departement/departement.model';
@@ -27,6 +28,22 @@ type RestOf<T extends ICorresp | NewCorresp> = Omit<T, 'dateCreated' | 'courrier
 interface IFileUpload {
   fileId: string;
   uniqueFileName: string;
+}
+
+export interface CorrespSummaryDTO {
+  subject?: string | null;
+  reference?: string | null;
+}
+
+// Interface pour la réponse paginée
+export interface PagedCorrespResponse {
+  content: ICorresp[];
+  currentPage: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
 }
 
 export type RestCorresp = RestOf<ICorresp>;
@@ -53,6 +70,7 @@ export class CorrespService {
   // url pour l'endpoint qui renvoie l'arbre de départements (service orgacare)
   protected resourceUrlDepartementHierarchy = this.applicationConfigService.getEndpointFor('api/departementshierarchy', 'orgacare');
   protected resourceUrlDepartementTree = this.applicationConfigService.getEndpointFor('api/departements/tree', 'orgacare');
+  protected resourceUrlMessages = this.applicationConfigService.getEndpointFor('api/messages', 'correspmanage');
 
   constructor(protected http: HttpClient, protected applicationConfigService: ApplicationConfigService) {}
 
@@ -130,6 +148,85 @@ export class CorrespService {
       observe: 'response',
       responseType: 'text' as 'json',
     });
+  }
+
+  /**
+   * Appelle GET /api/corresps/dispatched
+   * Retourne la full HttpResponse contenant le tableau de Corresp (avec conversion des dates).
+   */
+  getAllDispatched(): Observable<EntityArrayResponseType> {
+    return this.http.get<RestCorresp[]>(`${this.resourceUrl}/dispatched`, { observe: 'response' }).pipe(
+      // conversion des dates du serveur vers dayjs (réutilise ton helper)
+      map(res => this.convertResponseArrayFromServer(res)),
+      // en cas d'erreur, renvoyer une réponse vide afin de ne pas casser l'UI
+      catchError(() => of(new HttpResponse<ICorresp[]>({ body: [] })))
+    );
+  }
+
+  /**
+   * Variante pratique — renvoie directement la liste (ICorresp[]) sans HttpResponse,
+   * plus simple à consommer dans les composants.
+   */
+  getAllDispatchedList(): Observable<ICorresp[]> {
+    return this.getAllDispatched().pipe(
+      map(resp => resp.body ?? []),
+      // si tu préfères une valeur par défaut vide en cas d'erreur
+      catchError(() => of([]))
+    );
+  }
+
+  /**
+   * GET /api/corresps-filter?userId=...&pageIndex=...&pageSize=...&...filtres
+   * Remplace findAllCorrespByFilter + findAllByStatusDispatch (unifié côté backend)
+   */
+  getCorrespsFiltered(
+    userId: number,
+    pageIndex: number = 1,
+    pageSize: number = 15,
+    filters?: {
+      reference?: string;
+      status?: string;
+      dispatchType?: string;
+      startDate?: string;
+      endDate?: string;
+    }
+  ): Observable<PagedCorrespResponse> {
+    let params: any = { userId, pageIndex, pageSize };
+
+    if (filters) {
+      if (filters.reference) params['reference'] = filters.reference;
+      if (filters.status) params['status'] = filters.status;
+      if (filters.dispatchType) params['dispatchType'] = filters.dispatchType;
+      if (filters.startDate) params['startDate'] = filters.startDate;
+      if (filters.endDate) params['endDate'] = filters.endDate;
+    }
+
+    const httpParams = createRequestOption(params);
+
+    return this.http
+      .get<any>(`${this.applicationConfigService.getEndpointFor('api/corresps-filter', 'correspmanage')}`, { params: httpParams })
+      .pipe(
+        map(response => ({
+          content: (response.content ?? []).map((item: RestCorresp) => this.convertDateFromServer(item)),
+          currentPage: response.currentPage,
+          pageSize: response.pageSize,
+          totalItems: response.totalItems,
+          totalPages: response.totalPages,
+          hasNext: response.hasNext,
+          hasPrevious: response.hasPrevious,
+        })),
+        catchError(() =>
+          of({
+            content: [],
+            currentPage: pageIndex,
+            pageSize: pageSize,
+            totalItems: 0,
+            totalPages: 0,
+            hasNext: false,
+            hasPrevious: false,
+          })
+        )
+      );
   }
 
   delete(id: number): Observable<HttpResponse<{}>> {
@@ -304,6 +401,14 @@ export class CorrespService {
       .pipe(map(res => this.convertResponseArrayFromServer(res)));
   }
 
+  getCorrespSummaryByTask(taskId: number): Observable<{ subject?: string | null; reference?: string | null }> {
+    return this.http.get<{ subject?: string | null; reference?: string | null }>(`${this.resourceUrl}/by-task/${taskId}/summary`);
+  }
+
+  getCorrespSummariesByTasks(taskIds: number[]): Observable<Record<string, CorrespSummaryDTO>> {
+    return this.http.post<Record<string, CorrespSummaryDTO>>(`${this.resourceUrl}/summaries-by-tasks`, taskIds);
+  }
+
   /**
    * Liste complète (non paginée) des corresps ayant une reference non-nulle.
    * GET /api/corresps/with-reference/list
@@ -328,5 +433,58 @@ export class CorrespService {
 
   getPermissions(correspId: number): Observable<CorrespPermissionsDTO> {
     return this.http.get<CorrespPermissionsDTO>(`${this.resourceUrl}/${correspId}/permissions`);
+  }
+
+  getCorrespsByUserAcl(userId: number): Observable<EntityArrayResponseType> {
+    const params = createRequestOption({ userId });
+    return this.http
+      .get<RestCorresp[]>(`${this.resourceUrl}/correspsByUserAcl`, { params, observe: 'response' })
+      .pipe(map(res => this.convertResponseArrayFromServer(res)));
+  }
+
+  // Dans la classe CorrespService, ajouter cette méthode :
+  getCorrespsByUserAclPaged(userId: number, page: number = 1, size: number = 15): Observable<PagedCorrespResponse> {
+    const params = createRequestOption({ userId, page, size });
+    return this.http.get<any>(`${this.resourceUrl}/correspsByUserAclPaged`, { params }).pipe(
+      map(response => ({
+        content: (response.content ?? []).map((item: RestCorresp) => this.convertDateFromServer(item)),
+        currentPage: response.currentPage,
+        pageSize: response.pageSize,
+        totalItems: response.totalItems,
+        totalPages: response.totalPages,
+        hasNext: response.hasNext,
+        hasPrevious: response.hasPrevious,
+      })),
+      catchError(() =>
+        of({
+          content: [],
+          currentPage: page,
+          pageSize: size,
+          totalItems: 0,
+          totalPages: 0,
+          hasNext: false,
+          hasPrevious: false,
+        })
+      )
+    );
+  }
+
+  /**
+   * GET /api/messages/by-corresp/{correspId}
+   * L'API backend retourne un seul MessageDTO (ou 404 si aucun message).
+   * On wrappe le résultat dans un tableau pour garder la compatibilité avec le composant.
+   */
+  getMessagesByCorrespId(correspId: number): Observable<HttpResponse<IMessage[]>> {
+    return this.http.get<IMessage>(`${this.resourceUrlMessages}/by-corresp/${correspId}`, { observe: 'response' }).pipe(
+      map(res => {
+        // Wrapper le message unique dans un tableau
+        const body: IMessage[] = res.body ? [res.body] : [];
+        return res.clone({ body });
+      }),
+      catchError(err => {
+        console.warn(`[CorrespService] Erreur chargement message pour correspId=${correspId}:`, err?.status, err?.message);
+        return of(new HttpResponse<IMessage[]>({ body: [] }));
+      })
+    );
   }
 }

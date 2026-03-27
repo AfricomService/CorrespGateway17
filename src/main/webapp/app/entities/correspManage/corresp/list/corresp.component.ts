@@ -1,7 +1,7 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { ActivatedRoute, Data, ParamMap, Router } from '@angular/router';
-import { combineLatest, filter, Observable, switchMap, tap } from 'rxjs';
+import { combineLatest, filter, firstValueFrom, Observable, switchMap, tap } from 'rxjs';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import moment from 'moment';
 
@@ -17,6 +17,9 @@ import CustomStore from 'devextreme/data/custom_store';
 import { CorrespType } from '../../../enumerations/corresp-type.model';
 import { CustomSearchService } from '../../custom-search/service/custom-search.service';
 import { CustomSearchView } from '../../custom-search/custom-search-view';
+import { AccountService } from 'app/core/auth/account.service';
+import { Authority } from 'app/config/authority.constants';
+import { Account } from 'app/core/auth/account.model';
 
 interface Filter {
   field: string;
@@ -71,7 +74,13 @@ export class CorrespComponent implements OnInit {
 
   endpoint!: string;
 
+  presentFilter = false;
+
   filterApplied = false;
+
+  isAdmin = false;
+  isBoc = false;
+  currentUserId: number | null = null;
 
   isSaving = false;
 
@@ -122,8 +131,6 @@ export class CorrespComponent implements OnInit {
 
   public resourceUrl = SERVER_API_URL + 'services/correspmanage/api/corresps';
 
-  presentFilter = false;
-
   @ViewChild(DxDataGridComponent, { static: false }) dataGrid!: DxDataGridComponent;
 
   constructor(
@@ -133,7 +140,8 @@ export class CorrespComponent implements OnInit {
     protected dataUtils: DataUtils,
     protected modalService: NgbModal,
     protected http: HttpClient,
-    protected customSearchService: CustomSearchService
+    protected customSearchService: CustomSearchService,
+    protected accountService: AccountService
   ) {}
 
   trackId = (_index: number, item: ICorresp): number => this.correspService.getCorrespIdentifier(item);
@@ -141,7 +149,16 @@ export class CorrespComponent implements OnInit {
   ngOnInit(): void {
     this.selectedItemsAcc = ['Information Generales', 'Tasks'];
     this.customSearchService.getByUserLogin().subscribe(res => (this.loadedFiltres = res));
-    this.load();
+
+    // Vérifier le rôle de l'utilisateur avant de charger les données
+    this.accountService.identity().subscribe((account: Account | null) => {
+      if (account) {
+        this.isAdmin = this.accountService.hasAnyAuthority(Authority.ADMIN);
+        this.isBoc = this.accountService.hasAnyAuthority(Authority.BOC);
+        this.currentUserId = (account as any).id ?? null;
+      }
+      this.load();
+    });
   }
 
   byteSize(base64String: string): string {
@@ -194,63 +211,46 @@ export class CorrespComponent implements OnInit {
   createDataSource(filter?: Filter[]): CustomStore {
     return new CustomStore({
       key: 'id',
-      load: (loadOptions: any) => {
-        const params: any = {
-          ...loadOptions,
-          $paging: this.constructPage(loadOptions.skip, loadOptions.take),
-        };
+      load: async (loadOptions: any) => {
+        const skip = loadOptions.skip ?? 0;
+        const take = loadOptions.take ?? 15;
+        const pageIndex = Math.floor(skip / take) + 1;
+        const pageSize = take;
 
-        // // append active filters
-        // this.activeFilters.forEach(f => {
-        //   if (f.key === 'courrierDate') {
-        //     params.startDate = this.dateRange.startDate;
-        //     params.endDate = this.dateRange.endDate;
-        //   } else {
-        //     params[f.key] = f.value;
-        //   }
-        // });
-
-        this.endpoint = `${this.resourceUrl}-filter?${params.$paging}`;
-
-        console.log('filter from inside');
-        console.log(filter);
-
+        // Construire les filtres depuis activeFilters
+        const filters: any = {};
         if (filter && filter.length > 0) {
           filter.forEach(f => {
             switch (f.field) {
               case 'reference':
-                this.endpoint += `&reference=${f.value}`;
+                filters.reference = f.value;
                 break;
               case 'status':
-                this.endpoint += `&status=${f.value}`;
+                filters.status = f.value;
                 break;
               case 'dispatchType':
-                this.endpoint += `&dispatchType=${f.value}`;
+                filters.dispatchType = f.value;
                 break;
               case 'courrierDate':
-                this.endpoint += `&startDate=${f.value.startDate}&endDate=${f.value.endDate}`;
+                filters.startDate = f.value.startDate;
+                filters.endDate = f.value.endDate;
                 break;
-              default:
-                console.log('No Filter');
             }
           });
         }
 
-        // if (params.reference) endpoint += `&reference=${params.reference}`;
-        // if (params.status) endpoint += `&status=${params.status}`;
-        // if (params.dispatchType) endpoint += `&dispatchType=${params.dispatchType}`;
-        // if (params.startDate && params.endDate) endpoint += `&startDate=${params.startDate}&endDate=${params.endDate}`;
-        //
-        // console.log("endpoint", params);
-        // console.log("endpoint", this.dateRange);
+        // Construire l'URL pour la sauvegarde de filtre (compatibilité saveCustomFilters)
+        this.endpoint = `${this.resourceUrl}-filter?pageIndex=${pageIndex}&pageSize=${pageSize}&userId=${this.currentUserId ?? ''}`;
+        Object.entries(filters).forEach(([k, v]) => {
+          this.endpoint += `&${k}=${v}`;
+        });
 
-        return this.http
-          .get(this.endpoint)
-          .toPromise()
-          .then((data: any) => ({
-            data: data.content,
-            totalCount: data.totalElements,
-          }));
+        const response = await firstValueFrom(this.correspService.getCorrespsFiltered(this.currentUserId!, pageIndex, pageSize, filters));
+
+        return {
+          data: response.content,
+          totalCount: response.totalItems,
+        };
       },
     });
   }
@@ -326,13 +326,45 @@ export class CorrespComponent implements OnInit {
   // }
 
   load(): void {
-    this.datasource = this.createDataSource();
+    if (this.isAdmin || this.isBoc) {
+      // Admin ou BOC : charger toutes les corresps via le datasource paginé avec filtres + dispatched
+      this.datasource = this.createDataSource();
+    } else if (this.currentUserId != null) {
+      // Simple user : charger uniquement les corresps par ACL
+      this.datasource = this.createDataSourceByUserAcl(this.currentUserId);
+    }
 
     // this.loadFromBackendWithRouteInformations().subscribe({
     //   next: (res: EntityArrayResponseType) => {
     //     this.onResponseSuccess(res);
     //   },
     // });
+  }
+
+  /**
+   * Crée un CustomStore qui charge les corresps par ACL utilisateur.
+   * L'API retourne toutes les corresps d'un coup (pas de pagination serveur),
+   * donc on pagine côté client avec skip/take de DevExtreme.
+   */
+  createDataSourceByUserAcl(userId: number): CustomStore {
+    return new CustomStore({
+      key: 'id',
+      load: async (loadOptions: any) => {
+        const skip = loadOptions.skip ?? 0;
+        const take = loadOptions.take ?? 15;
+
+        // pageIndex commence à 1 (convention backend)
+        const pageIndex = Math.floor(skip / take) + 1;
+        const pageSize = take;
+
+        const response = await firstValueFrom(this.correspService.getCorrespsByUserAclPaged(userId, pageIndex, pageSize));
+
+        return {
+          data: response.content,
+          totalCount: response.totalItems,
+        };
+      },
+    });
   }
 
   private constructFilter(filter: any): string {
@@ -450,7 +482,11 @@ export class CorrespComponent implements OnInit {
 
   removeFilter(index: number) {
     this.activeFilters.splice(index, 1);
-    this.datasource = this.createDataSource(this.activeFilters);
+    if (this.isAdmin || this.isBoc) {
+      this.datasource = this.createDataSource(this.activeFilters);
+    } else if (this.currentUserId != null) {
+      this.datasource = this.createDataSourceByUserAcl(this.currentUserId);
+    }
 
     this.isSaving = false;
     this.filterApplied = this.activeFilters.length > 0;
@@ -458,7 +494,11 @@ export class CorrespComponent implements OnInit {
 
   applyFilters() {
     console.log('Filters applied:', this.activeFilters);
-    this.datasource = this.createDataSource(this.activeFilters);
+    if (this.isAdmin || this.isBoc) {
+      this.datasource = this.createDataSource(this.activeFilters);
+    } else if (this.currentUserId != null) {
+      this.datasource = this.createDataSourceByUserAcl(this.currentUserId);
+    }
 
     this.isSaving = false;
     this.filterApplied = this.activeFilters.length > 0;
@@ -543,7 +583,7 @@ export class CorrespComponent implements OnInit {
   // }
 
   onRowDoubleClick(e: any): void {
-    const url = `/cc/corresp/${e.data.id}/view`;
+    const url = `/corresp/${e.data.id}/view`;
     window.open(url, '_blank');
   }
 
@@ -622,9 +662,17 @@ export class CorrespComponent implements OnInit {
               displayValue: '',
             };
           });
-          this.datasource = this.createDataSource(filtersArray);
+          if (this.isAdmin || this.isBoc) {
+            this.datasource = this.createDataSource(filtersArray);
+          } else if (this.currentUserId != null) {
+            this.datasource = this.createDataSourceByUserAcl(this.currentUserId);
+          }
         } else {
-          this.datasource = this.createDataSource();
+          if (this.isAdmin || this.isBoc) {
+            this.datasource = this.createDataSource();
+          } else if (this.currentUserId != null) {
+            this.datasource = this.createDataSourceByUserAcl(this.currentUserId);
+          }
         }
       } else {
         filter.active = false;

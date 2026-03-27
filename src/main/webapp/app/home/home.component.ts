@@ -9,6 +9,7 @@ import { Title } from '@angular/platform-browser';
 
 import { AccountService } from 'app/core/auth/account.service';
 import { Account } from 'app/core/auth/account.model';
+import { Authority } from 'app/config/authority.constants';
 import { ITasks } from '../entities/correspManage/tasks/tasks.model';
 import { CorrespStatus } from 'app/entities/enumerations/corresp-status.model';
 import { HttpResponse } from '@angular/common/http';
@@ -17,6 +18,7 @@ import { CorrespService } from '../entities/correspManage/corresp/service/corres
 import { IDepartement } from '../entities/orgacare/departement/departement.model';
 
 import { TranslateService } from '@ngx-translate/core';
+import { PagedTasksResponse } from '../entities/correspManage/tasks/service/tasks.service';
 
 @Component({
   selector: 'jhi-home',
@@ -43,12 +45,21 @@ export class HomeComponent implements OnInit, OnDestroy {
   isSearching = false;
 
   // pagination
-  pageSize = 4; // <-- nombre d'éléments par page
+  pageSize = 10;
   currentPage = 1;
+  totalItemsFromServer = 0;
+  totalPagesFromServer = 0;
+  hasNextFromServer = false;
+  hasPreviousFromServer = false;
 
   // petits réglages visuels/restants
   loadPanel = { enabled: true };
   sorting = { mode: 'none' };
+
+  // ARRIVÉE : activé uniquement pour BOC ou ADMIN
+  canCreateArrivee = false;
+
+  isRefreshing = false;
 
   constructor(
     private accountService: AccountService,
@@ -67,6 +78,12 @@ export class HomeComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(account => {
         this.account = account;
+
+        // Vérifier si l'utilisateur a le rôle BOC ou ADMIN pour activer le bouton ARRIVÉE
+        this.canCreateArrivee =
+          account != null &&
+          account.authorities != null &&
+          (account.authorities.includes(Authority.BOC) || account.authorities.includes(Authority.ADMIN));
 
         const name = account && account.firstName ? account.firstName : '';
         this.translate.get('home.title', { firstName: name }).subscribe(translatedTitle => {
@@ -155,32 +172,31 @@ export class HomeComponent implements OnInit, OnDestroy {
     const userId = this.account && (this.account as any).id != null ? (this.account as any).id : null;
 
     if (userId != null) {
+      const statusStr = status === CorrespStatus.IN_PROGRESS ? 'IN_PROGRESS' : 'CLOSED';
       this.tasksService
-        .getTasksByUserAcl(userId, status)
+        .getTasksByUserAclPaged(userId, statusStr, this.currentPage, this.pageSize)
         .pipe(takeUntil(this.destroy$))
         .subscribe(
-          (res: HttpResponse<ITasks[]>) => {
-            this.processTasksResponse(res);
+          (res: PagedTasksResponse) => {
+            this.totalItemsFromServer = res.totalItems;
+            this.totalPagesFromServer = res.totalPages;
+            this.hasNextFromServer = res.hasNext;
+            this.hasPreviousFromServer = res.hasPrevious;
+            this.processTasksResponse(new HttpResponse<ITasks[]>({ body: res.content }));
           },
           err => {
-            // en cas d'erreur réseau, log et vider la liste (ou gérer autrement)
-            // eslint-disable-next-line no-console
-            console.warn(`Erreur lors du chargement des tâches par ACL (status=${status})`, err);
+            console.warn(`Erreur chargement tâches ACL paginées (status=${status})`, err);
             this.tasks = [];
           }
         );
     } else {
-      // fallback : si on n'a pas d'account.id, on garde un endpoint alternatif
-      // on passe status en string via l'objet { etat: status }
+      // fallback sans userId
       this.tasksService
         .getAllTasksByEtat({ etat: status })
         .pipe(takeUntil(this.destroy$))
         .subscribe(
-          (res: HttpResponse<ITasks[]>) => {
-            this.processTasksResponse(res);
-          },
+          (res: HttpResponse<ITasks[]>) => this.processTasksResponse(res),
           err => {
-            // eslint-disable-next-line no-console
             console.warn('Erreur fallback getAllTasksByEtat', err);
             this.tasks = [];
           }
@@ -240,11 +256,49 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   refresh(): void {
-    if (this.tasksView === 'inProgress') {
-      this.loadTasks();
+    if (this.isRefreshing) return;
+    this.isRefreshing = true;
+    const status = this.tasksView === 'inProgress' ? CorrespStatus.IN_PROGRESS : CorrespStatus.CLOSED;
+    const userId = this.account && (this.account as any).id != null ? (this.account as any).id : null;
+
+    if (userId != null) {
+      const statusStr = status === CorrespStatus.IN_PROGRESS ? 'IN_PROGRESS' : 'CLOSED';
+      this.tasksService
+        .getTasksByUserAclPaged(userId, statusStr, this.currentPage, this.pageSize)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe(
+          (res: PagedTasksResponse) => {
+            this.totalItemsFromServer = res.totalItems;
+            this.totalPagesFromServer = res.totalPages;
+            this.hasNextFromServer = res.hasNext;
+            this.hasPreviousFromServer = res.hasPrevious;
+            this.processTasksResponse(new HttpResponse<ITasks[]>({ body: res.content }));
+            this.isRefreshing = false;
+            try {
+              this.cdr.detectChanges();
+            } catch {
+              /* noop */
+            }
+          },
+          err => {
+            console.warn('Erreur refresh tâches', err);
+            this.isRefreshing = false;
+          }
+        );
     } else {
-      // en vue terminées, recharger depuis l'API avec status CLOSED
-      this.loadTasksByStatus(CorrespStatus.CLOSED);
+      this.tasksService
+        .getAllTasksByEtat({ etat: status })
+        .pipe(takeUntil(this.destroy$))
+        .subscribe(
+          (res: HttpResponse<ITasks[]>) => {
+            this.processTasksResponse(res);
+            this.isRefreshing = false;
+          },
+          err => {
+            console.warn('Erreur refresh fallback', err);
+            this.isRefreshing = false;
+          }
+        );
     }
   }
 
@@ -271,18 +325,18 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   // --- Pagination helpers
+  // Pagination — utilise les données serveur
   get totalTasks(): number {
-    return this.displayedTasks.length;
+    return this.totalItemsFromServer;
   }
 
   get totalPages(): number {
-    return Math.max(1, Math.ceil(this.totalTasks / this.pageSize));
+    return this.totalPagesFromServer || 1;
   }
 
   get paginatedTasks(): ITasks[] {
-    const all = this.displayedTasks || [];
-    const start = (this.currentPage - 1) * this.pageSize;
-    return all.slice(start, start + this.pageSize);
+    // les données sont déjà paginées côté serveur
+    return this.tasks ?? [];
   }
 
   get pages(): number[] {
@@ -290,9 +344,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   get startItem(): number {
-    if (this.totalTasks === 0) {
-      return 0;
-    }
+    if (this.totalTasks === 0) return 0;
     return (this.currentPage - 1) * this.pageSize + 1;
   }
 
@@ -303,14 +355,17 @@ export class HomeComponent implements OnInit, OnDestroy {
   setPage(page: number): void {
     if (!page || page < 1) page = 1;
     if (page > this.totalPages) page = this.totalPages;
+    if (page === this.currentPage) return;
     this.currentPage = page;
+    this.loadTasksByStatus(this.tasksView === 'inProgress' ? CorrespStatus.IN_PROGRESS : CorrespStatus.CLOSED);
   }
 
   nextPage(): void {
-    this.setPage(this.currentPage + 1);
+    if (this.hasNextFromServer) this.setPage(this.currentPage + 1);
   }
+
   prevPage(): void {
-    this.setPage(this.currentPage - 1);
+    if (this.hasPreviousFromServer) this.setPage(this.currentPage - 1);
   }
 
   // --------- Navigation / interactions ----------
@@ -322,17 +377,17 @@ export class HomeComponent implements OnInit, OnDestroy {
   showInProgress(): void {
     if (this.tasksView !== 'inProgress') {
       this.tasksView = 'inProgress';
+      this.currentPage = 1;
       this.loadTasksByStatus(CorrespStatus.IN_PROGRESS);
     }
   }
 
   showDraft(): void {
-    if (this.tasksView === 'draft') {
-      return;
+    if (this.tasksView !== 'draft') {
+      this.tasksView = 'draft';
+      this.currentPage = 1;
+      this.loadTasksByStatus(CorrespStatus.CLOSED);
     }
-    this.tasksView = 'draft';
-    // afficher les tâches terminées via l'API ACL (status=CLOSED)
-    this.loadTasksByStatus(CorrespStatus.CLOSED);
   }
 
   openTask(task: ITasks): void {
@@ -536,30 +591,16 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   private loadCorrespInfoForTasks(): void {
     const tasks = this.tasks || [];
-    if (!tasks.length) {
-      return;
-    }
-    const calls = tasks
-      .map(t => (t && (t as any).id != null ? (t as any).id : null))
-      .filter((id): id is number => id != null)
-      .map(id => this.correspService.getCorrespsByTask(id));
+    const ids = tasks.map(t => (t as any)?.id).filter((id): id is number => id != null);
 
-    if (!calls.length) {
-      return;
-    }
-    forkJoin(calls)
+    if (!ids.length) return;
+
+    this.correspService
+      .getCorrespSummariesByTasks(ids)
       .pipe(takeUntil(this.destroy$))
-      .subscribe((responses: HttpResponse<any[]>[]) => {
-        responses.forEach((res, idx) => {
-          const task = tasks[idx];
-          const taskId = (task as any)?.id;
-          const items = res?.body || [];
-          const first = items && items.length ? items[0] : null;
-          const subject = first ? (first as any).subject ?? null : null;
-          const reference = first ? (first as any).reference ?? null : null;
-          if (typeof taskId === 'number') {
-            this.correspInfoByTaskId[taskId] = { subject, reference };
-          }
+      .subscribe((summaries: Record<number, { subject?: string | null; reference?: string | null }>) => {
+        Object.entries(summaries).forEach(([taskId, summary]) => {
+          this.correspInfoByTaskId[+taskId] = summary;
         });
       });
   }

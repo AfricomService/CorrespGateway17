@@ -28,6 +28,10 @@ import { CorrespStatus } from 'app/entities/enumerations/corresp-status.model';
 import { CorrespPermissionsDTO, PermissionDTO } from '../../permissions.model';
 import { AccountService } from 'app/core/auth/account.service';
 import { Account } from 'app/core/auth/account.model';
+import { Authority } from 'app/config/authority.constants';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { PjCareService, PjCareScanResult, PjCareDriverInfo, ScanDriver } from 'app/entities/correspManage/pj/service/pjcare.service';
+import { ScanSettingsService } from 'app/entities/correspManage/pj/service/scan-settings.service';
 
 // export interface ITasks {
 //   id: number;
@@ -43,6 +47,14 @@ import { Account } from 'app/core/auth/account.model';
 //   name?: string | null;
 //   fileType?: string | null;
 // }
+
+interface BatchScanItem {
+  id: string;
+  preview: string; // data-URI image OU 'pdf'
+  format: string;
+  result: PjCareScanResult;
+  name: string;
+}
 
 @Component({
   selector: 'jhi-corresp-detail',
@@ -88,7 +100,7 @@ export class CorrespDetailComponent implements OnInit {
 
   correspLoaded!: ICorresp;
   formattedDate = '';
-  selectedTypeDocument!: ITypedocument;
+  selectedTypeDocument: ITypedocument | null = null;
   tachesAssociees: ITasks[] = [];
 
   pjsLoaded: IPj[] = [];
@@ -145,11 +157,35 @@ export class CorrespDetailComponent implements OnInit {
 
   isUploading = false; // Prevents new uploads while one is in progress
 
+  pjcareAvailable = false;
+  scanners: string[] = [];
+  selectedScanner = '';
+  scanFormat: 'jpg' | 'png' | 'pdf' | 'tiff' = 'pdf';
+  scanDpi = 150;
+  scanQuality = 75;
+  scanBitdepth: 'color' | 'gray' | 'bw' = 'color';
+  scanDuplex = false;
+  isScanning = false;
+  scanPreview: string | null = null;
+  scanError: string | null = null;
+  loadingScanners = false;
+  availableDrivers: PjCareDriverInfo[] = [];
+  selectedDriver: ScanDriver | '' = '';
+  loadingDrivers = false;
+  private lastScanResult: PjCareScanResult | null = null;
+  batchScans: BatchScanItem[] = [];
+  scanExcludeBlank = false;
+  scanBlankThreshold = 240;
+  scanCoverageThreshold = 5;
+  private _pendingDriverFromCookie: string = '';
+
   uploadProgress: Map<string, number> = new Map(); // Per-file progress tracking
 
   bodyHtmlContent = '';
 
   selectedPjToDelete!: IPj;
+
+  editingPendingTaskIndex: number = -1;
 
   @ViewChild('filePreview') filePreview!: FilePreviewComponent;
 
@@ -172,6 +208,14 @@ export class CorrespDetailComponent implements OnInit {
   ccTreeSearchQuery = '';
   ccExpandedNodes: Set<number> = new Set();
   selectedCcDepts: IContactCopieCorresp[] = [];
+
+  pendingTasks: Array<{
+    typeTask: string;
+    responsable: string;
+    dateLimite: string;
+    responsableName: string;
+    commentaire: string;
+  }> = [];
 
   dispatchType: DispatchType | '' = '';
   dispatchTypeOptions: Array<{ value: DispatchType; label: string }> = [
@@ -196,8 +240,25 @@ export class CorrespDetailComponent implements OnInit {
   private currentUserId: number | null = null;
   isGlobalAdmin = false;
 
+  /** true si l'utilisateur courant a le rôle ADMIN et/ou BOC */
+  isAdminOrBoc = false;
+
   // Cache pour la résolution des noms de départements
   private deptNameByCode: Map<string, string> = new Map();
+
+  // === Message receiver / copyTo (provenant de N8N / email) ===
+  messageReceiverEmails: string[] = [];
+  messageCopyToEmails: string[] = [];
+
+  /**
+   * Vrai si la correspondance est dans un état qui rend la partie gauche
+   * (infos générales, tâches, PJ, boutons) éditable : DRAFT ou DISPATCH.
+   * La partie droite (corps) reste non-éditable pour DISPATCH.
+   */
+  get isEditableLeft(): boolean {
+    const st = this.correspLoaded?.status;
+    return st === CorrespStatus.DRAFT || st === CorrespStatus.DISPATCH;
+  }
 
   constructor(
     protected activatedRoute: ActivatedRoute,
@@ -208,13 +269,74 @@ export class CorrespDetailComponent implements OnInit {
     private pjService: PjService,
     private modalService: NgbModal,
     protected contactCompanyService: ContactCompanyService,
-    private accountService: AccountService
+    private accountService: AccountService,
+    private sanitizer: DomSanitizer,
+    private pjCareService: PjCareService,
+    private scanSettingsService: ScanSettingsService
   ) {}
+
+  get safeHtmlContent(): SafeHtml {
+    let raw = this.htmlContent || this.correspLoaded?.body || '';
+
+    raw = this.fixWindows1256(raw);
+    raw = raw.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+    raw = raw.replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '');
+    raw = raw.replace(/<!--\[if[\s\S]*?<!\[endif\]-->/gi, '');
+
+    const bodyMatch = raw.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+    if (bodyMatch) {
+      raw = bodyMatch[1];
+    }
+
+    // ✅ Fixer la direction RTL pour les paragraphes/spans contenant de l'arabe
+    raw = this.fixArabicDirection(raw);
+
+    return this.sanitizer.bypassSecurityTrustHtml(raw);
+  }
+
+  private fixArabicDirection(html: string): string {
+    const arabicRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/;
+
+    html = html.replace(/<(p|div|td|li)([^>]*)>([\s\S]*?)<\/\1>/gi, (match, tag, attrs, content) => {
+      const textOnly = content.replace(/<[^>]+>/g, '').trim();
+      if (!textOnly) return match;
+
+      const arabicChars = (textOnly.match(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/g) || []).length;
+      const latinChars = (textOnly.match(/[a-zA-ZÀ-ÿ]/g) || []).length;
+      const isArabicDominant = arabicChars > latinChars && arabicChars > 0;
+
+      if (isArabicDominant) {
+        if (/dir\s*=/i.test(attrs)) return match;
+        // Remplacer ou ajouter le style text-align
+        const attrsClean = attrs.replace(/style\s*=\s*["'][^"']*["']/gi, '');
+        return `<${tag}${attrsClean} dir="rtl" style="text-align: right; unicode-bidi: embed; direction: rtl;">${content}</${tag}>`;
+      }
+      return match;
+    });
+
+    // Wrapper les lignes de texte brut arabes (hors balises)
+    html = html.replace(/(?<=>|^)([^<]+)(?=<|$)/g, match => {
+      const trimmed = match.trim();
+      if (!trimmed) return match;
+
+      const arabicChars = (trimmed.match(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/g) || []).length;
+      const latinChars = (trimmed.match(/[a-zA-ZÀ-ÿ]/g) || []).length;
+
+      if (arabicChars > latinChars && arabicChars > 0) {
+        return `<span dir="rtl" style="display: block; text-align: right; unicode-bidi: embed; direction: rtl;">${match}</span>`;
+      }
+      return match;
+    });
+
+    return html;
+  }
 
   ngOnInit(): void {
     this.accountService.identity().subscribe(acc => {
       const roles = acc?.authorities ?? [];
       this.isGlobalAdmin = Array.isArray(roles) && roles.includes('ROLE_ADMIN');
+      this.isAdminOrBoc = Array.isArray(roles) && (roles.includes(Authority.ADMIN) || roles.includes(Authority.BOC));
+      this.applyDispatchPermissionsForAdminOrBoc();
     });
     const qp = this.activatedRoute.snapshot.queryParamMap.get('taskId');
     this.selectedTaskId = qp != null && qp !== '' ? Number(qp) : null;
@@ -224,16 +346,12 @@ export class CorrespDetailComponent implements OnInit {
     this.correspService.find(Number(id)).subscribe(res => {
       this.correspLoaded = res.body!;
       this.loadPermissionsForCorresp(Number(this.correspLoaded.id));
-      // this.htmlContent = this.correspLoaded.body || '';
-      // this.formattedDate = dayjs(this.correspLoaded.courrierDate).format('dddd DD MMMM YYYY').toUpperCase();
-      // console.log(this.correspLoaded)
       this.objet = this.correspLoaded.subject || '';
       this.expediteur = this.correspLoaded.sender || '';
       this.destinataireLabel = this.correspLoaded.labelDestinataire || '';
       this.contactEmail = this.correspLoaded.contactEmail || '';
       this.contactEmailCCLabel = this.correspLoaded.labelContactCC || '';
 
-      // Peupler les chips CC depuis les données persistées
       if (this.correspLoaded.contactCopies && this.correspLoaded.contactCopies.length > 0) {
         this.selectedCcDepts = this.correspLoaded.contactCopies.map(cc => ({
           id: cc.id ?? null,
@@ -244,7 +362,6 @@ export class CorrespDetailComponent implements OnInit {
           emailDept: cc.emailDept ?? null,
         }));
       } else if (this.contactEmailCCLabel) {
-        // Fallback : parser labelContactCC pour créer des chips
         this.selectedCcDepts = this.contactEmailCCLabel
           .split(',')
           .map(s => s.trim())
@@ -261,8 +378,6 @@ export class CorrespDetailComponent implements OnInit {
       this.priorite = this.correspLoaded.priority || false;
       this.dispatchType = (this.correspLoaded.dispatchType as DispatchType) || '';
 
-      //TODO - GET MESSAGE BY CORRESP ID AND GET PATH AND PASS IT BELOW
-      //
       this.correspService.loadBodyFromFile({ correspId: this.correspLoaded.id }).subscribe({
         next: res => {
           this.htmlContent = res;
@@ -274,9 +389,28 @@ export class CorrespDetailComponent implements OnInit {
       });
 
       this.typeDocumentService.query({ page: 0, size: 1000 }).subscribe(res => {
-        this.typedocuments = res.body!;
-        this.selectedTypeDocument = this.typedocuments.find(td => td.id === Number(this.correspLoaded.typeDocumentId))!;
-        console.log(this.selectedTypeDocument);
+        this.typedocuments = res.body || [];
+        const autre: ITypedocument = {
+          id: 0,
+          nom: 'Autre',
+          defautdest: null,
+          defaultobject: null,
+          defaultencopie: null,
+          labelDD: null,
+          labelDCC: null,
+          usualstatus: null,
+        };
+        this.typedocuments.push(autre);
+
+        // FIX 1 : éviter de matcher l'objet "Autre" (id=0) si typeDocumentId est null/0/falsy
+        const found = this.correspLoaded.typeDocumentId
+          ? this.typedocuments.find(td => td.id === Number(this.correspLoaded.typeDocumentId))
+          : null;
+        this.selectedTypeDocument = found ?? null;
+
+        // FIX 2 : appel sans argument → mode "chargement initial", ne réinitialise PAS this.objet
+        this.onTypeDocumentChange();
+        this.objet = this.correspLoaded.subject || '';
       });
     });
 
@@ -295,11 +429,42 @@ export class CorrespDetailComponent implements OnInit {
       this.pjsLoaded = res.body || [];
     });
 
-    this.correspType = 'Arrivée';
+    this.correspService.getMessagesByCorrespId(Number(id)).subscribe({
+      next: (res: HttpResponse<any[]>) => {
+        const messages = res.body;
+        if (messages && messages.length > 0) {
+          const msg = messages[0];
+          console.log('[CorrespDetail] Message reçu:', JSON.stringify(msg));
+          console.log(
+            '[CorrespDetail] receiver:',
+            JSON.stringify(msg.receiver),
+            '| type:',
+            typeof msg.receiver,
+            '| isArray:',
+            Array.isArray(msg.receiver)
+          );
+          console.log(
+            '[CorrespDetail] copyTo:',
+            JSON.stringify(msg.copyTo),
+            '| type:',
+            typeof msg.copyTo,
+            '| isArray:',
+            Array.isArray(msg.copyTo)
+          );
+          this.messageReceiverEmails = this.extractEmails(msg.receiver);
+          this.messageCopyToEmails = this.extractEmails(msg.copyTo);
+          console.log('[CorrespDetail] Emails extraits — receiver:', this.messageReceiverEmails, '| copyTo:', this.messageCopyToEmails);
+        } else {
+          console.warn('[CorrespDetail] Aucun message trouvé pour correspId:', id);
+        }
+      },
+      error: () => {
+        this.messageReceiverEmails = [];
+        this.messageCopyToEmails = [];
+      },
+    });
 
-    // this.correspService.queryOrga().subscribe(res => {
-    //   this.orgaList = res.body!;
-    // });
+    this.correspType = 'Arrivée';
     this.loadActiveCompanies();
     this.loadCorrespsWithReferenceList();
   }
@@ -325,6 +490,75 @@ export class CorrespDetailComponent implements OnInit {
     this.reponseSur = reference ?? '';
   }
 
+  /**
+   * Extrait les adresses email depuis les données receiver/copyTo du message.
+   * Le backend peut renvoyer :
+   * - une liste d'objets [{email: "a@b.com"}, ...]
+   * - une chaîne JSON stringifiée '[{"email":"a@b.com"}]'
+   * - le format Java toString '[{email=a@b.com}]'
+   * - une chaîne brute "a@b.com, c@d.com"
+   * - null/undefined
+   */
+  extractEmails(data: any): string[] {
+    if (!data) {
+      return [];
+    }
+    // Cas 1 : déjà un tableau (JSON désérialisé par Angular/HttpClient)
+    if (Array.isArray(data)) {
+      return this.extractEmailsFromArray(data);
+    }
+    if (typeof data === 'string') {
+      const trimmed = data.trim();
+      // Cas 2 : chaîne JSON stringifiée — ex: '[{"email":"a@b.com"}]'
+      if (trimmed.startsWith('[')) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          if (Array.isArray(parsed)) {
+            return this.extractEmailsFromArray(parsed);
+          }
+        } catch {
+          // Pas du JSON valide — essayer le format Java toString
+          // Format Java: [{email=a@b.com}, {email=b@c.com}]
+          const javaPattern = /\{[^}]*email\s*=\s*([^,}]+)/g;
+          let match: RegExpExecArray | null;
+          const results: string[] = [];
+          while ((match = javaPattern.exec(trimmed)) !== null) {
+            const email = match[1].trim();
+            if (email) {
+              results.push(email);
+            }
+          }
+          if (results.length > 0) {
+            return results;
+          }
+        }
+      }
+      // Cas 3 : chaîne brute séparée par virgules/points-virgules — ex: "a@b.com, c@d.com"
+      return trimmed
+        .split(/[,;]+/)
+        .map((s: string) => s.trim())
+        .filter((s: string) => s.length > 0);
+    }
+    return [String(data)];
+  }
+
+  /**
+   * Extrait les emails depuis un tableau d'objets ou de chaînes.
+   */
+  private extractEmailsFromArray(arr: any[]): string[] {
+    return arr
+      .map((entry: any) => {
+        if (typeof entry === 'object' && entry !== null && entry.email) {
+          return entry.email;
+        }
+        if (typeof entry === 'string') {
+          return entry.trim();
+        }
+        return String(entry);
+      })
+      .filter((e: string) => !!e);
+  }
+
   formatLongDate(date: dayjs.Dayjs | string | null | undefined): string {
     if (!date) return '';
     return dayjs(date).format('dddd DD MMMM YYYY').toUpperCase();
@@ -334,9 +568,13 @@ export class CorrespDetailComponent implements OnInit {
     if (!date) return '';
     return dayjs(date).format('dddd DD MMMM YYYY - HH:mm').toUpperCase();
   }
-  onTypeDocumentChange(): void {
+  onTypeDocumentChange(newSelected?: ITypedocument | null): void {
+    this.selectedTypeDocument = newSelected ?? this.selectedTypeDocument ?? null;
+
     if (!this.selectedTypeDocument) {
-      // Réinitialiser si aucun type document sélectionné
+      if (newSelected !== undefined) {
+        this.objet = '';
+      }
       this.objet = '';
       this.destinataire = '';
       this.destinataireLabel = '';
@@ -344,64 +582,185 @@ export class CorrespDetailComponent implements OnInit {
       this.contactEmailCC = '';
       this.contactEmailCCLabel = '';
       this.selectedCcDepts = [];
+      this.pendingTasks = [];
       return;
     }
 
-    this.objet = this.selectedTypeDocument.defaultobject || '';
+    // Ne pas écraser this.objet lors du chargement initial (appel sans argument)
+    if (newSelected !== undefined && !this.objet?.trim()) {
+      this.objet = this.selectedTypeDocument.defaultobject || '';
+    }
+
+    // ✅ FIX : en mode chargement initial (newSelected === undefined),
+    // NE PAS réinitialiser les champs déjà chargés depuis la base
+    // (destinataireLabel, contactEmailCCLabel, selectedCcDepts)
+    if (newSelected === undefined) {
+      this.pendingTasks = [];
+      return;
+    }
+
+    // Ces réinitialisations ne s'exécutent QUE lors d'un vrai changement utilisateur
+    this.destinataire = '';
+    this.destinataireLabel = '';
+    this.recipientSelectedDept = null;
+    this.contactEmailCC = '';
+    this.contactEmailCCLabel = '';
+    this.selectedCcDepts = [];
+    this.pendingTasks = [];
+
+    const typeName = (this.selectedTypeDocument?.nom || '').trim().toLowerCase();
+    const is = (s: string) => typeName === s.toLowerCase();
+    const anyOf = (...alts: string[]) => alts.some(a => is(a));
+
+    if (is('autre')) {
+      this.destinataire = '';
+      this.destinataireLabel = '';
+      this.selectedCcDepts = [];
+      this.contactEmailCC = '';
+      this.contactEmailCCLabel = '';
+      return;
+    }
+
+    if (is('note service')) {
+      this.destinataire = '';
+      this.destinataireLabel = 'Direction générale adjoint';
+      this.selectedCcDepts = [{ codeDept: 'Direction IT', nomDept: 'Direction IT', emailDept: '' }];
+      this.updateCcLabelsFromSelection();
+      this.pendingTasks.push({
+        typeTask: 'traitement',
+        responsable: 'Direction générale adjoint',
+        dateLimite: '',
+        responsableName: 'Direction générale adjoint',
+        commentaire: '',
+      });
+      this.pendingTasks.push({
+        typeTask: 'lecture',
+        responsable: 'Direction IT',
+        dateLimite: '',
+        responsableName: 'Direction IT',
+        commentaire: '',
+      });
+      return;
+    }
+
+    if (anyOf("demande d'intervention technique")) {
+      this.destinataire = '';
+      this.destinataireLabel = 'Direction IT';
+      this.selectedCcDepts = [{ codeDept: 'Direction Réalisation', nomDept: 'Direction Réalisation', emailDept: '' }];
+      this.updateCcLabelsFromSelection();
+      this.pendingTasks.push({
+        typeTask: 'traitement',
+        responsable: 'Direction IT',
+        dateLimite: '',
+        responsableName: 'Direction IT',
+        commentaire: '',
+      });
+      this.pendingTasks.push({
+        typeTask: 'lecture',
+        responsable: 'Direction Réalisation',
+        dateLimite: '',
+        responsableName: 'Direction Réalisation',
+        commentaire: '',
+      });
+      return;
+    }
+
+    if (anyOf('example doument', 'example document')) {
+      this.destinataire = '';
+      this.destinataireLabel = 'Administratifs';
+      this.selectedCcDepts = [{ codeDept: 'Direction générale adjoint', nomDept: 'Direction générale adjoint', emailDept: '' }];
+      this.updateCcLabelsFromSelection();
+      this.pendingTasks.push({
+        typeTask: 'traitement',
+        responsable: 'Administratifs',
+        dateLimite: '',
+        responsableName: 'Administratifs',
+        commentaire: '',
+      });
+      this.pendingTasks.push({
+        typeTask: 'lecture',
+        responsable: 'Direction générale adjoint',
+        dateLimite: '',
+        responsableName: 'Direction générale adjoint',
+        commentaire: '',
+      });
+      return;
+    }
 
     if (this.selectedTypeDocument.defautdest) {
       this.correspService.queryOrgaDepsByCode({ code: this.selectedTypeDocument.defautdest }).subscribe({
         next: (res: HttpResponse<IDepartement>) => {
           if (res.body) {
-            console.log('res body');
-            console.log(res.body);
             this.destinataire = res.body.email || '';
             this.destinataireLabel = res.body.nom || '';
+
+            this.pendingTasks = this.pendingTasks.filter(t => t.typeTask !== 'traitement');
+            this.pendingTasks.push({
+              typeTask: 'traitement',
+              responsable: res.body.code ?? '',
+              dateLimite: '',
+              responsableName: res.body.nom ?? '',
+              commentaire: '',
+            });
           } else {
             this.destinataire = '';
-            this.destinataireLabel = '';
+            this.destinataireLabel = this.selectedTypeDocument!.labelDD || '';
+            this.pendingTasks = this.pendingTasks.filter(t => t.typeTask !== 'traitement');
           }
         },
         error: () => {
           this.destinataire = '';
-          this.destinataireLabel = '';
+          this.destinataireLabel = this.selectedTypeDocument!.labelDD || '';
+          this.pendingTasks = this.pendingTasks.filter(t => t.typeTask !== 'traitement');
         },
       });
     } else {
       this.destinataire = '';
-      this.destinataireLabel = '';
+      this.destinataireLabel = this.selectedTypeDocument.labelDD || '';
+      this.pendingTasks = this.pendingTasks.filter(t => t.typeTask !== 'traitement');
     }
 
-    // 3️⃣ Contact en copie (CC)
     if (this.selectedTypeDocument.defaultencopie) {
       this.correspService.queryOrgaDepsByCode({ code: this.selectedTypeDocument.defaultencopie }).subscribe({
         next: (res: HttpResponse<IDepartement>) => {
           if (res.body) {
-            this.contactEmailCC = res.body.email || '';
-            this.contactEmailCCLabel = res.body.nom || '';
             this.selectedCcDepts = [
               {
-                codeDept: this.selectedTypeDocument.defaultencopie ?? null,
-                nomDept: res.body.nom || '',
-                emailDept: res.body.email || '',
+                idDept: res.body.id ?? null,
+                codeDept: res.body.code ?? '',
+                nomDept: res.body.nom ?? '',
+                emailDept: res.body.email ?? '',
               },
             ];
+            this.updateCcLabelsFromSelection();
+
+            this.pendingTasks = this.pendingTasks.filter(t => t.typeTask !== 'lecture');
+            this.pendingTasks.push({
+              typeTask: 'lecture',
+              responsable: res.body.code ?? '',
+              dateLimite: '',
+              responsableName: res.body.nom ?? '',
+              commentaire: '',
+            });
           } else {
-            this.contactEmailCC = '';
-            this.contactEmailCCLabel = '';
             this.selectedCcDepts = [];
+            this.contactEmailCC = '';
+            this.contactEmailCCLabel = this.selectedTypeDocument!.labelDCC || '';
+            this.pendingTasks = this.pendingTasks.filter(t => t.typeTask !== 'lecture');
           }
         },
         error: () => {
-          this.contactEmailCC = '';
-          this.contactEmailCCLabel = '';
           this.selectedCcDepts = [];
+          this.contactEmailCC = '';
+          this.contactEmailCCLabel = this.selectedTypeDocument!.labelDCC || '';
+          this.pendingTasks = this.pendingTasks.filter(t => t.typeTask !== 'lecture');
         },
       });
     } else {
-      this.contactEmailCC = '';
-      this.contactEmailCCLabel = '';
       this.selectedCcDepts = [];
+      this.contactEmailCC = '';
+      this.contactEmailCCLabel = this.selectedTypeDocument.labelDCC || '';
+      this.pendingTasks = this.pendingTasks.filter(t => t.typeTask !== 'lecture');
     }
   }
   private sanitize(obj: any): any {
@@ -477,6 +836,15 @@ export class CorrespDetailComponent implements OnInit {
           this.canAdminCorresp = true;
         }
 
+        // DISPATCH + ADMIN/BOC => accorder toutes les permissions
+        if (this.isAdminOrBoc && this.correspLoaded?.status === CorrespStatus.DISPATCH) {
+          this.canReadCorresp = true;
+          this.canWriteCorresp = true;
+          this.canDeleteCorresp = true;
+          this.canAdminCorresp = true;
+          console.log('[PERMISSIONS] DISPATCH + ADMIN/BOC => all permissions granted');
+        }
+
         // normaliser keys tasksPermissions (backend peut renvoyer des clefs string)
         this.taskPermissions = {};
         const rawTasks = (res && (res as any).tasksPermissions) || {};
@@ -527,12 +895,30 @@ export class CorrespDetailComponent implements OnInit {
         this.canDeleteCorresp = false;
         this.canAdminCorresp = false;
 
+        // DISPATCH + ADMIN/BOC => accorder les permissions même en cas d'erreur
+        this.applyDispatchPermissionsForAdminOrBoc();
+
         // Fallback : tenter de résoudre les permissions via les tâches ACL de l'utilisateur
         this.loadCurrentUserAndAclTasks(() => {
           this.recomputeCorrespPermsFromUserAclTasks();
         });
       },
     });
+  }
+
+  /**
+   * Accorde toutes les permissions si l'utilisateur est ADMIN ou BOC
+   * et que la correspondance est en statut DISPATCH.
+   * Appelée quand l'identité ou la corresp est chargée (gestion du timing asynchrone).
+   */
+  private applyDispatchPermissionsForAdminOrBoc(): void {
+    if (this.isAdminOrBoc && this.correspLoaded?.status === CorrespStatus.DISPATCH) {
+      this.canReadCorresp = true;
+      this.canWriteCorresp = true;
+      this.canDeleteCorresp = true;
+      this.canAdminCorresp = true;
+      console.log('[PERMISSIONS] applyDispatchPermissionsForAdminOrBoc => all permissions granted');
+    }
   }
 
   private loadCurrentUserAndAclTasks(callback?: () => void): void {
@@ -612,6 +998,16 @@ export class CorrespDetailComponent implements OnInit {
   private recomputeCorrespPermsFromUserAclTasks(): void {
     // Si admin global => déjà tout autorisé
     if (this.isGlobalAdmin) {
+      return;
+    }
+
+    // DISPATCH + ADMIN/BOC => accorder toutes les permissions
+    if (this.isAdminOrBoc && this.correspLoaded?.status === CorrespStatus.DISPATCH) {
+      this.canReadCorresp = true;
+      this.canWriteCorresp = true;
+      this.canDeleteCorresp = true;
+      this.canAdminCorresp = true;
+      console.log('[PERMISSIONS] recompute: DISPATCH + ADMIN/BOC => all permissions granted');
       return;
     }
 
@@ -924,7 +1320,7 @@ export class CorrespDetailComponent implements OnInit {
       labelContactCC: this.contactEmailCCLabel || '',
     };
 
-    const typeDocumentDTO = this.selectedTypeDocument;
+    const typeDocumentDTO = this.selectedTypeDocument!;
 
     this.isSaving = true;
 
@@ -932,10 +1328,54 @@ export class CorrespDetailComponent implements OnInit {
       next: res => {
         this.isSaving = false;
         this.correspLoaded = res.body!;
+
         this.correspService.loadBodyFromFile({ correspId: this.correspLoaded.id }).subscribe(body => {
           this.htmlContent = body;
         });
-        this.showNotification('Brouillon enregistré avec succès !', 'success');
+
+        // Envoyer les tâches pendingTasks en lot séquentiellement
+        if (this.pendingTasks.length > 0) {
+          const tasksToSend = [...this.pendingTasks];
+          this.pendingTasks = []; // vider immédiatement pour éviter double envoi
+
+          const sendNext = (index: number): void => {
+            if (index >= tasksToSend.length) {
+              // Toutes les tâches envoyées → rafraîchir la liste affichée et vider l'aperçu
+              this.taskService.getAllTasksByCorrespId({ correspId: this.correspLoaded.id }).subscribe(r => {
+                const list = r.body || [];
+                this.taskService.enrichTasksWithCanModify(list).subscribe(enriched => {
+                  this.tachesAssociees = enriched || [];
+                  this.pendingTasks = []; // vider ici après rafraîchissement confirmé
+                  this.resolveResponsableNames();
+                });
+              });
+              this.showNotification('Brouillon et tâches enregistrés avec succès !', 'success');
+              return;
+            }
+
+            const t = tasksToSend[index];
+            const taskModel: any = {
+              object: `${t.responsableName} effectuera la tâche de ${t.typeTask.toUpperCase()}`,
+              taskType: t.typeTask,
+              commentaire: t.commentaire || null,
+              responsible: t.responsable,
+              dueDate: t.dateLimite ? dayjs(t.dateLimite).toISOString() : null,
+              responsables: t.responsable ? [{ codeDept: t.responsable }] : [],
+            };
+
+            this.correspService.addTaskToCorresp(taskModel, this.correspLoaded.id).subscribe({
+              next: () => sendNext(index + 1),
+              error: err => {
+                console.warn(`Erreur envoi tâche auto (${t.typeTask})`, err);
+                sendNext(index + 1); // continuer même en cas d'erreur
+              },
+            });
+          };
+
+          sendNext(0);
+        } else {
+          this.showNotification('Brouillon enregistré avec succès !', 'success');
+        }
       },
       error: err => {
         this.isSaving = false;
@@ -1039,6 +1479,8 @@ export class CorrespDetailComponent implements OnInit {
         return 'deeppink'; // Pink
       case CorrespStatus.IN_PROGRESS:
         return '#0d6efd'; // Blue
+      case CorrespStatus.DISPATCH:
+        return '#6c757d'; // Grey (dispatch)
       case CorrespStatus.CLOSED:
         return '#198754'; // Green
       case CorrespStatus.CANCELLED:
@@ -1054,12 +1496,14 @@ export class CorrespDetailComponent implements OnInit {
         return 'brouillon'; // Pink
       case CorrespStatus.IN_PROGRESS:
         return 'En cours'; // Blue
+      case CorrespStatus.DISPATCH:
+        return 'Dispatch';
       case CorrespStatus.CLOSED:
         return 'achevée'; // Green
       case CorrespStatus.CANCELLED:
         return 'annulée'; // Red
       default:
-        return '#6c757d'; // Grey default
+        return status ? String(status) : '';
     }
   }
 
@@ -1125,44 +1569,132 @@ export class CorrespDetailComponent implements OnInit {
     return parts.join(', ');
   }
 
+  removePendingTask(index: number): void {
+    const task = this.pendingTasks[index];
+
+    // Supprimer la tâche
+    this.pendingTasks.splice(index, 1);
+
+    // Synchroniser les champs selon le type de tâche
+    if (task.typeTask === 'traitement') {
+      // Vider le destinataire si aucune autre tâche traitement ne reste
+      const hasOtherTraitement = this.pendingTasks.some(t => t.typeTask === 'traitement');
+      if (!hasOtherTraitement) {
+        this.destinataire = '';
+        this.destinataireLabel = '';
+        this.recipientSelectedDept = null;
+      }
+    } else if (task.typeTask === 'lecture') {
+      // Retirer le département CC correspondant
+      this.selectedCcDepts = this.selectedCcDepts.filter(cc => cc.codeDept !== task.responsable && cc.nomDept !== task.responsableName);
+      this.updateCcLabelsFromSelection();
+    }
+  }
+
+  openEditPendingTaskModal(index: number, modal: any): void {
+    const task = this.pendingTasks[index];
+
+    this.editingPendingTaskIndex = index;
+
+    // Pré-remplir les champs du modal avec les données de la tâche
+    this.selectedType = task.typeTask;
+    this.dateLimite = task.dateLimite || '';
+    this.commentaire = task.commentaire || '';
+    this.selectedDepartement = task.responsable;
+    this.selectedDepartementName = task.responsableName;
+
+    // Restaurer la sélection dans l'arbre
+    this.selectedResponsables = task.responsable ? [{ codeDept: task.responsable, displayName: task.responsableName }] : [];
+
+    // Charger l'arbre si pas encore chargé
+    this.prepareAndLoadOrgaThenTree();
+
+    // Ouvrir le modal en mode édition
+    this.modalService.open(modal, { size: 'xl' }).result.then(
+      () => {
+        // Confirmer : mettre à jour la pendingTask
+        const updated = {
+          typeTask: this.selectedType,
+          responsable: this.selectedResponsables[0]?.codeDept || this.selectedDepartement || '',
+          dateLimite: this.dateLimite,
+          responsableName: this.selectedResponsables[0]?.displayName || this.selectedDepartementName || '',
+          commentaire: this.commentaire,
+        };
+        this.pendingTasks[index] = updated;
+        this.resetForm();
+      },
+      () => {
+        // Annulé — reset sans modifier
+        this.resetForm();
+      }
+    );
+  }
+
   // --- replace existing saveTask() with this ---
   saveTask(): void {
-    if (!this.canWriteCorresp) {
-      this.showNotification('Vous n’avez pas le droit d’ajouter une tâche sur ce courrier', 'error');
-      return;
-    }
-    if (this.btnSaveTaskDisabled) {
-      return;
-    }
-    // reset client-side errors
-    this.validationErrors = {};
+    if (this.btnSaveTaskDisabled) return;
 
-    if (!this.validateForm()) {
+    this.validationErrors = {};
+    if (!this.validateForm()) return;
+
+    // ✅ MODE ÉDITION PENDING : mise à jour locale uniquement, pas de backend
+    if (this.editingPendingTaskIndex >= 0) {
+      const updated = {
+        typeTask: this.selectedType,
+        responsable: this.selectedResponsables[0]?.codeDept ?? this.selectedDepartement ?? '',
+        dateLimite: this.dateLimite,
+        responsableName: this.selectedResponsables[0]?.displayName ?? this.selectedDepartementName ?? '',
+        commentaire: this.commentaire,
+      };
+
+      const oldTask = this.pendingTasks[this.editingPendingTaskIndex];
+
+      if (updated.typeTask === 'traitement' && updated.responsable !== oldTask.responsable) {
+        this.destinataireLabel = updated.responsableName;
+        this.destinataire = '';
+      }
+
+      if (updated.typeTask === 'lecture' && updated.responsable !== oldTask.responsable) {
+        const ccIdx = this.selectedCcDepts.findIndex(cc => cc.codeDept === oldTask.responsable || cc.nomDept === oldTask.responsableName);
+        if (ccIdx >= 0) {
+          this.selectedCcDepts[ccIdx] = {
+            ...this.selectedCcDepts[ccIdx],
+            codeDept: updated.responsable,
+            nomDept: updated.responsableName,
+          };
+          this.updateCcLabelsFromSelection();
+        }
+      }
+
+      this.pendingTasks[this.editingPendingTaskIndex] = updated;
+      this.editingPendingTaskIndex = -1;
+      this.resetForm();
+      this.modalService.dismissAll();
+      return;
+    }
+
+    // ✅ MODE NOUVELLE TÂCHE : sauvegarde backend normale
+    if (!this.canWriteCorresp) {
+      this.showNotification("Vous n'avez pas le droit d'ajouter une tâche sur ce courrier", 'error');
       return;
     }
 
     this.btnSaveTaskDisabled = true;
 
-    // build 'object' (server requires non-null)
     const responsibleText = this.getResponsablesSummary() || this.selectedDepartement || '';
     const taskTypeText = this.selectedType ? this.selectedType.toUpperCase() : 'N/A';
 
     let objectBuilder = `${responsibleText} effectuera la tâche de ${taskTypeText}`;
     if (this.dateLimite) {
-      const formatted = dayjs(this.dateLimite).format('DD/MM/YYYY');
-      objectBuilder += ` en ne dépassant pas la date limite du ${formatted}`;
+      objectBuilder += ` en ne dépassant pas la date limite du ${dayjs(this.dateLimite).format('DD/MM/YYYY')}`;
     }
 
-    // prepare payload
     const taskModel: any = {
       object: objectBuilder,
       taskType: this.selectedType || null,
       commentaire: this.commentaire || null,
-      // responsible for display (optional) — keep readable label
       responsible: responsibleText || this.selectedDepartement || null,
-      // dueDate as ISO string (server expects String or date)
       dueDate: this.dateLimite ? this.toIso(dayjs(this.dateLimite)) : null,
-      // responsables: only include fields that actually exist (no empty keys)
       responsables: (this.selectedResponsables || [])
         .map(r => {
           const out: any = {};
@@ -1173,16 +1705,11 @@ export class CorrespDetailComponent implements OnInit {
         .filter(x => Object.keys(x).length > 0),
     };
 
-    // debug
-    console.log('POST /api/corresps/{id}/tasks payload =', taskModel);
-
-    // call service: your CorrespService.addTaskToCorresp expects ITasks and converts dates
     this.correspService.addTaskToCorresp(taskModel, this.correspLoaded.id).subscribe({
-      next: resp => {
+      next: () => {
         this.btnSaveTaskDisabled = false;
         this.resetForm();
         this.modalService.dismissAll();
-        // refresh local tasks list (without full reload) + enrich with canModify
         this.taskService.getAllTasksByCorrespId({ correspId: this.correspLoaded.id }).subscribe(r => {
           const list = r.body || [];
           this.taskService.enrichTasksWithCanModify(list).subscribe(enriched => {
@@ -1194,28 +1721,14 @@ export class CorrespDetailComponent implements OnInit {
       error: err => {
         this.btnSaveTaskDisabled = false;
         console.error('Erreur ajout tâche', err);
-
-        // Try to parse JHipster / Problem JSON with fieldErrors
-        if (err && err.error) {
-          const payload = err.error;
-          // if fieldErrors present, map to validationErrors
-          if (Array.isArray(payload.fieldErrors) && payload.fieldErrors.length) {
-            payload.fieldErrors.forEach((fe: any) => {
-              // fe.field may be 'object' etc.
-              this.validationErrors[fe.field] = fe.message || 'Valeur invalide';
-            });
-            this.showNotification('Erreur de validation : corrigez les champs indiqués', 'error');
-            return;
-          }
-          // generic message
-          if (payload.message) {
-            this.showNotification(payload.message, 'error');
-            return;
-          }
+        if (err?.error?.fieldErrors?.length) {
+          err.error.fieldErrors.forEach((fe: any) => {
+            this.validationErrors[fe.field] = fe.message || 'Valeur invalide';
+          });
+          this.showNotification('Erreur de validation : corrigez les champs indiqués', 'error');
+        } else {
+          this.showNotification("Erreur lors de l'ajout de la tâche (serveur)", 'error');
         }
-
-        // fallback
-        this.showNotification("Erreur lors de l'ajout de la tâche (serveur)", 'error');
       },
     });
   }
@@ -1256,6 +1769,7 @@ export class CorrespDetailComponent implements OnInit {
       this.showNotification('Vous êtes en lecture seule pour ce courrier', 'error');
       return;
     }
+    this.editingPendingTaskIndex = -1;
     // this.selectedOrga = null;
     this.selectedDepartement = '';
     this.resetForm();
@@ -1406,7 +1920,12 @@ export class CorrespDetailComponent implements OnInit {
     if (idx >= 0) {
       this.selectedResponsables.splice(idx, 1);
     } else {
-      this.selectedResponsables.push({ codeDept: code, displayName: node.nom ?? code });
+      // En mode édition pending : remplacer la sélection existante
+      if (this.editingPendingTaskIndex >= 0) {
+        this.selectedResponsables = [{ codeDept: code, displayName: node.nom ?? code }];
+      } else {
+        this.selectedResponsables.push({ codeDept: code, displayName: node.nom ?? code });
+      }
     }
   }
 
@@ -1423,7 +1942,12 @@ export class CorrespDetailComponent implements OnInit {
     if (idx >= 0) {
       this.selectedResponsables.splice(idx, 1);
     } else {
-      this.selectedResponsables.push({ codeDept: code || null, matriculePers: matricule, displayName: person.nomPrenom ?? matricule });
+      // En mode édition pending : remplacer la sélection existante
+      if (this.editingPendingTaskIndex >= 0) {
+        this.selectedResponsables = [{ codeDept: code || null, matriculePers: matricule, displayName: person.nomPrenom ?? matricule }];
+      } else {
+        this.selectedResponsables.push({ codeDept: code || null, matriculePers: matricule, displayName: person.nomPrenom ?? matricule });
+      }
     }
   }
 
@@ -1639,7 +2163,7 @@ export class CorrespDetailComponent implements OnInit {
   }
 
   cloturerCorresp(correspId: number): void {
-    if (!this.canWriteCorresp) {
+    if (!(this.canWriteCorresp || this.canAdminCorresp || this.isAdminOrBoc)) {
       this.showNotification('Vous n’avez pas le droit de clôturer ce courrier', 'error');
       return;
     }
@@ -1656,20 +2180,108 @@ export class CorrespDetailComponent implements OnInit {
   generateReference(): void {
     if (!this.correspLoaded || !this.correspLoaded.id) return;
 
-    // contrôle permission (écriture ou admin)
     if (!(this.canWriteCorresp || this.canAdminCorresp)) {
       this.showNotification("Vous n'avez pas le droit de générer une référence", 'error');
       return;
     }
 
-    this.correspService.generateReferenceForCorresp(this.correspLoaded.id).subscribe({
-      next: (res: ICorresp) => {
-        this.correspLoaded.reference = res.reference;
-        this.showNotification(`Référence générée${res.reference ? ' : ' + res.reference : ''}`, 'success');
+    if (!this.selectedTypeDocument) {
+      this.showNotification('Veuillez sélectionner un type de document !', 'error');
+      return;
+    }
+
+    const correspDTO: any = {
+      id: this.correspLoaded.id,
+      idinstance: this.correspLoaded.idinstance,
+      subject: this.objet || 'Sans objet',
+      courrierDate: this.date ? dayjs(this.date).toISOString() : dayjs().toISOString(),
+      dateCreated: this.correspLoaded.dateCreated ? dayjs(this.correspLoaded.dateCreated).toISOString() : dayjs().toISOString(),
+      status: 'DRAFT',
+      body: this.htmlContent || '',
+      sender: this.expediteur || 'Inconnu',
+      contact: this.contactEmail || '',
+      contactEmail: this.contactEmail || '',
+      contactEmailCc: this.contactEmailCCLabel || '',
+      responseTo: this.reponseSur || null,
+      senderReference: this.referenceEmetteur || null,
+      priority: this.priorite || false,
+      corresptype: this.correspLoaded.corresptype || 'STANDARD',
+      dispatchType: this.correspLoaded.dispatchType || 'NORMAL',
+      labelDestinataire: this.destinataireLabel || '',
+      labelContactCC: this.contactEmailCCLabel || '',
+    };
+
+    this.isSaving = true;
+
+    // 1) Sauvegarder d'abord le brouillon
+    this.correspService.updateCorrespDraft(this.correspLoaded.id, correspDTO, this.selectedTypeDocument).subscribe({
+      next: res => {
+        this.correspLoaded = res.body!;
+
+        // 2) Envoyer les pendingTasks séquentiellement avant de générer la référence
+        if (this.pendingTasks.length > 0) {
+          const tasksToSend = [...this.pendingTasks];
+          this.pendingTasks = []; // vider immédiatement pour éviter double envoi
+
+          const sendNext = (index: number): void => {
+            if (index >= tasksToSend.length) {
+              // Toutes les tâches envoyées → générer la référence
+              this.doGenerateReference();
+              return;
+            }
+
+            const t = tasksToSend[index];
+            const taskModel: any = {
+              object: `${t.responsableName} effectuera la tâche de ${t.typeTask.toUpperCase()}`,
+              taskType: t.typeTask,
+              commentaire: t.commentaire || null,
+              responsible: t.responsable,
+              dueDate: t.dateLimite ? dayjs(t.dateLimite).toISOString() : null,
+              responsables: t.responsable ? [{ codeDept: t.responsable }] : [],
+            };
+
+            this.correspService.addTaskToCorresp(taskModel, this.correspLoaded.id).subscribe({
+              next: () => sendNext(index + 1),
+              error: err => {
+                console.warn(`Erreur envoi tâche auto (${t.typeTask})`, err);
+                sendNext(index + 1); // continuer même en cas d'erreur
+              },
+            });
+          };
+
+          sendNext(0);
+        } else {
+          // Pas de pendingTasks → générer directement la référence
+          this.doGenerateReference();
+        }
       },
       error: err => {
+        this.isSaving = false;
+        console.error('Erreur sauvegarde avant génération référence', err);
+        this.showNotification("Erreur lors de l'enregistrement du brouillon", 'error');
+      },
+    });
+  }
+
+  private doGenerateReference(): void {
+    this.correspService.generateReferenceForCorresp(this.correspLoaded.id).subscribe({
+      next: (refRes: ICorresp) => {
+        this.isSaving = false;
+        this.correspLoaded.reference = refRes.reference;
+        // Rafraîchir la liste des tâches affichées
+        this.taskService.getAllTasksByCorrespId({ correspId: this.correspLoaded.id }).subscribe(r => {
+          const list = r.body || [];
+          this.taskService.enrichTasksWithCanModify(list).subscribe(enriched => {
+            this.tachesAssociees = enriched || [];
+            this.resolveResponsableNames();
+          });
+        });
+        this.showNotification(`Brouillon enregistré et référence générée${refRes.reference ? ' : ' + refRes.reference : ''}`, 'success');
+      },
+      error: err => {
+        this.isSaving = false;
         console.error('Erreur génération référence :', err);
-        this.showNotification('Impossible de générer la référence', 'error');
+        this.showNotification('Brouillon enregistré mais impossible de générer la référence', 'error');
       },
     });
   }
@@ -1987,13 +2599,32 @@ export class CorrespDetailComponent implements OnInit {
     this.recipientSelectedDept = node;
     this.destinataireLabel = node.nom || '';
     this.destinataire = node.email || '';
+
+    // Mettre à jour ou créer la pendingTask traitement
+    const existingIdx = this.pendingTasks.findIndex(t => t.typeTask === 'traitement');
+    const newTask = {
+      typeTask: 'traitement',
+      responsable: node.code ?? '',
+      dateLimite: existingIdx >= 0 ? this.pendingTasks[existingIdx].dateLimite : '',
+      responsableName: node.nom ?? '',
+      commentaire: existingIdx >= 0 ? this.pendingTasks[existingIdx].commentaire : '',
+    };
+    if (existingIdx >= 0) {
+      this.pendingTasks[existingIdx] = newTask;
+    } else {
+      this.pendingTasks.push(newTask);
+    }
+
     modalRef.close();
   }
 
   clearRecipientDept(): void {
     this.recipientSelectedDept = null;
-    this.destinataireLabel = '';
     this.destinataire = '';
+    this.destinataireLabel = '';
+
+    // Supprimer la pendingTask de type traitement associée
+    this.pendingTasks = this.pendingTasks.filter(t => t.typeTask !== 'traitement');
   }
 
   // --------------------------------------------------------------------------
@@ -2024,6 +2655,224 @@ export class CorrespDetailComponent implements OnInit {
         },
       });
     }
+  }
+
+  openScanModal(content: any): void {
+    this.scanPreview = null;
+    this.scanError = null;
+    this.lastScanResult = null;
+    this.batchScans = [];
+    this.loadScanSettings();
+    this.checkPjCare();
+    this.modalService.open(content, { size: 'lg' });
+  }
+
+  private loadScanSettings(): void {
+    const s = this.scanSettingsService.load();
+    this.scanFormat = s.scanFormat;
+    this.scanDpi = s.scanDpi;
+    this.scanQuality = s.scanQuality;
+    this.scanBitdepth = s.scanBitdepth;
+    this.scanDuplex = s.scanDuplex;
+    this.scanExcludeBlank = s.scanExcludeBlank;
+    this.scanBlankThreshold = s.scanBlankThreshold;
+    this.scanCoverageThreshold = s.scanCoverageThreshold;
+    this._pendingDriverFromCookie = s.selectedDriver;
+  }
+
+  saveScanSettings(): void {
+    this.scanSettingsService.save({
+      scanFormat: this.scanFormat,
+      scanDpi: this.scanDpi,
+      scanQuality: this.scanQuality,
+      scanBitdepth: this.scanBitdepth,
+      scanDuplex: this.scanDuplex,
+      scanExcludeBlank: this.scanExcludeBlank,
+      scanBlankThreshold: this.scanBlankThreshold,
+      scanCoverageThreshold: this.scanCoverageThreshold,
+      selectedDriver: this.selectedDriver as string,
+    });
+  }
+
+  resetScanSettings(): void {
+    this.scanSettingsService.reset();
+    this.scanFormat = 'pdf';
+    this.scanDpi = 150;
+    this.scanQuality = 75;
+    this.scanBitdepth = 'color';
+    this.scanDuplex = false;
+    this.scanExcludeBlank = false;
+    this.scanBlankThreshold = 70;
+    this.scanCoverageThreshold = 25;
+  }
+
+  checkPjCare(): void {
+    this.loadingScanners = true;
+    this.loadingDrivers = true;
+    this.pjCareService.getHealth().subscribe({
+      next: res => {
+        if (res && res.status === 200) {
+          this.pjcareAvailable = true;
+          this.pjCareService.getDrivers().subscribe({
+            next: driverRes => {
+              this.availableDrivers = driverRes.drivers || [];
+              const defaultKey = res.defaultDriver || (this.availableDrivers[0]?.key ?? '');
+
+              // Restaurer le driver depuis le cookie s'il est encore disponible
+              const cookieDriver = this._pendingDriverFromCookie;
+              const cookieDriverExists = cookieDriver ? this.availableDrivers.some(d => d.key === cookieDriver) : false;
+
+              this.selectedDriver = (cookieDriverExists ? cookieDriver : defaultKey) as ScanDriver;
+              this._pendingDriverFromCookie = ''; // vider après usage
+
+              this.loadingDrivers = false;
+              this.loadScannersForDriver(this.selectedDriver as ScanDriver);
+            },
+            error: () => {
+              this.availableDrivers = [];
+              this.loadingDrivers = false;
+              this.loadScannersForDriver(undefined);
+            },
+          });
+        } else {
+          this.pjcareAvailable = false;
+          this.loadingScanners = false;
+          this.loadingDrivers = false;
+        }
+      },
+      error: () => {
+        this.pjcareAvailable = false;
+        this.loadingScanners = false;
+        this.loadingDrivers = false;
+      },
+    });
+  }
+
+  loadScannersForDriver(driver?: ScanDriver): void {
+    this.loadingScanners = true;
+    this.scanners = [];
+    this.selectedScanner = '';
+    this.pjCareService.getScanners(driver).subscribe({
+      next: scanRes => {
+        this.scanners = scanRes.scanners || [];
+        if (this.scanners.length > 0) {
+          this.selectedScanner = this.scanners[0];
+        }
+        this.loadingScanners = false;
+      },
+      error: () => {
+        this.scanners = [];
+        this.loadingScanners = false;
+      },
+    });
+  }
+
+  onDriverChange(): void {
+    this.scanPreview = null;
+    this.scanError = null;
+    this.lastScanResult = null;
+    this.loadScannersForDriver((this.selectedDriver as ScanDriver) || undefined);
+  }
+
+  launchScan(): void {
+    this.isScanning = true;
+    this.scanError = null;
+    this.saveScanSettings();
+    this.pjCareService
+      .scan({
+        source: this.selectedScanner,
+        driver: (this.selectedDriver as ScanDriver) || undefined,
+        format: this.scanFormat as any,
+        dpi: this.scanDpi,
+        jpegquality: this.scanQuality,
+        bitdepth: this.scanBitdepth,
+        duplex: this.scanDuplex,
+        name: this.objet || 'scan',
+        excludeBlank: this.scanExcludeBlank,
+        blankThreshold: this.scanBlankThreshold,
+        coverageThreshold: this.scanCoverageThreshold,
+      })
+      .subscribe({
+        next: result => {
+          this.isScanning = false;
+          if (result.status === 200) {
+            this.lastScanResult = result;
+            const preview = this.scanFormat !== 'pdf' ? `data:image/${this.scanFormat};base64,${result.data}` : 'pdf';
+            this.scanPreview = preview;
+
+            // Ajouter dans la liste batch
+            const item: BatchScanItem = {
+              id: this.generateRandomId(10),
+              preview,
+              format: this.scanFormat,
+              result,
+              name: result.file,
+            };
+            this.batchScans.push(item);
+          } else {
+            this.scanError = result.error || 'Erreur inconnue';
+          }
+        },
+        error: () => {
+          this.isScanning = false;
+          this.scanError = 'PjCare inaccessible. Vérifiez que le service tourne.';
+        },
+      });
+  }
+
+  removeBatchScan(id: string): void {
+    this.batchScans = this.batchScans.filter(s => s.id !== id);
+    if (this.batchScans.length === 0) {
+      this.scanPreview = null;
+      this.lastScanResult = null;
+    }
+  }
+
+  attachScanResult(modal: any): void {
+    const items =
+      this.batchScans.length > 0
+        ? this.batchScans
+        : this.lastScanResult
+        ? [
+            {
+              id: 'single',
+              preview: this.scanPreview ?? '',
+              format: this.scanFormat,
+              result: this.lastScanResult,
+              name: this.lastScanResult.file,
+            } as BatchScanItem,
+          ]
+        : [];
+
+    if (items.length === 0) return;
+
+    for (const item of items) {
+      const base64 = item.result.data;
+      const filename = item.result.file;
+      const mimeType = item.format === 'pdf' ? 'application/pdf' : `image/${item.format}`;
+
+      const byteString = atob(base64);
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+      }
+      const blob = new Blob([ab], { type: mimeType });
+      const file = new File([blob], filename, { type: mimeType });
+
+      const uniquePjName = this.generateRandomId(10);
+      const pjModel: IPj = {} as IPj;
+      const parts = filename.split('.');
+      pjModel.name = parts.slice(0, -1).join('.');
+      pjModel.fileType = parts[parts.length - 1];
+      pjModel.uniqueName = uniquePjName;
+
+      this.accordionStates['pieces'] = true;
+      this.uploadProgress.set(uniquePjName, 0);
+      this.uploadFileWithProgress(file, uniquePjName, pjModel);
+    }
+
+    modal.close();
   }
 
   private loadCcTree(orgaCode: string): void {
@@ -2089,10 +2938,31 @@ export class CorrespDetailComponent implements OnInit {
       this.selectedCcDepts.splice(idx, 1);
     }
     this.updateCcLabelsFromSelection();
+
+    // Supprimer la pendingTask de type lecture associée à ce département
+    this.pendingTasks = this.pendingTasks.filter(
+      t => !(t.typeTask === 'lecture' && (t.responsable === cc.codeDept || t.responsableName === cc.nomDept))
+    );
   }
 
   confirmCcSelection(modalRef: any): void {
     this.updateCcLabelsFromSelection();
+
+    // Resynchroniser les pendingTasks lecture avec la sélection CC actuelle
+    // Supprimer toutes les tâches lecture existantes
+    this.pendingTasks = this.pendingTasks.filter(t => t.typeTask !== 'lecture');
+
+    // Recréer une tâche lecture par département CC sélectionné
+    for (const cc of this.selectedCcDepts) {
+      this.pendingTasks.push({
+        typeTask: 'lecture',
+        responsable: cc.codeDept ?? '',
+        dateLimite: '',
+        responsableName: cc.nomDept ?? cc.codeDept ?? '',
+        commentaire: '',
+      });
+    }
+
     modalRef.close();
   }
 
@@ -2107,6 +2977,35 @@ export class CorrespDetailComponent implements OnInit {
         .filter(Boolean)
         .join(', ');
     }
+  }
+
+  // Table Windows-1256 → Unicode
+  private readonly WIN1256: number[] = [
+    8364, 1662, 8218, 402, 8222, 8230, 8224, 8225, 710, 8240, 1657, 8249, 338, 1670, 1688, 1672, 1711, 8216, 8217, 8220, 8221, 8226, 8211,
+    8212, 1705, 8482, 1681, 8250, 339, 8204, 8205, 1722, 160, 1548, 162, 163, 164, 165, 166, 167, 168, 169, 1726, 171, 172, 173, 174, 175,
+    176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 1563, 187, 188, 189, 190, 1567, 1729, 1569, 1570, 1571, 1572, 1573, 1574, 1575, 1576,
+    1577, 1578, 1579, 1580, 1581, 1582, 1583, 1584, 1585, 1586, 1587, 1588, 1589, 1590, 215, 1591, 1592, 1593, 1594, 1600, 1601, 1602, 1603,
+    224, 1604, 226, 1605, 1606, 1607, 1608, 231, 232, 233, 234, 235, 1609, 1610, 238, 239, 1611, 1612, 1613, 1614, 244, 1615, 1616, 247,
+    1617, 249, 1618, 251, 252, 8206, 8207, 1746,
+  ];
+
+  private fixWindows1256(str: string): string {
+    if (!str) return '';
+    // Détecter si le contenu contient des chars Latin-1 étendu (128-255)
+    // qui sont en réalité des bytes Windows-1256
+    const hasLatin1Arabic = /[\x80-\xFF]/.test(str);
+    if (!hasLatin1Arabic) return str; // déjà correct, rien à faire
+
+    let result = '';
+    for (let i = 0; i < str.length; i++) {
+      const code = str.charCodeAt(i);
+      if (code >= 128 && code <= 255) {
+        result += String.fromCharCode(this.WIN1256[code - 128]);
+      } else {
+        result += str[i];
+      }
+    }
+    return result;
   }
 
   private expandAllFilteredNodes(nodes: DepartementTreeFeignDTO[], expandedSet: Set<number>): void {

@@ -9,6 +9,17 @@ import { ApplicationConfigService } from 'app/core/config/application-config.ser
 import { createRequestOption } from 'app/core/request/request-util';
 import { ITasks, NewTasks } from '../tasks.model';
 
+// Interface pour la réponse paginée
+export interface PagedTasksResponse {
+  content: ITasks[];
+  currentPage: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+}
+
 export type PartialUpdateTasks = Partial<ITasks> & Pick<ITasks, 'id'>;
 
 type RestOf<T extends ITasks | NewTasks> = Omit<T, 'creationDate' | 'startDate' | 'dueDate' | 'closeDate' | 'updatedDate'> & {
@@ -84,6 +95,32 @@ export class TasksService {
     return this.http
       .get<RestTasks[]>(`${this.resourceUrl}/tasksByUserAcl`, { params, observe: 'response' })
       .pipe(map((res: HttpResponse<RestTasks[]>) => this.convertResponseArrayFromServer(res)));
+  }
+
+  getTasksByUserAclPaged(userId: number, status?: string, page: number = 1, size: number = 10): Observable<PagedTasksResponse> {
+    const params = createRequestOption({ userId, status, page, size });
+    return this.http.get<any>(`${this.resourceUrl}/tasksByUserAclPaged`, { params }).pipe(
+      map(response => ({
+        content: (response.content ?? []).map((item: RestTasks) => this.convertDateFromServer(item)),
+        currentPage: response.currentPage,
+        pageSize: response.pageSize,
+        totalItems: response.totalItems,
+        totalPages: response.totalPages,
+        hasNext: response.hasNext,
+        hasPrevious: response.hasPrevious,
+      })),
+      catchError(() =>
+        of({
+          content: [],
+          currentPage: page,
+          pageSize: size,
+          totalItems: 0,
+          totalPages: 0,
+          hasNext: false,
+          hasPrevious: false,
+        })
+      )
+    );
   }
 
   searchTasksByUserAcl(userId: number, reference: string): Observable<EntityArrayResponseType> {

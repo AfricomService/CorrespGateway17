@@ -89,6 +89,7 @@ public class SecurityConfiguration {
             .and()
             .headers()
             .contentSecurityPolicy(jHipsterProperties.getSecurity().getContentSecurityPolicy())
+//            .contentSecurityPolicy("default-src 'self'; frame-src 'self' data:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://storage.googleapis.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: http://127.0.0.1:7777 http://localhost:7777")
             .and()
             .referrerPolicy(ReferrerPolicyServerHttpHeadersWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
             .and()
@@ -109,6 +110,9 @@ public class SecurityConfiguration {
 
             // Règle SPÉCIFIQUE : autorise ROLE_USER et ROLE_ADMIN pour GET /api/admin/users/by-login
             .pathMatchers(HttpMethod.GET, "/api/admin/users/by-login").hasAnyAuthority(AuthoritiesConstants.USER, AuthoritiesConstants.ADMIN)
+
+            // Règle SPÉCIFIQUE : autorise ROLE_USER et ROLE_ADMIN pour POST /api/admin/users/by-logins
+            .pathMatchers(HttpMethod.POST, "/api/admin/users/by-logins").hasAnyAuthority(AuthoritiesConstants.USER, AuthoritiesConstants.ADMIN, AuthoritiesConstants.BOC)
 
             // Règle SPÉCIFIQUE : autorise ROLE_USER et ROLE_ADMIN pour GET /api/admin/users/id/{id}
             .pathMatchers("/api/admin/users/id/**").hasAnyAuthority(AuthoritiesConstants.USER, AuthoritiesConstants.ADMIN)

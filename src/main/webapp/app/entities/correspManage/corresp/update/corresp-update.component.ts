@@ -41,6 +41,19 @@ import { DepartementTreeFeignDTO } from './DepartementTreeFeignDTO';
 import { PersonneFeignDTO } from './PersonneFeignDTO';
 import { TypeAffectation } from 'app/entities/correspManage/corresp/update/enums';
 
+import { AccountService } from 'app/core/auth/account.service';
+import { Account } from 'app/core/auth/account.model';
+import { Authority } from 'app/config/authority.constants';
+import {
+  PjCareService,
+  PjCareScanResult,
+  PjCareDriverInfo,
+  ScanDriver,
+  ScannedPage,
+  MergePagesRequest,
+} from 'app/entities/correspManage/pj/service/pjcare.service';
+import { ScanSettingsService } from 'app/entities/correspManage/pj/service/scan-settings.service';
+
 // --------------------------------------------------------------------------
 // Small helper interfaces
 // --------------------------------------------------------------------------
@@ -61,6 +74,9 @@ export class CorrespUpdateComponent implements OnInit {
   // === existing state (kept mostly intact) ===
   isSaving = false;
   corresp!: ICorresp;
+
+  /** true si l'utilisateur courant a le rôle ADMIN et/ou BOC */
+  isAdminOrBoc = false;
 
   /** Référence générée par le bouton "Identifier" — sera utilisée lors de l'enregistrement */
   generatedReference: string | null = null;
@@ -125,7 +141,14 @@ export class CorrespUpdateComponent implements OnInit {
     pieces: true,
   };
 
-  tasks: Array<{ typeTask: string; responsable: any; dateLimite: string; responsableName: string; commentaire: string }> = [];
+  tasks: Array<{
+    typeTask: string;
+    responsable: any;
+    dateLimite: string;
+    responsableName: string;
+    commentaire: string;
+    autoBoc?: boolean;
+  }> = [];
 
   correspType!: string;
 
@@ -208,13 +231,23 @@ export class CorrespUpdateComponent implements OnInit {
     protected typeDocumentService: TypedocumentService,
     public router: Router,
     protected contactCompanyService: ContactCompanyService,
-    protected parentClassdefService: ParentClassdefService
+    protected parentClassdefService: ParentClassdefService,
+    protected accountService: AccountService,
+    private pjCareService: PjCareService,
+    private scanSettingsService: ScanSettingsService
   ) {}
 
   // --------------------------------------------------------------------------
   // ngOnInit
   // --------------------------------------------------------------------------
   ngOnInit(): void {
+    // Vérifier si l'utilisateur a le rôle ADMIN ou BOC
+    this.accountService.getAuthenticationState().subscribe(account => {
+      if (account && account.authorities) {
+        this.isAdminOrBoc = account.authorities.includes(Authority.ADMIN) || account.authorities.includes(Authority.BOC);
+      }
+    });
+
     // charger types de documents
     this.typeDocumentService.query({ page: 0, size: 1000 }).subscribe(res => {
       this.typedocuments = res.body || [];
@@ -243,6 +276,38 @@ export class CorrespUpdateComponent implements OnInit {
 
     this.route.queryParams.subscribe(params => {
       this.correspType = params['type'];
+
+      // Auto-create a "traitement" task for BOC users creating an Arrivée corresp
+      if (this.correspType === 'Arrivée') {
+        this.accountService.getAuthenticationState().subscribe(account => {
+          if (
+            account &&
+            account.authorities &&
+            (account.authorities.includes(Authority.BOC) || account.authorities.includes(Authority.ADMIN))
+          ) {
+            const userLogin = account.login;
+            const userName = [account.firstName, account.lastName].filter(Boolean).join(' ') || userLogin;
+
+            // Avoid duplicate: only add if no traitement task for this user already exists
+            const alreadyExists = this.tasks.some(t => t.typeTask === 'traitement' && t.responsable === userLogin);
+            if (!alreadyExists) {
+              this.tasks.push({
+                typeTask: 'traitement',
+                responsable: userLogin,
+                dateLimite: '',
+                responsableName: userName,
+                commentaire: '',
+                autoBoc: true,
+              });
+
+              // Open the tasks accordion to show the auto-created task
+              if (!this.accordionStates['taches']) {
+                this.accordionStates['taches'] = true;
+              }
+            }
+          }
+        });
+      }
     });
 
     this.loadUsers();
@@ -390,7 +455,7 @@ export class CorrespUpdateComponent implements OnInit {
       return;
     }
     this.tasks = this.tasks.map(t => {
-      if (t.typeTask === 'traitement') {
+      if (t.typeTask === 'traitement' && !t.autoBoc) {
         return { ...t, responsableName: this.destinataireLabel || t.responsableName || '' };
       }
       // Pour les tâches "lecture", chaque tâche garde son propre responsableName (nom du département CC)
@@ -413,11 +478,11 @@ export class CorrespUpdateComponent implements OnInit {
     this.objet = this.selectedTypeDocument.defaultobject || '';
 
     if (this.selectedTypeDocument.nom === 'Autre') {
-      this.tasks = [];
+      this.tasks = this.tasks.filter(t => t.autoBoc === true);
     }
 
     if (this.selectedTypeDocument.defautdest) {
-      this.tasks = [];
+      this.tasks = this.tasks.filter(t => t.autoBoc === true);
 
       this.correspService.queryOrgaDepsByCode({ code: this.selectedTypeDocument.defautdest }).subscribe({
         next: (res: HttpResponse<IDepartement>) => {
@@ -759,6 +824,16 @@ export class CorrespUpdateComponent implements OnInit {
       taskModel.dueDate = dayjs(t.dateLimite);
       taskModel.taskType = t.typeTask;
       taskModel.commentaire = t.commentaire;
+
+      // Peupler responsables pour alimenter la table responsable_tache côté backend
+      if (t.autoBoc) {
+        // Tâche BOC auto-créée : le responsable est un matricule (login du user)
+        taskModel.responsables = [{ matriculePers: t.responsable }];
+      } else if (t.responsable) {
+        // Tâche standard : le responsable est un code département
+        taskModel.responsables = [{ codeDept: t.responsable }];
+      }
+
       this.tasksToSave.push(taskModel);
     });
 
@@ -767,12 +842,46 @@ export class CorrespUpdateComponent implements OnInit {
       this.corresp!.reference = this.generatedReference;
     }
 
+    // Mémoriser si une tâche BOC auto-créée existe avant le save
+    const hasAutoBocTask = this.tasks.some(t => t.autoBoc === true);
+
     this.correspService
       .saveCorrespWithTasksAndPj(this.corresp, this.tasksToSave, this.pjsToSave, this.selectedTypeDocument, false)
       .subscribe({
         next: (savedCorresp: any) => {
           this.isSaving = false;
-          if (savedCorresp?.id) {
+
+          // Si l'utilisateur BOC a une tâche de traitement auto-créée,
+          // on change son statut en IN_PROGRESS après la sauvegarde
+          if (hasAutoBocTask && savedCorresp?.id) {
+            this.tasksService.getAllTasksByCorrespId({ correspId: savedCorresp.id }).subscribe({
+              next: (tasksRes: HttpResponse<ITasks[]>) => {
+                const savedTasks = tasksRes.body || [];
+                const bocTask = savedTasks.find(t => t.taskType === 'traitement');
+                if (bocTask && bocTask.id) {
+                  this.correspService
+                    .changeTaskStatus({ correspId: savedCorresp.id, taskId: bocTask.id, status: 'IN_PROGRESS' })
+                    .subscribe({
+                      next: () => {
+                        // Navigation après le changement de statut réussi
+                        this.router.navigate(['/corresp', savedCorresp.id, 'view']);
+                      },
+                      error: () => {
+                        // En cas d'erreur du changeTaskStatus, on navigue quand même
+                        this.router.navigate(['/corresp', savedCorresp.id, 'view']);
+                      },
+                    });
+                } else {
+                  // Pas de tâche traitement trouvée, navigation normale
+                  this.router.navigate(['/corresp', savedCorresp.id, 'view']);
+                }
+              },
+              error: () => {
+                // Erreur lors de la récupération des tâches, navigation normale
+                this.router.navigate(['/corresp', savedCorresp.id, 'view']);
+              },
+            });
+          } else if (savedCorresp?.id) {
             this.router.navigate(['/corresp', savedCorresp.id, 'view']);
           } else {
             this.router.navigate(['/corresp']);
@@ -782,6 +891,50 @@ export class CorrespUpdateComponent implements OnInit {
           this.isSaving = false;
         },
       });
+  }
+
+  // --------------------------------------------------------------------------
+  // Soumettre correspondance (ADMIN / BOC uniquement)
+  // --------------------------------------------------------------------------
+  soumettreCorresp(): void {
+    if (!this.corresp?.id) {
+      this.showNotification("Veuillez d'abord enregistrer la correspondance avant de la soumettre.", 'error');
+      return;
+    }
+    this.isSaving = true;
+    this.correspService.soumettreCorresp({ correspId: this.corresp.id }).subscribe({
+      next: () => {
+        this.isSaving = false;
+        this.showNotification('Correspondance soumise avec succès.', 'success');
+        this.router.navigate(['/corresp', this.corresp.id, 'view']);
+      },
+      error: () => {
+        this.isSaving = false;
+        this.showNotification('Échec de la soumission de la correspondance.', 'error');
+      },
+    });
+  }
+
+  // --------------------------------------------------------------------------
+  // Clôturer correspondance (ADMIN / BOC uniquement)
+  // --------------------------------------------------------------------------
+  cloturerCorresp(): void {
+    if (!this.corresp?.id) {
+      this.showNotification("Veuillez d'abord enregistrer la correspondance avant de la clôturer.", 'error');
+      return;
+    }
+    this.isSaving = true;
+    this.correspService.cloturerCorresp({ correspId: this.corresp.id }).subscribe({
+      next: () => {
+        this.isSaving = false;
+        this.showNotification('Correspondance clôturée avec succès.', 'success');
+        this.router.navigate(['/corresp', this.corresp.id, 'view']);
+      },
+      error: () => {
+        this.isSaving = false;
+        this.showNotification('Échec de la clôture de la correspondance.', 'error');
+      },
+    });
   }
 
   validateInfoGeneralesForm(): boolean {
@@ -1378,7 +1531,8 @@ export class CorrespUpdateComponent implements OnInit {
     this.destinataire = this.recipientSelectedDept.email || '';
 
     // Mettre à jour ou créer la tâche "traitement" associée au destinataire
-    const existingIdx = this.tasks.findIndex(t => t.typeTask === 'traitement');
+    // (ignorer la tâche BOC auto-créée qui est aussi de type 'traitement')
+    const existingIdx = this.tasks.findIndex(t => t.typeTask === 'traitement' && !t.autoBoc);
     const newTaskData = {
       typeTask: 'traitement',
       responsable: this.recipientSelectedDept.code ?? '',
@@ -1402,7 +1556,8 @@ export class CorrespUpdateComponent implements OnInit {
     this.destinataire = node.email || '';
 
     // Mettre à jour ou créer la tâche "traitement" associée au destinataire
-    const existingIdx = this.tasks.findIndex(t => t.typeTask === 'traitement');
+    // (ignorer la tâche BOC auto-créée qui est aussi de type 'traitement')
+    const existingIdx = this.tasks.findIndex(t => t.typeTask === 'traitement' && !t.autoBoc);
     const newTaskData = {
       typeTask: 'traitement',
       responsable: node.code ?? '',
@@ -1424,8 +1579,8 @@ export class CorrespUpdateComponent implements OnInit {
     this.recipientSelectedDept = null;
     this.destinataireLabel = '';
     this.destinataire = '';
-    // Supprimer la tâche "traitement" associée au destinataire
-    const idx = this.tasks.findIndex(t => t.typeTask === 'traitement');
+    // Supprimer la tâche "traitement" associée au destinataire (pas la tâche BOC)
+    const idx = this.tasks.findIndex(t => t.typeTask === 'traitement' && !t.autoBoc);
     if (idx >= 0) {
       this.tasks.splice(idx, 1);
     }
@@ -1667,6 +1822,277 @@ export class CorrespUpdateComponent implements OnInit {
   toggleAccordion(section: string): void {
     this.accordionStates[section] = !this.accordionStates[section];
   }
+
+  // ── PjCare methods ─────────────────────────────────────────────────────────
+
+  openScanModal(content: any): void {
+    this.scanPreview = null;
+    this.scanError = null;
+    this.isMerging = false;
+    this.currentDocumentPages = [];
+
+    this.loadScanSettings();
+    this.checkPjCare();
+    this.modalService.open(content, { size: 'lg' });
+  }
+
+  private loadScanSettings(): void {
+    const s = this.scanSettingsService.load();
+    this.scanFormat = s.scanFormat;
+    this.scanDpi = s.scanDpi;
+    this.scanQuality = s.scanQuality;
+    this.scanBitdepth = s.scanBitdepth;
+    this.scanDuplex = s.scanDuplex;
+    this.scanExcludeBlank = s.scanExcludeBlank;
+    this.scanBlankThreshold = s.scanBlankThreshold;
+    this.scanCoverageThreshold = s.scanCoverageThreshold;
+    // selectedDriver : sera écrasé par checkPjCare() si le driver sauvegardé
+    // est encore disponible — on le stocke temporairement
+    this._pendingDriverFromCookie = s.selectedDriver;
+  }
+
+  // Stockage temporaire du driver lu depuis le cookie
+  // (sera appliqué après le chargement de la liste des drivers)
+  private _pendingDriverFromCookie: string = '';
+
+  saveScanSettings(): void {
+    this.scanSettingsService.save({
+      scanFormat: this.scanFormat,
+      scanDpi: this.scanDpi,
+      scanQuality: this.scanQuality,
+      scanBitdepth: this.scanBitdepth,
+      scanDuplex: this.scanDuplex,
+      scanExcludeBlank: this.scanExcludeBlank,
+      scanBlankThreshold: this.scanBlankThreshold,
+      scanCoverageThreshold: this.scanCoverageThreshold,
+      selectedDriver: this.selectedDriver as string,
+    });
+  }
+
+  resetScanSettings(): void {
+    this.scanSettingsService.reset();
+    // Remettre les valeurs par défaut dans la vue
+    this.scanFormat = 'pdf';
+    this.scanDpi = 150;
+    this.scanQuality = 75;
+    this.scanBitdepth = 'color';
+    this.scanDuplex = false;
+    this.scanExcludeBlank = false;
+    this.scanBlankThreshold = 240;
+    this.scanCoverageThreshold = 5;
+  }
+
+  checkPjCare(): void {
+    this.loadingScanners = true;
+    this.loadingDrivers = true;
+
+    this.pjCareService.getHealth().subscribe({
+      next: res => {
+        if (res && res.status === 200) {
+          this.pjcareAvailable = true;
+          this.pjCareService.getDrivers().subscribe({
+            next: driverRes => {
+              this.availableDrivers = driverRes.drivers || [];
+              const defaultKey = res.defaultDriver || (this.availableDrivers[0]?.key ?? '');
+
+              // Restaurer le driver depuis le cookie s'il est encore disponible
+              const cookieDriver = this._pendingDriverFromCookie;
+              const cookieDriverExists = cookieDriver ? this.availableDrivers.some(d => d.key === cookieDriver) : false;
+
+              this.selectedDriver = (cookieDriverExists ? cookieDriver : defaultKey) as ScanDriver;
+              this._pendingDriverFromCookie = ''; // vider après usage
+              this.loadingDrivers = false;
+              this.loadScannersForDriver(this.selectedDriver as ScanDriver);
+            },
+            error: () => {
+              this.availableDrivers = [];
+              this.loadingDrivers = false;
+              this.loadScannersForDriver(undefined);
+            },
+          });
+        } else {
+          this.pjcareAvailable = false;
+          this.loadingScanners = false;
+          this.loadingDrivers = false;
+        }
+      },
+      error: () => {
+        this.pjcareAvailable = false;
+        this.loadingScanners = false;
+        this.loadingDrivers = false;
+      },
+    });
+  }
+
+  loadScannersForDriver(driver?: ScanDriver): void {
+    this.loadingScanners = true;
+    this.scanners = [];
+    this.selectedScanner = '';
+
+    this.pjCareService.getScanners(driver).subscribe({
+      next: scanRes => {
+        this.scanners = scanRes.scanners || [];
+        if (this.scanners.length > 0) {
+          this.selectedScanner = this.scanners[0];
+        }
+        this.loadingScanners = false;
+      },
+      error: () => {
+        this.scanners = [];
+        this.loadingScanners = false;
+      },
+    });
+  }
+
+  onDriverChange(): void {
+    this.scanPreview = null;
+    this.scanError = null;
+    this.loadScannersForDriver((this.selectedDriver as ScanDriver) || undefined);
+  }
+
+  launchScan(): void {
+    this.isScanning = true;
+    this.scanError = null;
+    this.scanPreview = null;
+
+    this.saveScanSettings();
+
+    this.pjCareService
+      .scan({
+        source: this.selectedScanner,
+        driver: (this.selectedDriver as ScanDriver) || undefined,
+        format: this.scanFormat as any,
+        dpi: this.scanDpi,
+        jpegquality: this.scanQuality,
+        bitdepth: this.scanBitdepth,
+        duplex: this.scanDuplex,
+        name: this.objet || 'scan',
+        excludeBlank: this.scanExcludeBlank,
+        blankThreshold: this.scanBlankThreshold,
+        coverageThreshold: this.scanCoverageThreshold,
+      })
+      .subscribe({
+        next: result => {
+          this.isScanning = false;
+          if (result.status === 200) {
+            const preview = this.scanFormat !== 'pdf' ? `data:image/${this.scanFormat};base64,${result.data}` : null;
+
+            this.scanPreview = preview ?? 'pdf';
+
+            // Ajouter au buffer du document courant
+            const page: ScannedPage = {
+              data: result.data,
+              format: result.format || this.scanFormat,
+              preview,
+              pageNumber: this.currentDocumentPages.length + 1,
+            };
+            this.currentDocumentPages.push(page);
+          } else {
+            this.scanError = result.error || 'Erreur inconnue';
+          }
+        },
+        error: () => {
+          this.isScanning = false;
+          this.scanError = 'PjCare inaccessible. Vérifiez que le service tourne.';
+        },
+      });
+  }
+
+  removePage(index: number): void {
+    this.currentDocumentPages.splice(index, 1);
+    this.currentDocumentPages.forEach((p, i) => (p.pageNumber = i + 1));
+    if (this.currentDocumentPages.length === 0) {
+      this.scanPreview = null;
+    }
+  }
+
+  attachScanResult(modal: any): void {
+    if (this.currentDocumentPages.length === 0) return;
+
+    // Cas 1 page : attachement direct sans fusion réseau
+    if (this.currentDocumentPages.length === 1) {
+      const p = this.currentDocumentPages[0];
+      const filename = this.objet ? `${this.objet.replace(/[^\p{L}\p{N}_-]/gu, '_')}.${this.scanFormat}` : `scan.${this.scanFormat}`;
+      this._attachRawResult(p.data, filename, this.scanFormat, modal);
+      return;
+    }
+
+    // Plusieurs pages → fusion via /api/MergePages
+    this.isMerging = true;
+    this.scanError = null;
+
+    this.pjCareService
+      .mergePages({
+        pages: this.currentDocumentPages.map(p => ({ data: p.data, format: p.format })),
+        outputFormat: this.scanFormat as any,
+        jpegquality: this.scanQuality,
+        name: this.objet || 'document',
+      })
+      .subscribe({
+        next: result => {
+          this.isMerging = false;
+          if (result.status === 200) {
+            this._attachRawResult(result.data, result.file, result.format, modal);
+          } else {
+            this.scanError = result.error || 'Erreur lors de la fusion des pages';
+          }
+        },
+        error: () => {
+          this.isMerging = false;
+          this.scanError = 'Erreur lors de la fusion des pages';
+        },
+      });
+  }
+
+  private _attachRawResult(base64: string, filename: string, format: string, modal: any): void {
+    const mimeType = format === 'pdf' ? 'application/pdf' : `image/${format}`;
+    const byteString = atob(base64);
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+    const blob = new Blob([ab], { type: mimeType });
+    const file = new File([blob], filename, { type: mimeType });
+
+    this.uploadedFiles.push(file);
+    const uniquePjName = this.generateRandomId(10);
+    const pjModel: IPj = {} as IPj;
+    const parts = filename.split('.');
+    pjModel.name = parts.slice(0, -1).join('.');
+    pjModel.fileType = parts[parts.length - 1];
+    pjModel.uniqueName = uniquePjName;
+
+    this.fileLinks.push({ index: this.uploadedFiles.length - 1, uniqueName: uniquePjName });
+    this.uploadProgress.set(uniquePjName, 0);
+    this.uploadFileWithProgress(file, uniquePjName, pjModel);
+    this.pjsToSave.push(pjModel);
+
+    this.accordionStates['pieces'] = true;
+    modal.close();
+  }
+
+  // ── PjCare scan state ──────────────────────────────────────────────────────
+  pjcareAvailable = false;
+  scanners: string[] = [];
+  selectedScanner = '';
+  scanFormat: 'jpg' | 'png' | 'pdf' | 'tiff' = 'pdf';
+  scanDpi = 150;
+  scanQuality = 75;
+  scanBitdepth: 'color' | 'gray' | 'bw' = 'color';
+  scanDuplex = false;
+  isScanning = false;
+  isMerging = false;
+  scanPreview: string | null = null;
+  scanError: string | null = null;
+  loadingScanners = false;
+  availableDrivers: PjCareDriverInfo[] = [];
+  selectedDriver: ScanDriver | '' = '';
+  loadingDrivers = false;
+  scanExcludeBlank = false;
+  scanBlankThreshold = 240;
+  scanCoverageThreshold = 5;
+
+  /** Buffer multi-pages du document en cours — toutes les pages seront fusionnées en UN seul fichier */
+  currentDocumentPages: ScannedPage[] = [];
 
   protected readonly console = console;
   protected readonly CorrespType = CorrespType;
