@@ -30,7 +30,14 @@ import { AccountService } from 'app/core/auth/account.service';
 import { Account } from 'app/core/auth/account.model';
 import { Authority } from 'app/config/authority.constants';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { PjCareService, PjCareScanResult, PjCareDriverInfo, ScanDriver } from 'app/entities/correspManage/pj/service/pjcare.service';
+import {
+  PjCareService,
+  PjCareScanResult,
+  PjCareDriverInfo,
+  ScanDriver,
+  ScannedPage,
+  MergePagesRequest,
+} from 'app/entities/correspManage/pj/service/pjcare.service';
 import { ScanSettingsService } from 'app/entities/correspManage/pj/service/scan-settings.service';
 
 // export interface ITasks {
@@ -47,14 +54,6 @@ import { ScanSettingsService } from 'app/entities/correspManage/pj/service/scan-
 //   name?: string | null;
 //   fileType?: string | null;
 // }
-
-interface BatchScanItem {
-  id: string;
-  preview: string; // data-URI image OU 'pdf'
-  format: string;
-  result: PjCareScanResult;
-  name: string;
-}
 
 @Component({
   selector: 'jhi-corresp-detail',
@@ -166,18 +165,20 @@ export class CorrespDetailComponent implements OnInit {
   scanBitdepth: 'color' | 'gray' | 'bw' = 'color';
   scanDuplex = false;
   isScanning = false;
+  isMerging = false;
   scanPreview: string | null = null;
   scanError: string | null = null;
   loadingScanners = false;
   availableDrivers: PjCareDriverInfo[] = [];
   selectedDriver: ScanDriver | '' = '';
   loadingDrivers = false;
-  private lastScanResult: PjCareScanResult | null = null;
-  batchScans: BatchScanItem[] = [];
   scanExcludeBlank = false;
   scanBlankThreshold = 240;
   scanCoverageThreshold = 5;
   private _pendingDriverFromCookie: string = '';
+
+  /** Buffer multi-pages du document en cours — toutes les pages formeront UN seul fichier */
+  currentDocumentPages: ScannedPage[] = [];
 
   uploadProgress: Map<string, number> = new Map(); // Per-file progress tracking
 
@@ -2660,8 +2661,8 @@ export class CorrespDetailComponent implements OnInit {
   openScanModal(content: any): void {
     this.scanPreview = null;
     this.scanError = null;
-    this.lastScanResult = null;
-    this.batchScans = [];
+    this.isMerging = false;
+    this.currentDocumentPages = [];
     this.loadScanSettings();
     this.checkPjCare();
     this.modalService.open(content, { size: 'lg' });
@@ -2702,8 +2703,8 @@ export class CorrespDetailComponent implements OnInit {
     this.scanBitdepth = 'color';
     this.scanDuplex = false;
     this.scanExcludeBlank = false;
-    this.scanBlankThreshold = 70;
-    this.scanCoverageThreshold = 25;
+    this.scanBlankThreshold = 240;
+    this.scanCoverageThreshold = 5;
   }
 
   checkPjCare(): void {
@@ -2770,14 +2771,15 @@ export class CorrespDetailComponent implements OnInit {
   onDriverChange(): void {
     this.scanPreview = null;
     this.scanError = null;
-    this.lastScanResult = null;
     this.loadScannersForDriver((this.selectedDriver as ScanDriver) || undefined);
   }
 
   launchScan(): void {
     this.isScanning = true;
     this.scanError = null;
+    this.scanPreview = null;
     this.saveScanSettings();
+
     this.pjCareService
       .scan({
         source: this.selectedScanner,
@@ -2796,19 +2798,18 @@ export class CorrespDetailComponent implements OnInit {
         next: result => {
           this.isScanning = false;
           if (result.status === 200) {
-            this.lastScanResult = result;
-            const preview = this.scanFormat !== 'pdf' ? `data:image/${this.scanFormat};base64,${result.data}` : 'pdf';
-            this.scanPreview = preview;
+            const preview = this.scanFormat !== 'pdf' ? `data:image/${this.scanFormat};base64,${result.data}` : null;
 
-            // Ajouter dans la liste batch
-            const item: BatchScanItem = {
-              id: this.generateRandomId(10),
+            this.scanPreview = preview ?? 'pdf';
+
+            // Ajouter au buffer du document courant
+            const page: ScannedPage = {
+              data: result.data,
+              format: result.format || this.scanFormat,
               preview,
-              format: this.scanFormat,
-              result,
-              name: result.file,
+              pageNumber: this.currentDocumentPages.length + 1,
             };
-            this.batchScans.push(item);
+            this.currentDocumentPages.push(page);
           } else {
             this.scanError = result.error || 'Erreur inconnue';
           }
@@ -2820,58 +2821,71 @@ export class CorrespDetailComponent implements OnInit {
       });
   }
 
-  removeBatchScan(id: string): void {
-    this.batchScans = this.batchScans.filter(s => s.id !== id);
-    if (this.batchScans.length === 0) {
+  removePage(index: number): void {
+    this.currentDocumentPages.splice(index, 1);
+    this.currentDocumentPages.forEach((p, i) => (p.pageNumber = i + 1));
+    if (this.currentDocumentPages.length === 0) {
       this.scanPreview = null;
-      this.lastScanResult = null;
     }
   }
 
   attachScanResult(modal: any): void {
-    const items =
-      this.batchScans.length > 0
-        ? this.batchScans
-        : this.lastScanResult
-        ? [
-            {
-              id: 'single',
-              preview: this.scanPreview ?? '',
-              format: this.scanFormat,
-              result: this.lastScanResult,
-              name: this.lastScanResult.file,
-            } as BatchScanItem,
-          ]
-        : [];
+    if (this.currentDocumentPages.length === 0) return;
 
-    if (items.length === 0) return;
-
-    for (const item of items) {
-      const base64 = item.result.data;
-      const filename = item.result.file;
-      const mimeType = item.format === 'pdf' ? 'application/pdf' : `image/${item.format}`;
-
-      const byteString = atob(base64);
-      const ab = new ArrayBuffer(byteString.length);
-      const ia = new Uint8Array(ab);
-      for (let i = 0; i < byteString.length; i++) {
-        ia[i] = byteString.charCodeAt(i);
-      }
-      const blob = new Blob([ab], { type: mimeType });
-      const file = new File([blob], filename, { type: mimeType });
-
-      const uniquePjName = this.generateRandomId(10);
-      const pjModel: IPj = {} as IPj;
-      const parts = filename.split('.');
-      pjModel.name = parts.slice(0, -1).join('.');
-      pjModel.fileType = parts[parts.length - 1];
-      pjModel.uniqueName = uniquePjName;
-
-      this.accordionStates['pieces'] = true;
-      this.uploadProgress.set(uniquePjName, 0);
-      this.uploadFileWithProgress(file, uniquePjName, pjModel);
+    // Cas 1 page : attachement direct sans fusion réseau
+    if (this.currentDocumentPages.length === 1) {
+      const p = this.currentDocumentPages[0];
+      const filename = this.objet ? `${this.objet.replace(/[^\p{L}\p{N}_-]/gu, '_')}.${this.scanFormat}` : `scan.${this.scanFormat}`;
+      this._attachRawResult(p.data, filename, this.scanFormat, modal);
+      return;
     }
 
+    // Plusieurs pages → fusion via /api/MergePages
+    this.isMerging = true;
+    this.scanError = null;
+
+    this.pjCareService
+      .mergePages({
+        pages: this.currentDocumentPages.map(p => ({ data: p.data, format: p.format })),
+        outputFormat: this.scanFormat as any,
+        jpegquality: this.scanQuality,
+        name: this.objet || 'document',
+      })
+      .subscribe({
+        next: result => {
+          this.isMerging = false;
+          if (result.status === 200) {
+            this._attachRawResult(result.data, result.file, result.format, modal);
+          } else {
+            this.scanError = result.error || 'Erreur lors de la fusion des pages';
+          }
+        },
+        error: () => {
+          this.isMerging = false;
+          this.scanError = 'Erreur lors de la fusion des pages';
+        },
+      });
+  }
+
+  private _attachRawResult(base64: string, filename: string, format: string, modal: any): void {
+    const mimeType = format === 'pdf' ? 'application/pdf' : `image/${format}`;
+    const byteString = atob(base64);
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+    const blob = new Blob([ab], { type: mimeType });
+    const file = new File([blob], filename, { type: mimeType });
+
+    const uniquePjName = this.generateRandomId(10);
+    const pjModel: IPj = {} as IPj;
+    const parts = filename.split('.');
+    pjModel.name = parts.slice(0, -1).join('.');
+    pjModel.fileType = parts[parts.length - 1];
+    pjModel.uniqueName = uniquePjName;
+
+    this.accordionStates['pieces'] = true;
+    this.uploadProgress.set(uniquePjName, 0);
+    this.uploadFileWithProgress(file, uniquePjName, pjModel);
     modal.close();
   }
 
