@@ -30,6 +30,11 @@ interface IFileUpload {
   uniqueFileName: string;
 }
 
+export interface CorrespSummaryDTO {
+  subject?: string | null;
+  reference?: string | null;
+}
+
 // Interface pour la réponse paginée
 export interface PagedCorrespResponse {
   content: ICorresp[];
@@ -394,6 +399,14 @@ export class CorrespService {
     return this.http
       .get<RestCorresp[]>(`${this.resourceUrl}/by-task/${taskId}`, { observe: 'response' })
       .pipe(map(res => this.convertResponseArrayFromServer(res)));
+  }
+
+  getCorrespSummaryByTask(taskId: number): Observable<{ subject?: string | null; reference?: string | null }> {
+    return this.http.get<{ subject?: string | null; reference?: string | null }>(`${this.resourceUrl}/by-task/${taskId}/summary`);
+  }
+
+  getCorrespSummariesByTasks(taskIds: number[]): Observable<Record<string, CorrespSummaryDTO>> {
+    return this.http.post<Record<string, CorrespSummaryDTO>>(`${this.resourceUrl}/summaries-by-tasks`, taskIds);
   }
 
   /**

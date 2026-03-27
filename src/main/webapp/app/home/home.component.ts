@@ -591,30 +591,16 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   private loadCorrespInfoForTasks(): void {
     const tasks = this.tasks || [];
-    if (!tasks.length) {
-      return;
-    }
-    const calls = tasks
-      .map(t => (t && (t as any).id != null ? (t as any).id : null))
-      .filter((id): id is number => id != null)
-      .map(id => this.correspService.getCorrespsByTask(id));
+    const ids = tasks.map(t => (t as any)?.id).filter((id): id is number => id != null);
 
-    if (!calls.length) {
-      return;
-    }
-    forkJoin(calls)
+    if (!ids.length) return;
+
+    this.correspService
+      .getCorrespSummariesByTasks(ids)
       .pipe(takeUntil(this.destroy$))
-      .subscribe((responses: HttpResponse<any[]>[]) => {
-        responses.forEach((res, idx) => {
-          const task = tasks[idx];
-          const taskId = (task as any)?.id;
-          const items = res?.body || [];
-          const first = items && items.length ? items[0] : null;
-          const subject = first ? (first as any).subject ?? null : null;
-          const reference = first ? (first as any).reference ?? null : null;
-          if (typeof taskId === 'number') {
-            this.correspInfoByTaskId[taskId] = { subject, reference };
-          }
+      .subscribe((summaries: Record<number, { subject?: string | null; reference?: string | null }>) => {
+        Object.entries(summaries).forEach(([taskId, summary]) => {
+          this.correspInfoByTaskId[+taskId] = summary;
         });
       });
   }
