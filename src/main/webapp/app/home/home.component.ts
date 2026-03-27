@@ -370,7 +370,11 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   // --------- Navigation / interactions ----------
   onTypeClicked(type: string): void {
-    this.router.navigate(['/corresp/new'], { queryParams: { type } });
+    if (type === 'Sortant') {
+      this.router.navigate(['/corresp/new-out']);
+    } else {
+      this.router.navigate(['/corresp/new'], { queryParams: { type } });
+    }
   }
 
   // --- Tabs / boutons ---
