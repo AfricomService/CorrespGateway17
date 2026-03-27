@@ -195,233 +195,63 @@
                   </div>
                 </div>
 
-                <!-- ================= Expéditeur / Destinataire ================= -->
+                <!-- ===== ROW 1 : EXPÉDITEUR (interne, org) + CONTACT EN COPIE (interne, org) ===== -->
                 <div style="display: flex; gap: 12px; margin-bottom: 1.5em; padding-bottom: 1.5em; border-bottom: 1px dashed #5570a3">
-                  <!-- EXPÉDITEUR: select sociétés actives OR champ manuel -->
-                  <div style="flex: 1; display: flex; gap: 8px; align-items: flex-start">
-                    <div style="flex: 1">
-                      <label class="form-label fw-semibold"
-                        ><span jhiTranslate="correspCareApp.correspManageCorresp.sender">Expéditeur</span>
-                        <span class="text-danger">*</span></label
-                      >
-
-                      <!-- MODE SELECT with search -->
-                      <div *ngIf="!showManualExpediteur" style="display: flex; gap: 8px; align-items: center">
-                        <dx-select-box
-                          [(value)]="selectedCompanyId"
-                          [dataSource]="companies"
-                          [valueExpr]="'id'"
-                          displayExpr="nom"
-                          [searchEnabled]="true"
-                          [searchExpr]="companySearchExpr"
-                          [placeholder]="'correspCareApp.correspManageCorresp.update.selectCompanyPlaceholder' | translate"
-                          (onValueChanged)="onExpediteurChange($event.value)"
-                          class="w-100"
-                          [disabled]="loadingCompanies"
-                        >
-                          <div *dxTemplate="let item of 'listItem'">
-                            <div>
-                              {{ item.nom }} <span *ngIf="item.matrne"> - {{ item.matrne }}</span>
-                            </div>
-                          </div>
-                        </dx-select-box>
-
-                        <!-- bouton plus -> mode manuel -->
-                        <button
-                          type="button"
-                          class="btn btn-outline-secondary"
-                          [attr.aria-label]="'correspCareApp.correspManageCorresp.update.enterManually' | translate"
-                          (click)="toggleManualExpediteur(true)"
-                          [attr.title]="'correspCareApp.correspManageCorresp.update.enterManually' | translate"
-                          style="padding: 6px 8px; display: inline-flex; align-items: center; justify-content: center"
-                        >
-                          <!-- icône plus -->
-                          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                            <path
-                              d="M8 1a.5.5 0 0 1 .5.5V7.5H14a.5.5 0 0 1 0 1H8.5V14a.5.5 0 0 1-1 0V8.5H2a.5.5 0 0 1 0-1h5.5V1.5A.5.5 0 0 1 8 1z"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-
-                      <!-- MODE MANUEL -->
-                      <div *ngIf="showManualExpediteur" style="display: flex; gap: 8px; align-items: center">
-                        <input
-                          type="text"
-                          class="form-control"
-                          [(ngModel)]="expediteur"
-                          name="expediteurManual"
-                          [placeholder]="'correspCareApp.correspManageCorresp.update.enterSenderManual' | translate"
-                          [class.is-invalid]="validationInfoGenErrors['expediteur']"
-                          style="flex: 1"
-                        />
-                        <button
-                          type="button"
-                          class="btn btn-outline-secondary"
-                          (click)="toggleManualExpediteur(false)"
-                          [attr.title]="'correspCareApp.correspManageCorresp.update.chooseFromList' | translate"
-                          style="padding: 6px 8px; display: inline-flex; align-items: center; justify-content: center"
-                        >
-                          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                            <path
-                              d="M11.354 1.646a.5.5 0 0 1 0 .708L6.707 7l4.647 4.646a.5.5 0 0 1-.708.708l-5-5a.5.5 0 0 1 0-.708l5-5a.5.5 0 0 1 .708 0z"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-
-                      <div class="invalid-feedback" *ngIf="validationInfoGenErrors['expediteur']" style="display: block">
-                        {{ validationInfoGenErrors['expediteur'] }}
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- ================= CONTACT ================= -->
-                  <div style="display: flex; gap: 10px; align-items: end; flex: 1">
-                    <div style="flex: 1">
-                      <label class="form-label fw-semibold" jhiTranslate="correspCareApp.correspManageCorresp.contact">Contact</label>
-
-                      <!-- MODE SELECT with search for persons -->
-                      <div *ngIf="!showManualContact" style="display: flex; gap: 8px; align-items: center">
-                        <dx-select-box
-                          [(value)]="selectedPersonId"
-                          [dataSource]="personsForSelectedCompany"
-                          [valueExpr]="'id'"
-                          displayExpr="nom"
-                          [searchEnabled]="true"
-                          [searchExpr]="personSearchExpr"
-                          [placeholder]="'correspCareApp.correspManageCorresp.update.selectContactPlaceholder' | translate"
-                          (onValueChanged)="onSelectContactPerson($event.value)"
-                          [disabled]="!selectedCompanyId || loadingPersons"
-                          class="w-100"
-                        >
-                          <div *dxTemplate="let item of 'listItem'">
-                            <div>
-                              {{ item.nom }}
-                              <span *ngIf="item.email"> — {{ item.email }}</span>
-                              <span *ngIf="!item.email && item.tel"> — {{ item.tel }}</span>
-                            </div>
-                          </div>
-                        </dx-select-box>
-
-                        <!-- bouton plus -> mode manuel -->
-                        <button
-                          type="button"
-                          class="btn btn-outline-secondary"
-                          [attr.aria-label]="'correspCareApp.correspManageCorresp.update.enterContactManually' | translate"
-                          (click)="toggleManualContact(true)"
-                          [attr.title]="'correspCareApp.correspManageCorresp.update.enterManually' | translate"
-                          style="padding: 6px 8px; display: inline-flex; align-items: center; justify-content: center"
-                        >
-                          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                            <path
-                              d="M8 1a.5.5 0 0 1 .5.5V7.5H14a.5.5 0 0 1 0 1H8.5V14a.5.5 0 0 1-1 0V8.5H2a.5.5 0 0 1 0-1h5.5V1.5A.5.5 0 0 1 8 1z"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-
-                      <!-- MODE MANUEL pour contact -->
-                      <div *ngIf="showManualContact" style="display: flex; gap: 8px; align-items: center">
-                        <input
-                          type="text"
-                          class="form-control"
-                          [(ngModel)]="contactEmail"
-                          name="contactEmailFallback"
-                          [placeholder]="'correspCareApp.correspManageCorresp.update.enterContactManual' | translate"
-                          [class.is-invalid]="validationInfoGenErrors['contactEmail']"
-                          style="flex: 1"
-                        />
-                        <button
-                          type="button"
-                          class="btn btn-outline-secondary"
-                          (click)="toggleManualContact(false)"
-                          [attr.title]="'correspCareApp.correspManageCorresp.update.chooseFromList' | translate"
-                          style="padding: 6px 8px; display: inline-flex; align-items: center; justify-content: center"
-                        >
-                          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                            <path
-                              d="M11.354 1.646a.5.5 0 0 1 0 .708L6.707 7l4.647 4.646a.5.5 0 0 1-.708.708l-5-5a.5.5 0 0 1 0-.708l5-5a.5.5 0 0 1 .708 0z"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-
-                      <div class="invalid-feedback" *ngIf="validationInfoGenErrors['contactEmail']" style="display: block">
-                        {{ validationInfoGenErrors['contactEmail'] }}
-                      </div>
-
-                      <div
-                        *ngIf="loadingPersons"
-                        class="mt-2 small text-muted"
-                        jhiTranslate="correspCareApp.correspManageCorresp.update.loadingContacts"
-                      >
-                        Chargement des contacts…
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- ================= DESTINATAIRE + CONTACT EN COPIE (même ligne) ================= -->
-                <div style="display: flex; gap: 12px; margin-bottom: 1.5em">
-                  <!-- DESTINATAIRE -->
+                  <!-- EXPÉDITEUR — département interne via organigramme -->
                   <div style="flex: 1">
-                    <label class="form-label fw-semibold"
-                      ><span jhiTranslate="correspCareApp.correspManageCorresp.recipient">Destinataire</span>
-                      <span class="text-danger">*</span></label
-                    >
+                    <label class="form-label fw-semibold"> <span>Expéditeur</span> <span class="text-danger">*</span> </label>
                     <div style="display: flex; gap: 10px; align-items: center">
                       <input
                         type="text"
                         class="form-control"
-                        [class.is-invalid]="validationInfoGenErrors['destinataire']"
-                        [(ngModel)]="destinataireLabel"
-                        (ngModelChange)="onRecipientOrCcChange()"
-                        name="destinataire"
-                        [placeholder]="'correspCareApp.correspManageCorresp.update.enterRecipient' | translate"
+                        [class.is-invalid]="validationInfoGenErrors['expediteur']"
+                        [(ngModel)]="expediteur"
+                        name="expediteur"
+                        placeholder="Sélectionner via l'organigramme"
                         [disabled]="true"
                         style="flex: 1"
                       />
                       <button
                         type="button"
                         class="btn btn-outline-secondary"
-                        (click)="openRecipientModal(DestinataireModal)"
-                        title="Choisir via l'organigramme"
+                        (click)="openSenderModal(SenderModal)"
+                        title="Choisir l'expéditeur via l'organigramme"
                         style="padding: 6px 8px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0"
+                        [disabled]="!selectedTypeDocument"
+                        [style.opacity]="!selectedTypeDocument ? '0.5' : '1'"
                       >
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                           <path
                             d="M8 1a.5.5 0 0 1 .5.5V7.5H14a.5.5 0 0 1 0 1H8.5V14a.5.5 0 0 1-1 0V8.5H2a.5.5 0 0 1 0-1h5.5V1.5A.5.5 0 0 1 8 1z"
                           />
                         </svg>
                       </button>
                     </div>
-                    <div class="invalid-feedback" *ngIf="validationInfoGenErrors['destinataire']" style="display: block">
-                      {{ validationInfoGenErrors['destinataire'] }}
+                    <div class="invalid-feedback" *ngIf="validationInfoGenErrors['expediteur']" style="display: block">
+                      {{ validationInfoGenErrors['expediteur'] }}
                     </div>
-                    <!-- Chip du département destinataire sélectionné -->
-                    <div *ngIf="destinataireLabel" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px">
+                    <div *ngIf="expediteur" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px">
                       <span
                         style="
                           display: inline-flex;
                           align-items: center;
                           gap: 4px;
-                          background: #e8f2ff;
-                          color: #1e7bff;
+                          background: #fff0e6;
+                          color: #e65100;
                           border-radius: 16px;
                           padding: 2px 10px;
                           font-size: 13px;
                           font-weight: 500;
                         "
                       >
-                        {{ destinataireLabel }}
+                        {{ expediteur }}
                         <button
                           type="button"
-                          (click)="clearRecipientDept()"
+                          (click)="clearSenderDept()"
                           style="
                             background: none;
                             border: none;
-                            color: #1e7bff;
+                            color: #e65100;
                             font-size: 14px;
                             cursor: pointer;
                             padding: 0 2px;
@@ -435,16 +265,16 @@
                     </div>
                   </div>
 
-                  <!-- CONTACT EN COPIE -->
+                  <!-- CONTACT EN COPIE — interne via organigramme (multi-select) -->
                   <div style="flex: 1">
-                    <label class="form-label fw-semibold">Contact En Copie</label>
+                    <label class="form-label fw-semibold">Contact En Copie (Interne)</label>
                     <div style="display: flex; gap: 10px; align-items: center">
                       <input
                         type="text"
                         class="form-control"
                         [value]="contactEmailCCLabel"
                         name="contactEmailCC"
-                        placeholder="Sélectionner les contacts en copie"
+                        placeholder="Sélectionner les copies internes"
                         [disabled]="true"
                         style="flex: 1"
                       />
@@ -456,16 +286,14 @@
                         style="padding: 6px 8px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0"
                         [disabled]="!selectedTypeDocument"
                         [style.opacity]="!selectedTypeDocument ? '0.5' : '1'"
-                        [style.cursor]="!selectedTypeDocument ? 'not-allowed' : 'pointer'"
                       >
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                           <path
                             d="M8 1a.5.5 0 0 1 .5.5V7.5H14a.5.5 0 0 1 0 1H8.5V14a.5.5 0 0 1-1 0V8.5H2a.5.5 0 0 1 0-1h5.5V1.5A.5.5 0 0 1 8 1z"
                           />
                         </svg>
                       </button>
                     </div>
-                    <!-- Chips des départements sélectionnés -->
                     <div *ngIf="selectedCcDepts.length > 0" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px">
                       <span
                         *ngFor="let cc of selectedCcDepts"
@@ -499,6 +327,144 @@
                           &times;
                         </button>
                       </span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- ===== ROW 2 : DESTINATAIRE (externe, société) + CONTACT (externe, personne) ===== -->
+                <div style="display: flex; gap: 12px; margin-bottom: 1.5em; padding-bottom: 1.5em; border-bottom: 1px dashed #5570a3">
+                  <!-- DESTINATAIRE — société externe (was Expéditeur) -->
+                  <div style="flex: 1; display: flex; gap: 8px; align-items: flex-start">
+                    <div style="flex: 1">
+                      <label class="form-label fw-semibold">
+                        <span jhiTranslate="correspCareApp.correspManageCorresp.recipient">Destinataire</span>
+                        <span class="text-danger">*</span>
+                      </label>
+                      <div *ngIf="!showManualExpediteur" style="display: flex; gap: 8px; align-items: center">
+                        <dx-select-box
+                          [(value)]="selectedCompanyId"
+                          [dataSource]="companies"
+                          [valueExpr]="'id'"
+                          displayExpr="nom"
+                          [searchEnabled]="true"
+                          [searchExpr]="companySearchExpr"
+                          placeholder="-- Sélectionner une société --"
+                          (onValueChanged)="onExpediteurChange($event.value)"
+                          class="w-100"
+                          [disabled]="loadingCompanies"
+                        >
+                          <div *dxTemplate="let item of 'listItem'">
+                            <div>
+                              {{ item.nom }} <span *ngIf="item.matrne"> - {{ item.matrne }}</span>
+                            </div>
+                          </div>
+                        </dx-select-box>
+                        <button
+                          type="button"
+                          class="btn btn-outline-secondary"
+                          (click)="toggleManualExpediteur(true)"
+                          title="Saisir manuellement"
+                          style="padding: 6px 8px; display: inline-flex; align-items: center; justify-content: center"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <path
+                              d="M8 1a.5.5 0 0 1 .5.5V7.5H14a.5.5 0 0 1 0 1H8.5V14a.5.5 0 0 1-1 0V8.5H2a.5.5 0 0 1 0-1h5.5V1.5A.5.5 0 0 1 8 1z"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                      <div *ngIf="showManualExpediteur" style="display: flex; gap: 8px; align-items: center">
+                        <input
+                          type="text"
+                          class="form-control"
+                          [(ngModel)]="destinataireLabel"
+                          name="destinataireLabelManual"
+                          placeholder="Saisir le destinataire manuellement"
+                          [class.is-invalid]="validationInfoGenErrors['destinataire']"
+                          style="flex: 1"
+                        />
+                        <button
+                          type="button"
+                          class="btn btn-outline-secondary"
+                          (click)="toggleManualExpediteur(false)"
+                          title="Choisir dans la liste"
+                          style="padding: 6px 8px; display: inline-flex; align-items: center; justify-content: center"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <path
+                              d="M11.354 1.646a.5.5 0 0 1 0 .708L6.707 7l4.647 4.646a.5.5 0 0 1-.708.708l-5-5a.5.5 0 0 1 0-.708l5-5a.5.5 0 0 1 .708 0z"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                      <div class="invalid-feedback" *ngIf="validationInfoGenErrors['destinataire']" style="display: block">
+                        {{ validationInfoGenErrors['destinataire'] }}
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- CONTACT — personne de la société (was Contact) -->
+                  <div style="display: flex; gap: 10px; align-items: end; flex: 1">
+                    <div style="flex: 1">
+                      <label class="form-label fw-semibold" jhiTranslate="correspCareApp.correspManageCorresp.contact">Contact</label>
+                      <div *ngIf="!showManualContact" style="display: flex; gap: 8px; align-items: center">
+                        <dx-select-box
+                          [(value)]="selectedPersonId"
+                          [dataSource]="personsForSelectedCompany"
+                          [valueExpr]="'id'"
+                          displayExpr="nom"
+                          [searchEnabled]="true"
+                          [searchExpr]="personSearchExpr"
+                          placeholder="-- Sélectionner un contact --"
+                          (onValueChanged)="onSelectContactPerson($event.value)"
+                          [disabled]="!selectedCompanyId || loadingPersons"
+                          class="w-100"
+                        >
+                          <div *dxTemplate="let item of 'listItem'">
+                            <div>
+                              {{ item.nom }}<span *ngIf="item.email"> — {{ item.email }}</span
+                              ><span *ngIf="!item.email && item.tel"> — {{ item.tel }}</span>
+                            </div>
+                          </div>
+                        </dx-select-box>
+                        <button
+                          type="button"
+                          class="btn btn-outline-secondary"
+                          (click)="toggleManualContact(true)"
+                          title="Saisir manuellement"
+                          style="padding: 6px 8px; display: inline-flex; align-items: center; justify-content: center"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <path
+                              d="M8 1a.5.5 0 0 1 .5.5V7.5H14a.5.5 0 0 1 0 1H8.5V14a.5.5 0 0 1-1 0V8.5H2a.5.5 0 0 1 0-1h5.5V1.5A.5.5 0 0 1 8 1z"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                      <div *ngIf="showManualContact" style="display: flex; gap: 8px; align-items: center">
+                        <input
+                          type="text"
+                          class="form-control"
+                          [(ngModel)]="contactEmail"
+                          name="contactEmailFallback"
+                          placeholder="Saisir le contact manuellement"
+                          style="flex: 1"
+                        />
+                        <button
+                          type="button"
+                          class="btn btn-outline-secondary"
+                          (click)="toggleManualContact(false)"
+                          title="Choisir dans la liste"
+                          style="padding: 6px 8px; display: inline-flex; align-items: center; justify-content: center"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <path
+                              d="M11.354 1.646a.5.5 0 0 1 0 .708L6.707 7l4.647 4.646a.5.5 0 0 1-.708.708l-5-5a.5.5 0 0 1 0-.708l5-5a.5.5 0 0 1 .708 0z"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                      <div *ngIf="loadingPersons" class="mt-2 small text-muted">Chargement des contacts…</div>
                     </div>
                   </div>
                 </div>
@@ -745,6 +711,66 @@
               style="overflow: hidden; transition: max-height 0.5s ease, padding 0.5s ease"
               [style.padding]="accordionStates['corps'] ? '16px' : '0 16px'"
             >
+              <!-- ===== EMAIL FIELDS: De / À / CC ===== -->
+              <div
+                style="
+                  display: flex;
+                  flex-direction: column;
+                  gap: 8px;
+                  margin-bottom: 14px;
+                  padding: 12px;
+                  background: #f8f9fa;
+                  border: 1px solid #e9ecef;
+                  border-radius: 8px;
+                "
+              >
+                <!-- De (sender — auto) -->
+                <div style="display: flex; align-items: center; gap: 10px">
+                  <label class="form-label fw-semibold mb-0" style="min-width: 38px; font-size: 13px; color: #495057">De :</label>
+                  <div style="flex: 1; position: relative">
+                    <input
+                      type="email"
+                      class="form-control form-control-sm"
+                      [(ngModel)]="msgSender"
+                      name="msgSender"
+                      [disabled]="true"
+                      placeholder="Email de l'expéditeur (auto)"
+                      style="background: #e9ecef; font-size: 13px; padding-right: 28px"
+                    />
+                    <span
+                      style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: #6c757d; font-size: 11px"
+                      title="Rempli automatiquement"
+                      >🔒</span
+                    >
+                  </div>
+                </div>
+
+                <!-- À (receiver → IMessage.receiver) -->
+                <div style="display: flex; align-items: center; gap: 10px">
+                  <label class="form-label fw-semibold mb-0" style="min-width: 38px; font-size: 13px; color: #495057">À :</label>
+                  <input
+                    type="text"
+                    class="form-control form-control-sm"
+                    [(ngModel)]="msgReceiver"
+                    name="msgReceiver"
+                    placeholder="Email(s) destinataire — séparés par des virgules"
+                    style="font-size: 13px"
+                  />
+                </div>
+
+                <!-- CC (copyTo → IMessage.copyTo) -->
+                <div style="display: flex; align-items: center; gap: 10px">
+                  <label class="form-label fw-semibold mb-0" style="min-width: 38px; font-size: 13px; color: #495057">CC :</label>
+                  <input
+                    type="text"
+                    class="form-control form-control-sm"
+                    [(ngModel)]="msgCopyTo"
+                    name="msgCopyTo"
+                    placeholder="Email(s) en copie — séparés par des virgules"
+                    style="font-size: 13px"
+                  />
+                </div>
+              </div>
               <dx-html-editor
                 [(value)]="htmlContent"
                 [height]="365"
@@ -1301,6 +1327,92 @@
       >
         <ng-container *ngFor="let c of node.children">
           <ng-template [ngTemplateOutlet]="renderRecipientNode" [ngTemplateOutletContext]="{ node: c, level: level + 1 }"></ng-template>
+        </ng-container>
+      </ul>
+    </li>
+  </ng-template>
+</ng-template>
+
+<!-- ==================== MODAL EXPÉDITEUR INTERNE (org picker) ==================== -->
+<ng-template #SenderModal let-SenderModal>
+  <div class="modal-header">
+    <h4 class="modal-title" style="color: #2c3e50; font-weight: bold; text-transform: uppercase; font-style: italic">
+      Choisir l'expéditeur — Organigramme
+    </h4>
+  </div>
+  <div class="modal-body">
+    <div style="height: 420px; overflow: auto; border: 1px solid #e9ecef; border-radius: 8px; padding: 12px; background: #fff">
+      <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px">
+        <input
+          type="text"
+          class="form-control"
+          [(ngModel)]="recipientTreeSearchQuery"
+          name="senderSearchQuery"
+          (input)="onRecipientTreeSearchChange()"
+          placeholder="Rechercher un département..."
+        />
+      </div>
+      <div *ngIf="recipientLoadingTree" style="text-align: center; padding: 40px 0; color: #6c757d">Chargement de l'organigramme...</div>
+      <ul *ngIf="!recipientLoadingTree && recipientTreeFiltered?.length" style="padding-left: 0; margin: 0; list-style: none">
+        <ng-container *ngFor="let node of recipientTreeFiltered">
+          <ng-template [ngTemplateOutlet]="renderSenderNode" [ngTemplateOutletContext]="{ node: node, level: 0 }"></ng-template>
+        </ng-container>
+      </ul>
+      <div
+        *ngIf="!recipientLoadingTree && (!recipientTreeFiltered || recipientTreeFiltered.length === 0)"
+        style="text-align: center; color: #6c757d"
+      >
+        Aucun département disponible.
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-light" (click)="SenderModal.close()">Annuler</button>
+  </div>
+
+  <ng-template #renderSenderNode let-node="node" let-level="level">
+    <li style="margin: 8px 0; list-style: none">
+      <div
+        (click)="toggleRecipientNodeExpand(node.id)"
+        style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 8px;
+          padding: 8px;
+          border-radius: 8px;
+          cursor: pointer;
+        "
+        [style.borderStyle]="'solid'"
+        [style.borderWidth.px]="3"
+        [style.borderColor]="getLevelColor(level)"
+        [style.background]="recipientSelectedDept?.id === node.id ? '#fff0e6' : '#ffffff'"
+      >
+        <div style="display: flex; align-items: center; gap: 8px">
+          <i
+            [class]="isRecipientNodeExpanded(node.id) ? 'fa fa-chevron-down' : 'fa fa-chevron-right'"
+            style="color: #6c757d; font-size: 12px"
+          ></i>
+          <span style="font-weight: 600; color: #2c3e50">{{ node.nom }}</span>
+        </div>
+        <div style="display: flex; gap: 12px; align-items: center">
+          <span *ngIf="(node.children?.length || 0) > 0" style="font-size: 13px; color: #6c757d">{{ node.children.length }}</span>
+          <input
+            type="checkbox"
+            class="org-checkbox"
+            [checked]="recipientSelectedDept?.id === node.id"
+            (change)="selectSenderDept(node, SenderModal); $event.stopPropagation()"
+            style="width: 18px; height: 18px; cursor: pointer"
+          />
+        </div>
+      </div>
+      <ul
+        *ngIf="isRecipientNodeExpanded(node.id) && node.children?.length"
+        [style.marginLeft.px]="(level + 1) * 18"
+        style="margin: 6px 0 0 0; padding-left: 0; list-style: none"
+      >
+        <ng-container *ngFor="let c of node.children">
+          <ng-template [ngTemplateOutlet]="renderSenderNode" [ngTemplateOutletContext]="{ node: c, level: level + 1 }"></ng-template>
         </ng-container>
       </ul>
     </li>

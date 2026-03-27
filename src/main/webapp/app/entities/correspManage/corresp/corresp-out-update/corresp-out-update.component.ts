@@ -73,6 +73,17 @@ export class CorrespOutUpdateComponent implements OnInit {
   isUploading = false;
 
   htmlContent: string = '';
+  // ── Message email fields (IMessage) ──────────────────────────────────────
+  /** sender: auto-filled from current user's email — maps to IMessage.sender */
+  msgSender: string = '';
+  /** receiver: maps to IMessage.receiver */
+  msgReceiver: string = '';
+  /** copyTo: maps to IMessage.copyTo */
+  msgCopyTo: string = '';
+
+  // Internal sender (org picker — replaces the old Destinataire org picker)
+  expediteurCode: string = '';
+  expediteurEmail: string = '';
 
   // correspType is fixed to 'Sortant' for this component
   correspType = 'Sortant';
@@ -217,6 +228,8 @@ export class CorrespOutUpdateComponent implements OnInit {
     this.accountService.getAuthenticationState().subscribe(account => {
       if (account && account.authorities) {
         this.isAdminOrBoc = account.authorities.includes(Authority.ADMIN) || account.authorities.includes(Authority.BOC);
+        // Auto-fill msgSender from user's email
+        this.msgSender = (account as any).email || (account as any).login || '';
       }
     });
 
@@ -310,6 +323,8 @@ export class CorrespOutUpdateComponent implements OnInit {
     if (id) {
       const company = this.companies.find(c => c.id === id);
       this.expediteur = company ? company.nom || '' : '';
+      // sync msgReceiver with company email if available
+      this.msgReceiver = (company as any)?.email || '';
     } else {
       if (!this.showManualExpediteur) {
         this.expediteur = '';
@@ -345,6 +360,8 @@ export class CorrespOutUpdateComponent implements OnInit {
     const p = this.personsForSelectedCompany.find(x => x.id === personId);
     if (p) {
       this.contactEmail = p.email || p.whatsapp || p.tel || p.nom || '';
+      // If person has email, use it as receiver
+      if (p.email) this.msgReceiver = p.email;
       this.contactEmailLabel = p.nom || '';
     } else {
       this.contactEmail = '';
@@ -709,7 +726,7 @@ export class CorrespOutUpdateComponent implements OnInit {
       this.validationInfoGenErrors['date'] = 'La date est obligatoire';
       isValid = false;
     }
-    if (!this.selectedCompanyId && !this.expediteur?.trim()) {
+    if (!this.expediteur?.trim()) {
       this.validationInfoGenErrors['expediteur'] = "L'expéditeur est obligatoire";
       isValid = false;
     }
@@ -1288,10 +1305,37 @@ export class CorrespOutUpdateComponent implements OnInit {
     this.updateCcLabelsFromSelection();
   }
 
+  // ── Internal Sender Modal (Expéditeur via org) ────────────────────────────
+  openSenderModal(content: any): void {
+    if (!this.selectedTypeDocument) return;
+    this.prepareAndLoadOrgaThenRecipientTree();
+    this.modalService.open(content, { size: 'xl' });
+  }
+
+  selectSenderDept(node: DepartementTreeFeignDTO, modalRef: any): void {
+    this.recipientSelectedDept = node;
+    this.expediteur = node.nom || '';
+    this.expediteurCode = node.code || '';
+    this.expediteurEmail = node.email || '';
+    modalRef.close();
+  }
+
+  clearSenderDept(): void {
+    this.recipientSelectedDept = null;
+    this.expediteur = '';
+    this.expediteurCode = '';
+    this.expediteurEmail = '';
+  }
+
   confirmCcSelection(modalRef: any): void {
     this.updateCcLabelsFromSelection();
     this.syncCcTasks();
     this.onRecipientOrCcChange();
+    // auto-populate msgCopyTo from CC dept emails
+    this.msgCopyTo = this.selectedCcDepts
+      .map(d => d.emailDept || '')
+      .filter(Boolean)
+      .join(', ');
     modalRef.close();
   }
 
