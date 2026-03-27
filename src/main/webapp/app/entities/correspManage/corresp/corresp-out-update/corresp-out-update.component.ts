@@ -312,6 +312,26 @@ export class CorrespOutUpdateComponent implements OnInit {
     });
   }
 
+  private loadDefaultExpediteurFromUserDepartment(userId: number): void {
+    this.correspService.getDepartementAffectationsByUser(userId).subscribe({
+      next: data => {
+        const affectations = data || [];
+
+        if (!affectations.length) return;
+
+        // priorité à un département CHEF si موجود, sinon le premier
+        const dept = affectations.find(a => a.typeAffectation === 'CHEF') || affectations[0];
+
+        this.expediteur = dept.nomDepartement || dept.codeDepartement || '';
+        this.expediteurCode = dept.codeDepartement || '';
+        this.expediteurEmail = dept.email || '';
+      },
+      error: err => {
+        console.error('Erreur chargement département utilisateur', err);
+      },
+    });
+  }
+
   onExpediteurChange(companyId: number | null | string): void {
     const id = companyId !== null && companyId !== undefined && companyId !== '' ? Number(companyId) : null;
     this.selectedCompanyId = id;
@@ -411,11 +431,6 @@ export class CorrespOutUpdateComponent implements OnInit {
   onTypeDocumentChange(): void {
     if (!this.selectedTypeDocument) {
       this.objet = '';
-      this.destinataire = '';
-      this.destinataireLabel = '';
-      this.contactEmailCC = '';
-      this.contactEmailCCLabel = '';
-      this.selectedCcDepts = [];
       return;
     }
 
@@ -424,74 +439,6 @@ export class CorrespOutUpdateComponent implements OnInit {
     if (this.selectedTypeDocument.nom === 'Autre') {
       this.tasks = this.tasks.filter(t => t.autoBoc === true);
     }
-
-    if (this.selectedTypeDocument.defautdest) {
-      this.tasks = this.tasks.filter(t => t.autoBoc === true);
-      this.correspService.queryOrgaDepsByCode({ code: this.selectedTypeDocument.defautdest }).subscribe({
-        next: (res: HttpResponse<IDepartement>) => {
-          if (res.body) {
-            this.destinataire = res.body.email || '';
-            this.destinataireLabel = res.body.nom || '';
-            this.tasks.push({
-              typeTask: 'traitement',
-              responsable: res.body.code ?? '',
-              dateLimite: '',
-              responsableName: res.body.nom ?? '',
-              commentaire: '',
-            });
-          } else {
-            this.destinataire = '';
-          }
-        },
-        error: () => {
-          this.destinataire = '';
-          this.destinataireLabel = '';
-        },
-      });
-    } else {
-      this.destinataire = '';
-      this.destinataireLabel = '';
-    }
-
-    if (this.selectedTypeDocument.defaultencopie) {
-      this.correspService.queryOrgaDepsByCode({ code: this.selectedTypeDocument.defaultencopie }).subscribe({
-        next: (res: HttpResponse<IDepartement>) => {
-          if (res.body) {
-            this.selectedCcDepts = [
-              {
-                idDept: res.body.id ?? null,
-                codeDept: res.body.code ?? '',
-                nomDept: res.body.nom ?? '',
-                emailDept: res.body.email ?? '',
-              },
-            ];
-            this.updateCcLabelsFromSelection();
-            this.tasks.push({
-              typeTask: 'lecture',
-              responsable: res.body.code ?? '',
-              dateLimite: '',
-              responsableName: res.body.nom ?? '',
-              commentaire: '',
-            });
-            this.syncDefaultTaskNames();
-          } else {
-            this.selectedCcDepts = [];
-            this.contactEmailCC = '';
-            this.contactEmailCCLabel = '';
-          }
-        },
-        error: () => {
-          this.selectedCcDepts = [];
-          this.contactEmailCC = '';
-          this.contactEmailCCLabel = '';
-        },
-      });
-    } else {
-      this.selectedCcDepts = [];
-      this.contactEmailCC = '';
-      this.contactEmailCCLabel = '';
-    }
-    this.syncDefaultTaskNames();
   }
 
   generateRandomId(length: number = 8): string {

@@ -35,6 +35,13 @@ export interface CorrespSummaryDTO {
   reference?: string | null;
 }
 
+export interface DepartementAffectationDTO {
+  codeDepartement?: string;
+  nomDepartement?: string;
+  typeAffectation?: string;
+  email?: string;
+}
+
 // Interface pour la réponse paginée
 export interface PagedCorrespResponse {
   content: ICorresp[];
@@ -403,6 +410,12 @@ export class CorrespService {
 
   getCorrespSummaryByTask(taskId: number): Observable<{ subject?: string | null; reference?: string | null }> {
     return this.http.get<{ subject?: string | null; reference?: string | null }>(`${this.resourceUrl}/by-task/${taskId}/summary`);
+  }
+
+  getDepartementAffectationsByUser(userId: number): Observable<DepartementAffectationDTO[]> {
+    return this.http.get<DepartementAffectationDTO[]>(
+      `${this.applicationConfigService.getEndpointFor('api/departements/user', 'orgacare')}/${userId}/affectations`
+    );
   }
 
   getCorrespSummariesByTasks(taskIds: number[]): Observable<Record<string, CorrespSummaryDTO>> {
