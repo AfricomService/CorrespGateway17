@@ -8,6 +8,7 @@ export interface ITypedocument {
   defaultencopie?: string | null;
   labelDD?: string | null;
   labelDCC?: string | null;
+  correspType?: string | null;
   usualstatus?: UsualStatus | null;
 }
 
