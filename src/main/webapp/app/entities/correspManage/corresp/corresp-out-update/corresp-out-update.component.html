@@ -207,7 +207,7 @@
                         [class.is-invalid]="validationInfoGenErrors['expediteur']"
                         [(ngModel)]="expediteur"
                         name="expediteur"
-                        placeholder="Sélectionner via l'organigramme"
+                        placeholder="Expéditeur rempli automatiquement"
                         [disabled]="true"
                         style="flex: 1"
                       />
@@ -722,27 +722,6 @@
                   border-radius: 8px;
                 "
               >
-                <!-- De (sender — auto) -->
-                <div style="display: flex; align-items: center; gap: 10px">
-                  <label class="form-label fw-semibold mb-0" style="min-width: 38px; font-size: 13px; color: #495057">De :</label>
-                  <div style="flex: 1; position: relative">
-                    <input
-                      type="email"
-                      class="form-control form-control-sm"
-                      [(ngModel)]="msgSender"
-                      name="msgSender"
-                      [disabled]="true"
-                      placeholder="Email de l'expéditeur (auto)"
-                      style="background: #e9ecef; font-size: 13px; padding-right: 28px"
-                    />
-                    <span
-                      style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: #6c757d; font-size: 11px"
-                      title="Rempli automatiquement"
-                      >🔒</span
-                    >
-                  </div>
-                </div>
-
                 <!-- À (receiver → IMessage.receiver) -->
                 <div style="display: flex; align-items: center; gap: 10px">
                   <label class="form-label fw-semibold mb-0" style="min-width: 38px; font-size: 13px; color: #495057">À :</label>

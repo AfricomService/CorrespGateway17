@@ -228,8 +228,13 @@ export class CorrespOutUpdateComponent implements OnInit {
     this.accountService.getAuthenticationState().subscribe(account => {
       if (account && account.authorities) {
         this.isAdminOrBoc = account.authorities.includes(Authority.ADMIN) || account.authorities.includes(Authority.BOC);
-        // Auto-fill msgSender from user's email
         this.msgSender = (account as any).email || (account as any).login || '';
+
+        const userId = (account as any)?.id;
+        if (userId) {
+          this.loadDefaultExpediteurFromUserDepartment(userId);
+          this.createDefaultProcessingTask(account);
+        }
       }
     });
 
@@ -319,17 +324,41 @@ export class CorrespOutUpdateComponent implements OnInit {
 
         if (!affectations.length) return;
 
-        // priorité à un département CHEF si موجود, sinon le premier
-        const dept = affectations.find(a => a.typeAffectation === 'CHEF') || affectations[0];
+        // priorité à un département CHEF si présent dans le tableau 'types', sinon le premier
+        const dept = affectations.find(a => a.types?.includes('CHEF')) || affectations[0];
 
-        this.expediteur = dept.nomDepartement || dept.codeDepartement || '';
-        this.expediteurCode = dept.codeDepartement || '';
+        this.expediteur = dept.departementName || dept.departementCode || '';
+        this.expediteurCode = dept.departementCode || '';
         this.expediteurEmail = dept.email || '';
       },
       error: err => {
         console.error('Erreur chargement département utilisateur', err);
       },
     });
+  }
+
+  private createDefaultProcessingTask(account: any): void {
+    const login = account.login || '';
+    const name = [account.firstName, account.lastName].filter(Boolean).join(' ') || login;
+
+    const taskData = {
+      typeTask: 'traitement',
+      responsable: login,
+      dateLimite: '',
+      responsableName: name,
+      commentaire: 'Tâche de traitement par défaut pour le créateur',
+      autoBoc: true,
+    };
+
+    if (!this.tasks) {
+      this.tasks = [];
+    }
+
+    // On n'ajoute la tâche que si elle n'existe pas déjà
+    const exists = this.tasks.some(t => t.typeTask === 'traitement' && t.responsable === login && t.autoBoc);
+    if (!exists) {
+      this.tasks.push(taskData);
+    }
   }
 
   onExpediteurChange(companyId: number | null | string): void {
@@ -344,7 +373,7 @@ export class CorrespOutUpdateComponent implements OnInit {
       const company = this.companies.find(c => c.id === id);
       this.expediteur = company ? company.nom || '' : '';
       // sync msgReceiver with company email if available
-      this.msgReceiver = (company as any)?.email || '';
+      // this.msgReceiver = (company as any)?.email || '';
     } else {
       if (!this.showManualExpediteur) {
         this.expediteur = '';

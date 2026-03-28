@@ -36,9 +36,9 @@ export interface CorrespSummaryDTO {
 }
 
 export interface DepartementAffectationDTO {
-  codeDepartement?: string;
-  nomDepartement?: string;
-  typeAffectation?: string;
+  departementCode?: string;
+  departementName?: string;
+  types?: string[];
   email?: string;
 }
 
