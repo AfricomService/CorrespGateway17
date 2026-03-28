@@ -389,7 +389,22 @@ export class CorrespDetailComponent implements OnInit {
         },
       });
 
-      this.typeDocumentService.query({ page: 0, size: 1000 }).subscribe(res => {
+      // Mapper corresptype backend → valeur attendue par le filtre
+      let correspTypeForBackend = '';
+      const ct = this.correspLoaded.corresptype;
+      if (ct === 'INCOMING') {
+        correspTypeForBackend = 'Entrant';
+      } else if (ct === 'OUTGOING') {
+        correspTypeForBackend = 'Sortant';
+      } else if (ct === 'INTERNAL') {
+        correspTypeForBackend = 'Interne';
+      }
+
+      const loadTypedocs$ = correspTypeForBackend
+        ? this.typeDocumentService.findByCorrespType(correspTypeForBackend)
+        : this.typeDocumentService.query({ page: 0, size: 1000 });
+
+      loadTypedocs$.subscribe(res => {
         this.typedocuments = res.body || [];
         const autre: ITypedocument = {
           id: 0,
@@ -399,6 +414,7 @@ export class CorrespDetailComponent implements OnInit {
           defaultencopie: null,
           labelDD: null,
           labelDCC: null,
+          correspType: null,
           usualstatus: null,
         };
         this.typedocuments.push(autre);

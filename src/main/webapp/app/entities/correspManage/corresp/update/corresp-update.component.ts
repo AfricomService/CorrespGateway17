@@ -248,24 +248,6 @@ export class CorrespUpdateComponent implements OnInit {
       }
     });
 
-    // charger types de documents
-    this.typeDocumentService.query({ page: 0, size: 1000 }).subscribe(res => {
-      this.typedocuments = res.body || [];
-
-      const autre: ITypedocument = {
-        id: 0,
-        nom: 'Autre',
-        defautdest: null,
-        defaultobject: null,
-        defaultencopie: null,
-        labelDD: null,
-        labelDCC: null,
-        usualstatus: null,
-      };
-
-      this.typedocuments.push(autre);
-    });
-
     const today = new Date();
     this.date = today.toISOString().split('T')[0];
 
@@ -276,6 +258,37 @@ export class CorrespUpdateComponent implements OnInit {
 
     this.route.queryParams.subscribe(params => {
       this.correspType = params['type'];
+
+      // Mapper correspType UI → valeur stockée en base
+      let correspTypeForBackend = '';
+      if (this.correspType === 'Arrivée') {
+        correspTypeForBackend = 'Entrant';
+      } else if (this.correspType === 'Sortant') {
+        correspTypeForBackend = 'Sortant';
+      } else if (this.correspType === 'Interne') {
+        correspTypeForBackend = 'Interne';
+      }
+
+      // Charger les typedocuments filtrés par correspType
+      const loadTypedocs$ = correspTypeForBackend
+        ? this.typeDocumentService.findByCorrespType(correspTypeForBackend)
+        : this.typeDocumentService.query({ page: 0, size: 1000 });
+
+      loadTypedocs$.subscribe(res => {
+        this.typedocuments = res.body || [];
+        const autre: ITypedocument = {
+          id: 0,
+          nom: 'Autre',
+          defautdest: null,
+          defaultobject: null,
+          defaultencopie: null,
+          labelDD: null,
+          labelDCC: null,
+          correspType: null,
+          usualstatus: null,
+        };
+        this.typedocuments.push(autre);
+      });
 
       // Auto-create a "traitement" task for BOC users creating an Arrivée corresp
       if (this.correspType === 'Arrivée') {
@@ -288,7 +301,6 @@ export class CorrespUpdateComponent implements OnInit {
             const userLogin = account.login;
             const userName = [account.firstName, account.lastName].filter(Boolean).join(' ') || userLogin;
 
-            // Avoid duplicate: only add if no traitement task for this user already exists
             const alreadyExists = this.tasks.some(t => t.typeTask === 'traitement' && t.responsable === userLogin);
             if (!alreadyExists) {
               this.tasks.push({
@@ -300,7 +312,6 @@ export class CorrespUpdateComponent implements OnInit {
                 autoBoc: true,
               });
 
-              // Open the tasks accordion to show the auto-created task
               if (!this.accordionStates['taches']) {
                 this.accordionStates['taches'] = true;
               }

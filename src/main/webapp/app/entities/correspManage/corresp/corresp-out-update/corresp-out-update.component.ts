@@ -238,7 +238,7 @@ export class CorrespOutUpdateComponent implements OnInit {
       }
     });
 
-    this.typeDocumentService.query({ page: 0, size: 1000 }).subscribe(res => {
+    this.typeDocumentService.findByCorrespType('Sortant').subscribe(res => {
       this.typedocuments = res.body || [];
       const autre: ITypedocument = {
         id: 0,
