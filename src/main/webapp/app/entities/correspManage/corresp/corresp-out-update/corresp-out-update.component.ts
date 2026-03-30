@@ -81,6 +81,8 @@ export class CorrespOutUpdateComponent implements OnInit {
   /** copyTo: maps to IMessage.copyTo */
   msgCopyTo: string = '';
 
+  selectedModel: string | null = null;
+
   // Internal sender (org picker — replaces the old Destinataire org picker)
   expediteurCode: string = '';
   expediteurEmail: string = '';
@@ -346,7 +348,7 @@ export class CorrespOutUpdateComponent implements OnInit {
       responsable: login,
       dateLimite: '',
       responsableName: name,
-      commentaire: 'Tâche de traitement par défaut pour le créateur',
+      commentaire: '',
       autoBoc: true,
     };
 
