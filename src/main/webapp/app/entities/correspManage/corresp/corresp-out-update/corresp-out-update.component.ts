@@ -46,6 +46,8 @@ import { ScanSettingsService } from 'app/entities/correspManage/pj/service/scan-
 import { ModelNotifService } from 'app/entities/configManage/model-notif/service/model-notif.service';
 import { IModelNotif } from 'app/entities/configManage/model-notif/model-notif.model';
 
+import { IMessage, NewMessage } from '../../message/message.model';
+
 interface FileIndexLink {
   index: number;
   uniqueName: string;
@@ -83,11 +85,16 @@ export class CorrespOutUpdateComponent implements OnInit {
   /** copyTo: maps to IMessage.copyTo */
   msgCopyTo: string = '';
 
+  currentUserFirstName: string = '';
+  currentUserLastName: string = '';
+  currentUserDepartementName: string = '';
+
   selectedModel: string | null = null;
 
   models: IModelNotif[] = [];
   loadingModels = false;
   selectedModelNotif: IModelNotif | null = null;
+  showEmailPreviewModal = false;
 
   // Internal sender (org picker — replaces the old Destinataire org picker)
   expediteurCode: string = '';
@@ -238,6 +245,8 @@ export class CorrespOutUpdateComponent implements OnInit {
       if (account && account.authorities) {
         this.isAdminOrBoc = account.authorities.includes(Authority.ADMIN) || account.authorities.includes(Authority.BOC);
         this.msgSender = (account as any).email || (account as any).login || '';
+        this.currentUserFirstName = (account as any).firstName || '';
+        this.currentUserLastName = (account as any).lastName || '';
 
         const userId = (account as any)?.id;
         if (userId) {
@@ -340,6 +349,7 @@ export class CorrespOutUpdateComponent implements OnInit {
         this.expediteur = dept.departementName || dept.departementCode || '';
         this.expediteurCode = dept.departementCode || '';
         this.expediteurEmail = dept.email || '';
+        this.currentUserDepartementName = dept.departementName || dept.departementCode || '';
       },
       error: err => {
         console.error('Erreur chargement département utilisateur', err);
@@ -382,11 +392,11 @@ export class CorrespOutUpdateComponent implements OnInit {
     if (id) {
       const company = this.companies.find(c => c.id === id);
       this.expediteur = company ? company.nom || '' : '';
-      // sync msgReceiver with company email if available
-      // this.msgReceiver = (company as any)?.email || '';
+      this.destinataireLabel = company ? company.nom || '' : ''; // ← AJOUT
     } else {
       if (!this.showManualExpediteur) {
         this.expediteur = '';
+        this.destinataireLabel = ''; // ← AJOUT
       }
     }
 
@@ -437,6 +447,7 @@ export class CorrespOutUpdateComponent implements OnInit {
       this.loadingPersons = false;
     } else {
       this.expediteur = '';
+      this.destinataireLabel = ''; // ← AJOUT
       if (!this.companies || this.companies.length === 0) {
         this.loadActiveCompanies();
       }
@@ -684,6 +695,12 @@ export class CorrespOutUpdateComponent implements OnInit {
       .subscribe({
         next: (savedCorresp: any) => {
           this.isSaving = false;
+
+          // ── Persister le message email si un modèle et un destinataire sont définis ──
+          if (savedCorresp?.id && (this.msgReceiver || this.msgCopyTo)) {
+            this.persistEmailMessage(savedCorresp.id);
+          }
+
           if (savedCorresp?.id) {
             this.router.navigate(['/corresp', savedCorresp.id, 'view']);
           } else {
@@ -694,6 +711,38 @@ export class CorrespOutUpdateComponent implements OnInit {
           this.isSaving = false;
         },
       });
+  }
+
+  private persistEmailMessage(correspId: number): void {
+    const message: NewMessage = {
+      id: null,
+      sender: this.msgSender || this.expediteurEmail || null,
+      receiver: this.msgReceiver || null,
+      copyTo: this.msgCopyTo || null,
+      blindCopyTo: null,
+      path: null,
+      msgID: null,
+      parentID: null,
+      inReplyTo: null,
+      type: this.selectedModelNotif?.name || null,
+      etat: 'PENDING',
+      correspId: correspId,
+      fileId: null,
+      uniqueName: null,
+      createdBy: this.msgSender || null,
+      creationDate: null,
+      updatedBy: null,
+      updatedDate: null,
+    };
+
+    this.correspService.createMessage(message).subscribe({
+      next: () => {
+        console.log('Message email persisté avec succès');
+      },
+      error: err => {
+        console.error('Erreur lors de la persistance du message email', err);
+      },
+    });
   }
 
   validateInfoGeneralesForm(): boolean {
@@ -1401,12 +1450,7 @@ export class CorrespOutUpdateComponent implements OnInit {
   }
 
   onModelChange(): void {
-    if (!this.selectedModelNotif) {
-      this.htmlContent = '';
-      return;
-    }
-    // Pré-remplir le corps avec le contenu du modèle
-    this.htmlContent = this.selectedModelNotif.content || '';
+    // Ne rien faire — le modèle est utilisé uniquement pour la prévisualisation
   }
 
   // ── PjCare scan ──────────────────────────────────────────────────────────
@@ -1588,6 +1632,124 @@ export class CorrespOutUpdateComponent implements OnInit {
     this.currentDocumentPages.splice(index, 1);
     this.currentDocumentPages.forEach((p, i) => (p.pageNumber = i + 1));
     if (this.currentDocumentPages.length === 0) this.scanPreview = null;
+  }
+
+  openEmailPreview(): void {
+    if (!this.selectedModelNotif) return;
+    this.showEmailPreviewModal = true;
+  }
+
+  closeEmailPreview(): void {
+    this.showEmailPreviewModal = false;
+  }
+
+  getEmailPreviewHtml(): string {
+    if (!this.selectedModelNotif) return '';
+
+    const model = this.selectedModelNotif;
+    const toValue = this.msgReceiver || model.recepientEmailFormule || '';
+    const ccValue = this.msgCopyTo || '';
+    const subject = model.subjectFormula || '';
+    const sender = model.senderEmailFormule || this.msgSender || '';
+
+    // Traitement du contenu du modèle avec les marqueurs
+    let modelContent = model.content || '';
+
+    // 1. Remplacer [CORPS_CORRESP] par le corps saisi dans l'éditeur
+    const userBody = this.htmlContent || '';
+    modelContent = modelContent.replace('[CORPS_CORRESP]', userBody ? `${userBody}<br>` : '');
+
+    // 2. Remplacer [br] par un vrai saut de ligne HTML
+    modelContent = modelContent.replace(/\[br\]/g, '<br>');
+
+    // 3. Remplacer les marqueurs de signature
+    const fullName = [this.currentUserFirstName, this.currentUserLastName].filter(Boolean).join(' ') || this.msgSender || '';
+    modelContent = modelContent.replace('[Votre nom]', `<strong>${fullName}</strong>`);
+    modelContent = modelContent.replace(
+      '[Votre département]',
+      this.currentUserDepartementName ? `<strong>${this.currentUserDepartementName}</strong>` : ''
+    );
+    modelContent = modelContent.replace('[Votre téléphone]', '');
+
+    // 4. Remplacer [signature] par un séparateur visuel
+    modelContent = modelContent.replace('[signature]', '<hr style="border:none;border-top:1px solid #e2e8f0;margin:12px 0;">');
+
+    // Noms des pièces jointes
+    const attachmentNames = this.uploadedFiles.map(f => f.name);
+
+    return this.buildEmailHtml({
+      to: toValue,
+      cc: ccValue,
+      subject,
+      sender,
+      body: modelContent,
+      attachments: attachmentNames,
+      recipientFormule: model.recepientEmailFormule || '',
+    });
+  }
+
+  private buildEmailHtml(data: {
+    to: string;
+    cc: string;
+    subject: string;
+    sender: string;
+    body: string;
+    attachments: string[];
+    recipientFormule: string;
+  }): string {
+    const attachmentsHtml =
+      data.attachments.length > 0
+        ? `<div style="margin-top:16px;padding:10px 14px;background:#f1f5f9;border-radius:6px;border:1px solid #e2e8f0;">
+        <p style="margin:0 0 6px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;">📎 Pièces jointes</p>
+        ${data.attachments
+          .map(
+            name =>
+              `<span style="display:inline-block;background:#fff;border:1px solid #cbd5e1;border-radius:4px;padding:2px 10px;font-size:12px;color:#374151;margin:2px 4px 2px 0;">📄 ${name}</span>`
+          )
+          .join('')}
+      </div>`
+        : '';
+
+    return `
+    <div style="font-family:Arial,sans-serif;max-width:700px;margin:0 auto;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <!-- Header -->
+      <div style="background:#1e40af;padding:16px 20px;">
+        <p style="margin:0;font-size:18px;font-weight:700;color:#fff;">📧 ${data.subject || '(Sans objet)'}</p>
+      </div>
+
+      <!-- Meta -->
+      <div style="padding:14px 20px;background:#f8fafc;border-bottom:1px solid #e2e8f0;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <tr>
+            <td style="padding:4px 0;color:#64748b;width:60px;font-weight:600;">De :</td>
+            <td style="padding:4px 0;color:#1e293b;">${data.sender}</td>
+          </tr>
+          <tr>
+            <td style="padding:4px 0;color:#64748b;font-weight:600;">À :</td>
+            <td style="padding:4px 0;color:#1e293b;">
+              ${data.recipientFormule ? `<span style="color:#64748b;margin-right:6px;">${data.recipientFormule}</span>` : ''}
+              ${data.to ? `<span style="color:#1e40af;">${data.to}</span>` : ''}
+            </td>
+          </tr>
+          ${
+            data.cc
+              ? `<tr>
+            <td style="padding:4px 0;color:#64748b;font-weight:600;">CC :</td>
+            <td style="padding:4px 0;color:#1e40af;">${data.cc}</td>
+          </tr>`
+              : ''
+          }
+        </table>
+      </div>
+
+      <!-- Body -->
+      <div style="padding:20px;font-size:14px;line-height:1.7;color:#1e293b;background:#fff;">
+        ${data.body}
+      </div>
+
+      ${attachmentsHtml}
+    </div>
+  `;
   }
 
   attachScanResult(modal: any): void {

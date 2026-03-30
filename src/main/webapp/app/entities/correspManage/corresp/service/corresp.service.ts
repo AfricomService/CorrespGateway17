@@ -10,7 +10,7 @@ import { createRequestOption } from 'app/core/request/request-util';
 import { ICorresp, NewCorresp } from '../corresp.model';
 import { ITasks } from '../../tasks/tasks.model';
 import { IPj } from '../../pj/pj.model';
-import { IMessage } from '../../message/message.model';
+import { IMessage, NewMessage } from '../../message/message.model';
 import { IOrga } from '../orga';
 import { DepartementTreeFeignDTO } from '../update/DepartementTreeFeignDTO';
 import { IDepartement } from '../../../orgacare/departement/departement.model';
@@ -430,6 +430,14 @@ export class CorrespService {
     return this.http
       .get<RestCorresp[]>(`${this.resourceUrl}/with-reference/list`, { observe: 'response' })
       .pipe(map(res => this.convertResponseArrayFromServer(res)));
+  }
+
+  /**
+   * POST /api/messages
+   * Crée un nouveau message (receiver, copyTo, correspId, etc.)
+   */
+  createMessage(message: NewMessage): Observable<HttpResponse<IMessage>> {
+    return this.http.post<IMessage>(this.resourceUrlMessages, message, { observe: 'response' });
   }
 
   /**
