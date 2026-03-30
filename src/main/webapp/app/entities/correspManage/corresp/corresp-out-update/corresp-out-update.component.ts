@@ -43,6 +43,8 @@ import { AccountService } from 'app/core/auth/account.service';
 import { Authority } from 'app/config/authority.constants';
 import { PjCareService, PjCareDriverInfo, ScanDriver, ScannedPage } from 'app/entities/correspManage/pj/service/pjcare.service';
 import { ScanSettingsService } from 'app/entities/correspManage/pj/service/scan-settings.service';
+import { ModelNotifService } from 'app/entities/configManage/model-notif/service/model-notif.service';
+import { IModelNotif } from 'app/entities/configManage/model-notif/model-notif.model';
 
 interface FileIndexLink {
   index: number;
@@ -82,6 +84,10 @@ export class CorrespOutUpdateComponent implements OnInit {
   msgCopyTo: string = '';
 
   selectedModel: string | null = null;
+
+  models: IModelNotif[] = [];
+  loadingModels = false;
+  selectedModelNotif: IModelNotif | null = null;
 
   // Internal sender (org picker — replaces the old Destinataire org picker)
   expediteurCode: string = '';
@@ -223,7 +229,8 @@ export class CorrespOutUpdateComponent implements OnInit {
     protected parentClassdefService: ParentClassdefService,
     protected accountService: AccountService,
     private pjCareService: PjCareService,
-    private scanSettingsService: ScanSettingsService
+    private scanSettingsService: ScanSettingsService,
+    protected modelNotifService: ModelNotifService
   ) {}
 
   ngOnInit(): void {
@@ -236,6 +243,7 @@ export class CorrespOutUpdateComponent implements OnInit {
         if (userId) {
           this.loadDefaultExpediteurFromUserDepartment(userId);
           this.createDefaultProcessingTask(account);
+          this.loadModels();
         }
       }
     });
@@ -1375,6 +1383,30 @@ export class CorrespOutUpdateComponent implements OnInit {
 
   toggleAccordion(section: string): void {
     this.accordionStates[section] = !this.accordionStates[section];
+  }
+
+  loadModels(): void {
+    this.loadingModels = true;
+    this.modelNotifService.query({ page: 0, size: 1000, sort: ['name,ASC'] }).subscribe({
+      next: (res: HttpResponse<IModelNotif[]>) => {
+        this.models = res.body || [];
+        this.loadingModels = false;
+      },
+      error: err => {
+        console.error('Erreur chargement modèles', err);
+        this.models = [];
+        this.loadingModels = false;
+      },
+    });
+  }
+
+  onModelChange(): void {
+    if (!this.selectedModelNotif) {
+      this.htmlContent = '';
+      return;
+    }
+    // Pré-remplir le corps avec le contenu du modèle
+    this.htmlContent = this.selectedModelNotif.content || '';
   }
 
   // ── PjCare scan ──────────────────────────────────────────────────────────

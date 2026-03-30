@@ -707,14 +707,31 @@
                 "
               >
                 <!-- Model -->
+                <!-- Après (remplacer par) -->
                 <div style="display: flex; align-items: center; gap: 10px">
                   <label class="form-label fw-semibold mb-0" style="min-width: 50px; font-size: 13px; color: #495057">Modèle :</label>
                   <div style="flex: 1; display: flex; gap: 8px">
-                    <select class="form-select form-select-sm" [(ngModel)]="selectedModel" name="selectedModel" style="font-size: 13px">
-                      <option [ngValue]="null" disabled selected>-- Choisir un modèle --</option>
+                    <select
+                      class="form-select form-select-sm"
+                      [(ngModel)]="selectedModelNotif"
+                      name="selectedModelNotif"
+                      style="font-size: 13px"
+                      [disabled]="loadingModels"
+                      (ngModelChange)="onModelChange()"
+                    >
+                      <option [ngValue]="null">-- Choisir un modèle --</option>
+                      <option *ngFor="let model of models" [ngValue]="model">
+                        {{ model.name }}<ng-container *ngIf="model.famille"> — {{ model.famille }}</ng-container>
+                      </option>
                     </select>
-                    <button type="button" class="btn btn-sm btn-outline-primary" style="font-size: 12px; white-space: nowrap">
-                      Visualiser
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-primary"
+                      style="font-size: 12px; white-space: nowrap"
+                      [disabled]="!selectedModelNotif"
+                      (click)="htmlContent = selectedModelNotif?.content || ''"
+                    >
+                      Appliquer
                     </button>
                   </div>
                 </div>
