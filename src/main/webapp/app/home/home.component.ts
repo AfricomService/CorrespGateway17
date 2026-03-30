@@ -570,6 +570,41 @@ export class HomeComponent implements OnInit, OnDestroy {
     return '';
   }
 
+  getTaskTypeBg(type?: string | null): string {
+    const k = (type || '').toString().toLowerCase();
+    if (k === 'lecture') return '#e8f2ff';
+    if (k === 'signature') return '#efe8ff';
+    if (k === 'traitement') return '#fff0e6';
+    if (k === 'validation') return '#e9f7ee';
+    return '#ffffff';
+  }
+
+  getTaskTypeAccent(type?: string | null): string {
+    const k = (type || '').toString().toLowerCase();
+    if (k === 'lecture') return '#1e7bff';
+    if (k === 'signature') return '#6d28d9';
+    if (k === 'traitement') return '#f97316';
+    if (k === 'validation') return '#16a34a';
+    return '#6c757d';
+  }
+
+  getTaskStatusColor(status?: CorrespStatus | null): string {
+    switch (status) {
+      case CorrespStatus.DRAFT:
+        return 'deeppink'; // Pink
+      case CorrespStatus.IN_PROGRESS:
+        return '#0d6efd'; // Blue
+      case CorrespStatus.DISPATCH:
+        return '#6c757d'; // Grey (dispatch)
+      case CorrespStatus.CLOSED:
+        return '#198754'; // Green
+      case CorrespStatus.CANCELLED:
+        return '#dc3545'; // Red
+      default:
+        return '#6c757d'; // Grey default
+    }
+  }
+
   // ---------- Recherche distante ----------
 
   formatToDate(value: any): Date | null {

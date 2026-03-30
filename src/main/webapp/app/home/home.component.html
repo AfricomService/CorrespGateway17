@@ -286,12 +286,29 @@
                     (dblclick)="openTask(t)"
                     (keydown.enter)="openTask(t)"
                     (click)="openTask(t)"
-                    [ngClass]="getStatusClass(t.status)"
+                    [style.background-color]="getTaskTypeBg(t.taskType)"
+                    [style.border-left]="'6px solid ' + getTaskStatusColor(t.status)"
                     [attr.aria-label]="getTaskSubject(t) + ' [' + getTaskReference(t) + '] - ' + (t.status || '')"
                   >
                     <div class="task-card-header">
                       <div class="task-title">{{ getTaskSubject(t) }}</div>
-                      <div class="task-status-pill">{{ t.status }}</div>
+                      <div style="display: flex; gap: 8px; align-items: center">
+                        <div
+                          *ngIf="t.taskType"
+                          class="task-status-pill"
+                          [style.background-color]="getTaskTypeAccent(t.taskType)"
+                          style="color: white; font-weight: 600; text-transform: uppercase"
+                        >
+                          {{ t.taskType }}
+                        </div>
+                        <div
+                          class="task-status-pill"
+                          [style.background-color]="getTaskStatusColor(t.status)"
+                          style="color: white; font-weight: 600; text-transform: uppercase"
+                        >
+                          {{ t.status }}
+                        </div>
+                      </div>
                     </div>
 
                     <div class="task-card-body">
