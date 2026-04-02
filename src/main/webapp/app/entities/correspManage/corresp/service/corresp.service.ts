@@ -53,6 +53,22 @@ export interface PagedCorrespResponse {
   hasPrevious: boolean;
 }
 
+export interface CorrespReferenceItem {
+  id: number;
+  reference: string;
+  subject?: string | null;
+}
+
+export interface PagedReferenceResponse {
+  content: CorrespReferenceItem[];
+  currentPage: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+}
+
 export type RestCorresp = RestOf<ICorresp>;
 
 export type NewRestCorresp = RestOf<NewCorresp>;
@@ -430,6 +446,31 @@ export class CorrespService {
     return this.http
       .get<RestCorresp[]>(`${this.resourceUrl}/with-reference/list`, { observe: 'response' })
       .pipe(map(res => this.convertResponseArrayFromServer(res)));
+  }
+
+  // Méthode à ajouter dans la classe CorrespService
+
+  getReferences(page: number = 1, size: number = 20, search?: string): Observable<PagedReferenceResponse> {
+    let params: any = { page, size };
+    if (search && search.trim()) params['search'] = search.trim();
+
+    return this.http
+      .get<PagedReferenceResponse>(`${this.applicationConfigService.getEndpointFor('api/corresps/references', 'correspmanage')}`, {
+        params: createRequestOption(params),
+      })
+      .pipe(
+        catchError(() =>
+          of({
+            content: [],
+            currentPage: page,
+            pageSize: size,
+            totalItems: 0,
+            totalPages: 0,
+            hasNext: false,
+            hasPrevious: false,
+          })
+        )
+      );
   }
 
   /**

@@ -799,10 +799,10 @@
                 <button
                   (click)="openTasksModal(AddTaskModal); $event.stopPropagation()"
                   *ngIf="correspLoaded?.status !== CorrespStatus.CLOSED"
-                  [disabled]="btnSaveTaskDisabled || !(canWriteCorresp || canAdminCorresp)"
+                  [disabled]="btnSaveTaskDisabled || !(canWriteCorresp || canAdminCorresp || isReadOnlyAclUser)"
                   class="btn btn-primary btn-sm"
                   style="font-weight: bold; font-size: 1.2em; padding: 0 0.5em"
-                  title="{{ canWriteCorresp || canAdminCorresp ? '' : 'Droit insuffisant' }}"
+                  title="{{ canWriteCorresp || canAdminCorresp || isReadOnlyAclUser ? '' : 'Droit insuffisant' }}"
                 >
                   +
                 </button>
@@ -1544,7 +1544,12 @@
     </h4>
     <button
       (click)="saveTask()"
-      [disabled]="btnSaveTaskDisabled"
+      [attr.title]="
+        canWriteCorresp || canAdminCorresp || isReadOnlyAclUser
+          ? ''
+          : ('correspCareApp.correspManageCorresp.actions.insufficientRights' | translate)
+      "
+      [disabled]="btnSaveTaskDisabled || !(canWriteCorresp || canAdminCorresp || isReadOnlyAclUser)"
       class="btn btn-primary btn-sm"
       jhiTranslate="correspCareApp.correspManageCorresp.actions.save"
       type="button"
@@ -1754,8 +1759,32 @@
           <div class="form-text" jhiTranslate="correspCareApp.correspManageCorresp.detail.selectActionType" style="margin-top: -6px">
             Sélectionnez le type d'action à effectuer
           </div>
-          <div class="type-actions">
-            <button (click)="selectedType = 'lecture'" [class.active]="selectedType === 'lecture'" class="type-card lecture" type="button">
+          <!-- Bandeau info pour utilisateur lecture seule -->
+          <div
+            *ngIf="isReadOnlyAclUser"
+            style="
+              margin-bottom: 10px;
+              padding: 8px 12px;
+              background: #eff6ff;
+              border-left: 3px solid #3b82f6;
+              border-radius: 6px;
+              font-size: 12px;
+              color: #1e40af;
+            "
+          >
+            ℹ️ Vous avez un accès <strong>lecture seule</strong> sur ce courrier. Seules les tâches de type <strong>Lecture</strong> peuvent
+            être ajoutées.
+          </div>
+
+          <div class="type-actions" [style.grid-template-columns]="isReadOnlyAclUser ? '1fr' : 'repeat(4, 1fr)'">
+            <!-- Bouton Lecture : toujours visible -->
+            <button
+              (click)="!isReadOnlyAclUser && (selectedType = 'lecture')"
+              [class.active]="selectedType === 'lecture'"
+              [style.cursor]="isReadOnlyAclUser ? 'default' : 'pointer'"
+              class="type-card lecture"
+              type="button"
+            >
               <svg aria-hidden="true" class="icon" viewBox="0 0 24 24">
                 <path d="M3 4h8a5 5 0 0 1 5 5v11H8a5 5 0 0 0-5-5V4Z" fill="currentColor" opacity="0.15" />
                 <path d="M3 4h8a5 5 0 0 1 5 5v11H8a5 5 0 0 0-5-5V4Z" fill="none" stroke="currentColor" stroke-width="1.6" />
@@ -1763,42 +1792,56 @@
               </svg>
               Lecture
             </button>
-            <button
-              (click)="selectedType = 'signature'"
-              [class.active]="selectedType === 'signature'"
-              class="type-card signature"
-              type="button"
-            >
-              <svg aria-hidden="true" class="icon" viewBox="0 0 24 24">
-                <path d="M3 21l6-2 9-9-4-4-9 9-2 6Z" fill="none" stroke="currentColor" stroke-width="1.6" />
-                <path d="M14 6l4 4" stroke="currentColor" stroke-width="1.6" />
-              </svg>
-              Signature
-            </button>
-            <button
-              (click)="selectedType = 'traitement'"
-              [class.active]="selectedType === 'traitement'"
-              class="type-card traitement"
-              type="button"
-            >
-              <svg aria-hidden="true" class="icon" viewBox="0 0 24 24">
-                <path d="M12 6v-3m0 18v-3M6 12H3m18 0h-3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2" stroke="currentColor" stroke-width="1.6" />
-                <circle cx="12" cy="12" fill="none" r="3.5" stroke="currentColor" stroke-width="1.6" />
-              </svg>
-              Traitement
-            </button>
-            <button
-              (click)="selectedType = 'validation'"
-              [class.active]="selectedType === 'validation'"
-              class="type-card validation"
-              type="button"
-            >
-              <svg aria-hidden="true" class="icon" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" fill="none" r="8" stroke="currentColor" stroke-width="1.6" />
-                <path d="M8.5 12.5l2.5 2.5 4.5-5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" />
-              </svg>
-              Validation
-            </button>
+
+            <!-- Boutons masqués pour utilisateur lecture seule -->
+            <ng-container *ngIf="!isReadOnlyAclUser">
+              <button
+                (click)="selectedType = 'signature'"
+                [class.active]="selectedType === 'signature'"
+                class="type-card signature"
+                type="button"
+              >
+                <svg aria-hidden="true" class="icon" viewBox="0 0 24 24">
+                  <path d="M3 21l6-2 9-9-4-4-9 9-2 6Z" fill="none" stroke="currentColor" stroke-width="1.6" />
+                  <path d="M14 6l4 4" stroke="currentColor" stroke-width="1.6" />
+                </svg>
+                Signature
+              </button>
+              <button
+                (click)="selectedType = 'traitement'"
+                [class.active]="selectedType === 'traitement'"
+                class="type-card traitement"
+                type="button"
+              >
+                <svg aria-hidden="true" class="icon" viewBox="0 0 24 24">
+                  <path
+                    d="M12 6v-3m0 18v-3M6 12H3m18 0h-3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"
+                    stroke="currentColor"
+                    stroke-width="1.6"
+                  />
+                  <circle cx="12" cy="12" fill="none" r="3.5" stroke="currentColor" stroke-width="1.6" />
+                </svg>
+                Traitement
+              </button>
+              <button
+                (click)="selectedType = 'validation'"
+                [class.active]="selectedType === 'validation'"
+                class="type-card validation"
+                type="button"
+              >
+                <svg aria-hidden="true" class="icon" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" fill="none" r="8" stroke="currentColor" stroke-width="1.6" />
+                  <path
+                    d="M8.5 12.5l2.5 2.5 4.5-5"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.8"
+                  />
+                </svg>
+                Validation
+              </button>
+            </ng-container>
           </div>
           <div *ngIf="validationErrors['typeTask']" class="text-danger small">{{ validationErrors['typeTask'] }}</div>
           <label class="form-label fw-semibold" jhiTranslate="correspCareApp.correspManageCorresp.detail.deadline">Date limite</label>
@@ -1828,9 +1871,11 @@
     <button
       (click)="saveTask()"
       [attr.title]="
-        canWriteCorresp || canAdminCorresp ? '' : ('correspCareApp.correspManageCorresp.actions.insufficientRights' | translate)
+        canWriteCorresp || canAdminCorresp || isReadOnlyAclUser
+          ? ''
+          : ('correspCareApp.correspManageCorresp.actions.insufficientRights' | translate)
       "
-      [disabled]="btnSaveTaskDisabled || !(canWriteCorresp || canAdminCorresp)"
+      [disabled]="btnSaveTaskDisabled || !(canWriteCorresp || canAdminCorresp || isReadOnlyAclUser)"
       class="btn btn-primary btn-model"
       jhiTranslate="correspCareApp.correspManageCorresp.actions.save"
       type="button"

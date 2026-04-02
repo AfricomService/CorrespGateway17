@@ -1691,7 +1691,10 @@ export class CorrespDetailComponent implements OnInit {
     }
 
     // ✅ MODE NOUVELLE TÂCHE : sauvegarde backend normale
-    if (!this.canWriteCorresp) {
+    const canAddTask =
+      this.canWriteCorresp || this.canAdminCorresp || this.isGlobalAdmin || (this.isReadOnlyAclUser && this.selectedType === 'lecture');
+
+    if (!canAddTask) {
       this.showNotification("Vous n'avez pas le droit d'ajouter une tâche sur ce courrier", 'error');
       return;
     }
@@ -1782,14 +1785,18 @@ export class CorrespDetailComponent implements OnInit {
   validationErrors: { [key: string]: string } = {};
 
   openTasksModal(content: any): void {
-    if (!this.canWriteCorresp) {
-      this.showNotification('Vous êtes en lecture seule pour ce courrier', 'error');
+    // Bloquer uniquement si aucun droit du tout
+    if (!this.canWriteCorresp && !this.canAdminCorresp && !this.isGlobalAdmin && !this.isReadOnlyAclUser) {
+      this.showNotification("Vous n'avez pas le droit d'ajouter une tâche sur ce courrier", 'error');
       return;
     }
     this.editingPendingTaskIndex = -1;
-    // this.selectedOrga = null;
     this.selectedDepartement = '';
     this.resetForm();
+    // Pré-sélectionner 'lecture' si l'utilisateur est lecture seule
+    if (this.isReadOnlyAclUser) {
+      this.selectedType = 'lecture';
+    }
     this.prepareAndLoadOrgaThenTree();
     this.modalService.open(content, { size: 'xl' });
   }
@@ -3077,6 +3084,18 @@ export class CorrespDetailComponent implements OnInit {
       const tt = (t.taskType || '').toLowerCase();
       return tt === 'traitement' || tt === 'signature' || tt === 'validation';
     });
+  }
+
+  get isReadOnlyAclUser(): boolean {
+    if (this.canWriteCorresp || this.canAdminCorresp || this.isGlobalAdmin) return false;
+    const accessibleTasks = (this.tachesAssociees || []).filter(t => this.userAclTaskIds.has(t.id));
+    return (
+      accessibleTasks.length > 0 &&
+      accessibleTasks.every(t => {
+        const tt = (t.taskType || '').toLowerCase();
+        return tt === 'lecture';
+      })
+    );
   }
 
   getDispatchBadgeStyle(type?: string | null): { [key: string]: string } {
