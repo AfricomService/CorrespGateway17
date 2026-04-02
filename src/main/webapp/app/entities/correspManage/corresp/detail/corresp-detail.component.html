@@ -1289,8 +1289,8 @@
               <div style="display: flex; align-items: center; gap: 12px">
                 <button
                   (click)="fileInput.click(); $event.stopPropagation()"
-                  *ngIf="isEditableLeft"
-                  [disabled]="isUploading || !(canWriteCorresp || canAdminCorresp)"
+                  *ngIf="canManageAttachments"
+                  [disabled]="isUploading || !canManageAttachments"
                   [style.cursor]="isUploading ? 'not-allowed' : 'pointer'"
                   [style.opacity]="isUploading || !(canWriteCorresp || canAdminCorresp) ? '0.5' : '1'"
                   class="btn btn-primary btn-sm"
@@ -1303,8 +1303,8 @@
                 <button
                   class="btn btn-outline-primary btn-sm"
                   (click)="openScanModal(ScanModal); $event.stopPropagation()"
-                  *ngIf="isEditableLeft"
-                  [disabled]="isUploading || !(canWriteCorresp || canAdminCorresp)"
+                  *ngIf="canManageAttachments"
+                  [disabled]="isUploading || !canManageAttachments"
                   [style.opacity]="isUploading || !(canWriteCorresp || canAdminCorresp) ? '0.5' : '1'"
                   [style.cursor]="isUploading || !(canWriteCorresp || canAdminCorresp) ? 'not-allowed' : 'pointer'"
                   style="font-size: 1em; width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center"
@@ -1424,7 +1424,7 @@
 
                     <dx-button
                       (click)="openDeletePjModal(DeletePjModal, pj)"
-                      [disabled]="isUploading || !(canWriteCorresp || canDeleteCorresp || canAdminCorresp)"
+                      [disabled]="isUploading || !(canManageAttachments || canDeleteCorresp)"
                       [elementAttr]="{ title: canWriteCorresp || canDeleteCorresp || canAdminCorresp ? '' : 'Droit insuffisant' }"
                       class="pj-action-btn"
                       icon="trash"

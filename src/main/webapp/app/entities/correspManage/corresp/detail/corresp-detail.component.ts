@@ -3067,6 +3067,17 @@ export class CorrespDetailComponent implements OnInit {
         return type ?? '';
     }
   }
+  get canManageAttachments(): boolean {
+    // Admin ou droit d'écriture direct
+    if (this.canWriteCorresp || this.canAdminCorresp || this.isGlobalAdmin) return true;
+
+    // Vérifier si l'utilisateur a une tâche de type traitement/signature/validation via ACL
+    const accessibleTasks = (this.tachesAssociees || []).filter(t => this.userAclTaskIds.has(t.id));
+    return accessibleTasks.some(t => {
+      const tt = (t.taskType || '').toLowerCase();
+      return tt === 'traitement' || tt === 'signature' || tt === 'validation';
+    });
+  }
 
   getDispatchBadgeStyle(type?: string | null): { [key: string]: string } {
     switch (type) {
