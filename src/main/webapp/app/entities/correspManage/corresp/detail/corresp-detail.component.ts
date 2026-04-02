@@ -3038,6 +3038,51 @@ export class CorrespDetailComponent implements OnInit {
     return result;
   }
 
+  getDispatchIcon(type?: string | null): string {
+    switch (type) {
+      case DispatchType.LETTER:
+        return '📄';
+      case DispatchType.EMAIL:
+        return '📧';
+      case DispatchType.FAX:
+        return '📠';
+      case DispatchType.REGISTERED_LETTER:
+        return '📬';
+      default:
+        return '📄';
+    }
+  }
+
+  getDispatchLabel(type?: string | null): string {
+    switch (type) {
+      case DispatchType.LETTER:
+        return 'Lettre';
+      case DispatchType.EMAIL:
+        return 'E-mail';
+      case DispatchType.FAX:
+        return 'Fax';
+      case DispatchType.REGISTERED_LETTER:
+        return 'Recommandée';
+      default:
+        return type ?? '';
+    }
+  }
+
+  getDispatchBadgeStyle(type?: string | null): { [key: string]: string } {
+    switch (type) {
+      case DispatchType.LETTER:
+        return { background: '#e8f0fe', color: '#2248a1', border: '1px solid #b3c5f7' };
+      case DispatchType.EMAIL:
+        return { background: '#e6f7ff', color: '#0c5a8a', border: '1px solid #91d5ff' };
+      case DispatchType.FAX:
+        return { background: '#fff3e0', color: '#7c4200', border: '1px solid #ffb74d' };
+      case DispatchType.REGISTERED_LETTER:
+        return { background: '#f3e8ff', color: '#5b2086', border: '1px solid #c084fc' };
+      default:
+        return { background: '#f1f3f5', color: '#495057', border: '1px solid #dee2e6' };
+    }
+  }
+
   private expandAllFilteredNodes(nodes: DepartementTreeFeignDTO[], expandedSet: Set<number>): void {
     for (const node of nodes) {
       if (node.id != null) {

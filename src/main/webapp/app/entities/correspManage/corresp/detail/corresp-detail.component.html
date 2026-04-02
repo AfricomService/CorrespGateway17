@@ -194,23 +194,45 @@
                 transition: background-color 0.3s ease;
               "
             >
-              <h5 style="font-weight: 600; margin: 0; color: #2c3e50">
+              <h5 style="font-weight: 600; margin: 0; color: #2c3e50; display: flex; align-items: center; gap: 8px">
+                <span [innerHTML]="getDispatchIcon(correspLoaded?.dispatchType)" style="font-size: 18px; line-height: 1"></span>
                 <span jhiTranslate="correspCareApp.correspManageCorresp.detail.generalInfo">Informations Générales</span> -
                 <span *ngIf="correspLoaded?.status as st" [style.color]="getTaskColor(st)">
                   {{ getTaskLabel(st) }}
                 </span>
               </h5>
 
-              <svg
-                [style.transform]="accordionStates['infoGen'] ? 'rotate(180deg)' : 'rotate(0deg)'"
-                fill="none"
-                stroke="currentColor"
-                style="transition: transform 0.3s ease; width: 20px; height: 20px"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
-              </svg>
+              <div style="display: flex; align-items: center; gap: 10px">
+                <span
+                  *ngIf="correspLoaded?.dispatchType"
+                  [ngStyle]="getDispatchBadgeStyle(correspLoaded?.dispatchType)"
+                  style="
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 5px;
+                    padding: 2px 10px;
+                    border-radius: 20px;
+                    font-size: 11px;
+                    font-weight: 600;
+                    text-transform: uppercase;
+                    letter-spacing: 0.4px;
+                  "
+                >
+                  <span [innerHTML]="getDispatchIcon(correspLoaded?.dispatchType)"></span>
+                  {{ getDispatchLabel(correspLoaded?.dispatchType) }}
+                </span>
+
+                <svg
+                  [style.transform]="accordionStates['infoGen'] ? 'rotate(180deg)' : 'rotate(0deg)'"
+                  fill="none"
+                  stroke="currentColor"
+                  style="transition: transform 0.3s ease; width: 20px; height: 20px"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+                </svg>
+              </div>
             </div>
 
             <!-- 🟢 SI DRAFT ou DISPATCH : afficher le formulaire -->
@@ -663,21 +685,91 @@
                 [style.padding]="accordionStates['infoGen'] ? '16px' : '0 16px'"
                 style="overflow: hidden; transition: max-height 0.5s ease, padding 0.5s ease"
               >
-                <div class="alert alert-light" role="alert" style="border: 1px solid #dee2e6; color: #495057">
-                  <p><strong jhiTranslate="correspCareApp.correspManageCorresp.subject">Objet</strong> : {{ correspLoaded?.subject }}</p>
-                  <p>
-                    <strong jhiTranslate="correspCareApp.correspManageCorresp.sender">Expéditeur</strong>
-                    : {{ correspLoaded?.sender }} |
-                    <strong jhiTranslate="correspCareApp.correspManageCorresp.recipient">Destinataire</strong> :
-                    {{ correspLoaded?.labelDestinataire }} | <strong jhiTranslate="correspCareApp.correspManageCorresp.cc">CC</strong> :
-                    {{ correspLoaded?.labelContactCC }}
-                  </p>
-                  <p>
-                    <strong jhiTranslate="correspCareApp.correspManageCorresp.date">Date</strong> :
-                    {{ formatLongDate(correspLoaded?.courrierDate) }} |
-                    <strong jhiTranslate="correspCareApp.correspManageCorresp.contact">Contact</strong> :
-                    {{ correspLoaded?.contactEmail }}
-                  </p>
+                <div
+                  style="
+                    background: #fff;
+                    border: 1px solid #e9ecef;
+                    border-radius: 8px;
+                    padding: 14px 16px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 10px;
+                  "
+                >
+                  <div *ngIf="correspLoaded?.subject" style="display: flex; gap: 8px; align-items: baseline; font-size: 14px">
+                    <strong jhiTranslate="correspCareApp.correspManageCorresp.subject" style="white-space: nowrap">Objet :</strong>
+                    <span>{{ correspLoaded?.subject }}</span>
+                  </div>
+
+                  <div *ngIf="correspLoaded?.sender" style="display: flex; gap: 8px; align-items: baseline; font-size: 14px">
+                    <strong jhiTranslate="correspCareApp.correspManageCorresp.sender" style="white-space: nowrap">Expéditeur :</strong>
+                    <span>{{ correspLoaded?.sender }}</span>
+                  </div>
+
+                  <div *ngIf="correspLoaded?.contactEmail" style="display: flex; gap: 8px; align-items: baseline; font-size: 14px">
+                    <strong jhiTranslate="correspCareApp.correspManageCorresp.contact" style="white-space: nowrap">Contact :</strong>
+                    <span>{{ correspLoaded?.contactEmail }}</span>
+                  </div>
+
+                  <div
+                    *ngIf="correspLoaded?.labelDestinataire"
+                    style="display: flex; gap: 8px; align-items: center; font-size: 14px; flex-wrap: wrap"
+                  >
+                    <strong jhiTranslate="correspCareApp.correspManageCorresp.recipient" style="white-space: nowrap">Destinataire :</strong>
+                    <span
+                      style="
+                        display: inline-flex;
+                        align-items: center;
+                        background: #e8f2ff;
+                        color: #1a5ca8;
+                        border-radius: 12px;
+                        padding: 1px 10px;
+                        font-size: 13px;
+                        font-weight: 500;
+                      "
+                    >
+                      {{ correspLoaded?.labelDestinataire }}
+                    </span>
+                  </div>
+
+                  <div
+                    *ngIf="correspLoaded?.labelContactCC"
+                    style="display: flex; gap: 8px; align-items: center; font-size: 14px; flex-wrap: wrap"
+                  >
+                    <strong style="white-space: nowrap">En Copie :</strong>
+                    <ng-container *ngFor="let cc of correspLoaded?.labelContactCC?.split(',')">
+                      <span
+                        style="
+                          display: inline-flex;
+                          align-items: center;
+                          background: #e8f2ff;
+                          color: #1a5ca8;
+                          border-radius: 12px;
+                          padding: 1px 10px;
+                          font-size: 13px;
+                          font-weight: 500;
+                          margin: 2px;
+                        "
+                      >
+                        {{ cc.trim() }}
+                      </span>
+                    </ng-container>
+                  </div>
+
+                  <div *ngIf="correspLoaded?.responseTo" style="display: flex; gap: 8px; align-items: baseline; font-size: 14px">
+                    <strong style="white-space: nowrap">Réponse à :</strong>
+                    <span style="font-style: italic">{{ correspLoaded?.responseTo }}</span>
+                  </div>
+
+                  <div *ngIf="correspLoaded?.priority" style="display: flex; gap: 8px; align-items: baseline; font-size: 14px">
+                    <strong style="white-space: nowrap">Prioritaire :</strong>
+                    <span style="color: #dc3545; font-weight: 600">Oui ⚑</span>
+                  </div>
+
+                  <div *ngIf="correspLoaded?.courrierDate" style="display: flex; gap: 8px; align-items: baseline; font-size: 14px">
+                    <strong jhiTranslate="correspCareApp.correspManageCorresp.date" style="white-space: nowrap">Date :</strong>
+                    <span>{{ formatLongDate(correspLoaded?.courrierDate) }}</span>
+                  </div>
                 </div>
               </div>
             </ng-template>
