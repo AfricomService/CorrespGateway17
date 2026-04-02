@@ -10,7 +10,7 @@ import { createRequestOption } from 'app/core/request/request-util';
 import { ICorresp, NewCorresp } from '../corresp.model';
 import { ITasks } from '../../tasks/tasks.model';
 import { IPj } from '../../pj/pj.model';
-import { IMessage } from '../../message/message.model';
+import { IMessage, NewMessage } from '../../message/message.model';
 import { IOrga } from '../orga';
 import { DepartementTreeFeignDTO } from '../update/DepartementTreeFeignDTO';
 import { IDepartement } from '../../../orgacare/departement/departement.model';
@@ -35,9 +35,32 @@ export interface CorrespSummaryDTO {
   reference?: string | null;
 }
 
+export interface DepartementAffectationDTO {
+  departementCode?: string;
+  departementName?: string;
+  types?: string[];
+  email?: string;
+}
+
 // Interface pour la réponse paginée
 export interface PagedCorrespResponse {
   content: ICorresp[];
+  currentPage: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+}
+
+export interface CorrespReferenceItem {
+  id: number;
+  reference: string;
+  subject?: string | null;
+}
+
+export interface PagedReferenceResponse {
+  content: CorrespReferenceItem[];
   currentPage: number;
   pageSize: number;
   totalItems: number;
@@ -405,6 +428,12 @@ export class CorrespService {
     return this.http.get<{ subject?: string | null; reference?: string | null }>(`${this.resourceUrl}/by-task/${taskId}/summary`);
   }
 
+  getDepartementAffectationsByUser(userId: number): Observable<DepartementAffectationDTO[]> {
+    return this.http.get<DepartementAffectationDTO[]>(
+      `${this.applicationConfigService.getEndpointFor('api/departements/user', 'orgacare')}/${userId}/affectations`
+    );
+  }
+
   getCorrespSummariesByTasks(taskIds: number[]): Observable<Record<string, CorrespSummaryDTO>> {
     return this.http.post<Record<string, CorrespSummaryDTO>>(`${this.resourceUrl}/summaries-by-tasks`, taskIds);
   }
@@ -417,6 +446,39 @@ export class CorrespService {
     return this.http
       .get<RestCorresp[]>(`${this.resourceUrl}/with-reference/list`, { observe: 'response' })
       .pipe(map(res => this.convertResponseArrayFromServer(res)));
+  }
+
+  // Méthode à ajouter dans la classe CorrespService
+
+  getReferences(page: number = 1, size: number = 20, search?: string): Observable<PagedReferenceResponse> {
+    let params: any = { page, size };
+    if (search && search.trim()) params['search'] = search.trim();
+
+    return this.http
+      .get<PagedReferenceResponse>(`${this.applicationConfigService.getEndpointFor('api/corresps/references', 'correspmanage')}`, {
+        params: createRequestOption(params),
+      })
+      .pipe(
+        catchError(() =>
+          of({
+            content: [],
+            currentPage: page,
+            pageSize: size,
+            totalItems: 0,
+            totalPages: 0,
+            hasNext: false,
+            hasPrevious: false,
+          })
+        )
+      );
+  }
+
+  /**
+   * POST /api/messages
+   * Crée un nouveau message (receiver, copyTo, correspId, etc.)
+   */
+  createMessage(message: NewMessage): Observable<HttpResponse<IMessage>> {
+    return this.http.post<IMessage>(this.resourceUrlMessages, message, { observe: 'response' });
   }
 
   /**

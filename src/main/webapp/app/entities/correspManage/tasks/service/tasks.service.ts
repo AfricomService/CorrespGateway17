@@ -123,8 +123,9 @@ export class TasksService {
     );
   }
 
-  searchTasksByUserAcl(userId: number, reference: string): Observable<EntityArrayResponseType> {
-    const params = createRequestOption({ userId, reference });
+  searchTasksByUserAcl(userId: number, keyword: string): Observable<EntityArrayResponseType> {
+    // On envoie le même mot-clé sur les deux champs : reference ET subject
+    const params = createRequestOption({ userId, reference: keyword, subject: keyword });
     return this.http
       .get<RestTasks[]>(`${this.resourceUrl}/searchByUserAcl`, { params, observe: 'response' })
       .pipe(map((res: HttpResponse<RestTasks[]>) => this.convertResponseArrayFromServer(res)));

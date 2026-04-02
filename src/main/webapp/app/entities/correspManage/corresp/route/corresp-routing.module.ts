@@ -7,6 +7,7 @@ import { CorrespDetailComponent } from '../detail/corresp-detail.component';
 import { CorrespUpdateComponent } from '../update/corresp-update.component';
 import { CorrespRoutingResolveService } from './corresp-routing-resolve.service';
 import { ASC } from 'app/config/navigation.constants';
+import { CorrespOutUpdateComponent } from '../corresp-out-update/corresp-out-update.component';
 
 const correspRoute: Routes = [
   {
@@ -31,6 +32,11 @@ const correspRoute: Routes = [
     resolve: {
       corresp: CorrespRoutingResolveService,
     },
+    canActivate: [UserRouteAccessService],
+  },
+  {
+    path: 'new-out',
+    component: CorrespOutUpdateComponent,
     canActivate: [UserRouteAccessService],
   },
   {

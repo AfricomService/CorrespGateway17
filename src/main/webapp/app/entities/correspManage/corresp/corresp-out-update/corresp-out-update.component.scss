@@ -1,0 +1,145 @@
+/* Identical to corresp-update.component.scss */
+
+h5 {
+  font-style: italic;
+  text-transform: uppercase;
+}
+
+strong {
+  font-weight: bold;
+}
+
+.form-label {
+  font-weight: 500;
+}
+
+.border {
+  border-color: #dee2e6 !important;
+}
+
+.form-check-input[type='radio'] {
+  accent-color: #c1121f;
+  transition: transform 0.2s ease;
+}
+
+.form-check-input[type='radio']:hover {
+  transform: scale(1.4);
+}
+
+.form-check-label {
+  font-weight: 500;
+  user-select: none;
+}
+
+/* --- Left panel (controls) pro design --- */
+.assign-controls {
+  background: linear-gradient(180deg, #f7f9fc 0%, #eef2f7 100%);
+  border: 1px solid #e6eef9;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 2px 8px rgba(18, 38, 63, 0.06);
+}
+
+.type-actions {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.type-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 16px;
+  background: #ffffff;
+  color: #2c3e50;
+  border: 1px solid #dbe4f0;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(18, 38, 63, 0.04);
+  transition: transform 0.15s ease, box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+.type-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(18, 38, 63, 0.08);
+  border-color: #c7d5e8;
+}
+.type-card.active {
+  background: linear-gradient(180deg, #0d6efd 0%, #0b5ed7 100%);
+  color: inherit;
+  border-color: #0b5ed7;
+  box-shadow: 0 6px 12px rgba(13, 110, 253, 0.25);
+}
+.type-card .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.type-card.lecture {
+  background: #e8f2ff;
+  border-color: #a8c5f0;
+}
+.type-card.lecture:hover {
+  background: #d9ecff;
+}
+.type-card.lecture.active {
+  background: linear-gradient(180deg, #4da3ff 0%, #1e7bff 100%);
+  border-color: #1e7bff;
+  color: #0b5ed7;
+}
+
+.type-card.signature {
+  background: #efe8ff;
+  border-color: #c1a8f0;
+}
+.type-card.signature:hover {
+  background: #e6ddff;
+}
+.type-card.signature.active {
+  background: linear-gradient(180deg, #8b5cf6 0%, #6d28d9 100%);
+  border-color: #6d28d9;
+  color: #4c1d95;
+}
+
+.type-card.traitement {
+  background: #fff0e6;
+  border-color: #f0c5a8;
+}
+.type-card.traitement:hover {
+  background: #ffe7d6;
+}
+.type-card.traitement.active {
+  background: linear-gradient(180deg, #fb923c 0%, #f97316 100%);
+  border-color: #f97316;
+  color: #b45309;
+}
+
+.type-card.validation {
+  background: #e9f7ee;
+  border-color: #a8d5b8;
+}
+.type-card.validation:hover {
+  background: #def2e6;
+}
+.type-card.validation.active {
+  background: linear-gradient(180deg, #22c55e 0%, #16a34a 100%);
+  border-color: #16a34a;
+  color: #166534;
+}
+.assign-controls .form-control {
+  border-radius: 10px;
+  border-color: #cfd8e3;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.assign-controls .form-control:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+}
+
+.org-checkbox {
+  transform: scale(1.4);
+  margin-right: 4px;
+}
