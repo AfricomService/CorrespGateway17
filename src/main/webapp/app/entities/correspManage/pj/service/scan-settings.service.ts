@@ -41,6 +41,10 @@ export class ScanSettingsService {
     }
   }
 
+  hasSettings(): boolean {
+    return !!this.getCookie(COOKIE_KEY);
+  }
+
   save(settings: Partial<ScanSettings>): void {
     try {
       const current = this.load();

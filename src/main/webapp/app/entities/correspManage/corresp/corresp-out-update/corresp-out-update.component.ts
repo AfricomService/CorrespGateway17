@@ -1526,6 +1526,12 @@ export class CorrespOutUpdateComponent implements OnInit {
     this.scanError = null;
     this.isMerging = false;
     this.currentDocumentPages = [];
+
+    // Si des paramètres sont déjà mémorisés, fermer les sections de config
+    const hasSavedSettings = this.scanSettingsService.hasSettings();
+    this.accordionStates['scanSource'] = !hasSavedSettings;
+    this.accordionStates['scanParams'] = !hasSavedSettings;
+
     this.loadScanSettings();
     this.checkPjCare();
     this.modalService.open(content, { size: 'lg' });
