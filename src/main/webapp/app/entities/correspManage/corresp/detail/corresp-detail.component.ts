@@ -1124,16 +1124,20 @@ export class CorrespDetailComponent implements OnInit {
       const accessibleTasks = (this.tachesAssociees || []).filter(t => accessibleTaskIds.includes(t.id));
       console.log(
         '[PERMISSIONS] recompute: accessible tasks taskTypes=',
-        accessibleTasks.map(t => ({ id: t.id, taskType: t.taskType }))
+        accessibleTasks.map(t => ({ id: t.id, taskType: t.taskType, status: t.status }))
       );
+      // IMPORTANT: canWrite seulement si la tâche est encore IN_PROGRESS
+      // Une tâche CLOSED ne donne plus le droit d'écriture
       const hasWritableTask = accessibleTasks.some(t => {
         const tt = (t.taskType || '').toLowerCase();
-        return tt === 'traitement' || tt === 'signature' || tt === 'validation';
+        const isWritableType = tt === 'traitement' || tt === 'signature' || tt === 'validation';
+        const isActiveTask = t.status === CorrespStatus.IN_PROGRESS;
+        return isWritableType && isActiveTask;
       });
 
       if (hasWritableTask) {
         this.canWriteCorresp = true;
-        console.log('[PERMISSIONS] recompute: granted canWrite from task with taskType traitement/signature/validation');
+        console.log('[PERMISSIONS] recompute: granted canWrite from IN_PROGRESS task with writable taskType');
       }
     }
 
@@ -2208,6 +2212,11 @@ export class CorrespDetailComponent implements OnInit {
           const list = r.body || [];
           this.taskService.enrichTasksWithCanModify(list).subscribe(enriched => {
             this.tachesAssociees = enriched || [];
+            this.resolveResponsableNames();
+            // Recompute permissions based on updated task statuses
+            // canManageAttachments and isReadOnlyAclUser are getters that depend on tachesAssociees,
+            // so they auto-recompute. But canWriteCorresp needs explicit refresh:
+            this.refreshCorrespWritePermission();
           });
         });
         this.showNotification('Statut modifié', 'success');
@@ -2217,6 +2226,31 @@ export class CorrespDetailComponent implements OnInit {
         this.showNotification('Erreur lors du changement', 'error');
       },
     });
+  }
+
+  /**
+   * Recalcule canWriteCorresp en fonction de l'état actuel des tâches.
+   * À appeler après tout changement de statut de tâche.
+   */
+  private refreshCorrespWritePermission(): void {
+    if (this.isGlobalAdmin || this.canAdminCorresp) return; // admin garde toujours ses droits
+
+    // DISPATCH + ADMIN/BOC
+    if (this.isAdminOrBoc && this.correspLoaded?.status === CorrespStatus.DISPATCH) return;
+
+    // Recalculer canWriteCorresp selon les tâches IN_PROGRESS accessibles à cet utilisateur
+    const accessibleTasks = (this.tachesAssociees || []).filter(t => this.userAclTaskIds.has(t.id));
+
+    const hasActiveWritableTask = accessibleTasks.some(t => {
+      const tt = (t.taskType || '').toLowerCase();
+      const isWritableType = tt === 'traitement' || tt === 'signature' || tt === 'validation';
+      return isWritableType && t.status === CorrespStatus.IN_PROGRESS;
+    });
+
+    if (!hasActiveWritableTask && !this.canAdminCorresp) {
+      this.canWriteCorresp = false;
+      console.log('[PERMISSIONS] refreshCorrespWritePermission: canWrite revoked — no active writable tasks remaining');
+    }
   }
 
   soumettreCorresp(correspId: number): void {
@@ -3130,27 +3164,39 @@ export class CorrespDetailComponent implements OnInit {
     }
   }
   get canManageAttachments(): boolean {
-    // Admin ou droit d'écriture direct
+    // Admin ou droit d'écriture direct sur la corresp => toujours autorisé
     if (this.canWriteCorresp || this.canAdminCorresp || this.isGlobalAdmin) return true;
 
-    // Vérifier si l'utilisateur a une tâche de type traitement/signature/validation via ACL
+    // Vérifier si l'utilisateur a une tâche IN_PROGRESS de type traitement/signature/validation via ACL
+    // IMPORTANT: on filtre uniquement les tâches IN_PROGRESS — une tâche CLOSED ne donne plus le droit d'écriture
     const accessibleTasks = (this.tachesAssociees || []).filter(t => this.userAclTaskIds.has(t.id));
     return accessibleTasks.some(t => {
       const tt = (t.taskType || '').toLowerCase();
-      return tt === 'traitement' || tt === 'signature' || tt === 'validation';
+      const isWritableType = tt === 'traitement' || tt === 'signature' || tt === 'validation';
+      const isActiveTask = t.status === CorrespStatus.IN_PROGRESS;
+      return isWritableType && isActiveTask;
     });
   }
 
   get isReadOnlyAclUser(): boolean {
     if (this.canWriteCorresp || this.canAdminCorresp || this.isGlobalAdmin) return false;
     const accessibleTasks = (this.tachesAssociees || []).filter(t => this.userAclTaskIds.has(t.id));
-    return (
-      accessibleTasks.length > 0 &&
-      accessibleTasks.every(t => {
-        const tt = (t.taskType || '').toLowerCase();
-        return tt === 'lecture';
-      })
-    );
+    if (accessibleTasks.length === 0) return false;
+
+    // Une tâche de type traitement/signature/validation encore IN_PROGRESS = droit d'écriture, pas lecture seule
+    const hasActiveWritableTask = accessibleTasks.some(t => {
+      const tt = (t.taskType || '').toLowerCase();
+      const isWritableType = tt === 'traitement' || tt === 'signature' || tt === 'validation';
+      return isWritableType && t.status === CorrespStatus.IN_PROGRESS;
+    });
+
+    if (hasActiveWritableTask) return false;
+
+    // Si toutes les tâches accessibles sont lecture OU sont CLOSED => lecture seule
+    return accessibleTasks.every(t => {
+      const tt = (t.taskType || '').toLowerCase();
+      return tt === 'lecture' || t.status === CorrespStatus.CLOSED;
+    });
   }
 
   getDispatchBadgeStyle(type?: string | null): { [key: string]: string } {
