@@ -15,6 +15,7 @@ import {
   DxTreeViewModule,
 } from 'devextreme-angular';
 import { FilePreviewComponent } from '../pj/file-preview/file-preview.component';
+import { CorrespOutUpdateComponent } from './corresp-out-update/corresp-out-update.component';
 
 @NgModule({
   imports: [
@@ -29,6 +30,6 @@ import { FilePreviewComponent } from '../pj/file-preview/file-preview.component'
     DxButtonModule,
     DxSelectBoxModule,
   ],
-  declarations: [CorrespComponent, CorrespDetailComponent, CorrespUpdateComponent, CorrespDeleteDialogComponent],
+  declarations: [CorrespComponent, CorrespDetailComponent, CorrespUpdateComponent, CorrespDeleteDialogComponent, CorrespOutUpdateComponent],
 })
 export class CorrespManageCorrespModule {}

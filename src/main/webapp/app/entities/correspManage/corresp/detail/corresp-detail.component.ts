@@ -2,7 +2,7 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import dayjs from 'dayjs/esm';
 import { ICorresp, IContactCopieCorresp } from '../corresp.model';
-import { CorrespService } from '../service/corresp.service';
+import { CorrespService, CorrespReferenceItem } from '../service/corresp.service';
 import { TasksService } from '../../tasks/service/tasks.service';
 import { ITasks } from '../../tasks/tasks.model';
 import { IPj } from '../../pj/pj.model';
@@ -30,7 +30,14 @@ import { AccountService } from 'app/core/auth/account.service';
 import { Account } from 'app/core/auth/account.model';
 import { Authority } from 'app/config/authority.constants';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { PjCareService, PjCareScanResult, PjCareDriverInfo, ScanDriver } from 'app/entities/correspManage/pj/service/pjcare.service';
+import {
+  PjCareService,
+  PjCareScanResult,
+  PjCareDriverInfo,
+  ScanDriver,
+  ScannedPage,
+  MergePagesRequest,
+} from 'app/entities/correspManage/pj/service/pjcare.service';
 import { ScanSettingsService } from 'app/entities/correspManage/pj/service/scan-settings.service';
 
 // export interface ITasks {
@@ -47,14 +54,6 @@ import { ScanSettingsService } from 'app/entities/correspManage/pj/service/scan-
 //   name?: string | null;
 //   fileType?: string | null;
 // }
-
-interface BatchScanItem {
-  id: string;
-  preview: string; // data-URI image OU 'pdf'
-  format: string;
-  result: PjCareScanResult;
-  name: string;
-}
 
 @Component({
   selector: 'jhi-corresp-detail',
@@ -123,15 +122,16 @@ export class CorrespDetailComponent implements OnInit {
   personSearchExpr = function (dataItem: IPersonCompany): string {
     return (dataItem.nom ? dataItem.nom + ' ' : '') + (dataItem.email ? dataItem.email + ' ' : '') + (dataItem.tel ? dataItem.tel : '');
   };
-  correspsWithReference: ICorresp[] = [];
-  loadingCorrespsWithRef = false;
-  responseSearchExpr = function (dataItem: ICorresp): string {
-    return (
-      (dataItem.subject ? dataItem.subject + ' ' : '') +
-      (dataItem.reference ? dataItem.reference + ' ' : '') +
-      (dataItem.idinstance ? dataItem.idinstance : '')
-    );
-  };
+  // État du modal références
+  refsModalOpen = false;
+  refsModalPage = 1;
+  refsModalTotalPages = 1;
+  refsModalTotalItems = 0;
+  refsModalPageSize = 10;
+  refsModalItems: CorrespReferenceItem[] = [];
+  refsModalLoading = false;
+  refsModalSearchQuery = '';
+  refsSelectedItem: CorrespReferenceItem | null = null;
 
   // departements: DepartementTreeFeignDTO[] = [];
   selectedDepartement = '';
@@ -166,18 +166,20 @@ export class CorrespDetailComponent implements OnInit {
   scanBitdepth: 'color' | 'gray' | 'bw' = 'color';
   scanDuplex = false;
   isScanning = false;
+  isMerging = false;
   scanPreview: string | null = null;
   scanError: string | null = null;
   loadingScanners = false;
   availableDrivers: PjCareDriverInfo[] = [];
   selectedDriver: ScanDriver | '' = '';
   loadingDrivers = false;
-  private lastScanResult: PjCareScanResult | null = null;
-  batchScans: BatchScanItem[] = [];
   scanExcludeBlank = false;
   scanBlankThreshold = 240;
   scanCoverageThreshold = 5;
   private _pendingDriverFromCookie: string = '';
+
+  /** Buffer multi-pages du document en cours — toutes les pages formeront UN seul fichier */
+  currentDocumentPages: ScannedPage[] = [];
 
   uploadProgress: Map<string, number> = new Map(); // Per-file progress tracking
 
@@ -388,7 +390,22 @@ export class CorrespDetailComponent implements OnInit {
         },
       });
 
-      this.typeDocumentService.query({ page: 0, size: 1000 }).subscribe(res => {
+      // Mapper corresptype backend → valeur attendue par le filtre
+      let correspTypeForBackend = '';
+      const ct = this.correspLoaded.corresptype;
+      if (ct === 'INCOMING') {
+        correspTypeForBackend = 'Entrant';
+      } else if (ct === 'OUTGOING') {
+        correspTypeForBackend = 'Sortant';
+      } else if (ct === 'INTERNAL') {
+        correspTypeForBackend = 'Interne';
+      }
+
+      const loadTypedocs$ = correspTypeForBackend
+        ? this.typeDocumentService.findByCorrespType(correspTypeForBackend)
+        : this.typeDocumentService.query({ page: 0, size: 1000 });
+
+      loadTypedocs$.subscribe(res => {
         this.typedocuments = res.body || [];
         const autre: ITypedocument = {
           id: 0,
@@ -398,6 +415,7 @@ export class CorrespDetailComponent implements OnInit {
           defaultencopie: null,
           labelDD: null,
           labelDCC: null,
+          correspType: null,
           usualstatus: null,
         };
         this.typedocuments.push(autre);
@@ -466,29 +484,77 @@ export class CorrespDetailComponent implements OnInit {
 
     this.correspType = 'Arrivée';
     this.loadActiveCompanies();
-    this.loadCorrespsWithReferenceList();
   }
   // loadCorresp(id: number): void {
   //   this.correspService.find(id).subscribe((res: HttpResponse<ICorresp>) => {
   //     this.correspLoaded = res.body!;
   //   });
   // }
-  loadCorrespsWithReferenceList(): void {
-    this.loadingCorrespsWithRef = true;
-    this.correspService.getAllWithReferenceList().subscribe({
-      next: (res: HttpResponse<ICorresp[]>) => {
-        this.correspsWithReference = res.body || [];
-        this.loadingCorrespsWithRef = false;
+  // Ouvrir le modal de sélection de référence
+  openRefsModal(): void {
+    this.refsModalPage = 1;
+    this.refsModalSearchQuery = '';
+    this.refsModalItems = [];
+    this.refsModalOpen = true;
+    this.loadRefsModalPage(1);
+  }
+
+  closeRefsModal(): void {
+    this.refsModalOpen = false;
+  }
+
+  loadRefsModalPage(page: number): void {
+    this.refsModalLoading = true;
+    this.correspService.getReferences(page, this.refsModalPageSize, this.refsModalSearchQuery).subscribe({
+      next: res => {
+        this.refsModalItems = res.content;
+        this.refsModalPage = res.currentPage;
+        this.refsModalTotalPages = res.totalPages;
+        this.refsModalTotalItems = res.totalItems;
+        this.refsModalLoading = false;
       },
       error: () => {
-        this.correspsWithReference = [];
-        this.loadingCorrespsWithRef = false;
+        this.refsModalItems = [];
+        this.refsModalLoading = false;
       },
     });
   }
-  onSelectReponseSur(reference: string | null): void {
-    this.reponseSur = reference ?? '';
+
+  onRefsModalSearchChange(): void {
+    this.refsModalPage = 1;
+    this.loadRefsModalPage(1);
   }
+
+  refsModalGoToPage(page: number): void {
+    if (page < 1 || page > this.refsModalTotalPages) return;
+    this.loadRefsModalPage(page);
+  }
+
+  selectRefItem(item: CorrespReferenceItem): void {
+    this.refsSelectedItem = item;
+    this.reponseSur = item.reference;
+    this.refsModalOpen = false;
+    // Pour corresp-update uniquement — garder la synchro avec le formGroup si besoin :
+    // try { this.editForm?.controls?.responseTo?.setValue(this.reponseSur); } catch(e) {}
+  }
+
+  clearReponseSur(): void {
+    this.refsSelectedItem = null;
+    this.reponseSur = '';
+  }
+
+  formatRefDate(date?: string | null): string {
+    if (!date) return '';
+    return new Date(date).toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+  }
+
+  /**onSelectReponseSur(reference: string | null): void {
+    this.reponseSur = reference ?? '';
+  }*/
 
   /**
    * Extrait les adresses email depuis les données receiver/copyTo du message.
@@ -1674,7 +1740,10 @@ export class CorrespDetailComponent implements OnInit {
     }
 
     // ✅ MODE NOUVELLE TÂCHE : sauvegarde backend normale
-    if (!this.canWriteCorresp) {
+    const canAddTask =
+      this.canWriteCorresp || this.canAdminCorresp || this.isGlobalAdmin || (this.isReadOnlyAclUser && this.selectedType === 'lecture');
+
+    if (!canAddTask) {
       this.showNotification("Vous n'avez pas le droit d'ajouter une tâche sur ce courrier", 'error');
       return;
     }
@@ -1765,14 +1834,18 @@ export class CorrespDetailComponent implements OnInit {
   validationErrors: { [key: string]: string } = {};
 
   openTasksModal(content: any): void {
-    if (!this.canWriteCorresp) {
-      this.showNotification('Vous êtes en lecture seule pour ce courrier', 'error');
+    // Bloquer uniquement si aucun droit du tout
+    if (!this.canWriteCorresp && !this.canAdminCorresp && !this.isGlobalAdmin && !this.isReadOnlyAclUser) {
+      this.showNotification("Vous n'avez pas le droit d'ajouter une tâche sur ce courrier", 'error');
       return;
     }
     this.editingPendingTaskIndex = -1;
-    // this.selectedOrga = null;
     this.selectedDepartement = '';
     this.resetForm();
+    // Pré-sélectionner 'lecture' si l'utilisateur est lecture seule
+    if (this.isReadOnlyAclUser) {
+      this.selectedType = 'lecture';
+    }
     this.prepareAndLoadOrgaThenTree();
     this.modalService.open(content, { size: 'xl' });
   }
@@ -2660,8 +2733,14 @@ export class CorrespDetailComponent implements OnInit {
   openScanModal(content: any): void {
     this.scanPreview = null;
     this.scanError = null;
-    this.lastScanResult = null;
-    this.batchScans = [];
+    this.isMerging = false;
+    this.currentDocumentPages = [];
+
+    // Si des paramètres sont déjà mémorisés, fermer les sections de config
+    const hasSavedSettings = this.scanSettingsService.hasSettings();
+    this.accordionStates['scanSource'] = !hasSavedSettings;
+    this.accordionStates['scanParams'] = !hasSavedSettings;
+
     this.loadScanSettings();
     this.checkPjCare();
     this.modalService.open(content, { size: 'lg' });
@@ -2702,8 +2781,8 @@ export class CorrespDetailComponent implements OnInit {
     this.scanBitdepth = 'color';
     this.scanDuplex = false;
     this.scanExcludeBlank = false;
-    this.scanBlankThreshold = 70;
-    this.scanCoverageThreshold = 25;
+    this.scanBlankThreshold = 240;
+    this.scanCoverageThreshold = 5;
   }
 
   checkPjCare(): void {
@@ -2770,14 +2849,15 @@ export class CorrespDetailComponent implements OnInit {
   onDriverChange(): void {
     this.scanPreview = null;
     this.scanError = null;
-    this.lastScanResult = null;
     this.loadScannersForDriver((this.selectedDriver as ScanDriver) || undefined);
   }
 
   launchScan(): void {
     this.isScanning = true;
     this.scanError = null;
+    this.scanPreview = null;
     this.saveScanSettings();
+
     this.pjCareService
       .scan({
         source: this.selectedScanner,
@@ -2796,19 +2876,18 @@ export class CorrespDetailComponent implements OnInit {
         next: result => {
           this.isScanning = false;
           if (result.status === 200) {
-            this.lastScanResult = result;
-            const preview = this.scanFormat !== 'pdf' ? `data:image/${this.scanFormat};base64,${result.data}` : 'pdf';
-            this.scanPreview = preview;
+            const preview = this.scanFormat !== 'pdf' ? `data:image/${this.scanFormat};base64,${result.data}` : null;
 
-            // Ajouter dans la liste batch
-            const item: BatchScanItem = {
-              id: this.generateRandomId(10),
+            this.scanPreview = preview ?? 'pdf';
+
+            // Ajouter au buffer du document courant
+            const page: ScannedPage = {
+              data: result.data,
+              format: result.format || this.scanFormat,
               preview,
-              format: this.scanFormat,
-              result,
-              name: result.file,
+              pageNumber: this.currentDocumentPages.length + 1,
             };
-            this.batchScans.push(item);
+            this.currentDocumentPages.push(page);
           } else {
             this.scanError = result.error || 'Erreur inconnue';
           }
@@ -2820,58 +2899,71 @@ export class CorrespDetailComponent implements OnInit {
       });
   }
 
-  removeBatchScan(id: string): void {
-    this.batchScans = this.batchScans.filter(s => s.id !== id);
-    if (this.batchScans.length === 0) {
+  removePage(index: number): void {
+    this.currentDocumentPages.splice(index, 1);
+    this.currentDocumentPages.forEach((p, i) => (p.pageNumber = i + 1));
+    if (this.currentDocumentPages.length === 0) {
       this.scanPreview = null;
-      this.lastScanResult = null;
     }
   }
 
   attachScanResult(modal: any): void {
-    const items =
-      this.batchScans.length > 0
-        ? this.batchScans
-        : this.lastScanResult
-        ? [
-            {
-              id: 'single',
-              preview: this.scanPreview ?? '',
-              format: this.scanFormat,
-              result: this.lastScanResult,
-              name: this.lastScanResult.file,
-            } as BatchScanItem,
-          ]
-        : [];
+    if (this.currentDocumentPages.length === 0) return;
 
-    if (items.length === 0) return;
-
-    for (const item of items) {
-      const base64 = item.result.data;
-      const filename = item.result.file;
-      const mimeType = item.format === 'pdf' ? 'application/pdf' : `image/${item.format}`;
-
-      const byteString = atob(base64);
-      const ab = new ArrayBuffer(byteString.length);
-      const ia = new Uint8Array(ab);
-      for (let i = 0; i < byteString.length; i++) {
-        ia[i] = byteString.charCodeAt(i);
-      }
-      const blob = new Blob([ab], { type: mimeType });
-      const file = new File([blob], filename, { type: mimeType });
-
-      const uniquePjName = this.generateRandomId(10);
-      const pjModel: IPj = {} as IPj;
-      const parts = filename.split('.');
-      pjModel.name = parts.slice(0, -1).join('.');
-      pjModel.fileType = parts[parts.length - 1];
-      pjModel.uniqueName = uniquePjName;
-
-      this.accordionStates['pieces'] = true;
-      this.uploadProgress.set(uniquePjName, 0);
-      this.uploadFileWithProgress(file, uniquePjName, pjModel);
+    // Cas 1 page : attachement direct sans fusion réseau
+    if (this.currentDocumentPages.length === 1) {
+      const p = this.currentDocumentPages[0];
+      const filename = this.objet ? `${this.objet.replace(/[^\p{L}\p{N}_-]/gu, '_')}.${this.scanFormat}` : `scan.${this.scanFormat}`;
+      this._attachRawResult(p.data, filename, this.scanFormat, modal);
+      return;
     }
 
+    // Plusieurs pages → fusion via /api/MergePages
+    this.isMerging = true;
+    this.scanError = null;
+
+    this.pjCareService
+      .mergePages({
+        pages: this.currentDocumentPages.map(p => ({ data: p.data, format: p.format })),
+        outputFormat: this.scanFormat as any,
+        jpegquality: this.scanQuality,
+        name: this.objet || 'document',
+      })
+      .subscribe({
+        next: result => {
+          this.isMerging = false;
+          if (result.status === 200) {
+            this._attachRawResult(result.data, result.file, result.format, modal);
+          } else {
+            this.scanError = result.error || 'Erreur lors de la fusion des pages';
+          }
+        },
+        error: () => {
+          this.isMerging = false;
+          this.scanError = 'Erreur lors de la fusion des pages';
+        },
+      });
+  }
+
+  private _attachRawResult(base64: string, filename: string, format: string, modal: any): void {
+    const mimeType = format === 'pdf' ? 'application/pdf' : `image/${format}`;
+    const byteString = atob(base64);
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+    const blob = new Blob([ab], { type: mimeType });
+    const file = new File([blob], filename, { type: mimeType });
+
+    const uniquePjName = this.generateRandomId(10);
+    const pjModel: IPj = {} as IPj;
+    const parts = filename.split('.');
+    pjModel.name = parts.slice(0, -1).join('.');
+    pjModel.fileType = parts[parts.length - 1];
+    pjModel.uniqueName = uniquePjName;
+
+    this.accordionStates['pieces'] = true;
+    this.uploadProgress.set(uniquePjName, 0);
+    this.uploadFileWithProgress(file, uniquePjName, pjModel);
     modal.close();
   }
 
@@ -3006,6 +3098,74 @@ export class CorrespDetailComponent implements OnInit {
       }
     }
     return result;
+  }
+
+  getDispatchIcon(type?: string | null): string {
+    switch (type) {
+      case DispatchType.LETTER:
+        return '📄';
+      case DispatchType.EMAIL:
+        return '📧';
+      case DispatchType.FAX:
+        return '📠';
+      case DispatchType.REGISTERED_LETTER:
+        return '📬';
+      default:
+        return '📄';
+    }
+  }
+
+  getDispatchLabel(type?: string | null): string {
+    switch (type) {
+      case DispatchType.LETTER:
+        return 'Lettre';
+      case DispatchType.EMAIL:
+        return 'E-mail';
+      case DispatchType.FAX:
+        return 'Fax';
+      case DispatchType.REGISTERED_LETTER:
+        return 'Recommandée';
+      default:
+        return type ?? '';
+    }
+  }
+  get canManageAttachments(): boolean {
+    // Admin ou droit d'écriture direct
+    if (this.canWriteCorresp || this.canAdminCorresp || this.isGlobalAdmin) return true;
+
+    // Vérifier si l'utilisateur a une tâche de type traitement/signature/validation via ACL
+    const accessibleTasks = (this.tachesAssociees || []).filter(t => this.userAclTaskIds.has(t.id));
+    return accessibleTasks.some(t => {
+      const tt = (t.taskType || '').toLowerCase();
+      return tt === 'traitement' || tt === 'signature' || tt === 'validation';
+    });
+  }
+
+  get isReadOnlyAclUser(): boolean {
+    if (this.canWriteCorresp || this.canAdminCorresp || this.isGlobalAdmin) return false;
+    const accessibleTasks = (this.tachesAssociees || []).filter(t => this.userAclTaskIds.has(t.id));
+    return (
+      accessibleTasks.length > 0 &&
+      accessibleTasks.every(t => {
+        const tt = (t.taskType || '').toLowerCase();
+        return tt === 'lecture';
+      })
+    );
+  }
+
+  getDispatchBadgeStyle(type?: string | null): { [key: string]: string } {
+    switch (type) {
+      case DispatchType.LETTER:
+        return { background: '#e8f0fe', color: '#2248a1', border: '1px solid #b3c5f7' };
+      case DispatchType.EMAIL:
+        return { background: '#e6f7ff', color: '#0c5a8a', border: '1px solid #91d5ff' };
+      case DispatchType.FAX:
+        return { background: '#fff3e0', color: '#7c4200', border: '1px solid #ffb74d' };
+      case DispatchType.REGISTERED_LETTER:
+        return { background: '#f3e8ff', color: '#5b2086', border: '1px solid #c084fc' };
+      default:
+        return { background: '#f1f3f5', color: '#495057', border: '1px solid #dee2e6' };
+    }
   }
 
   private expandAllFilteredNodes(nodes: DepartementTreeFeignDTO[], expandedSet: Set<number>): void {

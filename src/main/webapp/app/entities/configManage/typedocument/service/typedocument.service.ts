@@ -51,6 +51,10 @@ export class TypedocumentService {
     return typedocument.id;
   }
 
+  findByCorrespType(correspType: string): Observable<EntityArrayResponseType> {
+    return this.http.get<ITypedocument[]>(`${this.resourceUrl}/by-corresp-type`, { params: { correspType }, observe: 'response' });
+  }
+
   compareTypedocument(o1: Pick<ITypedocument, 'id'> | null, o2: Pick<ITypedocument, 'id'> | null): boolean {
     return o1 && o2 ? this.getTypedocumentIdentifier(o1) === this.getTypedocumentIdentifier(o2) : o1 === o2;
   }

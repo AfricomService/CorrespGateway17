@@ -6,7 +6,7 @@ import { finalize } from 'rxjs/operators';
 
 import { CorrespFormService, CorrespFormGroup } from './corresp-form.service';
 import { ICorresp, IContactCopieCorresp } from '../corresp.model';
-import { CorrespService } from '../service/corresp.service';
+import { CorrespService, CorrespReferenceItem, PagedReferenceResponse } from '../service/corresp.service';
 import { AlertError } from 'app/shared/alert/alert-error.model';
 import { EventManager, EventWithContent } from 'app/core/util/event-manager.service';
 import { DataUtils, FileLoadError } from 'app/core/util/data-util.service';
@@ -122,9 +122,18 @@ export class CorrespUpdateComponent implements OnInit {
   editingTaskIndex: number | null = null;
   isEditMode: boolean = false;
 
-  correspsWithReference: ICorresp[] = [];
   selectedCorrespReference: string | null = null; // stocke la reference sélectionnée (facultatif)
-  loadingCorrespsWithRef = false;
+
+  // État du modal références
+  refsModalOpen = false;
+  refsModalPage = 1;
+  refsModalTotalPages = 1;
+  refsModalTotalItems = 0;
+  refsModalPageSize = 10;
+  refsModalItems: CorrespReferenceItem[] = [];
+  refsModalLoading = false;
+  refsModalSearchQuery = '';
+  refsSelectedItem: CorrespReferenceItem | null = null;
 
   editForm: CorrespFormGroup = this.correspFormService.createCorrespFormGroup();
 
@@ -248,24 +257,6 @@ export class CorrespUpdateComponent implements OnInit {
       }
     });
 
-    // charger types de documents
-    this.typeDocumentService.query({ page: 0, size: 1000 }).subscribe(res => {
-      this.typedocuments = res.body || [];
-
-      const autre: ITypedocument = {
-        id: 0,
-        nom: 'Autre',
-        defautdest: null,
-        defaultobject: null,
-        defaultencopie: null,
-        labelDD: null,
-        labelDCC: null,
-        usualstatus: null,
-      };
-
-      this.typedocuments.push(autre);
-    });
-
     const today = new Date();
     this.date = today.toISOString().split('T')[0];
 
@@ -276,6 +267,37 @@ export class CorrespUpdateComponent implements OnInit {
 
     this.route.queryParams.subscribe(params => {
       this.correspType = params['type'];
+
+      // Mapper correspType UI → valeur stockée en base
+      let correspTypeForBackend = '';
+      if (this.correspType === 'Arrivée') {
+        correspTypeForBackend = 'Entrant';
+      } else if (this.correspType === 'Sortant') {
+        correspTypeForBackend = 'Sortant';
+      } else if (this.correspType === 'Interne') {
+        correspTypeForBackend = 'Interne';
+      }
+
+      // Charger les typedocuments filtrés par correspType
+      const loadTypedocs$ = correspTypeForBackend
+        ? this.typeDocumentService.findByCorrespType(correspTypeForBackend)
+        : this.typeDocumentService.query({ page: 0, size: 1000 });
+
+      loadTypedocs$.subscribe(res => {
+        this.typedocuments = res.body || [];
+        const autre: ITypedocument = {
+          id: 0,
+          nom: 'Autre',
+          defautdest: null,
+          defaultobject: null,
+          defaultencopie: null,
+          labelDD: null,
+          labelDCC: null,
+          correspType: null,
+          usualstatus: null,
+        };
+        this.typedocuments.push(autre);
+      });
 
       // Auto-create a "traitement" task for BOC users creating an Arrivée corresp
       if (this.correspType === 'Arrivée') {
@@ -288,7 +310,6 @@ export class CorrespUpdateComponent implements OnInit {
             const userLogin = account.login;
             const userName = [account.firstName, account.lastName].filter(Boolean).join(' ') || userLogin;
 
-            // Avoid duplicate: only add if no traitement task for this user already exists
             const alreadyExists = this.tasks.some(t => t.typeTask === 'traitement' && t.responsable === userLogin);
             if (!alreadyExists) {
               this.tasks.push({
@@ -300,7 +321,6 @@ export class CorrespUpdateComponent implements OnInit {
                 autoBoc: true,
               });
 
-              // Open the tasks accordion to show the auto-created task
               if (!this.accordionStates['taches']) {
                 this.accordionStates['taches'] = true;
               }
@@ -313,7 +333,6 @@ export class CorrespUpdateComponent implements OnInit {
     this.loadUsers();
     this.loadActiveCompanies();
     this.loadAllCorresps();
-    this.loadCorrespsWithReferenceList();
   }
 
   // --------------------------------------------------------------------------
@@ -566,19 +585,67 @@ export class CorrespUpdateComponent implements OnInit {
     return result;
   }
 
-  loadCorrespsWithReferenceList(): void {
-    this.loadingCorrespsWithRef = true;
-    // utilise le service que nous avons ajouté précédemment
-    this.correspService.getAllWithReferenceList().subscribe({
-      next: (res: HttpResponse<ICorresp[]>) => {
-        this.correspsWithReference = res.body || [];
-        this.loadingCorrespsWithRef = false;
+  // Ouvrir le modal de sélection de référence
+  openRefsModal(): void {
+    this.refsModalPage = 1;
+    this.refsModalSearchQuery = '';
+    this.refsModalItems = [];
+    this.refsModalOpen = true;
+    this.loadRefsModalPage(1);
+  }
+
+  closeRefsModal(): void {
+    this.refsModalOpen = false;
+  }
+
+  loadRefsModalPage(page: number): void {
+    this.refsModalLoading = true;
+    this.correspService.getReferences(page, this.refsModalPageSize, this.refsModalSearchQuery).subscribe({
+      next: res => {
+        this.refsModalItems = res.content;
+        this.refsModalPage = res.currentPage;
+        this.refsModalTotalPages = res.totalPages;
+        this.refsModalTotalItems = res.totalItems;
+        this.refsModalLoading = false;
       },
-      error: err => {
-        console.error('Erreur chargement corresps with reference', err);
-        this.correspsWithReference = [];
-        this.loadingCorrespsWithRef = false;
+      error: () => {
+        this.refsModalItems = [];
+        this.refsModalLoading = false;
       },
+    });
+  }
+
+  onRefsModalSearchChange(): void {
+    this.refsModalPage = 1;
+    this.loadRefsModalPage(1);
+  }
+
+  refsModalGoToPage(page: number): void {
+    if (page < 1 || page > this.refsModalTotalPages) return;
+    this.loadRefsModalPage(page);
+  }
+
+  selectRefItem(item: CorrespReferenceItem): void {
+    this.refsSelectedItem = item;
+    this.reponseSur = item.reference;
+    this.refsModalOpen = false;
+    // Pour corresp-update uniquement — garder la synchro avec le formGroup si besoin :
+    try {
+      this.editForm?.controls?.responseTo?.setValue(this.reponseSur);
+    } catch (e) {}
+  }
+
+  clearReponseSur(): void {
+    this.refsSelectedItem = null;
+    this.reponseSur = '';
+  }
+
+  formatRefDate(date?: string | null): string {
+    if (!date) return '';
+    return new Date(date).toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
     });
   }
 
@@ -1830,6 +1897,11 @@ export class CorrespUpdateComponent implements OnInit {
     this.scanError = null;
     this.isMerging = false;
     this.currentDocumentPages = [];
+
+    // Si des paramètres sont déjà mémorisés, fermer les sections de config
+    const hasSavedSettings = this.scanSettingsService.hasSettings();
+    this.accordionStates['scanSource'] = !hasSavedSettings;
+    this.accordionStates['scanParams'] = !hasSavedSettings;
 
     this.loadScanSettings();
     this.checkPjCare();
