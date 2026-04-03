@@ -2,7 +2,7 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import dayjs from 'dayjs/esm';
 import { ICorresp, IContactCopieCorresp } from '../corresp.model';
-import { CorrespService } from '../service/corresp.service';
+import { CorrespService, CorrespReferenceItem } from '../service/corresp.service';
 import { TasksService } from '../../tasks/service/tasks.service';
 import { ITasks } from '../../tasks/tasks.model';
 import { IPj } from '../../pj/pj.model';
@@ -122,15 +122,16 @@ export class CorrespDetailComponent implements OnInit {
   personSearchExpr = function (dataItem: IPersonCompany): string {
     return (dataItem.nom ? dataItem.nom + ' ' : '') + (dataItem.email ? dataItem.email + ' ' : '') + (dataItem.tel ? dataItem.tel : '');
   };
-  correspsWithReference: ICorresp[] = [];
-  loadingCorrespsWithRef = false;
-  responseSearchExpr = function (dataItem: ICorresp): string {
-    return (
-      (dataItem.subject ? dataItem.subject + ' ' : '') +
-      (dataItem.reference ? dataItem.reference + ' ' : '') +
-      (dataItem.idinstance ? dataItem.idinstance : '')
-    );
-  };
+  // État du modal références
+  refsModalOpen = false;
+  refsModalPage = 1;
+  refsModalTotalPages = 1;
+  refsModalTotalItems = 0;
+  refsModalPageSize = 10;
+  refsModalItems: CorrespReferenceItem[] = [];
+  refsModalLoading = false;
+  refsModalSearchQuery = '';
+  refsSelectedItem: CorrespReferenceItem | null = null;
 
   // departements: DepartementTreeFeignDTO[] = [];
   selectedDepartement = '';
@@ -483,29 +484,77 @@ export class CorrespDetailComponent implements OnInit {
 
     this.correspType = 'Arrivée';
     this.loadActiveCompanies();
-    this.loadCorrespsWithReferenceList();
   }
   // loadCorresp(id: number): void {
   //   this.correspService.find(id).subscribe((res: HttpResponse<ICorresp>) => {
   //     this.correspLoaded = res.body!;
   //   });
   // }
-  loadCorrespsWithReferenceList(): void {
-    this.loadingCorrespsWithRef = true;
-    this.correspService.getAllWithReferenceList().subscribe({
-      next: (res: HttpResponse<ICorresp[]>) => {
-        this.correspsWithReference = res.body || [];
-        this.loadingCorrespsWithRef = false;
+  // Ouvrir le modal de sélection de référence
+  openRefsModal(): void {
+    this.refsModalPage = 1;
+    this.refsModalSearchQuery = '';
+    this.refsModalItems = [];
+    this.refsModalOpen = true;
+    this.loadRefsModalPage(1);
+  }
+
+  closeRefsModal(): void {
+    this.refsModalOpen = false;
+  }
+
+  loadRefsModalPage(page: number): void {
+    this.refsModalLoading = true;
+    this.correspService.getReferences(page, this.refsModalPageSize, this.refsModalSearchQuery).subscribe({
+      next: res => {
+        this.refsModalItems = res.content;
+        this.refsModalPage = res.currentPage;
+        this.refsModalTotalPages = res.totalPages;
+        this.refsModalTotalItems = res.totalItems;
+        this.refsModalLoading = false;
       },
       error: () => {
-        this.correspsWithReference = [];
-        this.loadingCorrespsWithRef = false;
+        this.refsModalItems = [];
+        this.refsModalLoading = false;
       },
     });
   }
-  onSelectReponseSur(reference: string | null): void {
-    this.reponseSur = reference ?? '';
+
+  onRefsModalSearchChange(): void {
+    this.refsModalPage = 1;
+    this.loadRefsModalPage(1);
   }
+
+  refsModalGoToPage(page: number): void {
+    if (page < 1 || page > this.refsModalTotalPages) return;
+    this.loadRefsModalPage(page);
+  }
+
+  selectRefItem(item: CorrespReferenceItem): void {
+    this.refsSelectedItem = item;
+    this.reponseSur = item.reference;
+    this.refsModalOpen = false;
+    // Pour corresp-update uniquement — garder la synchro avec le formGroup si besoin :
+    // try { this.editForm?.controls?.responseTo?.setValue(this.reponseSur); } catch(e) {}
+  }
+
+  clearReponseSur(): void {
+    this.refsSelectedItem = null;
+    this.reponseSur = '';
+  }
+
+  formatRefDate(date?: string | null): string {
+    if (!date) return '';
+    return new Date(date).toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+  }
+
+  /**onSelectReponseSur(reference: string | null): void {
+    this.reponseSur = reference ?? '';
+  }*/
 
   /**
    * Extrait les adresses email depuis les données receiver/copyTo du message.
@@ -2686,6 +2735,12 @@ export class CorrespDetailComponent implements OnInit {
     this.scanError = null;
     this.isMerging = false;
     this.currentDocumentPages = [];
+
+    // Si des paramètres sont déjà mémorisés, fermer les sections de config
+    const hasSavedSettings = this.scanSettingsService.hasSettings();
+    this.accordionStates['scanSource'] = !hasSavedSettings;
+    this.accordionStates['scanParams'] = !hasSavedSettings;
+
     this.loadScanSettings();
     this.checkPjCare();
     this.modalService.open(content, { size: 'lg' });

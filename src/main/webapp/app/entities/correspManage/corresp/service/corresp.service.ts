@@ -57,6 +57,8 @@ export interface CorrespReferenceItem {
   id: number;
   reference: string;
   subject?: string | null;
+  dateCreated?: string | null;
+  sender?: string | null;
 }
 
 export interface PagedReferenceResponse {
@@ -447,8 +449,6 @@ export class CorrespService {
       .get<RestCorresp[]>(`${this.resourceUrl}/with-reference/list`, { observe: 'response' })
       .pipe(map(res => this.convertResponseArrayFromServer(res)));
   }
-
-  // Méthode à ajouter dans la classe CorrespService
 
   getReferences(page: number = 1, size: number = 20, search?: string): Observable<PagedReferenceResponse> {
     let params: any = { page, size };
