@@ -509,24 +509,32 @@
                       <label class="form-label fw-semibold">Réponse Sur</label>
                       <dx-select-box
                         [(value)]="reponseSur"
-                        [dataSource]="correspsWithReference"
+                        [dataSource]="references"
                         [valueExpr]="'reference'"
                         displayExpr="reference"
                         [searchEnabled]="true"
-                        [searchExpr]="responseSearchExpr"
+                        [searchTimeout]="400"
                         placeholder="-- Choisir une correspondance (référence) --"
                         class="w-100"
                         [disabled]="loadingCorrespsWithRef"
                         (onValueChanged)="onSelectReponseSur($event.value)"
+                        (onInput)="onRefsSearchChange($event.event.target.value)"
                       >
                         <div *dxTemplate="let item of 'listItem'">
                           <div>
                             <strong>{{ item.reference || '(Sans référence)' }}</strong>
                             <span *ngIf="item.subject"> — {{ item.subject }}</span>
-                            <span *ngIf="item.idinstance" class="text-muted"> — {{ item.idinstance }}</span>
                           </div>
                         </div>
                       </dx-select-box>
+                      <button
+                        *ngIf="refsHasNext"
+                        type="button"
+                        class="btn btn-sm btn-outline-secondary mt-1 w-100"
+                        (click)="loadMoreRefs()"
+                      >
+                        Charger plus de références…
+                      </button>
                     </div>
 
                     <div style="flex: 1">

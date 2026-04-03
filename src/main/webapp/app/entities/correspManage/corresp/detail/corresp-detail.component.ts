@@ -2,7 +2,7 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import dayjs from 'dayjs/esm';
 import { ICorresp, IContactCopieCorresp } from '../corresp.model';
-import { CorrespService } from '../service/corresp.service';
+import { CorrespService, CorrespReferenceItem } from '../service/corresp.service';
 import { TasksService } from '../../tasks/service/tasks.service';
 import { ITasks } from '../../tasks/tasks.model';
 import { IPj } from '../../pj/pj.model';
@@ -122,15 +122,11 @@ export class CorrespDetailComponent implements OnInit {
   personSearchExpr = function (dataItem: IPersonCompany): string {
     return (dataItem.nom ? dataItem.nom + ' ' : '') + (dataItem.email ? dataItem.email + ' ' : '') + (dataItem.tel ? dataItem.tel : '');
   };
-  correspsWithReference: ICorresp[] = [];
+  references: CorrespReferenceItem[] = [];
   loadingCorrespsWithRef = false;
-  responseSearchExpr = function (dataItem: ICorresp): string {
-    return (
-      (dataItem.subject ? dataItem.subject + ' ' : '') +
-      (dataItem.reference ? dataItem.reference + ' ' : '') +
-      (dataItem.idinstance ? dataItem.idinstance : '')
-    );
-  };
+  refsPage = 1;
+  refsHasNext = false;
+  refsSearchQuery = '';
 
   // departements: DepartementTreeFeignDTO[] = [];
   selectedDepartement = '';
@@ -492,15 +488,36 @@ export class CorrespDetailComponent implements OnInit {
   // }
   loadCorrespsWithReferenceList(): void {
     this.loadingCorrespsWithRef = true;
-    this.correspService.getAllWithReferenceList().subscribe({
-      next: (res: HttpResponse<ICorresp[]>) => {
-        this.correspsWithReference = res.body || [];
+    this.correspService.getReferences(1, 20).subscribe({
+      next: res => {
+        this.references = res.content;
+        this.refsHasNext = res.hasNext;
+        this.refsPage = 1;
         this.loadingCorrespsWithRef = false;
       },
       error: () => {
-        this.correspsWithReference = [];
+        this.references = [];
         this.loadingCorrespsWithRef = false;
       },
+    });
+  }
+
+  onRefsSearchChange(query: string): void {
+    this.refsSearchQuery = query;
+    this.correspService.getReferences(1, 20, query).subscribe(res => {
+      this.references = res.content;
+      this.refsHasNext = res.hasNext;
+      this.refsPage = 1;
+    });
+  }
+
+  loadMoreRefs(): void {
+    if (!this.refsHasNext) return;
+    const next = this.refsPage + 1;
+    this.correspService.getReferences(next, 20, this.refsSearchQuery).subscribe(res => {
+      this.references = [...this.references, ...res.content];
+      this.refsHasNext = res.hasNext;
+      this.refsPage = next;
     });
   }
   onSelectReponseSur(reference: string | null): void {

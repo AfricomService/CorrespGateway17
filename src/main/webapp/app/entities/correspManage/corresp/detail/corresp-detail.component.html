@@ -623,25 +623,33 @@
                     <div style="flex: 1">
                       <label class="form-label fw-semibold">Réponse Sur</label>
                       <dx-select-box
-                        (onValueChanged)="onSelectReponseSur($event.value)"
                         [(value)]="reponseSur"
-                        [dataSource]="correspsWithReference"
-                        [disabled]="loadingCorrespsWithRef"
-                        [searchEnabled]="true"
-                        [searchExpr]="responseSearchExpr"
+                        [dataSource]="references"
                         [valueExpr]="'reference'"
-                        class="w-100"
                         displayExpr="reference"
+                        [searchEnabled]="true"
+                        [searchTimeout]="400"
                         placeholder="-- Choisir une correspondance (référence) --"
+                        class="w-100"
+                        [disabled]="loadingCorrespsWithRef"
+                        (onValueChanged)="onSelectReponseSur($event.value)"
+                        (onInput)="onRefsSearchChange($event.event.target.value)"
                       >
                         <div *dxTemplate="let item of 'listItem'">
                           <div>
-                            <strong>{{ item.reference || '(Sans référence)' }}</strong>
+                            <strong>{{ item.reference }}</strong>
                             <span *ngIf="item.subject"> — {{ item.subject }}</span>
-                            <span *ngIf="item.idinstance" class="text-muted"> — {{ item.idinstance }}</span>
                           </div>
                         </div>
                       </dx-select-box>
+                      <button
+                        *ngIf="refsHasNext"
+                        type="button"
+                        class="btn btn-sm btn-outline-secondary mt-1 w-100"
+                        (click)="loadMoreRefs()"
+                      >
+                        Charger plus de références…
+                      </button>
                     </div>
 
                     <!-- <div style="flex: 1">

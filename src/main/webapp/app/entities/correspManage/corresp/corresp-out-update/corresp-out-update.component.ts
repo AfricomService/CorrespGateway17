@@ -6,7 +6,7 @@ import { finalize } from 'rxjs/operators';
 
 import { CorrespFormService, CorrespFormGroup } from '../update/corresp-form.service';
 import { ICorresp, IContactCopieCorresp } from '../corresp.model';
-import { CorrespService } from '../service/corresp.service';
+import { CorrespService, CorrespReferenceItem } from '../service/corresp.service';
 import { AlertError } from 'app/shared/alert/alert-error.model';
 import { EventManager, EventWithContent } from 'app/core/util/event-manager.service';
 import { DataUtils, FileLoadError } from 'app/core/util/data-util.service';
@@ -131,9 +131,11 @@ export class CorrespOutUpdateComponent implements OnInit {
   editingTaskIndex: number | null = null;
   isEditMode: boolean = false;
 
-  correspsWithReference: ICorresp[] = [];
-  selectedCorrespReference: string | null = null;
+  references: CorrespReferenceItem[] = [];
   loadingCorrespsWithRef = false;
+  refsPage = 1;
+  refsHasNext = false;
+  refsSearchQuery = '';
 
   editForm: CorrespFormGroup = this.correspFormService.createCorrespFormGroup();
 
@@ -502,29 +504,41 @@ export class CorrespOutUpdateComponent implements OnInit {
 
   loadCorrespsWithReferenceList(): void {
     this.loadingCorrespsWithRef = true;
-    this.correspService.getAllWithReferenceList().subscribe({
-      next: (res: HttpResponse<ICorresp[]>) => {
-        this.correspsWithReference = res.body || [];
+    this.correspService.getReferences(1, 20).subscribe({
+      next: res => {
+        this.references = res.content;
+        this.refsHasNext = res.hasNext;
+        this.refsPage = 1;
         this.loadingCorrespsWithRef = false;
       },
-      error: err => {
-        console.error('Erreur chargement corresps with reference', err);
-        this.correspsWithReference = [];
+      error: () => {
+        this.references = [];
         this.loadingCorrespsWithRef = false;
       },
     });
   }
 
+  onRefsSearchChange(query: string): void {
+    this.refsSearchQuery = query;
+    this.correspService.getReferences(1, 20, query).subscribe(res => {
+      this.references = res.content;
+      this.refsHasNext = res.hasNext;
+      this.refsPage = 1;
+    });
+  }
+
+  loadMoreRefs(): void {
+    if (!this.refsHasNext) return;
+    const next = this.refsPage + 1;
+    this.correspService.getReferences(next, 20, this.refsSearchQuery).subscribe(res => {
+      this.references = [...this.references, ...res.content];
+      this.refsHasNext = res.hasNext;
+      this.refsPage = next;
+    });
+  }
+
   onSelectReponseSur(reference: string | null): void {
     this.reponseSur = reference ?? '';
-    this.selectedCorrespReference = reference;
-    try {
-      if (this.editForm && this.editForm.controls && this.editForm.controls.responseTo) {
-        this.editForm.controls.responseTo.setValue(this.reponseSur);
-      }
-    } catch (e) {
-      // ignore
-    }
   }
 
   // --------------------------------------------------------------------------
