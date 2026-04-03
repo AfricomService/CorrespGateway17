@@ -622,34 +622,296 @@
                   <div style="flex: 1; display: flex; align-items: center; gap: 16px; padding-top: 30px">
                     <div style="flex: 1">
                       <label class="form-label fw-semibold">Réponse Sur</label>
-                      <dx-select-box
-                        [(value)]="reponseSur"
-                        [dataSource]="references"
-                        [valueExpr]="'reference'"
-                        displayExpr="reference"
-                        [searchEnabled]="true"
-                        [searchTimeout]="400"
-                        placeholder="-- Choisir une correspondance (référence) --"
-                        class="w-100"
-                        [disabled]="loadingCorrespsWithRef"
-                        (onValueChanged)="onSelectReponseSur($event.value)"
-                        (onInput)="onRefsSearchChange($event.event.target.value)"
+
+                      <!-- Champ read-only + bouton + -->
+                      <div style="display: flex; gap: 8px; align-items: center">
+                        <input
+                          type="text"
+                          class="form-control"
+                          [value]="reponseSur || ''"
+                          placeholder="Aucune référence sélectionnée"
+                          [disabled]="true"
+                          style="flex: 1; background: #f8f9fa; cursor: default"
+                          readonly
+                        />
+                        <button
+                          type="button"
+                          class="btn btn-outline-secondary"
+                          (click)="openRefsModal()"
+                          title="Choisir une correspondance de référence"
+                          style="padding: 6px 10px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <path
+                              d="M8 1a.5.5 0 0 1 .5.5V7.5H14a.5.5 0 0 1 0 1H8.5V14a.5.5 0 0 1-1 0V8.5H2a.5.5 0 0 1 0-1h5.5V1.5A.5.5 0 0 1 8 1z"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+
+                      <!-- Puce de sélection -->
+                      <div *ngIf="refsSelectedItem" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px">
+                        <span
+                          style="
+                            display: inline-flex;
+                            align-items: center;
+                            gap: 4px;
+                            background: #e8f2ff;
+                            color: #1e7bff;
+                            border-radius: 16px;
+                            padding: 2px 10px;
+                            font-size: 13px;
+                            font-weight: 500;
+                          "
+                        >
+                          📎 {{ refsSelectedItem.reference }}
+                          <button
+                            type="button"
+                            (click)="clearReponseSur()"
+                            style="
+                              background: none;
+                              border: none;
+                              color: #1e7bff;
+                              font-size: 14px;
+                              cursor: pointer;
+                              padding: 0 2px;
+                              line-height: 1;
+                            "
+                            title="Retirer"
+                          >
+                            &times;
+                          </button>
+                        </span>
+                      </div>
+                    </div>
+
+                    <!-- MODAL SÉLECTION RÉFÉRENCE — à placer AVANT la balise </div> fermante du composant -->
+                    <div
+                      *ngIf="refsModalOpen"
+                      style="
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        background: rgba(0, 0, 0, 0.5);
+                        z-index: 1055;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        padding: 20px;
+                      "
+                      (click)="closeRefsModal()"
+                    >
+                      <div
+                        style="
+                          background: #fff;
+                          border-radius: 12px;
+                          width: 100%;
+                          max-width: 800px;
+                          max-height: 85vh;
+                          display: flex;
+                          flex-direction: column;
+                          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                        "
+                        (click)="$event.stopPropagation()"
                       >
-                        <div *dxTemplate="let item of 'listItem'">
-                          <div>
-                            <strong>{{ item.reference }}</strong>
-                            <span *ngIf="item.subject"> — {{ item.subject }}</span>
+                        <!-- Header -->
+                        <div
+                          style="
+                            padding: 16px 20px;
+                            border-bottom: 1px solid #e2e8f0;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            background: #f8fafc;
+                            border-radius: 12px 12px 0 0;
+                          "
+                        >
+                          <h5 style="margin: 0; font-weight: 700; color: #1a2332; font-size: 15px; text-transform: uppercase">
+                            📎 Sélectionner une correspondance de référence
+                          </h5>
+                          <button
+                            type="button"
+                            (click)="closeRefsModal()"
+                            style="
+                              background: none;
+                              border: 1px solid #e2e8f0;
+                              border-radius: 6px;
+                              padding: 4px 10px;
+                              cursor: pointer;
+                              font-size: 16px;
+                              color: #64748b;
+                            "
+                          >
+                            ✕
+                          </button>
+                        </div>
+
+                        <!-- Recherche -->
+                        <div style="padding: 12px 20px; border-bottom: 1px solid #f1f5f9">
+                          <div style="display: flex; gap: 8px">
+                            <input
+                              type="text"
+                              class="form-control"
+                              [(ngModel)]="refsModalSearchQuery"
+                              name="refsModalSearch"
+                              placeholder="Rechercher par référence ou objet…"
+                              (input)="onRefsModalSearchChange()"
+                              style="flex: 1"
+                            />
+                            <button
+                              type="button"
+                              class="btn btn-outline-secondary btn-sm"
+                              *ngIf="refsModalSearchQuery"
+                              (click)="refsModalSearchQuery = ''; onRefsModalSearchChange()"
+                            >
+                              ✕
+                            </button>
                           </div>
                         </div>
-                      </dx-select-box>
-                      <button
-                        *ngIf="refsHasNext"
-                        type="button"
-                        class="btn btn-sm btn-outline-secondary mt-1 w-100"
-                        (click)="loadMoreRefs()"
-                      >
-                        Charger plus de références…
-                      </button>
+
+                        <!-- Contenu -->
+                        <div style="flex: 1; overflow-y: auto; padding: 0">
+                          <!-- Loader -->
+                          <div *ngIf="refsModalLoading" style="text-align: center; padding: 40px; color: #64748b">
+                            <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                            Chargement…
+                          </div>
+
+                          <!-- Table -->
+                          <table
+                            *ngIf="!refsModalLoading && refsModalItems.length > 0"
+                            class="table table-hover mb-0"
+                            style="font-size: 13px"
+                          >
+                            <thead style="position: sticky; top: 0; background: #f8fafc; z-index: 1">
+                              <tr>
+                                <th style="padding: 10px 16px; color: #64748b; font-weight: 600; border-bottom: 2px solid #e2e8f0">
+                                  Référence
+                                </th>
+                                <th style="padding: 10px 16px; color: #64748b; font-weight: 600; border-bottom: 2px solid #e2e8f0">
+                                  Objet
+                                </th>
+                                <th style="padding: 10px 16px; color: #64748b; font-weight: 600; border-bottom: 2px solid #e2e8f0">Date</th>
+                                <th style="padding: 10px 16px; color: #64748b; font-weight: 600; border-bottom: 2px solid #e2e8f0">
+                                  Expéditeur
+                                </th>
+                                <th style="padding: 10px 16px; border-bottom: 2px solid #e2e8f0"></th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr
+                                *ngFor="let item of refsModalItems"
+                                style="cursor: pointer; transition: background 0.15s"
+                                (click)="selectRefItem(item)"
+                                [style.background]="refsSelectedItem?.id === item.id ? '#eff6ff' : ''"
+                              >
+                                <td style="padding: 10px 16px; font-weight: 700; color: #1e40af; border-bottom: 1px solid #f1f5f9">
+                                  {{ item.reference }}
+                                </td>
+                                <td
+                                  style="
+                                    padding: 10px 16px;
+                                    color: #374151;
+                                    border-bottom: 1px solid #f1f5f9;
+                                    max-width: 250px;
+                                    overflow: hidden;
+                                    text-overflow: ellipsis;
+                                    white-space: nowrap;
+                                  "
+                                >
+                                  {{ item.subject || '—' }}
+                                </td>
+                                <td style="padding: 10px 16px; color: #64748b; border-bottom: 1px solid #f1f5f9; white-space: nowrap">
+                                  {{ formatRefDate(item.dateCreated) }}
+                                </td>
+                                <td style="padding: 10px 16px; color: #374151; border-bottom: 1px solid #f1f5f9">
+                                  {{ item.sender || '—' }}
+                                </td>
+                                <td style="padding: 10px 16px; border-bottom: 1px solid #f1f5f9; text-align: center">
+                                  <span *ngIf="refsSelectedItem?.id === item.id" style="color: #1e40af; font-weight: 700; font-size: 16px"
+                                    >✓</span
+                                  >
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+
+                          <!-- Vide -->
+                          <div
+                            *ngIf="!refsModalLoading && refsModalItems.length === 0"
+                            style="text-align: center; padding: 40px; color: #94a3b8; font-style: italic"
+                          >
+                            Aucune correspondance avec référence trouvée.
+                          </div>
+                        </div>
+
+                        <!-- Pagination + footer -->
+                        <div
+                          style="
+                            padding: 12px 20px;
+                            border-top: 1px solid #e2e8f0;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            background: #f8fafc;
+                            border-radius: 0 0 12px 12px;
+                          "
+                        >
+                          <!-- Info -->
+                          <span style="font-size: 13px; color: #64748b">
+                            {{ refsModalTotalItems }} résultat{{ refsModalTotalItems > 1 ? 's' : '' }} — Page {{ refsModalPage }} /
+                            {{ refsModalTotalPages }}
+                          </span>
+
+                          <!-- Pagination -->
+                          <div style="display: flex; gap: 6px; align-items: center">
+                            <button
+                              type="button"
+                              class="btn btn-sm btn-outline-secondary"
+                              [disabled]="refsModalPage <= 1 || refsModalLoading"
+                              (click)="refsModalGoToPage(refsModalPage - 1)"
+                            >
+                              ‹
+                            </button>
+
+                            <ng-container *ngFor="let p of [].constructor(refsModalTotalPages); let i = index">
+                              <button
+                                *ngIf="
+                                  i + 1 === 1 || i + 1 === refsModalTotalPages || (i + 1 >= refsModalPage - 1 && i + 1 <= refsModalPage + 1)
+                                "
+                                type="button"
+                                class="btn btn-sm"
+                                [class.btn-primary]="i + 1 === refsModalPage"
+                                [class.btn-outline-secondary]="i + 1 !== refsModalPage"
+                                (click)="refsModalGoToPage(i + 1)"
+                              >
+                                {{ i + 1 }}
+                              </button>
+                              <span
+                                *ngIf="
+                                  (i + 1 === 2 && refsModalPage > 3) ||
+                                  (i + 1 === refsModalTotalPages - 1 && refsModalPage < refsModalTotalPages - 2)
+                                "
+                                style="color: #94a3b8; line-height: 30px"
+                                >…</span
+                              >
+                            </ng-container>
+
+                            <button
+                              type="button"
+                              class="btn btn-sm btn-outline-secondary"
+                              [disabled]="refsModalPage >= refsModalTotalPages || refsModalLoading"
+                              (click)="refsModalGoToPage(refsModalPage + 1)"
+                            >
+                              ›
+                            </button>
+                          </div>
+
+                          <button type="button" class="btn btn-light btn-sm" (click)="closeRefsModal()">Fermer</button>
+                        </div>
+                      </div>
                     </div>
 
                     <!-- <div style="flex: 1">

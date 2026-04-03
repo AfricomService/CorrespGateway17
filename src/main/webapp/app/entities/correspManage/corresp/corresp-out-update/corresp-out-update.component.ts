@@ -131,11 +131,16 @@ export class CorrespOutUpdateComponent implements OnInit {
   editingTaskIndex: number | null = null;
   isEditMode: boolean = false;
 
-  references: CorrespReferenceItem[] = [];
-  loadingCorrespsWithRef = false;
-  refsPage = 1;
-  refsHasNext = false;
-  refsSearchQuery = '';
+  // État du modal références
+  refsModalOpen = false;
+  refsModalPage = 1;
+  refsModalTotalPages = 1;
+  refsModalTotalItems = 0;
+  refsModalPageSize = 10;
+  refsModalItems: CorrespReferenceItem[] = [];
+  refsModalLoading = false;
+  refsModalSearchQuery = '';
+  refsSelectedItem: CorrespReferenceItem | null = null;
 
   editForm: CorrespFormGroup = this.correspFormService.createCorrespFormGroup();
 
@@ -284,7 +289,6 @@ export class CorrespOutUpdateComponent implements OnInit {
     this.loadUsers();
     this.loadActiveCompanies();
     this.loadAllCorresps();
-    this.loadCorrespsWithReferenceList();
   }
 
   // --------------------------------------------------------------------------
@@ -502,38 +506,65 @@ export class CorrespOutUpdateComponent implements OnInit {
     return result;
   }
 
-  loadCorrespsWithReferenceList(): void {
-    this.loadingCorrespsWithRef = true;
-    this.correspService.getReferences(1, 20).subscribe({
+  // Ouvrir le modal de sélection de référence
+  openRefsModal(): void {
+    this.refsModalPage = 1;
+    this.refsModalSearchQuery = '';
+    this.refsModalItems = [];
+    this.refsModalOpen = true;
+    this.loadRefsModalPage(1);
+  }
+
+  closeRefsModal(): void {
+    this.refsModalOpen = false;
+  }
+
+  loadRefsModalPage(page: number): void {
+    this.refsModalLoading = true;
+    this.correspService.getReferences(page, this.refsModalPageSize, this.refsModalSearchQuery).subscribe({
       next: res => {
-        this.references = res.content;
-        this.refsHasNext = res.hasNext;
-        this.refsPage = 1;
-        this.loadingCorrespsWithRef = false;
+        this.refsModalItems = res.content;
+        this.refsModalPage = res.currentPage;
+        this.refsModalTotalPages = res.totalPages;
+        this.refsModalTotalItems = res.totalItems;
+        this.refsModalLoading = false;
       },
       error: () => {
-        this.references = [];
-        this.loadingCorrespsWithRef = false;
+        this.refsModalItems = [];
+        this.refsModalLoading = false;
       },
     });
   }
 
-  onRefsSearchChange(query: string): void {
-    this.refsSearchQuery = query;
-    this.correspService.getReferences(1, 20, query).subscribe(res => {
-      this.references = res.content;
-      this.refsHasNext = res.hasNext;
-      this.refsPage = 1;
-    });
+  onRefsModalSearchChange(): void {
+    this.refsModalPage = 1;
+    this.loadRefsModalPage(1);
   }
 
-  loadMoreRefs(): void {
-    if (!this.refsHasNext) return;
-    const next = this.refsPage + 1;
-    this.correspService.getReferences(next, 20, this.refsSearchQuery).subscribe(res => {
-      this.references = [...this.references, ...res.content];
-      this.refsHasNext = res.hasNext;
-      this.refsPage = next;
+  refsModalGoToPage(page: number): void {
+    if (page < 1 || page > this.refsModalTotalPages) return;
+    this.loadRefsModalPage(page);
+  }
+
+  selectRefItem(item: CorrespReferenceItem): void {
+    this.refsSelectedItem = item;
+    this.reponseSur = item.reference;
+    this.refsModalOpen = false;
+    // Pour corresp-update uniquement — garder la synchro avec le formGroup si besoin :
+    // try { this.editForm?.controls?.responseTo?.setValue(this.reponseSur); } catch(e) {}
+  }
+
+  clearReponseSur(): void {
+    this.refsSelectedItem = null;
+    this.reponseSur = '';
+  }
+
+  formatRefDate(date?: string | null): string {
+    if (!date) return '';
+    return new Date(date).toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
     });
   }
 
