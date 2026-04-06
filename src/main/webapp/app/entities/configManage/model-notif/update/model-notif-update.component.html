@@ -1,161 +1,278 @@
-<div class="d-flex justify-content-center">
-  <div class="col-8">
-    <form name="editForm" role="form" novalidate (ngSubmit)="save()" [formGroup]="editForm">
-      <h2
-        id="jhi-model-notif-heading"
-        data-cy="ModelNotifCreateUpdateHeading"
-        jhiTranslate="correspCareApp.configManageModelNotif.home.createOrEditLabel"
+<div class="mn-page">
+  <!-- ── TOP TOOLBAR ── -->
+  <div class="mn-toolbar">
+    <h5 class="mn-toolbar__title">
+      <span *ngIf="editForm.controls.id.value !== null" jhiTranslate="correspCareApp.configManageModelNotif.home.createOrEditLabel">
+        Éditer un Modèle de Notification
+      </span>
+      <span *ngIf="editForm.controls.id.value === null" jhiTranslate="correspCareApp.configManageModelNotif.home.createOrEditLabel">
+        Créer un Modèle de Notification
+      </span>
+    </h5>
+
+    <div class="mn-toolbar__actions">
+      <button
+        type="button"
+        id="cancel-save"
+        data-cy="entityCreateCancelButton"
+        class="btn btn-outline-secondary btn-sm mn-btn"
+        (click)="previousState()"
       >
-        Créer ou éditer un Model Notif
-      </h2>
+        <fa-icon icon="ban"></fa-icon>
+        <span jhiTranslate="entity.action.cancel">Annuler</span>
+      </button>
 
-      <div>
-        <jhi-alert-error></jhi-alert-error>
-
-        <div class="row mb-3" *ngIf="editForm.controls.id.value !== null">
-          <label class="form-label" jhiTranslate="correspCareApp.configManageModelNotif.id" for="field_id">Id</label>
-          <input type="text" class="form-control" name="id" id="field_id" data-cy="id" formControlName="id" [readonly]="true" />
-          <div *ngIf="editForm.get('id')!.invalid && (editForm.get('id')!.dirty || editForm.get('id')!.touched)">
-            <small class="form-text text-danger" *ngIf="editForm.get('id')?.errors?.required" jhiTranslate="entity.validation.required">
-              Ce champ est obligatoire.
-            </small>
-          </div>
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.configManageModelNotif.name" for="field_name">Name</label>
-          <input type="text" class="form-control" name="name" id="field_name" data-cy="name" formControlName="name" />
-          <div *ngIf="editForm.get('name')!.invalid && (editForm.get('name')!.dirty || editForm.get('name')!.touched)">
-            <small class="form-text text-danger" *ngIf="editForm.get('name')?.errors?.required" jhiTranslate="entity.validation.required">
-              Ce champ est obligatoire.
-            </small>
-          </div>
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.configManageModelNotif.famille" for="field_famille">Famille</label>
-          <input type="text" class="form-control" name="famille" id="field_famille" data-cy="famille" formControlName="famille" />
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.configManageModelNotif.code" for="field_code">Code</label>
-          <input type="text" class="form-control" name="code" id="field_code" data-cy="code" formControlName="code" />
-          <div *ngIf="editForm.get('code')!.invalid && (editForm.get('code')!.dirty || editForm.get('code')!.touched)"></div>
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.configManageModelNotif.content" for="field_content">Content</label>
-          <textarea class="form-control" name="content" id="field_content" data-cy="content" formControlName="content"></textarea>
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.configManageModelNotif.subjectFormula" for="field_subjectFormula"
-            >Subject Formula</label
-          >
-          <input
-            type="text"
-            class="form-control"
-            name="subjectFormula"
-            id="field_subjectFormula"
-            data-cy="subjectFormula"
-            formControlName="subjectFormula"
-          />
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.configManageModelNotif.senderEmailFormule" for="field_senderEmailFormule"
-            >Sender Email Formule</label
-          >
-          <input
-            type="text"
-            class="form-control"
-            name="senderEmailFormule"
-            id="field_senderEmailFormule"
-            data-cy="senderEmailFormule"
-            formControlName="senderEmailFormule"
-          />
-          <div
-            *ngIf="
-              editForm.get('senderEmailFormule')!.invalid &&
-              (editForm.get('senderEmailFormule')!.dirty || editForm.get('senderEmailFormule')!.touched)
-            "
-          >
-            <small
-              class="form-text text-danger"
-              *ngIf="editForm.get('senderEmailFormule')?.errors?.required"
-              jhiTranslate="entity.validation.required"
-            >
-              Ce champ est obligatoire.
-            </small>
-          </div>
-        </div>
-
-        <div class="row mb-3">
-          <label
-            class="form-label"
-            jhiTranslate="correspCareApp.configManageModelNotif.recepientEmailFormule"
-            for="field_recepientEmailFormule"
-            >Recepient Email Formule</label
-          >
-          <input
-            type="text"
-            class="form-control"
-            name="recepientEmailFormule"
-            id="field_recepientEmailFormule"
-            data-cy="recepientEmailFormule"
-            formControlName="recepientEmailFormule"
-          />
-        </div>
-
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.configManageModelNotif.createdDate" for="field_createdDate"
-            >Created Date</label
-          >
-          <div class="d-flex">
-            <input
-              id="field_createdDate"
-              data-cy="createdDate"
-              type="datetime-local"
-              class="form-control"
-              name="createdDate"
-              formControlName="createdDate"
-              placeholder="YYYY-MM-DD HH:mm"
-            />
-          </div>
-          <div *ngIf="editForm.get('createdDate')!.invalid && (editForm.get('createdDate')!.dirty || editForm.get('createdDate')!.touched)">
-            <small
-              class="form-text text-danger"
-              *ngIf="editForm.get('createdDate')?.errors?.required"
-              jhiTranslate="entity.validation.required"
-            >
-              Ce champ est obligatoire.
-            </small>
-            <small
-              class="form-text text-danger"
-              [hidden]="!editForm.get('createdDate')?.errors?.datetimelocal"
-              jhiTranslate="entity.validation.datetimelocal"
-            >
-              Ce champ doit être une date et une heure.
-            </small>
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <button type="button" id="cancel-save" data-cy="entityCreateCancelButton" class="btn btn-secondary" (click)="previousState()">
-          <fa-icon icon="ban"></fa-icon>&nbsp;<span jhiTranslate="entity.action.cancel">Annuler</span>
-        </button>
-
-        <button
-          type="submit"
-          id="save-entity"
-          data-cy="entityCreateSaveButton"
-          [disabled]="editForm.invalid || isSaving"
-          class="btn btn-primary"
-        >
-          <fa-icon icon="save"></fa-icon>&nbsp;<span jhiTranslate="entity.action.save">Sauvegarder</span>
-        </button>
-      </div>
-    </form>
+      <button
+        type="button"
+        id="save-entity"
+        data-cy="entityCreateSaveButton"
+        class="btn btn-primary btn-sm mn-btn"
+        [disabled]="editForm.invalid || isSaving"
+        (click)="save()"
+      >
+        <fa-icon *ngIf="!isSaving" icon="save"></fa-icon>
+        <span *ngIf="isSaving" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"> </span>
+        <span jhiTranslate="entity.action.save">Sauvegarder</span>
+      </button>
+    </div>
   </div>
+
+  <!-- ── ALERT ── -->
+  <jhi-alert-error></jhi-alert-error>
+
+  <!-- ── FORM ── -->
+  <form name="editForm" role="form" novalidate [formGroup]="editForm">
+    <div class="mn-layout">
+      <!-- ════════════════════════════════
+           COLONNE GAUCHE
+           ════════════════════════════════ -->
+      <div class="mn-col-left">
+        <!-- CARD 1 : Informations générales -->
+        <div class="mn-card">
+          <div class="mn-card__header">
+            <h6>📋 Informations générales</h6>
+          </div>
+          <div class="mn-card__body">
+            <div class="mn-card__grid">
+              <!-- ID (edit only) -->
+              <div *ngIf="editForm.controls.id.value !== null" class="mn-card__full">
+                <label class="mn-label" jhiTranslate="correspCareApp.configManageModelNotif.id" for="field_id">Id</label>
+                <input
+                  type="text"
+                  class="form-control mn-input mn-input--readonly"
+                  id="field_id"
+                  data-cy="id"
+                  formControlName="id"
+                  [readonly]="true"
+                />
+              </div>
+
+              <!-- Nom -->
+              <div>
+                <label class="mn-label" jhiTranslate="correspCareApp.configManageModelNotif.name" for="field_name">
+                  Nom <span class="text-danger">*</span>
+                </label>
+                <input
+                  type="text"
+                  class="form-control mn-input"
+                  id="field_name"
+                  data-cy="name"
+                  formControlName="name"
+                  placeholder="Nom du modèle"
+                  [class.is-invalid]="editForm.get('name')!.invalid && (editForm.get('name')!.dirty || editForm.get('name')!.touched)"
+                />
+                <div class="invalid-feedback" *ngIf="editForm.get('name')?.errors?.required">Ce champ est obligatoire.</div>
+              </div>
+
+              <!-- Famille -->
+              <div>
+                <label class="mn-label" jhiTranslate="correspCareApp.configManageModelNotif.famille" for="field_famille">Famille</label>
+                <select class="form-select mn-input" id="field_famille" data-cy="famille" formControlName="famille">
+                  <option [ngValue]="null">-- Sélectionner une famille --</option>
+                  <option value="Email">📧 Email</option>
+                  <option value="Lettre">📄 Lettre</option>
+                </select>
+              </div>
+
+              <!-- Code -->
+              <div>
+                <label class="mn-label" jhiTranslate="correspCareApp.configManageModelNotif.code" for="field_code">Code</label>
+                <input
+                  type="text"
+                  class="form-control mn-input"
+                  id="field_code"
+                  data-cy="code"
+                  formControlName="code"
+                  placeholder="Code du modèle"
+                />
+              </div>
+
+              <!-- Date de création -->
+              <div>
+                <label class="mn-label" jhiTranslate="correspCareApp.configManageModelNotif.createdDate" for="field_createdDate">
+                  Date de création <span class="text-danger">*</span>
+                </label>
+                <input
+                  id="field_createdDate"
+                  data-cy="createdDate"
+                  type="datetime-local"
+                  class="form-control mn-input"
+                  name="createdDate"
+                  formControlName="createdDate"
+                  placeholder="YYYY-MM-DD HH:mm"
+                  [class.is-invalid]="
+                    editForm.get('createdDate')!.invalid && (editForm.get('createdDate')!.dirty || editForm.get('createdDate')!.touched)
+                  "
+                />
+                <div
+                  *ngIf="
+                    editForm.get('createdDate')!.invalid && (editForm.get('createdDate')!.dirty || editForm.get('createdDate')!.touched)
+                  "
+                >
+                  <small class="form-text text-danger" *ngIf="editForm.get('createdDate')?.errors?.required">
+                    Ce champ est obligatoire.
+                  </small>
+                  <small class="form-text text-danger" [hidden]="!editForm.get('createdDate')?.errors?.datetimelocal">
+                    Ce champ doit être une date et une heure.
+                  </small>
+                </div>
+              </div>
+            </div>
+            <!-- /mn-card__grid -->
+          </div>
+          <!-- /mn-card__body -->
+        </div>
+        <!-- /CARD 1 -->
+
+        <!-- CARD 2 : Formules d'envoi -->
+        <div class="mn-card">
+          <div class="mn-card__header">
+            <h6>✉️ Formules d'envoi</h6>
+          </div>
+          <div class="mn-card__body">
+            <div class="mn-card__grid">
+              <!-- Formule objet -->
+              <div class="mn-card__full">
+                <label class="mn-label" jhiTranslate="correspCareApp.configManageModelNotif.subjectFormula" for="field_subjectFormula"
+                  >Formule Objet</label
+                >
+                <input
+                  type="text"
+                  class="form-control mn-input"
+                  id="field_subjectFormula"
+                  data-cy="subjectFormula"
+                  formControlName="subjectFormula"
+                  placeholder="Ex : Objet : [variable]"
+                />
+              </div>
+
+              <!-- Email Expéditeur -->
+              <div>
+                <label
+                  class="mn-label"
+                  jhiTranslate="correspCareApp.configManageModelNotif.senderEmailFormule"
+                  for="field_senderEmailFormule"
+                >
+                  Email Expéditeur <span class="text-danger">*</span>
+                </label>
+                <input
+                  type="text"
+                  class="form-control mn-input"
+                  id="field_senderEmailFormule"
+                  data-cy="senderEmailFormule"
+                  formControlName="senderEmailFormule"
+                  placeholder="Ex : expediteur@domaine.com"
+                  [class.is-invalid]="
+                    editForm.get('senderEmailFormule')!.invalid &&
+                    (editForm.get('senderEmailFormule')!.dirty || editForm.get('senderEmailFormule')!.touched)
+                  "
+                />
+                <div class="invalid-feedback" *ngIf="editForm.get('senderEmailFormule')?.errors?.required">Ce champ est obligatoire.</div>
+              </div>
+
+              <!-- Email Destinataire -->
+              <div>
+                <label
+                  class="mn-label"
+                  jhiTranslate="correspCareApp.configManageModelNotif.recepientEmailFormule"
+                  for="field_recepientEmailFormule"
+                  >Email Destinataire</label
+                >
+                <input
+                  type="text"
+                  class="form-control mn-input"
+                  id="field_recepientEmailFormule"
+                  data-cy="recepientEmailFormule"
+                  formControlName="recepientEmailFormule"
+                  placeholder="Ex : destinataire@domaine.com"
+                />
+              </div>
+            </div>
+            <!-- /mn-card__grid -->
+          </div>
+          <!-- /mn-card__body -->
+        </div>
+        <!-- /CARD 2 -->
+      </div>
+      <!-- /mn-col-left -->
+
+      <!-- ════════════════════════════════
+           COLONNE DROITE
+           ════════════════════════════════ -->
+      <div class="mn-col-right">
+        <!-- CARD 3 : Contenu du modèle -->
+        <div class="mn-card">
+          <div class="mn-card__header">
+            <h6>📝 Contenu du modèle</h6>
+          </div>
+          <div class="mn-card__body mn-html-editor">
+            <dx-html-editor [(value)]="htmlContent" [height]="560" placeholder="Rédigez le contenu du modèle de notification...">
+              <dxo-toolbar [multiline]="true">
+                <dxi-item name="undo"></dxi-item>
+                <dxi-item name="redo"></dxi-item>
+                <dxi-item name="separator"></dxi-item>
+                <dxi-item name="size" [acceptedValues]="['8pt', '10pt', '12pt', '14pt', '18pt', '24pt', '36pt']"> </dxi-item>
+                <dxi-item
+                  name="font"
+                  [acceptedValues]="['Arial', 'Courier New', 'Georgia', 'Impact', 'Lucida Console', 'Tahoma', 'Times New Roman', 'Verdana']"
+                >
+                </dxi-item>
+                <dxi-item name="separator"></dxi-item>
+                <dxi-item name="bold"></dxi-item>
+                <dxi-item name="italic"></dxi-item>
+                <dxi-item name="strike"></dxi-item>
+                <dxi-item name="underline"></dxi-item>
+                <dxi-item name="separator"></dxi-item>
+                <dxi-item name="alignLeft"></dxi-item>
+                <dxi-item name="alignCenter"></dxi-item>
+                <dxi-item name="alignRight"></dxi-item>
+                <dxi-item name="alignJustify"></dxi-item>
+                <dxi-item name="separator"></dxi-item>
+                <dxi-item name="orderedList"></dxi-item>
+                <dxi-item name="bulletList"></dxi-item>
+                <dxi-item name="separator"></dxi-item>
+                <dxi-item name="header" [acceptedValues]="[false, 1, 2, 3, 4, 5]"></dxi-item>
+                <dxi-item name="separator"></dxi-item>
+                <dxi-item name="color"></dxi-item>
+                <dxi-item name="background"></dxi-item>
+                <dxi-item name="separator"></dxi-item>
+                <dxi-item name="link"></dxi-item>
+                <dxi-item name="image"></dxi-item>
+                <dxi-item name="separator"></dxi-item>
+                <dxi-item name="clear"></dxi-item>
+                <dxi-item name="codeBlock"></dxi-item>
+                <dxi-item name="blockquote"></dxi-item>
+                <dxi-item name="separator"></dxi-item>
+                <dxi-item name="insertTable"></dxi-item>
+                <dxi-item name="deleteTable"></dxi-item>
+              </dxo-toolbar>
+            </dx-html-editor>
+          </div>
+        </div>
+        <!-- /CARD 3 -->
+      </div>
+      <!-- /mn-col-right -->
+    </div>
+    <!-- /mn-layout -->
+  </form>
 </div>
