@@ -1,0 +1,152 @@
+// ── Wrapper principal
+.mn-page {
+  display: flex;
+  flex-direction: column;
+  padding: 0 20px;
+  min-height: 100%;
+}
+
+// ── Toolbar supérieure
+.mn-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 10px;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 10px;
+
+  &__title {
+    margin: 0;
+    font-weight: 700;
+    color: #1a2332;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 15px;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+}
+
+// ── Layout 2 colonnes
+.mn-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+
+  // Responsive : 1 colonne sous 992px
+  @media (max-width: 991.98px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ── Colonne gauche
+.mn-col-left {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+// ── Colonne droite
+.mn-col-right {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  // Sur grand écran : rendre la colonne droite sticky
+  @media (min-width: 992px) {
+    position: sticky;
+    top: 16px;
+  }
+}
+
+// ── Card générique
+.mn-card {
+  border: 1px solid #dee2e6;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+
+  &__header {
+    padding: 12px 20px;
+    background: #f1f5f9;
+    border-bottom: 1px solid #e2e8f0;
+
+    h6 {
+      margin: 0;
+      font-weight: 700;
+      color: #334155;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      font-size: 12px;
+    }
+  }
+
+  &__body {
+    padding: 20px;
+  }
+
+  // Grid interne 2 colonnes pour les champs
+  &__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+
+    @media (max-width: 575.98px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  // Champ pleine largeur dans la grille
+  &__full {
+    grid-column: 1 / -1;
+  }
+}
+
+// ── Labels
+.mn-label {
+  font-size: 13px;
+  color: #374151;
+  font-weight: 600;
+  margin-bottom: 6px;
+  display: block;
+}
+
+// ── Inputs / Selects
+.mn-input {
+  font-size: 13px;
+  border-radius: 8px;
+}
+
+// ── Champ ID (readonly)
+.mn-input--readonly {
+  background: #f8fafc;
+  max-width: 200px;
+}
+
+// ── Éditeur HTML (hauteur adaptative)
+.mn-html-editor {
+  // L'éditeur occupe toute la hauteur disponible de la colonne droite
+  dx-html-editor {
+    border-radius: 8px;
+    overflow: hidden;
+  }
+}
+
+// ── Bouton avec spinner
+.mn-btn {
+  font-weight: 600;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}

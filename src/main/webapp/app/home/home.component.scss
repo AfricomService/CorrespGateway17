@@ -160,6 +160,9 @@ $container-max: 1800px; // largeur raisonnable
     gap: 16px;
     padding: 0 12px;
   }
+  .hide-on-mobile {
+    display: none !important;
+  }
   :host .hero-inner {
     padding: 10px 12px;
   }
@@ -364,6 +367,9 @@ $container-max: 1800px; // largeur raisonnable
   .left-column .mail-card .mail-options {
     flex-direction: column;
     gap: 16px;
+  }
+  .hide-on-mobile {
+    display: none !important;
   }
 
   :host .mail-option {

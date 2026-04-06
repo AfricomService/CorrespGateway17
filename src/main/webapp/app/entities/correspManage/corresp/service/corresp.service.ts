@@ -420,6 +420,19 @@ export class CorrespService {
     return this.http.patch(`${this.resourceUrl}/saveBodyToFile`, options);
   }
 
+  prepareCorrespEmail(request: {
+    correspId: number;
+    modelNotifId: string;
+    receiver: string;
+    copyTo: string;
+    correspBody: string;
+    senderFullName: string;
+    senderDepartement: string;
+    senderEmail: string;
+  }): Observable<any> {
+    return this.http.post(`${this.applicationConfigService.getEndpointFor('api/corresps/send-email', 'correspmanage')}`, request);
+  }
+
   getCorrespsByTask(taskId: number): Observable<EntityArrayResponseType> {
     return this.http
       .get<RestCorresp[]>(`${this.resourceUrl}/by-task/${taskId}`, { observe: 'response' })

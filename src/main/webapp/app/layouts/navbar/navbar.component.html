@@ -31,6 +31,56 @@
             </span>
           </a>
         </li>
+        <!-- Menu Nouveau Courrier -->
+        <li *ngSwitchCase="true" ngbDropdown class="nav-item dropdown pointer" display="dynamic">
+          <a class="nav-link dropdown-toggle" ngbDropdownToggle href="javascript:void(0);" id="nouveau-courrier-menu">
+            <span>
+              <fa-icon icon="plus-circle"></fa-icon>
+              <span jhiTranslate="home.newMail">Nouveau</span>
+            </span>
+          </a>
+          <ul class="dropdown-menu nouveau-courrier-dropdown" ngbDropdownMenu aria-labelledby="nouveau-courrier-menu">
+            <!-- ARRIVÉE (uniquement BOC ou ADMIN) -->
+            <li *ngIf="canCreateArrivee">
+              <a class="dropdown-item" href="javascript:void(0);" (click)="navigateTo('Arrivée')">
+                <span class="nouveau-icon arrivee-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none">
+                    <path d="M3 8l3-3h12l3 3v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8z" stroke="currentColor" stroke-width="1.5" />
+                    <path d="M12 3v11M8 10l4 4 4-4" stroke="#ef4444" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </span>
+                <span jhiTranslate="home.arrival">ARRIVÉE</span>
+              </a>
+            </li>
+
+            <!-- SORTANT -->
+            <li>
+              <a class="dropdown-item" href="javascript:void(0);" (click)="navigateTo('Sortant')">
+                <span class="nouveau-icon sortant-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none">
+                    <path d="M3 8l3-3h12l3 3v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8z" stroke="currentColor" stroke-width="1.5" />
+                    <path d="M12 17V6M8 10l4-4 4 4" stroke="#ef4444" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </span>
+                <span jhiTranslate="home.outgoing">SORTANT</span>
+              </a>
+            </li>
+
+            <!-- INTERNE -->
+            <li>
+              <a class="dropdown-item" href="javascript:void(0);" (click)="navigateTo('Interne')">
+                <span class="nouveau-icon interne-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none">
+                    <rect x="4" y="3" width="14" height="18" rx="2" stroke="currentColor" stroke-width="1.5" />
+                    <path d="M8 8h8M8 12h8M8 16h5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+                  </svg>
+                </span>
+                <span jhiTranslate="home.internal">INTERNE</span>
+              </a>
+            </li>
+          </ul>
+        </li>
+        <!-- Fin Menu Nouveau Courrier -->
         <!-- jhipster-needle-add-element-to-menu - JHipster will add new menu items here -->
         <li
           *ngSwitchCase="true"
@@ -43,7 +93,7 @@
           <a class="nav-link dropdown-toggle" ngbDropdownToggle href="javascript:void(0);" id="entity-menu" data-cy="entity">
             <span>
               <fa-icon icon="th-list"></fa-icon>
-              <span jhiTranslate="global.menu.entities.main">Gestion</span>
+              <span jhiTranslate="global.menu.entities.main">Consulter</span>
             </span>
           </a>
           <ul class="dropdown-menu" ngbDropdownMenu aria-labelledby="entity-menu">
@@ -414,7 +464,6 @@
           <a class="nav-link dropdown-toggle" ngbDropdownToggle href="javascript:void(0);" id="languagesnavBarDropdown">
             <span>
               <fa-icon icon="flag"></fa-icon>
-              <span jhiTranslate="global.menu.language">Langue</span>
             </span>
           </a>
           <ul class="dropdown-menu" ngbDropdownMenu aria-labelledby="languagesnavBarDropdown">
@@ -439,7 +488,6 @@
           <a class="nav-link dropdown-toggle" ngbDropdownToggle href="javascript:void(0);" id="account-menu" data-cy="accountMenu">
             <span *ngIf="!account?.imageUrl">
               <fa-icon icon="user"></fa-icon>
-              <span jhiTranslate="global.menu.account.main">Compte</span>
             </span>
             <span *ngIf="account?.imageUrl">
               <img [src]="account!.imageUrl" class="profile-image rounded-circle" alt="Avatar" />

@@ -176,7 +176,6 @@ export class CorrespUpdateComponent implements OnInit {
   loadingCompanies = false;
   loadingPersons = false;
   contactEmailLabel: string = '';
-  loadingCorresps = false;
 
   showManualExpediteur = false;
   showManualContact: boolean = false;
@@ -332,7 +331,6 @@ export class CorrespUpdateComponent implements OnInit {
 
     this.loadUsers();
     this.loadActiveCompanies();
-    this.loadAllCorresps();
   }
 
   // --------------------------------------------------------------------------
@@ -345,14 +343,6 @@ export class CorrespUpdateComponent implements OnInit {
   personSearchExpr = function (dataItem: IPersonCompany): string {
     return (dataItem.nom ? dataItem.nom + ' ' : '') + (dataItem.email ? dataItem.email + ' ' : '') + (dataItem.tel ? dataItem.tel : '');
   };
-  responseSearchExpr = function (dataItem: ICorresp): string {
-    return (
-      (dataItem.subject ? dataItem.subject + ' ' : '') +
-      (dataItem.reference ? dataItem.reference + ' ' : '') +
-      (dataItem.idinstance ? dataItem.idinstance : '')
-    );
-  };
-  corresps: ICorresp[] = [];
 
   loadActiveCompanies(): void {
     this.loadingCompanies = true;
@@ -365,20 +355,6 @@ export class CorrespUpdateComponent implements OnInit {
         console.error('Failed to load companies', err);
         this.companies = [];
         this.loadingCompanies = false;
-      },
-    });
-  }
-  loadAllCorresps(): void {
-    this.loadingCorresps = true;
-    this.correspService.query({ page: 0, size: 1000, sort: ['subject,ASC'] }).subscribe({
-      next: (res: HttpResponse<ICorresp[]>) => {
-        this.corresps = res.body || [];
-        this.loadingCorresps = false;
-      },
-      error: err => {
-        console.error('Erreur chargement correspondances', err);
-        this.corresps = [];
-        this.loadingCorresps = false;
       },
     });
   }

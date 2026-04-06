@@ -1121,147 +1121,149 @@
                 id="tasksSection"
                 style="max-height: 420px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px"
               >
-                <div
-                  *ngFor="let task of tachesAssociees"
-                  [attr.id]="'task-' + task.id"
-                  [style.background-color]="getTaskTypeBg(task.taskType)"
-                  [style.border-left]="'5px solid ' + getTaskColor(task.status)"
-                  style="
-                    padding: 12px;
-                    background-color: #fff;
-                    border-radius: 6px;
-                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-                    display: flex;
-                    flex-direction: column;
-                  "
-                >
-                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px">
-                    <span
-                      [style.background-color]="getTaskColor(task.status)"
-                      class="badge"
-                      style="font-size: 0.7em; text-transform: uppercase"
-                    >
-                      {{ getTaskLabel(task.status) }}
-                    </span>
-                    <span style="font-size: 0.85em; color: #6c757d; text-transform: capitalize">
-                      <span *ngIf="task.dueDate" jhiTranslate="correspCareApp.correspManageCorresp.detail.dueDateLabel">Échéance:</span>
-                      {{ formatDate(task.dueDate) }}</span
-                    >
-                  </div>
-
-                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px">
-                    <p style="margin: 0; color: #212529; line-height: 1.4; font-size: 0.95em">
-                      <strong>{{ task.responsableName?.toUpperCase() }}</strong> : Tâche de
-                      <strong>{{ task.taskType }}</strong>
-                    </p>
-                    <div style="display: flex; gap: 0.5em">
+                <ng-container *ngFor="let task of tachesAssociees">
+                  <div
+                    *ngIf="task.status !== CorrespStatus.DRAFT || isAdminOrBoc || isGlobalAdmin"
+                    [attr.id]="'task-' + task.id"
+                    [style.background-color]="getTaskTypeBg(task.taskType)"
+                    [style.border-left]="'5px solid ' + getTaskColor(task.status)"
+                    style="
+                      padding: 12px;
+                      background-color: #fff;
+                      border-radius: 6px;
+                      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+                      display: flex;
+                      flex-direction: column;
+                    "
+                  >
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px">
                       <span
-                        (click)="changeTasksStatus(correspLoaded?.id!, task.id, 'CANCELLED')"
-                        *ngIf="CorrespStatus.DRAFT === task.status"
-                        [style.background-color]="'#6a2020'"
-                        [style.opacity]="isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? '1' : '0.4'"
-                        [style.pointer-events]="
-                          isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? 'auto' : 'none'
-                        "
-                        class="badge"
-                        style="font-size: 0.7em; text-transform: uppercase; cursor: pointer"
-                        title="{{
-                          isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? '' : 'Droit insuffisant'
-                        }}"
-                      >
-                        <span jhiTranslate="correspCareApp.correspManageCorresp.actions.cancel">annuler</span>
-                      </span>
-
-                      <span
-                        (click)="deleteTask(correspLoaded?.id!, task.id)"
-                        *ngIf="CorrespStatus.DRAFT === task.status"
-                        [style.background-color]="'#dc3545'"
-                        [style.opacity]="isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? '1' : '0.4'"
-                        [style.pointer-events]="
-                          isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? 'auto' : 'none'
-                        "
-                        class="badge"
-                        style="font-size: 0.7em; text-transform: uppercase; cursor: pointer"
-                        title="{{
-                          isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? '' : 'Droit insuffisant'
-                        }}"
-                      >
-                        <span jhiTranslate="correspCareApp.correspManageCorresp.actions.deleteUpper">SUPPRIMER</span>
-                      </span>
-
-                      <span
-                        (click)="changeTasksStatus(correspLoaded?.id!, task.id, 'IN_PROGRESS')"
-                        *ngIf="CorrespStatus.DRAFT === task.status"
-                        [style.background-color]="'#0d6efd'"
-                        [style.opacity]="isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? '1' : '0.4'"
-                        [style.pointer-events]="
-                          isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? 'auto' : 'none'
-                        "
-                        class="badge"
-                        style="font-size: 0.7em; text-transform: uppercase; cursor: pointer"
-                        title="{{
-                          isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? '' : 'Droit insuffisant'
-                        }}"
-                      >
-                        <span jhiTranslate="correspCareApp.correspManageCorresp.actions.start">commencer</span>
-                      </span>
-
-                      <span
-                        (click)="changeTasksStatus(correspLoaded?.id!, task.id, 'CANCELLED')"
-                        *ngIf="
-                          CorrespStatus.IN_PROGRESS === task.status &&
-                          (isGlobalAdmin || canAdminCorresp || taskPermissions[task.id]?.canWrite || userAclTaskIds.has(task.id))
-                        "
-                        [style.background-color]="'#6a2020'"
-                        class="badge"
-                        style="font-size: 0.7em; text-transform: uppercase; cursor: pointer"
-                        title="{{
-                          isGlobalAdmin || canAdminCorresp || taskPermissions[task.id]?.canWrite || userAclTaskIds.has(task.id)
-                            ? ''
-                            : 'Droit insuffisant'
-                        }}"
-                      >
-                        <span jhiTranslate="correspCareApp.correspManageCorresp.actions.cancel">annuler</span>
-                      </span>
-
-                      <span
-                        (click)="changeTasksStatus(correspLoaded?.id!, task.id, 'CLOSED')"
-                        *ngIf="
-                          CorrespStatus.IN_PROGRESS === task.status &&
-                          (isGlobalAdmin || canAdminCorresp || taskPermissions[task.id]?.canWrite || userAclTaskIds.has(task.id))
-                        "
-                        [style.background-color]="'#198754'"
-                        class="badge"
-                        style="font-size: 0.7em; text-transform: uppercase; cursor: pointer"
-                        title="{{
-                          isGlobalAdmin || canAdminCorresp || taskPermissions[task.id]?.canWrite || userAclTaskIds.has(task.id)
-                            ? ''
-                            : 'Droit insuffisant'
-                        }}"
-                      >
-                        <span jhiTranslate="correspCareApp.correspManageCorresp.actions.finish">terminer</span>
-                      </span>
-
-                      <span
-                        *ngIf="CorrespStatus.CLOSED === task.status"
-                        [style.background-color]="'#2c3e50'"
+                        [style.background-color]="getTaskColor(task.status)"
                         class="badge"
                         style="font-size: 0.7em; text-transform: uppercase"
                       >
-                        <span
-                          [translateValues]="{ date: formatLongDate(task.closeDate) }"
-                          jhiTranslate="correspCareApp.correspManageCorresp.actions.finishedOn"
-                          >terminée - {{ formatLongDate(task.closeDate) }}</span
-                        >
+                        {{ getTaskLabel(task.status) }}
                       </span>
+                      <span style="font-size: 0.85em; color: #6c757d; text-transform: capitalize">
+                        <span *ngIf="task.dueDate" jhiTranslate="correspCareApp.correspManageCorresp.detail.dueDateLabel">Échéance:</span>
+                        {{ formatDate(task.dueDate) }}</span
+                      >
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px">
+                      <p style="margin: 0; color: #212529; line-height: 1.4; font-size: 0.95em">
+                        <strong>{{ task.responsableName?.toUpperCase() }}</strong> : Tâche de
+                        <strong>{{ task.taskType }}</strong>
+                      </p>
+                      <div style="display: flex; gap: 0.5em">
+                        <span
+                          (click)="changeTasksStatus(correspLoaded?.id!, task.id, 'CANCELLED')"
+                          *ngIf="CorrespStatus.DRAFT === task.status"
+                          [style.background-color]="'#6a2020'"
+                          [style.opacity]="isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? '1' : '0.4'"
+                          [style.pointer-events]="
+                            isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? 'auto' : 'none'
+                          "
+                          class="badge"
+                          style="font-size: 0.7em; text-transform: uppercase; cursor: pointer"
+                          title="{{
+                            isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? '' : 'Droit insuffisant'
+                          }}"
+                        >
+                          <span jhiTranslate="correspCareApp.correspManageCorresp.actions.cancel">annuler</span>
+                        </span>
+
+                        <span
+                          (click)="deleteTask(correspLoaded?.id!, task.id)"
+                          *ngIf="CorrespStatus.DRAFT === task.status"
+                          [style.background-color]="'#dc3545'"
+                          [style.opacity]="isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? '1' : '0.4'"
+                          [style.pointer-events]="
+                            isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? 'auto' : 'none'
+                          "
+                          class="badge"
+                          style="font-size: 0.7em; text-transform: uppercase; cursor: pointer"
+                          title="{{
+                            isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? '' : 'Droit insuffisant'
+                          }}"
+                        >
+                          <span jhiTranslate="correspCareApp.correspManageCorresp.actions.deleteUpper">SUPPRIMER</span>
+                        </span>
+
+                        <span
+                          (click)="changeTasksStatus(correspLoaded?.id!, task.id, 'IN_PROGRESS')"
+                          *ngIf="CorrespStatus.DRAFT === task.status"
+                          [style.background-color]="'#0d6efd'"
+                          [style.opacity]="isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? '1' : '0.4'"
+                          [style.pointer-events]="
+                            isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? 'auto' : 'none'
+                          "
+                          class="badge"
+                          style="font-size: 0.7em; text-transform: uppercase; cursor: pointer"
+                          title="{{
+                            isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? '' : 'Droit insuffisant'
+                          }}"
+                        >
+                          <span jhiTranslate="correspCareApp.correspManageCorresp.actions.start">commencer</span>
+                        </span>
+
+                        <span
+                          (click)="changeTasksStatus(correspLoaded?.id!, task.id, 'CANCELLED')"
+                          *ngIf="
+                            CorrespStatus.IN_PROGRESS === task.status &&
+                            (isGlobalAdmin || canAdminCorresp || taskPermissions[task.id]?.canWrite || userAclTaskIds.has(task.id))
+                          "
+                          [style.background-color]="'#6a2020'"
+                          class="badge"
+                          style="font-size: 0.7em; text-transform: uppercase; cursor: pointer"
+                          title="{{
+                            isGlobalAdmin || canAdminCorresp || taskPermissions[task.id]?.canWrite || userAclTaskIds.has(task.id)
+                              ? ''
+                              : 'Droit insuffisant'
+                          }}"
+                        >
+                          <span jhiTranslate="correspCareApp.correspManageCorresp.actions.cancel">annuler</span>
+                        </span>
+
+                        <span
+                          (click)="changeTasksStatus(correspLoaded?.id!, task.id, 'CLOSED')"
+                          *ngIf="
+                            CorrespStatus.IN_PROGRESS === task.status &&
+                            (isGlobalAdmin || canAdminCorresp || taskPermissions[task.id]?.canWrite || userAclTaskIds.has(task.id))
+                          "
+                          [style.background-color]="'#198754'"
+                          class="badge"
+                          style="font-size: 0.7em; text-transform: uppercase; cursor: pointer"
+                          title="{{
+                            isGlobalAdmin || canAdminCorresp || taskPermissions[task.id]?.canWrite || userAclTaskIds.has(task.id)
+                              ? ''
+                              : 'Droit insuffisant'
+                          }}"
+                        >
+                          <span jhiTranslate="correspCareApp.correspManageCorresp.actions.finish">terminer</span>
+                        </span>
+
+                        <span
+                          *ngIf="CorrespStatus.CLOSED === task.status"
+                          [style.background-color]="'#2c3e50'"
+                          class="badge"
+                          style="font-size: 0.7em; text-transform: uppercase"
+                        >
+                          <span
+                            [translateValues]="{ date: formatLongDate(task.closeDate) }"
+                            jhiTranslate="correspCareApp.correspManageCorresp.actions.finishedOn"
+                            >terminée - {{ formatLongDate(task.closeDate) }}</span
+                          >
+                        </span>
+                      </div>
+                    </div>
+                    <div *ngIf="task.commentaire">
+                      <p style="margin: 0; color: #212529; line-height: 1.4; font-size: 0.95em">
+                        {{ task.commentaire }}
+                      </p>
                     </div>
                   </div>
-                  <div *ngIf="task.commentaire">
-                    <p style="margin: 0; color: #212529; line-height: 1.4; font-size: 0.95em">
-                      {{ task.commentaire }}
-                    </p>
-                  </div>
-                </div>
+                </ng-container>
               </div>
 
               <!-- Aperçu des tâches en attente (pendingTasks non encore sauvegardées) -->
@@ -1332,7 +1334,7 @@
                 </div>
               </div>
 
-              <div *ngIf="tachesAssociees.length === 0 && pendingTasks.length === 0" style="text-align: center; padding: 10px; color: #999">
+              <div *ngIf="visibleTasksCount === 0 && pendingTasks.length === 0" style="text-align: center; padding: 10px; color: #999">
                 <i jhiTranslate="correspCareApp.correspManageCorresp.detail.noAssociatedTasks">Aucune tâche associée.</i>
               </div>
             </div>

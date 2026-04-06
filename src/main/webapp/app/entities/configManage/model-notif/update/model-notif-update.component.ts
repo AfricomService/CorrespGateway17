@@ -14,6 +14,7 @@ import { DataUtils, FileLoadError } from 'app/core/util/data-util.service';
 @Component({
   selector: 'jhi-model-notif-update',
   templateUrl: './model-notif-update.component.html',
+  styleUrls: ['./model-notif-update.component.scss'],
 })
 export class ModelNotifUpdateComponent implements OnInit {
   isSaving = false;
@@ -59,6 +60,7 @@ export class ModelNotifUpdateComponent implements OnInit {
 
   save(): void {
     this.isSaving = true;
+    // Plus besoin de synchroniser htmlContent — le formControl gère directement
     const modelNotif = this.modelNotifFormService.getModelNotif(this.editForm);
     if (modelNotif.id !== null) {
       this.subscribeToSaveResponse(this.modelNotifService.update(modelNotif));
@@ -78,9 +80,7 @@ export class ModelNotifUpdateComponent implements OnInit {
     this.previousState();
   }
 
-  protected onSaveError(): void {
-    // Api for inheritance.
-  }
+  protected onSaveError(): void {}
 
   protected onSaveFinalize(): void {
     this.isSaving = false;
