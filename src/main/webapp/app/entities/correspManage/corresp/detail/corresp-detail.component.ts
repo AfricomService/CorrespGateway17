@@ -1533,7 +1533,11 @@ export class CorrespDetailComponent implements OnInit {
       return 0;
     }
 
-    const activeTasks = this.tachesAssociees.filter(t => t.status !== CorrespStatus.CANCELLED);
+    // Pour les utilisateurs non-admin/BOC, exclure les tâches DRAFT du calcul
+    const baseTasks =
+      this.isAdminOrBoc || this.isGlobalAdmin ? this.tachesAssociees : this.tachesAssociees.filter(t => t.status !== CorrespStatus.DRAFT);
+
+    const activeTasks = baseTasks.filter(t => t.status !== CorrespStatus.CANCELLED);
     if (activeTasks.length === 0) {
       return 0;
     }
@@ -3176,6 +3180,10 @@ export class CorrespDetailComponent implements OnInit {
       const isActiveTask = t.status === CorrespStatus.IN_PROGRESS;
       return isWritableType && isActiveTask;
     });
+  }
+
+  get visibleTasksCount(): number {
+    return (this.tachesAssociees || []).filter(t => t.status !== CorrespStatus.DRAFT || this.isAdminOrBoc || this.isGlobalAdmin).length;
   }
 
   get isReadOnlyAclUser(): boolean {

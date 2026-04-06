@@ -6,7 +6,7 @@
       "home": "Home",
       "jhipster-needle-menu-add-element": "JHipster will add additional menu entries here (do not translate!)",
       "entities": {
-        "main": "Management",
+        "main": "View",
         "rules": "Rules",
         "journauxHistConsult": "Hist Consult",
         "kafkaServiceMessage": "Message",

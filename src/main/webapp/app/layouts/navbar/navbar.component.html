@@ -43,7 +43,7 @@
           <a class="nav-link dropdown-toggle" ngbDropdownToggle href="javascript:void(0);" id="entity-menu" data-cy="entity">
             <span>
               <fa-icon icon="th-list"></fa-icon>
-              <span jhiTranslate="global.menu.entities.main">Gestion</span>
+              <span jhiTranslate="global.menu.entities.main">Consulter</span>
             </span>
           </a>
           <ul class="dropdown-menu" ngbDropdownMenu aria-labelledby="entity-menu">
@@ -414,7 +414,6 @@
           <a class="nav-link dropdown-toggle" ngbDropdownToggle href="javascript:void(0);" id="languagesnavBarDropdown">
             <span>
               <fa-icon icon="flag"></fa-icon>
-              <span jhiTranslate="global.menu.language">Langue</span>
             </span>
           </a>
           <ul class="dropdown-menu" ngbDropdownMenu aria-labelledby="languagesnavBarDropdown">
@@ -439,7 +438,6 @@
           <a class="nav-link dropdown-toggle" ngbDropdownToggle href="javascript:void(0);" id="account-menu" data-cy="accountMenu">
             <span *ngIf="!account?.imageUrl">
               <fa-icon icon="user"></fa-icon>
-              <span jhiTranslate="global.menu.account.main">Compte</span>
             </span>
             <span *ngIf="account?.imageUrl">
               <img [src]="account!.imageUrl" class="profile-image rounded-circle" alt="Avatar" />
