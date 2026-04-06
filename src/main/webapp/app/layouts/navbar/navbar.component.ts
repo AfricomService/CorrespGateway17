@@ -26,6 +26,8 @@ export class NavbarComponent implements OnInit {
   account: Account | null = null;
   entitiesNavbarItems: any[] = [];
 
+  canCreateArrivee = false;
+
   constructor(
     private loginService: LoginService,
     private translateService: TranslateService,
@@ -50,6 +52,10 @@ export class NavbarComponent implements OnInit {
 
     this.accountService.getAuthenticationState().subscribe(account => {
       this.account = account;
+      this.canCreateArrivee =
+        account != null &&
+        account.authorities != null &&
+        (account.authorities.includes('ROLE_BOC') || account.authorities.includes('ROLE_ADMIN'));
     });
   }
 
@@ -74,6 +80,15 @@ export class NavbarComponent implements OnInit {
 
   toggleNavbar(): void {
     this.isNavbarCollapsed = !this.isNavbarCollapsed;
+  }
+
+  navigateTo(type: string): void {
+    this.collapseNavbar();
+    if (type === 'Sortant') {
+      this.router.navigate(['/corresp/new-out']);
+    } else {
+      this.router.navigate(['/corresp/new'], { queryParams: { type } });
+    }
   }
 
   private loadModule(moduleType: Type<any>): void {

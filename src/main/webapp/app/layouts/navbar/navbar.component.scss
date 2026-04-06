@@ -59,3 +59,53 @@ Logo styles
   padding-top: 4px; /* Petit ajustement pour centrer avec le logo */
   letter-spacing: 0.05em;
 }
+/* ==========================================================================
+   Nouveau Courrier dropdown
+   ========================================================================== */
+.nouveau-courrier-dropdown {
+  min-width: 200px;
+  padding: 6px 0;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+
+  .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.3px;
+    transition: background 150ms ease, color 150ms ease;
+    color: #1e293b;
+
+    &:hover {
+      background: #f1f5f9;
+      color: #1e40af;
+    }
+  }
+}
+
+.nouveau-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  flex-shrink: 0;
+}
+
+.arrivee-icon {
+  background: #ecfdf5;
+  color: #059669;
+}
+.sortant-icon {
+  background: #fff7ed;
+  color: #ea580c;
+}
+.interne-icon {
+  background: #eff6ff;
+  color: #2563eb;
+}
