@@ -153,9 +153,9 @@
             <div class="mn-card__grid">
               <!-- Formule objet -->
               <div class="mn-card__full">
-                <label class="mn-label" jhiTranslate="correspCareApp.configManageModelNotif.subjectFormula" for="field_subjectFormula"
-                  >Formule Objet</label
-                >
+                <label class="mn-label" jhiTranslate="correspCareApp.configManageModelNotif.subjectFormula" for="field_subjectFormula">
+                  Formule Objet
+                </label>
                 <input
                   type="text"
                   class="form-control mn-input"
@@ -196,8 +196,9 @@
                   class="mn-label"
                   jhiTranslate="correspCareApp.configManageModelNotif.recepientEmailFormule"
                   for="field_recepientEmailFormule"
-                  >Email Destinataire</label
                 >
+                  Email Destinataire
+                </label>
                 <input
                   type="text"
                   class="form-control mn-input"
@@ -223,50 +224,61 @@
         <!-- CARD 3 : Contenu du modèle -->
         <div class="mn-card">
           <div class="mn-card__header">
-            <h6>📝 Contenu du modèle</h6>
+            <h6>📝 Contenu du modèle (template FreeMarker)</h6>
           </div>
-          <div class="mn-card__body mn-html-editor">
-            <dx-html-editor [(value)]="htmlContent" [height]="560" placeholder="Rédigez le contenu du modèle de notification...">
-              <dxo-toolbar [multiline]="true">
-                <dxi-item name="undo"></dxi-item>
-                <dxi-item name="redo"></dxi-item>
-                <dxi-item name="separator"></dxi-item>
-                <dxi-item name="size" [acceptedValues]="['8pt', '10pt', '12pt', '14pt', '18pt', '24pt', '36pt']"> </dxi-item>
-                <dxi-item
-                  name="font"
-                  [acceptedValues]="['Arial', 'Courier New', 'Georgia', 'Impact', 'Lucida Console', 'Tahoma', 'Times New Roman', 'Verdana']"
-                >
-                </dxi-item>
-                <dxi-item name="separator"></dxi-item>
-                <dxi-item name="bold"></dxi-item>
-                <dxi-item name="italic"></dxi-item>
-                <dxi-item name="strike"></dxi-item>
-                <dxi-item name="underline"></dxi-item>
-                <dxi-item name="separator"></dxi-item>
-                <dxi-item name="alignLeft"></dxi-item>
-                <dxi-item name="alignCenter"></dxi-item>
-                <dxi-item name="alignRight"></dxi-item>
-                <dxi-item name="alignJustify"></dxi-item>
-                <dxi-item name="separator"></dxi-item>
-                <dxi-item name="orderedList"></dxi-item>
-                <dxi-item name="bulletList"></dxi-item>
-                <dxi-item name="separator"></dxi-item>
-                <dxi-item name="header" [acceptedValues]="[false, 1, 2, 3, 4, 5]"></dxi-item>
-                <dxi-item name="separator"></dxi-item>
-                <dxi-item name="color"></dxi-item>
-                <dxi-item name="background"></dxi-item>
-                <dxi-item name="separator"></dxi-item>
-                <dxi-item name="link"></dxi-item>
-                <dxi-item name="image"></dxi-item>
-                <dxi-item name="separator"></dxi-item>
-                <dxi-item name="clear"></dxi-item>
-                <dxi-item name="codeBlock"></dxi-item>
-                <dxi-item name="blockquote"></dxi-item>
-                <dxi-item name="separator"></dxi-item>
-                <dxi-item name="insertTable"></dxi-item>
-                <dxi-item name="deleteTable"></dxi-item>
-              </dxo-toolbar>
-            </dx-html-editor>
+          <div class="mn-card__body">
+            <!-- Aide contextuelle -->
+            <div
+              style="
+                background: #eff6ff;
+                border: 1px solid #bfdbfe;
+                border-radius: 8px;
+                padding: 10px 14px;
+                margin-bottom: 14px;
+                font-size: 12px;
+                color: #1e40af;
+              "
+            >
+              <strong>Variables disponibles :</strong>
+              <code style="background: #dbeafe; padding: 1px 4px; border-radius: 3px; margin: 0 3px">&#36;&#123;objet&#125;</code>
+              <code style="background: #dbeafe; padding: 1px 4px; border-radius: 3px; margin: 0 3px">&#36;&#123;reference&#125;</code>
+              <code style="background: #dbeafe; padding: 1px 4px; border-radius: 3px; margin: 0 3px">&#36;&#123;date&#125;</code>
+              <code style="background: #dbeafe; padding: 1px 4px; border-radius: 3px; margin: 0 3px">&#36;&#123;corps&#125;</code>
+              <code style="background: #dbeafe; padding: 1px 4px; border-radius: 3px; margin: 0 3px">&#36;&#123;nomComplet&#125;</code>
+              <code style="background: #dbeafe; padding: 1px 4px; border-radius: 3px; margin: 0 3px">&#36;&#123;departement&#125;</code>
+              <code style="background: #dbeafe; padding: 1px 4px; border-radius: 3px; margin: 0 3px">&#36;&#123;emailEmetteur&#125;</code>
+              <code style="background: #dbeafe; padding: 1px 4px; border-radius: 3px; margin: 0 3px"
+                >&#36;&#123;emailDestinataire&#125;</code
+              >
+              <code style="background: #dbeafe; padding: 1px 4px; border-radius: 3px; margin: 0 3px">&#36;&#123;emailCopie&#125;</code>
+              <code style="background: #dbeafe; padding: 1px 4px; border-radius: 3px; margin: 0 3px">&#36;&#123;destinataire&#125;</code>
+              <code style="background: #dbeafe; padding: 1px 4px; border-radius: 3px; margin: 0 3px">&#36;&#123;dateAujourdhui&#125;</code>
+            </div>
+
+            <!-- Textarea pour saisir du HTML/FreeMarker brut -->
+            <textarea
+              class="form-control mn-input"
+              id="field_content"
+              data-cy="content"
+              formControlName="content"
+              [rows]="30"
+              style="
+                font-family: 'Courier New', monospace;
+                font-size: 12px;
+                line-height: 1.5;
+                resize: vertical;
+                background: #0f172a;
+                color: #e2e8f0;
+                border-radius: 8px;
+                padding: 16px;
+              "
+              placeholder="Saisissez ici votre template HTML avec les variables FreeMarker comme &#36;&#123;objet&#125;"
+            ></textarea>
+
+            <div style="margin-top: 8px; font-size: 11px; color: #94a3b8">
+              💡 Saisissez du HTML pur avec les variables FreeMarker (ex: <code>&#36;&#123;objet&#125;</code>). Ce champ accepte du code —
+              n'utilisez pas l'éditeur visuel pour les templates email.
+            </div>
           </div>
         </div>
         <!-- /CARD 3 -->

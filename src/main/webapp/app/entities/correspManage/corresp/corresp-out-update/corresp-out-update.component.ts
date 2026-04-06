@@ -714,12 +714,10 @@ export class CorrespOutUpdateComponent implements OnInit {
         next: (savedCorresp: any) => {
           this.isSaving = false;
 
-          // ── Persister le message email si un modèle et un destinataire sont définis ──
-          if (savedCorresp?.id && (this.msgReceiver || this.msgCopyTo)) {
-            this.persistEmailMessage(savedCorresp.id);
-          }
-
-          if (savedCorresp?.id) {
+          if (savedCorresp?.id && this.selectedModelNotif) {
+            // Appel backend FreeMarker — plus de logique frontend
+            this.sendEmailViaBackend(savedCorresp.id);
+          } else if (savedCorresp?.id) {
             this.router.navigate(['/corresp', savedCorresp.id, 'view']);
           } else {
             this.router.navigate(['/corresp']);
@@ -731,34 +729,31 @@ export class CorrespOutUpdateComponent implements OnInit {
       });
   }
 
-  private persistEmailMessage(correspId: number): void {
-    const message: NewMessage = {
-      id: null,
-      sender: this.msgSender || this.expediteurEmail || null,
-      receiver: this.msgReceiver || null,
-      copyTo: this.msgCopyTo || null,
-      blindCopyTo: null,
-      path: null,
-      msgID: null,
-      parentID: null,
-      inReplyTo: null,
-      type: this.selectedModelNotif?.name || null,
-      etat: 'PENDING',
+  private sendEmailViaBackend(correspId: number): void {
+    if (!this.selectedModelNotif?.id) {
+      this.router.navigate(['/corresp', correspId, 'view']);
+      return;
+    }
+
+    const request = {
       correspId: correspId,
-      fileId: null,
-      uniqueName: null,
-      createdBy: this.msgSender || null,
-      creationDate: null,
-      updatedBy: null,
-      updatedDate: null,
+      modelNotifId: this.selectedModelNotif.id,
+      receiver: this.msgReceiver || '',
+      copyTo: this.msgCopyTo || '',
+      correspBody: this.htmlContent || '',
+      senderFullName: [this.currentUserFirstName, this.currentUserLastName].filter(Boolean).join(' '),
+      senderDepartement: this.currentUserDepartementName || '',
+      senderEmail: this.msgSender || this.expediteurEmail || '',
     };
 
-    this.correspService.createMessage(message).subscribe({
+    this.correspService.prepareCorrespEmail(request).subscribe({
       next: () => {
-        console.log('Message email persisté avec succès');
+        this.router.navigate(['/corresp', correspId, 'view']);
       },
       error: err => {
-        console.error('Erreur lors de la persistance du message email', err);
+        console.error('Erreur préparation email', err);
+        // On navigue quand même même si l'email échoue
+        this.router.navigate(['/corresp', correspId, 'view']);
       },
     });
   }

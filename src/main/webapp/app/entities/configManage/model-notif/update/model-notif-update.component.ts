@@ -19,7 +19,6 @@ import { DataUtils, FileLoadError } from 'app/core/util/data-util.service';
 export class ModelNotifUpdateComponent implements OnInit {
   isSaving = false;
   modelNotif: IModelNotif | null = null;
-  htmlContent: string = '';
 
   editForm: ModelNotifFormGroup = this.modelNotifFormService.createModelNotifFormGroup();
 
@@ -61,7 +60,7 @@ export class ModelNotifUpdateComponent implements OnInit {
 
   save(): void {
     this.isSaving = true;
-    this.editForm.controls.content.setValue(this.htmlContent);
+    // Plus besoin de synchroniser htmlContent — le formControl gère directement
     const modelNotif = this.modelNotifFormService.getModelNotif(this.editForm);
     if (modelNotif.id !== null) {
       this.subscribeToSaveResponse(this.modelNotifService.update(modelNotif));
@@ -90,6 +89,5 @@ export class ModelNotifUpdateComponent implements OnInit {
   protected updateForm(modelNotif: IModelNotif): void {
     this.modelNotif = modelNotif;
     this.modelNotifFormService.resetForm(this.editForm, modelNotif);
-    this.htmlContent = modelNotif.content ?? '';
   }
 }
