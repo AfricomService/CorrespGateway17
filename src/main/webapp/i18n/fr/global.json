@@ -1,12 +1,12 @@
 {
   "global": {
-    "title": "Corresp_Care",
+    "title": "CorrespCare",
     "browsehappy": "Vous utilisez un <strong>ancien</strong> navigateur. Veuillez <a href=\"http://browsehappy.com/?locale=fr\">mettre à jour votre navigateur</a> pour une meilleure expérience.",
     "menu": {
       "home": "Accueil",
       "jhipster-needle-menu-add-element": "JHipster will add additional menu entries here (do not translate!)",
       "entities": {
-        "main": "Gestion",
+        "main": "Consulter",
         "rules": "Rules",
         "journauxHistConsult": "Hist Consult",
         "kafkaServiceMessage": "Message",
