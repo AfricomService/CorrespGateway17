@@ -343,6 +343,9 @@ export class CorrespDetailComponent implements OnInit {
     const qp = this.activatedRoute.snapshot.queryParamMap.get('taskId');
     this.selectedTaskId = qp != null && qp !== '' ? Number(qp) : null;
     this.loadMockData();
+    if (window.innerWidth < 768) {
+      this.accordionStates['infoGen'] = false;
+    }
     const id = this.activatedRoute.snapshot.paramMap.get('id');
 
     this.correspService.find(Number(id)).subscribe(res => {

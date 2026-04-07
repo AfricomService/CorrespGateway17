@@ -194,13 +194,22 @@
                 transition: background-color 0.3s ease;
               "
             >
-              <h5 style="font-weight: 600; margin: 0; color: #2c3e50; display: flex; align-items: center; gap: 8px">
-                <span [innerHTML]="getDispatchIcon(correspLoaded?.dispatchType)" style="font-size: 18px; line-height: 1"></span>
-                <span jhiTranslate="correspCareApp.correspManageCorresp.detail.generalInfo">Informations Générales</span> -
-                <span *ngIf="correspLoaded?.status as st" [style.color]="getTaskColor(st)">
-                  {{ getTaskLabel(st) }}
+              <div style="display: flex; flex-direction: column; gap: 2px">
+                <h5 style="font-weight: 600; margin: 0; color: #2c3e50; display: flex; align-items: center; gap: 8px">
+                  <span [innerHTML]="getDispatchIcon(correspLoaded?.dispatchType)" style="font-size: 18px; line-height: 1"></span>
+                  <span jhiTranslate="correspCareApp.correspManageCorresp.detail.generalInfo">Informations Générales</span> -
+                  <span *ngIf="correspLoaded?.status as st" [style.color]="getTaskColor(st)">
+                    {{ getTaskLabel(st) }}
+                  </span>
+                </h5>
+                <!-- Résumé visible uniquement quand la section est FERMÉE -->
+                <span
+                  *ngIf="!accordionStates['infoGen']"
+                  style="font-size: 11px; color: #6c757d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px"
+                >
+                  {{ objet || '—' }} · {{ date ? (date | date: 'dd/MM/yyyy') : '—' }} · {{ destinataireLabel || expediteur || '—' }}
                 </span>
-              </h5>
+              </div>
 
               <div style="display: flex; align-items: center; gap: 10px">
                 <span
@@ -1059,12 +1068,18 @@
                 user-select: none;
               "
             >
-              <h5
-                jhiTranslate="correspCareApp.correspManageCorresp.detail.associatedTasks"
-                style="font-weight: 600; margin: 0; color: #2c3e50"
-              >
-                Tâches Associées
-              </h5>
+              <div style="display: flex; flex-direction: column; gap: 2px">
+                <h5
+                  jhiTranslate="correspCareApp.correspManageCorresp.detail.associatedTasks"
+                  style="font-weight: 600; margin: 0; color: #2c3e50"
+                >
+                  Tâches Associées
+                </h5>
+                <span *ngIf="!accordionStates['taches']" style="font-size: 11px; color: #6c757d">
+                  {{ visibleTasksCount }} tâche{{ visibleTasksCount !== 1 ? 's' : '' }}
+                  <ng-container *ngIf="taskCompletionPercentage > 0"> · {{ taskCompletionPercentage }}% complété</ng-container>
+                </span>
+              </div>
               <div style="display: flex; align-items: center; gap: 12px">
                 <button
                   (click)="openTasksModal(AddTaskModal); $event.stopPropagation()"
@@ -1363,9 +1378,20 @@
                 transition: background-color 0.3s ease;
               "
             >
-              <h5 jhiTranslate="correspCareApp.correspManageCorresp.detail.bodySection" style="font-weight: 600; margin: 0; color: #2c3e50">
-                Corps de la Correspondance
-              </h5>
+              <div style="display: flex; flex-direction: column; gap: 2px">
+                <h5
+                  jhiTranslate="correspCareApp.correspManageCorresp.detail.bodySection"
+                  style="font-weight: 600; margin: 0; color: #2c3e50"
+                >
+                  Corps de la Correspondance
+                </h5>
+                <span
+                  *ngIf="!accordionStates['corps']"
+                  style="font-size: 11px; color: #6c757d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px"
+                >
+                  {{ objet || 'Aperçu du contenu' }}
+                </span>
+              </div>
               <svg
                 [style.transform]="accordionStates['corps'] ? 'rotate(180deg)' : 'rotate(0deg)'"
                 fill="none"
@@ -1552,12 +1578,17 @@
                 user-select: none;
               "
             >
-              <h5
-                jhiTranslate="correspCareApp.correspManageCorresp.detail.attachmentsSection"
-                style="font-weight: 600; margin: 0; color: #2c3e50"
-              >
-                Pièces Jointes
-              </h5>
+              <div style="display: flex; flex-direction: column; gap: 2px">
+                <h5
+                  jhiTranslate="correspCareApp.correspManageCorresp.detail.attachmentsSection"
+                  style="font-weight: 600; margin: 0; color: #2c3e50"
+                >
+                  Pièces Jointes
+                </h5>
+                <span *ngIf="!accordionStates['pieces']" style="font-size: 11px; color: #6c757d">
+                  {{ pjsLoaded.length > 0 ? pjsLoaded.length + ' fichier' + (pjsLoaded.length > 1 ? 's' : '') : 'Aucune pièce jointe' }}
+                </span>
+              </div>
               <div style="display: flex; align-items: center; gap: 12px">
                 <button
                   (click)="fileInput.click(); $event.stopPropagation()"
