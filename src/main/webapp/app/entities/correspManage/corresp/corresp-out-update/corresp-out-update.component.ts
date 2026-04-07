@@ -216,6 +216,16 @@ export class CorrespOutUpdateComponent implements OnInit {
   ccExpandedNodes: Set<number> = new Set();
   selectedCcDepts: IContactCopieCorresp[] = [];
 
+  // ── Preview email (backend FreeMarker) ─────────────────────────────────────
+  isLoadingPreview = false;
+  previewEmailHtml: string = '';
+  previewEmailSubject: string = '';
+  previewEmailFrom: string = '';
+  previewEmailTo: string = '';
+  previewEmailCc: string = '';
+  previewEmailModelName: string = '';
+  previewErrorMessage: string = '';
+
   dispatchTypeOptions: Array<{ value: DispatchType; label: string }> = [
     { value: DispatchType.LETTER, label: 'Lettre' },
     { value: DispatchType.REGISTERED_LETTER, label: 'Lettre recommandée' },
@@ -1654,8 +1664,52 @@ export class CorrespOutUpdateComponent implements OnInit {
   }
 
   openEmailPreview(): void {
-    if (!this.selectedModelNotif) return;
+    if (!this.selectedModelNotif?.id) return;
+
+    this.isLoadingPreview = true;
+    this.previewErrorMessage = '';
+    this.previewEmailHtml = '';
     this.showEmailPreviewModal = true;
+
+    // Construire la date formatée
+    const dateFormatted = this.date
+      ? new Date(this.date).toLocaleDateString('fr-FR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        })
+      : '';
+
+    const request = {
+      modelNotifId: this.selectedModelNotif.id,
+      receiver: this.msgReceiver || '',
+      copyTo: this.msgCopyTo || '',
+      correspBody: this.htmlContent || '',
+      senderFullName: [this.currentUserFirstName, this.currentUserLastName].filter(Boolean).join(' '),
+      senderDepartement: this.currentUserDepartementName || this.expediteur || '',
+      senderEmail: this.msgSender || this.expediteurEmail || '',
+      correspObjet: this.objet || '',
+      correspDate: dateFormatted,
+      correspReference: this.generatedReference || null,
+      destinataireLabel: this.destinataireLabel || '',
+    };
+
+    this.correspService.previewCorrespEmail(request).subscribe({
+      next: res => {
+        this.previewEmailHtml = res.html;
+        this.previewEmailSubject = res.subject;
+        this.previewEmailFrom = res.from;
+        this.previewEmailTo = res.to;
+        this.previewEmailCc = res.cc;
+        this.previewEmailModelName = res.modelName;
+        this.isLoadingPreview = false;
+      },
+      error: err => {
+        console.error('Erreur preview email', err);
+        this.previewErrorMessage = "Impossible de charger l'aperçu de l'email.";
+        this.isLoadingPreview = false;
+      },
+    });
   }
 
   closeEmailPreview(): void {

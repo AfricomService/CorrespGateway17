@@ -2580,7 +2580,7 @@
     </button>
   </div>
 </ng-template>
-<!-- ==================== MODAL VISUALISATION EMAIL ==================== -->
+<!-- ==================== MODAL VISUALISATION EMAIL (Backend FreeMarker) ==================== -->
 <div
   *ngIf="showEmailPreviewModal"
   style="
@@ -2589,7 +2589,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.55);
     z-index: 1055;
     display: flex;
     align-items: center;
@@ -2601,54 +2601,52 @@
   <div
     style="
       background: #fff;
-      border-radius: 12px;
+      border-radius: 14px;
       width: 100%;
-      max-width: 760px;
-      max-height: 90vh;
+      max-width: 820px;
+      max-height: 92vh;
       display: flex;
       flex-direction: column;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.35);
     "
     (click)="$event.stopPropagation()"
   >
-    <!-- Header modal -->
+    <!-- ── Header du modal ── -->
     <div
       style="
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 16px 20px;
+        padding: 14px 20px;
         border-bottom: 2px solid #e2e8f0;
-        background: #f8fafc;
-        border-radius: 12px 12px 0 0;
+        background: linear-gradient(90deg, #1e3a5f 0%, #1e40af 100%);
+        border-radius: 14px 14px 0 0;
       "
     >
       <div style="display: flex; align-items: center; gap: 10px">
         <span style="font-size: 20px">👁️</span>
-        <h4 style="margin: 0; font-weight: 700; color: #1a2332; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px">
-          Aperçu de l'email
-        </h4>
-        <span
-          *ngIf="selectedModelNotif"
-          style="background: #e0f2fe; color: #0369a1; border-radius: 20px; padding: 2px 12px; font-size: 12px; font-weight: 600"
-        >
-          {{ selectedModelNotif.name }}
-        </span>
+        <div>
+          <h4 style="margin: 0; font-weight: 700; color: #fff; font-size: 15px; text-transform: uppercase; letter-spacing: 0.5px">
+            Aperçu de l'email
+          </h4>
+          <p *ngIf="previewEmailModelName" style="margin: 2px 0 0; font-size: 11px; color: #bfdbfe; font-weight: 500">
+            Modèle : {{ previewEmailModelName }}
+          </p>
+        </div>
       </div>
       <button
         type="button"
         (click)="closeEmailPreview()"
         style="
-          background: none;
-          border: 1px solid #e2e8f0;
-          border-radius: 6px;
-          padding: 6px 10px;
+          background: rgba(255, 255, 255, 0.15);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          border-radius: 8px;
+          padding: 6px 12px;
           cursor: pointer;
           font-size: 16px;
-          color: #64748b;
+          color: #fff;
           display: flex;
           align-items: center;
-          justify-content: center;
         "
         title="Fermer"
       >
@@ -2656,21 +2654,73 @@
       </button>
     </div>
 
-    <!-- Corps du modal — rendu HTML de l'email -->
-    <div style="overflow-y: auto; padding: 20px; flex: 1">
-      <div [innerHTML]="getEmailPreviewHtml()"></div>
+    <!-- ── État chargement ── -->
+    <div
+      *ngIf="isLoadingPreview"
+      style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px; gap: 16px"
+    >
+      <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem"></div>
+      <p style="margin: 0; color: #64748b; font-size: 14px; font-weight: 500">Génération de l'aperçu en cours…</p>
     </div>
 
-    <!-- Footer modal -->
+    <!-- ── État erreur ── -->
+    <div
+      *ngIf="!isLoadingPreview && previewErrorMessage"
+      style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; gap: 12px"
+    >
+      <span style="font-size: 48px">⚠️</span>
+      <p style="margin: 0; color: #dc2626; font-size: 14px; font-weight: 600; text-align: center">
+        {{ previewErrorMessage }}
+      </p>
+      <button type="button" class="btn btn-outline-primary btn-sm" (click)="openEmailPreview()">🔄 Réessayer</button>
+    </div>
+
+    <!-- ── Contenu de la preview ── -->
+    <div
+      *ngIf="!isLoadingPreview && !previewErrorMessage && previewEmailHtml"
+      style="flex: 1; overflow: hidden; display: flex; flex-direction: column"
+    >
+      <!-- Méta : De / À / CC / Objet -->
+      <div style="padding: 12px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0">
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px">
+          <tr>
+            <td style="padding: 3px 0; color: #64748b; font-weight: 600; width: 70px">Objet :</td>
+            <td style="padding: 3px 0; color: #1e293b; font-weight: 600">{{ previewEmailSubject }}</td>
+          </tr>
+          <tr>
+            <td style="padding: 3px 0; color: #64748b; font-weight: 600">De :</td>
+            <td style="padding: 3px 0; color: #1e293b">{{ previewEmailFrom }}</td>
+          </tr>
+          <tr>
+            <td style="padding: 3px 0; color: #64748b; font-weight: 600">À :</td>
+            <td style="padding: 3px 0; color: #1e40af">{{ previewEmailTo }}</td>
+          </tr>
+          <tr *ngIf="previewEmailCc">
+            <td style="padding: 3px 0; color: #64748b; font-weight: 600">CC :</td>
+            <td style="padding: 3px 0; color: #64748b">{{ previewEmailCc }}</td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- Corps HTML rendu -->
+      <div style="flex: 1; overflow-y: auto; padding: 20px; background: #f1f5f9">
+        <div
+          style="background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08)"
+          [innerHTML]="previewEmailHtml"
+        ></div>
+      </div>
+    </div>
+
+    <!-- ── Footer ── -->
     <div
       style="
-        padding: 14px 20px;
+        padding: 12px 20px;
         border-top: 1px solid #e2e8f0;
         display: flex;
         justify-content: flex-end;
         gap: 10px;
         background: #f8fafc;
-        border-radius: 0 0 12px 12px;
+        border-radius: 0 0 14px 14px;
       "
     >
       <button type="button" class="btn btn-light" (click)="closeEmailPreview()" style="font-weight: 600; border-radius: 8px">Fermer</button>

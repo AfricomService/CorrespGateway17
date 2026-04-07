@@ -433,6 +433,33 @@ export class CorrespService {
     return this.http.post(`${this.applicationConfigService.getEndpointFor('api/corresps/send-email', 'correspmanage')}`, request);
   }
 
+  /**
+   * POST /api/corresps/preview-email
+   * Retourne le HTML rendu côté backend (FreeMarker) sans persister.
+   */
+  previewCorrespEmail(request: {
+    modelNotifId: string;
+    receiver: string;
+    copyTo: string;
+    correspBody: string;
+    senderFullName: string;
+    senderDepartement: string;
+    senderEmail: string;
+    correspObjet: string;
+    correspDate: string;
+    correspReference?: string | null;
+    destinataireLabel: string;
+  }): Observable<{
+    html: string;
+    subject: string;
+    from: string;
+    to: string;
+    cc: string;
+    modelName: string;
+  }> {
+    return this.http.post<any>(`${this.applicationConfigService.getEndpointFor('api/corresps/preview-email', 'correspmanage')}`, request);
+  }
+
   getCorrespsByTask(taskId: number): Observable<EntityArrayResponseType> {
     return this.http
       .get<RestCorresp[]>(`${this.resourceUrl}/by-task/${taskId}`, { observe: 'response' })
