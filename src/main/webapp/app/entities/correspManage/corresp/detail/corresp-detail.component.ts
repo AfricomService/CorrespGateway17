@@ -395,10 +395,13 @@ export class CorrespDetailComponent implements OnInit {
       const ct = this.correspLoaded.corresptype;
       if (ct === 'INCOMING') {
         correspTypeForBackend = 'Entrant';
+        this.correspType = 'Arrivée';
       } else if (ct === 'OUTGOING') {
         correspTypeForBackend = 'Sortant';
+        this.correspType = 'Sortant';
       } else if (ct === 'INTERNAL') {
         correspTypeForBackend = 'Interne';
+        this.correspType = 'Interne';
       }
 
       const loadTypedocs$ = correspTypeForBackend
@@ -482,7 +485,6 @@ export class CorrespDetailComponent implements OnInit {
       },
     });
 
-    this.correspType = 'Arrivée';
     this.loadActiveCompanies();
   }
   // loadCorresp(id: number): void {
@@ -553,8 +555,8 @@ export class CorrespDetailComponent implements OnInit {
   }
 
   /**onSelectReponseSur(reference: string | null): void {
-    this.reponseSur = reference ?? '';
-  }*/
+   this.reponseSur = reference ?? '';
+   }*/
 
   /**
    * Extrait les adresses email depuis les données receiver/copyTo du message.
