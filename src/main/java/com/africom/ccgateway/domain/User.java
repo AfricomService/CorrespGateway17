@@ -51,6 +51,10 @@ public class User extends AbstractAuditingEntity<Long> implements Serializable {
     @Size(min = 5, max = 254)
     private String email;
 
+    @Size(max = 255)
+    @Column("email_password")
+    private String emailPassword;
+
     @NotNull
     private boolean activated = false;
 
@@ -126,6 +130,14 @@ public class User extends AbstractAuditingEntity<Long> implements Serializable {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getEmailPassword() {
+        return emailPassword;
+    }
+
+    public void setEmailPassword(String emailPassword) {
+        this.emailPassword = emailPassword;
     }
 
     public String getImageUrl() {
@@ -209,6 +221,7 @@ public class User extends AbstractAuditingEntity<Long> implements Serializable {
             ", firstName='" + firstName + '\'' +
             ", lastName='" + lastName + '\'' +
             ", email='" + email + '\'' +
+            ", emailPassword='" + emailPassword + '\'' +
             ", imageUrl='" + imageUrl + '\'' +
             ", activated='" + activated + '\'' +
             ", langKey='" + langKey + '\'' +
