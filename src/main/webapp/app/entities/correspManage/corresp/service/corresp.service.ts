@@ -481,6 +481,20 @@ export class CorrespService {
   }
 
   /**
+   * POST /api/corresps/send-email/{messageId}
+   * Déclenche l'envoi SMTP depuis le Message persisté.
+   * L'expéditeur est lu dynamiquement depuis message.sender.
+   */
+  sendEmailFromMessage(
+    messageId: number,
+    subject: string
+  ): Observable<{ messageId: number; status: string; sender: string; sent: boolean }> {
+    return this.http.post<any>(`${this.applicationConfigService.getEndpointFor(`api/corresps/send-email/${messageId}`, 'correspmanage')}`, {
+      subject,
+    });
+  }
+
+  /**
    * Liste complète (non paginée) des corresps ayant une reference non-nulle.
    * GET /api/corresps/with-reference/list
    */
