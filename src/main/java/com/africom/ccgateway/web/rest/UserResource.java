@@ -27,6 +27,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -301,5 +302,12 @@ public class UserResource {
             )
             // Propager le NOT_FOUND si le service lève une ResponseStatusException(HttpStatus.NOT_FOUND)
             .onErrorResume(ResponseStatusException.class, ex -> Mono.error(ex));
+    }
+
+    @GetMapping(value = "/users/me/email-password", produces = MediaType.TEXT_PLAIN_VALUE)
+    @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.USER + "', '" + AuthoritiesConstants.ADMIN + "')")
+    public Mono<ResponseEntity<String>> getCurrentUserEmailPassword() {
+        log.debug("REST request to get current user's emailPassword");
+        return userService.getCurrentUserEmailPassword().map(ResponseEntity::ok);
     }
 }

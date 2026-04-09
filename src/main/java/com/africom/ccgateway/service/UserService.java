@@ -482,4 +482,18 @@ public class UserService {
 
         return userRepository.findAllByLoginIn(normalized).map(UserDTO::new);
     }
+
+    @Transactional(readOnly = true)
+    public Mono<String> getCurrentUserEmailPassword() {
+        return SecurityUtils
+            .getCurrentUserLogin()
+            .flatMap(userRepository::findOneByLogin)
+            .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Current user not found")))
+            .flatMap(user -> {
+                if (user.getEmailPassword() == null || user.getEmailPassword().isBlank()) {
+                    return Mono.just("Aucun mot de passe email n'est défini pour cet utilisateur.");
+                }
+                return Mono.just(user.getEmailPassword());
+            });
+    }
 }

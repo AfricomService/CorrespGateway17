@@ -226,6 +226,14 @@ export class CorrespOutUpdateComponent implements OnInit {
   previewEmailModelName: string = '';
   previewErrorMessage: string = '';
 
+  // ── État du workflow save → preview → send ─────────────────────────────────
+  isSavingAndPreviewing = false; // spinner du bouton Enregistrer
+  savedCorrespId: number | null = null; // id corresp après save
+  savedMessageId: number | null = null; // id message après prepareEmail
+  isSendingEmail = false; // spinner du bouton Envoyer
+  sendEmailError: string = '';
+  sendEmailSuccess = false;
+
   dispatchTypeOptions: Array<{ value: DispatchType; label: string }> = [
     { value: DispatchType.LETTER, label: 'Lettre' },
     { value: DispatchType.REGISTERED_LETTER, label: 'Lettre recommandée' },
@@ -677,13 +685,117 @@ export class CorrespOutUpdateComponent implements OnInit {
   // Save
   // --------------------------------------------------------------------------
   saveCorresp(withReference?: boolean, navigateToDetail?: boolean): void {
-    if (this.isSaving) return;
+    if (this.isSaving || this.isSavingAndPreviewing) return;
+
     this.validationInfoGenErrors = {};
     if (!this.validateInfoGeneralesForm()) return;
 
-    this.isSaving = true;
-    this.tasksToSave = [];
+    // Si un modèle email est sélectionné → flux preview avant envoi
+    if (this.selectedModelNotif) {
+      this.startSaveAndPreviewFlow();
+    } else {
+      // Flux simple sans email : save → navigate
+      this.startSimpleSaveFlow();
+    }
+  }
 
+  /** Flux 1 : sans modèle email → save direct */
+  private startSimpleSaveFlow(): void {
+    this.isSaving = true;
+    this.buildCorrespFromForm();
+
+    this.correspService
+      .saveCorrespWithTasksAndPj(this.corresp, this.tasksToSave, this.pjsToSave, this.selectedTypeDocument, false)
+      .subscribe({
+        next: (savedCorresp: any) => {
+          this.isSaving = false;
+          if (savedCorresp?.id) {
+            this.router.navigate(['/corresp', savedCorresp.id, 'view']);
+          } else {
+            this.router.navigate(['/corresp']);
+          }
+        },
+        error: () => {
+          this.isSaving = false;
+        },
+      });
+  }
+
+  /** Flux 2 : avec modèle email → save + prepareEmail + modal preview */
+  private startSaveAndPreviewFlow(): void {
+    this.isSavingAndPreviewing = true;
+    this.buildCorrespFromForm();
+
+    this.correspService
+      .saveCorrespWithTasksAndPj(this.corresp, this.tasksToSave, this.pjsToSave, this.selectedTypeDocument, false)
+      .subscribe({
+        next: (savedCorresp: any) => {
+          if (!savedCorresp?.id) {
+            this.isSavingAndPreviewing = false;
+            this.router.navigate(['/corresp']);
+            return;
+          }
+          this.savedCorrespId = savedCorresp.id;
+          // Préparer et persister le message email (FreeMarker)
+          this.prepareEmailThenOpenPreview(savedCorresp.id);
+        },
+        error: () => {
+          this.isSavingAndPreviewing = false;
+        },
+      });
+  }
+
+  /** Appelle send-email (prepareAndPersist) puis ouvre la preview */
+  private prepareEmailThenOpenPreview(correspId: number): void {
+    if (!this.selectedModelNotif?.id) {
+      this.isSavingAndPreviewing = false;
+      this.router.navigate(['/corresp', correspId, 'view']);
+      return;
+    }
+
+    const dateFormatted = this.date
+      ? new Date(this.date).toLocaleDateString('fr-FR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        })
+      : '';
+
+    const request = {
+      correspId: correspId,
+      modelNotifId: this.selectedModelNotif.id,
+      receiver: this.msgReceiver || '',
+      copyTo: this.msgCopyTo || '',
+      correspBody: this.htmlContent || '',
+      senderFullName: [this.currentUserFirstName, this.currentUserLastName].filter(Boolean).join(' '),
+      senderDepartement: this.currentUserDepartementName || this.expediteur || '',
+      senderEmail: this.msgSender || this.expediteurEmail || '',
+      correspObjet: this.objet || '',
+      correspDate: dateFormatted,
+      correspReference: this.generatedReference || null,
+      destinataireLabel: this.destinataireLabel || '',
+    };
+
+    // Appelle POST /corresps/send-email (prepareAndPersist, pas d'envoi SMTP ici)
+    this.correspService.prepareCorrespEmail(request).subscribe({
+      next: (res: any) => {
+        this.savedMessageId = res.messageId;
+        this.isSavingAndPreviewing = false;
+        // Ouvrir la preview (appelle backend FreeMarker pour afficher)
+        this.openEmailPreviewForMessage(correspId, request, res.messageId);
+      },
+      error: err => {
+        console.error('Erreur préparation email', err);
+        this.isSavingAndPreviewing = false;
+        // On navigue quand même
+        this.router.navigate(['/corresp', correspId, 'view']);
+      },
+    });
+  }
+
+  /** Construit this.corresp et this.tasksToSave depuis le formulaire */
+  private buildCorrespFromForm(): void {
+    this.tasksToSave = [];
     if (!this.corresp) this.corresp = {} as ICorresp;
 
     this.corresp!.courrierDate = dayjs(this.date);
@@ -699,7 +811,6 @@ export class CorrespOutUpdateComponent implements OnInit {
     this.corresp!.priority = this.priorite === 'Prioritaire';
     this.corresp!.body = this.htmlContent;
     this.corresp!.dispatchType = (this.dispatchType as DispatchType) || DispatchType.LETTER;
-    // Always Sortant
     this.corresp!.corresptype = CorrespType.OUTGOING;
 
     this.tasks.forEach(t => {
@@ -717,26 +828,67 @@ export class CorrespOutUpdateComponent implements OnInit {
     });
 
     if (this.generatedReference) this.corresp!.reference = this.generatedReference;
+  }
 
-    this.correspService
-      .saveCorrespWithTasksAndPj(this.corresp, this.tasksToSave, this.pjsToSave, this.selectedTypeDocument, false)
-      .subscribe({
-        next: (savedCorresp: any) => {
-          this.isSaving = false;
+  /** Ouvre le modal en appelant l'API preview (affichage FreeMarker rendu) */
+  private openEmailPreviewForMessage(correspId: number, request: any, messageId: number): void {
+    this.isLoadingPreview = true;
+    this.previewErrorMessage = '';
+    this.previewEmailHtml = '';
+    this.sendEmailError = '';
+    this.sendEmailSuccess = false;
+    this.showEmailPreviewModal = true;
 
-          if (savedCorresp?.id && this.selectedModelNotif) {
-            // Appel backend FreeMarker — plus de logique frontend
-            this.sendEmailViaBackend(savedCorresp.id);
-          } else if (savedCorresp?.id) {
-            this.router.navigate(['/corresp', savedCorresp.id, 'view']);
-          } else {
-            this.router.navigate(['/corresp']);
-          }
-        },
-        error: () => {
-          this.isSaving = false;
-        },
-      });
+    this.correspService.previewCorrespEmail(request).subscribe({
+      next: res => {
+        this.previewEmailHtml = res.html;
+        this.previewEmailSubject = res.subject;
+        this.previewEmailFrom = res.from;
+        this.previewEmailTo = res.to;
+        this.previewEmailCc = res.cc;
+        this.previewEmailModelName = res.modelName;
+        this.isLoadingPreview = false;
+      },
+      error: err => {
+        console.error('Erreur preview email', err);
+        this.previewErrorMessage = "Impossible de charger l'aperçu.";
+        this.isLoadingPreview = false;
+      },
+    });
+  }
+
+  /** Appelé par le bouton "Envoyer" dans le modal */
+  sendEmail(): void {
+    if (!this.savedMessageId || this.isSendingEmail) return;
+
+    this.isSendingEmail = true;
+    this.sendEmailError = '';
+
+    this.correspService.sendEmailFromMessage(this.savedMessageId, this.previewEmailSubject).subscribe({
+      next: res => {
+        this.isSendingEmail = false;
+        this.sendEmailSuccess = true;
+        // Naviguer vers la vue après 1.5s
+        setTimeout(() => {
+          this.closeEmailPreview();
+          this.router.navigate(['/corresp', this.savedCorrespId, 'view']);
+        }, 1500);
+      },
+      error: err => {
+        this.isSendingEmail = false;
+        this.sendEmailError = err?.error?.error || "Échec de l'envoi. Vérifiez la configuration SMTP.";
+      },
+    });
+  }
+
+  /** Navigue vers la vue corresp sans envoyer l'email */
+  navigateAfterSave(): void {
+    this.closeEmailPreview();
+    if (this.savedCorrespId) {
+      this.router.navigate(['/corresp', this.savedCorrespId, 'view']);
+    } else {
+      this.router.navigate(['/corresp']);
+    }
   }
 
   private sendEmailViaBackend(correspId: number): void {
