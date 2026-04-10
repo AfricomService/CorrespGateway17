@@ -1,0 +1,149 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <form name="editForm" role="form" novalidate (ngSubmit)="save()" [formGroup]="editForm">
+      <h2
+        id="jhi-smtp-config-heading"
+        data-cy="SmtpConfigCreateUpdateHeading"
+        jhiTranslate="correspCareApp.correspManageSmtpConfig.home.createOrEditLabel"
+      >
+        Créer ou éditer un Smtp Config
+      </h2>
+
+      <div>
+        <jhi-alert-error></jhi-alert-error>
+
+        <div class="row mb-3" *ngIf="editForm.controls.id.value !== null">
+          <label class="form-label" jhiTranslate="global.field.id" for="field_id">ID</label>
+          <input type="number" class="form-control" name="id" id="field_id" data-cy="id" formControlName="id" [readonly]="true" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageSmtpConfig.name" for="field_name">Name</label>
+          <input type="text" class="form-control" name="name" id="field_name" data-cy="name" formControlName="name" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageSmtpConfig.smtpHost" for="field_smtpHost">Smtp Host</label>
+          <input type="text" class="form-control" name="smtpHost" id="field_smtpHost" data-cy="smtpHost" formControlName="smtpHost" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageSmtpConfig.smtpPort" for="field_smtpPort">Smtp Port</label>
+          <input type="number" class="form-control" name="smtpPort" id="field_smtpPort" data-cy="smtpPort" formControlName="smtpPort" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageSmtpConfig.username" for="field_username">Username</label>
+          <input type="text" class="form-control" name="username" id="field_username" data-cy="username" formControlName="username" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageSmtpConfig.password" for="field_password">Password</label>
+          <input type="text" class="form-control" name="password" id="field_password" data-cy="password" formControlName="password" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageSmtpConfig.useAuth" for="field_useAuth">Use Auth</label>
+          <input type="checkbox" class="form-check" name="useAuth" id="field_useAuth" data-cy="useAuth" formControlName="useAuth" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageSmtpConfig.useTls" for="field_useTls">Use Tls</label>
+          <input type="checkbox" class="form-check" name="useTls" id="field_useTls" data-cy="useTls" formControlName="useTls" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageSmtpConfig.useSsl" for="field_useSsl">Use Ssl</label>
+          <input type="checkbox" class="form-check" name="useSsl" id="field_useSsl" data-cy="useSsl" formControlName="useSsl" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageSmtpConfig.fromAddress" for="field_fromAddress"
+            >From Address</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            name="fromAddress"
+            id="field_fromAddress"
+            data-cy="fromAddress"
+            formControlName="fromAddress"
+          />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageSmtpConfig.fromName" for="field_fromName">From Name</label>
+          <input type="text" class="form-control" name="fromName" id="field_fromName" data-cy="fromName" formControlName="fromName" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageSmtpConfig.lacalhostName" for="field_lacalhostName"
+            >Lacalhost Name</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            name="lacalhostName"
+            id="field_lacalhostName"
+            data-cy="lacalhostName"
+            formControlName="lacalhostName"
+          />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageSmtpConfig.connectionTimeout" for="field_connectionTimeout"
+            >Connection Timeout</label
+          >
+          <input
+            type="number"
+            class="form-control"
+            name="connectionTimeout"
+            id="field_connectionTimeout"
+            data-cy="connectionTimeout"
+            formControlName="connectionTimeout"
+          />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageSmtpConfig.timeout" for="field_timeout">Timeout</label>
+          <input type="number" class="form-control" name="timeout" id="field_timeout" data-cy="timeout" formControlName="timeout" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageSmtpConfig.active" for="field_active">Active</label>
+          <input type="checkbox" class="form-check" name="active" id="field_active" data-cy="active" formControlName="active" />
+        </div>
+
+        <div class="row mb-3">
+          <label class="form-label" jhiTranslate="correspCareApp.correspManageSmtpConfig.description" for="field_description"
+            >Description</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            name="description"
+            id="field_description"
+            data-cy="description"
+            formControlName="description"
+          />
+        </div>
+      </div>
+
+      <div>
+        <button type="button" id="cancel-save" data-cy="entityCreateCancelButton" class="btn btn-secondary" (click)="previousState()">
+          <fa-icon icon="ban"></fa-icon>&nbsp;<span jhiTranslate="entity.action.cancel">Annuler</span>
+        </button>
+
+        <button
+          type="submit"
+          id="save-entity"
+          data-cy="entityCreateSaveButton"
+          [disabled]="editForm.invalid || isSaving"
+          class="btn btn-primary"
+        >
+          <fa-icon icon="save"></fa-icon>&nbsp;<span jhiTranslate="entity.action.save">Sauvegarder</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

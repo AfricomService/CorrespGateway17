@@ -157,6 +157,7 @@ export class CorrespOutUpdateComponent implements OnInit {
     pieces: true,
   };
 
+  // Remplacez la déclaration du tableau tasks par :
   tasks: Array<{
     typeTask: string;
     responsable: any;
@@ -164,6 +165,7 @@ export class CorrespOutUpdateComponent implements OnInit {
     responsableName: string;
     commentaire: string;
     autoBoc?: boolean;
+    isMatricule?: boolean; // ← AJOUT : true si responsable = matricule personne
   }> = [];
 
   minDate!: string;
@@ -816,14 +818,18 @@ export class CorrespOutUpdateComponent implements OnInit {
     this.tasks.forEach(t => {
       const taskModel: ITasks = {} as ITasks;
       taskModel.responsible = t.responsable;
-      taskModel.dueDate = dayjs(t.dateLimite);
+      taskModel.dueDate = t.dateLimite ? dayjs(t.dateLimite) : undefined;
       taskModel.taskType = t.typeTask;
       taskModel.commentaire = t.commentaire;
+
       if (t.autoBoc) {
         taskModel.responsables = [{ matriculePers: t.responsable }];
-      } else if (t.responsable) {
+      } else if (t.isMatricule) {
+        taskModel.responsables = [{ matriculePers: t.responsable }];
+      } else {
         taskModel.responsables = [{ codeDept: t.responsable }];
       }
+
       this.tasksToSave.push(taskModel);
     });
 
@@ -958,8 +964,14 @@ export class CorrespOutUpdateComponent implements OnInit {
 
     const selections = this.selectedResponsables || [];
     if (selections.length > 0) {
-      const createdItems: Array<{ typeTask: string; responsable: any; dateLimite: string; responsableName: string; commentaire: string }> =
-        [];
+      const createdItems: Array<{
+        typeTask: string;
+        responsable: any;
+        dateLimite: string;
+        responsableName: string;
+        commentaire: string;
+        isMatricule?: boolean;
+      }> = [];
       for (const sel of selections) {
         const codeOrMatricule = sel.matriculePers ? sel.matriculePers : sel.codeDept || '';
         const displayLabel = sel.displayName || codeOrMatricule;
@@ -969,6 +981,7 @@ export class CorrespOutUpdateComponent implements OnInit {
           dateLimite: this.dateLimite,
           responsableName: displayLabel,
           commentaire: this.commentaire,
+          isMatricule: !!sel.matriculePers,
         });
       }
       if (this.isEditMode && this.editingTaskIndex !== null && createdItems.length === 1) {
@@ -984,6 +997,7 @@ export class CorrespOutUpdateComponent implements OnInit {
         dateLimite: this.dateLimite,
         responsableName: this.selectedDepartementName || responsibleText,
         commentaire: this.commentaire,
+        isMatricule: false,
       };
       if (this.isEditMode && this.editingTaskIndex !== null) {
         this.tasks[this.editingTaskIndex] = taskData;

@@ -25,6 +25,11 @@ import { RouterModule } from '@angular/router';
         loadChildren: () => import('./correspManage/corresp/corresp.module').then(m => m.CorrespManageCorrespModule),
       },
       {
+        path: 'smtp-config',
+        data: { pageTitle: 'correspCareApp.correspManageCorresp.home.title' },
+        loadChildren: () => import('./correspManage/smtp-config/smtp-config.module').then(m => m.CorrespManageSmtpConfigModule),
+      },
+      {
         path: 'note',
         data: { pageTitle: 'correspCareApp.correspManageNote.home.title' },
         loadChildren: () => import('./correspManage/note/note.module').then(m => m.CorrespManageNoteModule),
