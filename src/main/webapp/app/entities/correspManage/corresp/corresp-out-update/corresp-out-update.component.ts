@@ -390,12 +390,12 @@ export class CorrespOutUpdateComponent implements OnInit {
 
     if (id) {
       const company = this.companies.find(c => c.id === id);
-      this.expediteur = company ? company.nom || '' : '';
-      this.destinataireLabel = company ? company.nom || '' : ''; // ← AJOUT
+      // Ne toucher QUE destinataireLabel, jamais expediteur
+      this.destinataireLabel = company ? company.nom || '' : '';
     } else {
       if (!this.showManualExpediteur) {
-        this.expediteur = '';
-        this.destinataireLabel = ''; // ← AJOUT
+        // Ne pas réinitialiser expediteur ici non plus
+        this.destinataireLabel = '';
       }
     }
 
@@ -445,8 +445,8 @@ export class CorrespOutUpdateComponent implements OnInit {
       this.selectedPersonId = null;
       this.loadingPersons = false;
     } else {
-      this.expediteur = '';
-      this.destinataireLabel = ''; // ← AJOUT
+      // Ne pas toucher expediteur — seulement réinitialiser le champ destinataire
+      this.destinataireLabel = '';
       if (!this.companies || this.companies.length === 0) {
         this.loadActiveCompanies();
       }
