@@ -414,6 +414,14 @@ export class CorrespService {
     return this.http.get(`${this.resourceUrl}/loadBodyFromFile`, { params: options, responseType: 'text' });
   }
 
+  loadDraftBody(correspId: number): Observable<string> {
+    return this.http
+      .get(`${this.applicationConfigService.getEndpointFor('api/corresps/' + correspId + '/body', 'correspmanage')}`, {
+        responseType: 'text',
+      })
+      .pipe(catchError(() => of('')));
+  }
+
   saveBodyToFile(req?: any) {
     const options = createRequestOption(req);
 

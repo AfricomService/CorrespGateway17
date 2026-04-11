@@ -748,6 +748,7 @@ export class CorrespOutUpdateComponent implements OnInit {
   }
 
   /** Appelle send-email (prepareAndPersist) puis ouvre la preview */
+  // APRÈS — même logique, juste s'assurer que correspBody = htmlContent (corps brut)
   private prepareEmailThenOpenPreview(correspId: number): void {
     if (!this.selectedModelNotif?.id) {
       this.isSavingAndPreviewing = false;
@@ -756,11 +757,7 @@ export class CorrespOutUpdateComponent implements OnInit {
     }
 
     const dateFormatted = this.date
-      ? new Date(this.date).toLocaleDateString('fr-FR', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-        })
+      ? new Date(this.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
       : '';
 
     const request = {
@@ -768,7 +765,7 @@ export class CorrespOutUpdateComponent implements OnInit {
       modelNotifId: this.selectedModelNotif.id,
       receiver: this.msgReceiver || '',
       copyTo: this.msgCopyTo || '',
-      correspBody: this.htmlContent || '',
+      correspBody: this.htmlContent || '', // ← corps brut, FreeMarker l'encapsule dans le template
       senderFullName: [this.currentUserFirstName, this.currentUserLastName].filter(Boolean).join(' '),
       senderDepartement: this.currentUserDepartementName || this.expediteur || '',
       senderEmail: this.msgSender || this.expediteurEmail || '',
@@ -778,18 +775,16 @@ export class CorrespOutUpdateComponent implements OnInit {
       destinataireLabel: this.destinataireLabel || '',
     };
 
-    // Appelle POST /corresps/send-email (prepareAndPersist, pas d'envoi SMTP ici)
+    // prepareCorrespEmail → backend crée/met à jour le message EMAIL avec FreeMarker
     this.correspService.prepareCorrespEmail(request).subscribe({
       next: (res: any) => {
         this.savedMessageId = res.messageId;
         this.isSavingAndPreviewing = false;
-        // Ouvrir la preview (appelle backend FreeMarker pour afficher)
         this.openEmailPreviewForMessage(correspId, request, res.messageId);
       },
       error: err => {
         console.error('Erreur préparation email', err);
         this.isSavingAndPreviewing = false;
-        // On navigue quand même
         this.router.navigate(['/corresp', correspId, 'view']);
       },
     });

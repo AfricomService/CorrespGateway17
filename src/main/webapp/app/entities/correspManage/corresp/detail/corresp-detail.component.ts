@@ -382,14 +382,21 @@ export class CorrespDetailComponent implements OnInit {
       this.referenceEmetteur = this.correspLoaded.senderReference || '';
       this.priorite = this.correspLoaded.priority || false;
       this.dispatchType = (this.correspLoaded.dispatchType as DispatchType) || '';
-
-      this.correspService.loadBodyFromFile({ correspId: this.correspLoaded.id }).subscribe({
-        next: res => {
-          this.htmlContent = res;
+      // Utiliser le nouvel endpoint /body qui cible spécifiquement le message DRAFT
+      this.correspService.loadDraftBody(this.correspLoaded.id).subscribe({
+        next: (body: string) => {
+          this.htmlContent = body;
         },
-        error: err => {
-          console.warn('Impossible de charger le corps du courrier (peut ne pas encore exister)', err.status);
-          this.htmlContent = '';
+        error: () => {
+          // Fallback sur l'ancien endpoint pour compatibilité
+          this.correspService.loadBodyFromFile({ correspId: this.correspLoaded.id }).subscribe({
+            next: res => {
+              this.htmlContent = res;
+            },
+            error: () => {
+              this.htmlContent = '';
+            },
+          });
         },
       });
 
