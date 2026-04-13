@@ -829,6 +829,8 @@ export class CorrespOutUpdateComponent implements OnInit {
     });
 
     if (this.generatedReference) this.corresp!.reference = this.generatedReference;
+    // Transmettre l'id du modèle choisi pour conditionner saveCopy côté backend
+    this.corresp!.modelNotifId = this.selectedModelNotif?.id ?? null;
   }
 
   /** Ouvre le modal en appelant l'API preview (affichage FreeMarker rendu) */
