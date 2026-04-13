@@ -32,57 +32,27 @@
     <table class="table table-striped" aria-describedby="page-heading">
       <thead>
         <tr jhiSort [(predicate)]="predicate" [(ascending)]="ascending" (sortChange)="navigateToWithComponentValues()">
-          <th scope="col" jhiSortBy="id">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.configManageModelNotif.id">Id</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
           <th scope="col" jhiSortBy="name">
             <div class="d-flex">
-              <span jhiTranslate="correspCareApp.configManageModelNotif.name">Name</span>
+              <span>Nom</span>
               <fa-icon class="p-1" icon="sort"></fa-icon>
             </div>
           </th>
           <th scope="col" jhiSortBy="famille">
             <div class="d-flex">
-              <span jhiTranslate="correspCareApp.configManageModelNotif.famille">Famille</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="code">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.configManageModelNotif.code">Code</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="content">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.configManageModelNotif.content">Content</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="subjectFormula">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.configManageModelNotif.subjectFormula">Subject Formula</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="senderEmailFormule">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.configManageModelNotif.senderEmailFormule">Sender Email Formule</span>
-              <fa-icon class="p-1" icon="sort"></fa-icon>
-            </div>
-          </th>
-          <th scope="col" jhiSortBy="recepientEmailFormule">
-            <div class="d-flex">
-              <span jhiTranslate="correspCareApp.configManageModelNotif.recepientEmailFormule">Recepient Email Formule</span>
+              <span>Famille</span>
               <fa-icon class="p-1" icon="sort"></fa-icon>
             </div>
           </th>
           <th scope="col" jhiSortBy="createdDate">
             <div class="d-flex">
-              <span jhiTranslate="correspCareApp.configManageModelNotif.createdDate">Created Date</span>
+              <span>Date de création</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" jhiSortBy="saveCopy">
+            <div class="d-flex">
+              <span>Copie sauvegardée</span>
               <fa-icon class="p-1" icon="sort"></fa-icon>
             </div>
           </th>
@@ -91,17 +61,13 @@
       </thead>
       <tbody>
         <tr *ngFor="let modelNotif of modelNotifs; trackBy: trackId" data-cy="entityTable">
-          <td>
-            <a [routerLink]="['/model-notif', modelNotif.id, 'view']">{{ modelNotif.id }}</a>
-          </td>
           <td>{{ modelNotif.name }}</td>
           <td>{{ modelNotif.famille }}</td>
-          <td>{{ modelNotif.code }}</td>
-          <td>{{ modelNotif.content }}</td>
-          <td>{{ modelNotif.subjectFormula }}</td>
-          <td>{{ modelNotif.senderEmailFormule }}</td>
-          <td>{{ modelNotif.recepientEmailFormule }}</td>
           <td>{{ modelNotif.createdDate | formatMediumDatetime }}</td>
+          <td>
+            <span *ngIf="modelNotif.saveCopy" class="badge bg-success">Oui</span>
+            <span *ngIf="!modelNotif.saveCopy" class="badge bg-secondary">Non</span>
+          </td>
           <td class="text-end">
             <div class="btn-group">
               <button

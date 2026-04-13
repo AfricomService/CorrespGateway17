@@ -10,6 +10,7 @@ import { ModelNotifService } from '../service/model-notif.service';
 import { AlertError } from 'app/shared/alert/alert-error.model';
 import { EventManager, EventWithContent } from 'app/core/util/event-manager.service';
 import { DataUtils, FileLoadError } from 'app/core/util/data-util.service';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 @Component({
   selector: 'jhi-model-notif-update',
@@ -27,8 +28,12 @@ export class ModelNotifUpdateComponent implements OnInit {
     protected eventManager: EventManager,
     protected modelNotifService: ModelNotifService,
     protected modelNotifFormService: ModelNotifFormService,
-    protected activatedRoute: ActivatedRoute
+    protected activatedRoute: ActivatedRoute,
+    protected sanitizer: DomSanitizer
   ) {}
+
+  previewHtml: SafeHtml | null = null;
+  showPreview = false;
 
   ngOnInit(): void {
     this.activatedRoute.data.subscribe(({ modelNotif }) => {
@@ -89,5 +94,16 @@ export class ModelNotifUpdateComponent implements OnInit {
   protected updateForm(modelNotif: IModelNotif): void {
     this.modelNotif = modelNotif;
     this.modelNotifFormService.resetForm(this.editForm, modelNotif);
+  }
+
+  openPreview(): void {
+    const html = this.editForm.get('content')?.value ?? '';
+    this.previewHtml = this.sanitizer.bypassSecurityTrustHtml(html);
+    this.showPreview = true;
+  }
+
+  closePreview(): void {
+    this.showPreview = false;
+    this.previewHtml = null;
   }
 }
