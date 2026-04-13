@@ -319,19 +319,84 @@ strong {
   }
 }
 /* ==================== RESPONSIVE MOBILE ==================== */
+/* ==================== RESPONSIVE MOBILE ==================== */
+
+/* En-tête rapide De/À/CC */
+.header-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+  background: #fafafa;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #eee;
+}
+
+.hq-item {
+  font-size: 0.95em;
+  flex: 1 1 auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.last-modification {
+  font-size: 13px;
+  color: #6c757d;
+}
+
+.last-modification--closed {
+  font-style: italic;
+}
+
 @media (max-width: 768px) {
-  /* Conteneur principal : passer en colonne */
-  div[style*='display: flex; flex-grow: 1; gap: 16px'] {
+  /* Conteneur principal → colonne */
+  .main-panels-container {
     flex-direction: column !important;
   }
 
-  /* Chaque panneau prend 100% de la largeur */
-  div[style*='flex: 1 1 400px'] {
+  /* Les deux panneaux prennent 100% */
+  .panel-left,
+  .panel-right {
     flex: 1 1 100% !important;
     min-width: 0 !important;
   }
 
-  /* Barre d'actions du haut : réduire les gaps */
+  /* Réordonner les sections :
+     - Infos générales : order 1
+     - Panneau droit (corps + pièces jointes) : order 2
+     - Tâches associées : order 3 (dernier)
+  */
+  .panel-left {
+    display: contents; /* Les enfants directs participent au flux du parent */
+  }
+
+  .panel-info-gen {
+    order: 1;
+  }
+
+  .panel-right {
+    order: 2;
+  }
+
+  .panel-taches {
+    order: 3;
+  }
+
+  /* Pour que order fonctionne, le conteneur parent doit être flex */
+  .main-panels-container {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    flex-direction: column !important;
+  }
+
+  /* Champs en deux colonnes → une colonne */
+  div[style*='display: flex; gap: 12px; margin-bottom: 1.5em'] {
+    flex-direction: column !important;
+  }
+
+  /* Barre d'actions du haut */
   div[style*='justify-content: space-between; align-items: center; padding: 8px 12px'] {
     flex-wrap: wrap;
     gap: 8px;
@@ -342,12 +407,7 @@ strong {
     padding: 0 8px !important;
   }
 
-  /* Champs en deux colonnes → une colonne sur mobile */
-  div[style*='display: flex; gap: 12px; margin-bottom: 1.5em'] {
-    flex-direction: column !important;
-  }
-
-  /* La barre d'action du bas : boutons en colonne */
+  /* Barre d'action du bas */
   div[style*='justify-content: flex-end; align-items: center; padding: 12px 16px'] {
     flex-direction: column;
     align-items: stretch;
@@ -369,42 +429,5 @@ strong {
   .btn[style*='min-width: 120px'] {
     width: 100% !important;
     min-width: unset !important;
-  }
-
-  /* Résumé de section bien visible */
-  .section-summary-mobile {
-    display: block;
-    font-size: 11px;
-    color: #6c757d;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 240px;
-  }
-  /* Activer le layout flex avec order sur le conteneur principal */
-  div[style*='display: flex; flex-grow: 1; gap: 16px'] {
-    flex-direction: column !important;
-    display: flex !important;
-  }
-
-  /* Panneau gauche → flex container pour pouvoir ordonner ses enfants */
-  div[style*='flex: 1 1 400px; min-width: 0']:first-of-type > div {
-    display: flex !important;
-    flex-direction: column !important;
-  }
-
-  /* Bloc Infos Générales (premier enfant du panneau gauche) → order 1 */
-  div[style*='flex: 1 1 400px; min-width: 0']:first-of-type > div > div:first-child {
-    order: 1;
-  }
-
-  /* Bloc Tâches Associées (deuxième enfant du panneau gauche) → order 4 (dernier) */
-  div[style*='flex: 1 1 400px; min-width: 0']:first-of-type > div > div:last-child {
-    order: 4;
-  }
-
-  /* Panneau droit entier → order 2 et 3 (avant les tâches) */
-  div[style*='flex: 1 1 400px; min-width: 0']:last-of-type {
-    order: 2;
   }
 }

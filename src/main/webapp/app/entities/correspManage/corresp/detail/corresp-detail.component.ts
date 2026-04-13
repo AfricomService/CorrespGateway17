@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild, HostListener } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import dayjs from 'dayjs/esm';
 import { ICorresp, IContactCopieCorresp } from '../corresp.model';
@@ -343,9 +343,7 @@ export class CorrespDetailComponent implements OnInit {
     const qp = this.activatedRoute.snapshot.queryParamMap.get('taskId');
     this.selectedTaskId = qp != null && qp !== '' ? Number(qp) : null;
     this.loadMockData();
-    if (window.innerWidth < 768) {
-      this.accordionStates['infoGen'] = false;
-    }
+    this.onWindowResize();
     const id = this.activatedRoute.snapshot.paramMap.get('id');
 
     this.correspService.find(Number(id)).subscribe(res => {
@@ -496,6 +494,12 @@ export class CorrespDetailComponent implements OnInit {
     });
 
     this.loadActiveCompanies();
+  }
+
+  @HostListener('window:resize', [])
+  onWindowResize(): void {
+    const isMobile = window.innerWidth < 768;
+    this.accordionStates['infoGen'] = !isMobile;
   }
   // loadCorresp(id: number): void {
   //   this.correspService.find(id).subscribe((res: HttpResponse<ICorresp>) => {

@@ -172,13 +172,14 @@
   </div>
 
   <div style="display: flex; flex-direction: column; flex-grow: 1">
-    <div style="display: flex; flex-grow: 1; gap: 16px; padding-bottom: 1em">
-      <div style="flex: 1 1 400px; min-width: 0">
+    <div class="main-panels-container" style="display: flex; flex-grow: 1; gap: 16px; padding-bottom: 1em">
+      <div class="panel-left" style="flex: 1 1 400px; min-width: 0">
         <div
+          class="panel-left-inner"
           style="padding: 16px; border: 1px solid #ccc; border-radius: 12px; height: 100%; display: flex; flex-direction: column; gap: 16px"
         >
           <!-- 🟦 BLOC ACCORDÉON INFORMATIONS GÉNÉRALES -->
-          <div style="border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden">
+          <div class="panel-info-gen" style="border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden">
             <!-- HEADER ACCORDÉON -->
             <div
               (click)="toggleAccordion('infoGen')"
@@ -1054,7 +1055,7 @@
             </ng-template>
           </div>
 
-          <div style="border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden">
+          <div class="panel-taches" style="border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden">
             <div
               (click)="toggleAccordion('taches')"
               [style.background-color]="accordionStates['taches'] ? '#e9ecef' : '#f8f9fa'"
@@ -1357,7 +1358,7 @@
         </div>
       </div>
 
-      <div style="flex: 1 1 400px; min-width: 0">
+      <div class="panel-right" style="flex: 1 1 400px; min-width: 0">
         <div
           style="padding: 16px; border: 1px solid #ccc; border-radius: 12px; height: 100%; display: flex; flex-direction: column; gap: 16px"
         >
