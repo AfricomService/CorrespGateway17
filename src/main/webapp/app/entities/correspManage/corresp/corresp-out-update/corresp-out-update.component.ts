@@ -46,8 +46,6 @@ import { ScanSettingsService } from 'app/entities/correspManage/pj/service/scan-
 import { ModelNotifService } from 'app/entities/configManage/model-notif/service/model-notif.service';
 import { IModelNotif } from 'app/entities/configManage/model-notif/model-notif.model';
 
-import { IMessage, NewMessage } from '../../message/message.model';
-
 interface FileIndexLink {
   index: number;
   uniqueName: string;
