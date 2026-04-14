@@ -710,7 +710,23 @@ export class CorrespOutUpdateComponent implements OnInit {
         next: (savedCorresp: any) => {
           this.isSaving = false;
           if (savedCorresp?.id) {
-            this.router.navigate(['/corresp', savedCorresp.id, 'view']);
+            this.tasksService.getAllTasksByCorrespId({ correspId: savedCorresp.id }).subscribe({
+              next: (tasksRes: HttpResponse<ITasks[]>) => {
+                const savedTasks = tasksRes.body || [];
+                const traitementTask = savedTasks.find(t => t.taskType === 'traitement');
+                if (traitementTask && traitementTask.id) {
+                  this.correspService
+                    .changeTaskStatus({ correspId: savedCorresp.id, taskId: traitementTask.id, status: 'IN_PROGRESS' })
+                    .subscribe({
+                      next: () => this.router.navigate(['/corresp', savedCorresp.id, 'view']),
+                      error: () => this.router.navigate(['/corresp', savedCorresp.id, 'view']),
+                    });
+                } else {
+                  this.router.navigate(['/corresp', savedCorresp.id, 'view']);
+                }
+              },
+              error: () => this.router.navigate(['/corresp', savedCorresp.id, 'view']),
+            });
           } else {
             this.router.navigate(['/corresp']);
           }
@@ -736,8 +752,23 @@ export class CorrespOutUpdateComponent implements OnInit {
             return;
           }
           this.savedCorrespId = savedCorresp.id;
-          // Préparer et persister le message email (FreeMarker)
-          this.prepareEmailThenOpenPreview(savedCorresp.id);
+          this.tasksService.getAllTasksByCorrespId({ correspId: savedCorresp.id }).subscribe({
+            next: (tasksRes: HttpResponse<ITasks[]>) => {
+              const savedTasks = tasksRes.body || [];
+              const traitementTask = savedTasks.find(t => t.taskType === 'traitement');
+              if (traitementTask && traitementTask.id) {
+                this.correspService
+                  .changeTaskStatus({ correspId: savedCorresp.id, taskId: traitementTask.id, status: 'IN_PROGRESS' })
+                  .subscribe({
+                    next: () => this.prepareEmailThenOpenPreview(savedCorresp.id),
+                    error: () => this.prepareEmailThenOpenPreview(savedCorresp.id),
+                  });
+              } else {
+                this.prepareEmailThenOpenPreview(savedCorresp.id);
+              }
+            },
+            error: () => this.prepareEmailThenOpenPreview(savedCorresp.id),
+          });
         },
         error: () => {
           this.isSavingAndPreviewing = false;

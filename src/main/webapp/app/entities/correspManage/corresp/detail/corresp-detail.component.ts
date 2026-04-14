@@ -1535,15 +1535,6 @@ export class CorrespDetailComponent implements OnInit {
     ];
   }
 
-  // --- Logic: Task Progress ---
-  // get taskCompletionPercentage(): number {
-  //   if (!this.tasks || this.tasks.length === 0) {
-  //     return 0;
-  //   }
-  //   const closedTasks = this.tasks.filter(t => t.status === CorrespStatus.CLOSED).length;
-  //   return Math.round((closedTasks / this.tasks.length) * 100);
-  // }
-
   get taskCompletionPercentage(): number {
     if (!this.tachesAssociees || this.tachesAssociees.length === 0) {
       return 0;
