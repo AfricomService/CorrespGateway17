@@ -116,7 +116,7 @@ export class CorrespOutUpdateComponent implements OnInit {
   priorite = 'Normal';
   destinataire = '';
   destinataireLabel = '';
-  dispatchType = '';
+  dispatchType = DispatchType.LETTER;
   contactEmail = '';
   contactEmailCC = '';
   contactEmailCCLabel = '';

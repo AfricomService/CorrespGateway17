@@ -759,7 +759,6 @@
                   <div style="flex: 1">
                     <label class="form-label fw-semibold">Type d’envoi</label>
                     <select class="form-select" [(ngModel)]="dispatchType" name="dispatchType">
-                      <option [ngValue]="undefined">-- Sélectionner un type d’envoi --</option>
                       <option *ngFor="let opt of dispatchTypeOptions" [ngValue]="opt.value">
                         {{ opt.label }}
                       </option>

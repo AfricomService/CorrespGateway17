@@ -2,7 +2,7 @@
   "home": {
     "title": "Welcome, {{firstName}}",
     "subtitle": "Manage your mail and tasks with ease",
-    "newMail": "✨ New Mail",
+    "newMail": "New Mail",
     "arrival": "INCOMING",
     "arrivalSub": "Register an incoming mail",
     "outgoing": "OUTGOING",

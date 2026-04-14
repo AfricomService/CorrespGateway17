@@ -2,7 +2,7 @@
   "home": {
     "title": "Bienvenue, {{firstName}}",
     "subtitle": "Gérez vos courriers et tâches en toute simplicité",
-    "newMail": "✨ Nouveau courrier",
+    "newMail": "Nouveau courrier",
     "arrival": "ARRIVÉE",
     "arrivalSub": "Enregistrer un courrier entrant",
     "outgoing": "SORTANT",
