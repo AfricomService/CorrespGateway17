@@ -690,13 +690,8 @@ export class CorrespOutUpdateComponent implements OnInit {
     this.validationInfoGenErrors = {};
     if (!this.validateInfoGeneralesForm()) return;
 
-    // Si un modèle email est sélectionné → flux preview avant envoi
-    if (this.selectedModelNotif) {
-      this.startSaveAndPreviewFlow();
-    } else {
-      // Flux simple sans email : save → navigate
-      this.startSimpleSaveFlow();
-    }
+    // Toujours flux simple : save → navigate (la logique email est dans corresp-detail)
+    this.startSimpleSaveFlow();
   }
 
   /** Flux 1 : sans modèle email → save direct */

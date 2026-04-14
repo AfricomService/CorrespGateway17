@@ -61,11 +61,9 @@
     <!-- Right Side Button -->
     <!-- Bouton Enregistrer (sans modèle) ou Prévisualiser avant envoi (avec modèle) -->
     <button
-      [disabled]="isUploading || isSaving || isSavingAndPreviewing"
+      [disabled]="isUploading || isSaving"
       (click)="saveCorresp(false)"
-      class="btn btn-sm"
-      [class.btn-primary]="!selectedModelNotif"
-      [class.btn-success]="!!selectedModelNotif"
+      class="btn btn-sm btn-primary"
       style="
         font-weight: 600;
         text-transform: uppercase;
@@ -76,12 +74,10 @@
         align-items: center;
         gap: 6px;
       "
-      [attr.title]="selectedModelNotif ? 'Enregistrer et prévisualiser l\'email' : 'Enregistrer'"
+      title="Enregistrer"
     >
-      <span *ngIf="isSavingAndPreviewing" class="spinner-border spinner-border-sm" role="status"></span>
-      <fa-icon *ngIf="!isSavingAndPreviewing && !selectedModelNotif" icon="save"></fa-icon>
-      <fa-icon *ngIf="!isSavingAndPreviewing && selectedModelNotif" icon="eye"></fa-icon>
-      <span *ngIf="selectedModelNotif && !isSavingAndPreviewing" style="font-size: 11px"> Prévisualiser </span>
+      <span *ngIf="isSaving" class="spinner-border spinner-border-sm" role="status"></span>
+      <fa-icon *ngIf="!isSaving" icon="save"></fa-icon>
     </button>
   </div>
 
