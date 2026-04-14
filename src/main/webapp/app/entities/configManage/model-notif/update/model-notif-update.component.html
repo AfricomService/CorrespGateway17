@@ -22,6 +22,11 @@
         <span jhiTranslate="entity.action.cancel">Annuler</span>
       </button>
 
+      <button type="button" class="btn btn-outline-info btn-sm mn-btn" (click)="openPreview()">
+        <fa-icon icon="eye"></fa-icon>
+        <span>Prévisualiser</span>
+      </button>
+
       <button
         type="button"
         id="save-entity"
@@ -54,19 +59,6 @@
           </div>
           <div class="mn-card__body">
             <div class="mn-card__grid">
-              <!-- ID (edit only) -->
-              <div *ngIf="editForm.controls.id.value !== null" class="mn-card__full">
-                <label class="mn-label" jhiTranslate="correspCareApp.configManageModelNotif.id" for="field_id">Id</label>
-                <input
-                  type="text"
-                  class="form-control mn-input mn-input--readonly"
-                  id="field_id"
-                  data-cy="id"
-                  formControlName="id"
-                  [readonly]="true"
-                />
-              </div>
-
               <!-- Nom -->
               <div>
                 <label class="mn-label" jhiTranslate="correspCareApp.configManageModelNotif.name" for="field_name">
@@ -208,6 +200,12 @@
                   placeholder="Ex : destinataire@domaine.com"
                 />
               </div>
+              <div class="mn-card__full">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="field_saveCopy" data-cy="saveCopy" formControlName="saveCopy" />
+                  <label class="form-check-label mn-label" for="field_saveCopy"> Sauvegarder une copie </label>
+                </div>
+              </div>
             </div>
             <!-- /mn-card__grid -->
           </div>
@@ -287,4 +285,20 @@
     </div>
     <!-- /mn-layout -->
   </form>
+  <!-- ── MODALE PRÉVISUALISATION ── -->
+  <div *ngIf="showPreview" class="mn-preview-overlay" (click)="closePreview()">
+    <div class="mn-preview-modal" (click)="$event.stopPropagation()">
+      <div class="mn-preview-modal__header">
+        <span>👁️ Prévisualisation du template</span>
+        <button type="button" class="mn-preview-close-btn" (click)="closePreview()">
+          <span aria-hidden="true">✕</span>
+          <span class="visually-hidden">Fermer</span>
+        </button>
+      </div>
+
+      <div class="mn-preview-modal__body">
+        <iframe class="mn-preview-iframe" [srcdoc]="previewHtml" sandbox="allow-same-origin" title="Prévisualisation"></iframe>
+      </div>
+    </div>
+  </div>
 </div>

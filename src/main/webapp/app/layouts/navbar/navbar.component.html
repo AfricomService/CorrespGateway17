@@ -35,7 +35,7 @@
         <li *ngSwitchCase="true" ngbDropdown class="nav-item dropdown pointer" display="dynamic">
           <a class="nav-link dropdown-toggle" ngbDropdownToggle href="javascript:void(0);" id="nouveau-courrier-menu">
             <span>
-              <fa-icon icon="plus-circle"></fa-icon>
+              <fa-icon icon="envelope"></fa-icon>
               <span jhiTranslate="home.newMail">Nouveau</span>
             </span>
           </a>
@@ -323,6 +323,18 @@
               >
                 <fa-icon icon="asterisk" [fixedWidth]="true"></fa-icon>
                 <span jhiTranslate="global.menu.entities.configManageModelNotif">Model Notif</span>
+              </a>
+            </li>
+            <li *jhiHasAnyAuthority="'ROLE_ADMIN'">
+              <a
+                class="dropdown-item"
+                routerLink="smtp-config"
+                routerLinkActive="active"
+                [routerLinkActiveOptions]="{ exact: true }"
+                (click)="collapseNavbar()"
+              >
+                <fa-icon icon="asterisk" [fixedWidth]="true"></fa-icon>
+                <span>Smtp Config</span>
               </a>
             </li>
             <li *jhiHasAnyAuthority="'ROLE_ADMIN'">

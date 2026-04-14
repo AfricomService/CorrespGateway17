@@ -32,6 +32,7 @@
         "configManageConfigexport": "Configexport",
         "configManageMyreport": "Myreport",
         "correspManageCustomSearch": "Custom Search",
+        "correspManageSmtpConfig": "Smtp Config",
         "jhipster-needle-menu-add-entry": "JHipster will add additional entities here (do not translate!)"
       },
       "account": {

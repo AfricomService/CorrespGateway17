@@ -414,10 +414,42 @@ export class CorrespService {
     return this.http.get(`${this.resourceUrl}/loadBodyFromFile`, { params: options, responseType: 'text' });
   }
 
+  loadDraftBody(correspId: number): Observable<string> {
+    return this.http
+      .get(`${this.applicationConfigService.getEndpointFor('api/corresps/' + correspId + '/body', 'correspmanage')}`, {
+        responseType: 'text',
+      })
+      .pipe(catchError(() => of('')));
+  }
+
   saveBodyToFile(req?: any) {
     const options = createRequestOption(req);
 
     return this.http.patch(`${this.resourceUrl}/saveBodyToFile`, options);
+  }
+
+  /**
+   * POST /api/corresps/send-email-direct
+   * Prépare et envoie l'email sans persister le message en base (saveCopy=false).
+   */
+  sendEmailDirect(request: {
+    correspId: number;
+    modelNotifId: string;
+    receiver: string;
+    copyTo: string;
+    correspBody: string;
+    senderFullName: string;
+    senderDepartement: string;
+    senderEmail: string;
+    correspObjet: string;
+    correspDate: string;
+    correspReference?: string | null;
+    destinataireLabel: string;
+  }): Observable<{ sent: boolean; correspId: number; status: string }> {
+    return this.http.post<any>(
+      `${this.applicationConfigService.getEndpointFor('api/corresps/send-email-direct', 'correspmanage')}`,
+      request
+    );
   }
 
   prepareCorrespEmail(request: {

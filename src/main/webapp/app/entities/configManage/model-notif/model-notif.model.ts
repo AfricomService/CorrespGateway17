@@ -10,6 +10,9 @@ export interface IModelNotif {
   senderEmailFormule?: string | null;
   recepientEmailFormule?: string | null;
   createdDate?: dayjs.Dayjs | null;
+  ccEmailFormule?: { [key: string]: string }[] | null;
+  cciEmailFormule?: { [key: string]: string }[] | null;
+  saveCopy?: boolean | null;
 }
 
 export type NewModelNotif = Omit<IModelNotif, 'id'> & { id: null };

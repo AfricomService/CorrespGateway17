@@ -46,7 +46,8 @@
       "Connecteur",
       "Configexport",
       "Myreport",
-      "CustomSearch"
+      "CustomSearch",
+      "SmtpConfig"
     ],
     "entitySuffix": "",
     "gradleEnterpriseHost": "",
