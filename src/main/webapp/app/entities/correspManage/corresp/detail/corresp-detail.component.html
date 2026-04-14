@@ -1796,11 +1796,8 @@
         </button>
         <button
           (click)="soumettreCorresp(correspLoaded?.id!)"
-          *ngIf="isAdminOrBoc && isEditableLeft"
-          [attr.title]="
-            canWriteCorresp || canAdminCorresp ? '' : ('correspCareApp.correspManageCorresp.actions.insufficientRights' | translate)
-          "
-          [disabled]="!(canWriteCorresp || canAdminCorresp)"
+          *ngIf="canSoumettreCorresp"
+          [disabled]="!(canWriteCorresp || canAdminCorresp || isAdminOrBoc)"
           class="btn btn-success"
           jhiTranslate="correspCareApp.correspManageCorresp.actions.submit"
           style="font-weight: 600; text-transform: uppercase; min-width: 120px"
@@ -1809,12 +1806,7 @@
         </button>
         <button
           (click)="cloturerCorresp(correspLoaded?.id!)"
-          *ngIf="isAdminOrBoc && correspLoaded?.status === CorrespStatus.IN_PROGRESS"
-          [attr.title]="
-            canWriteCorresp || canAdminCorresp || isAdminOrBoc
-              ? ''
-              : ('correspCareApp.correspManageCorresp.actions.insufficientRights' | translate)
-          "
+          *ngIf="canCloturerCorresp"
           [disabled]="!(canWriteCorresp || canAdminCorresp || isAdminOrBoc)"
           class="btn btn-danger"
           jhiTranslate="correspCareApp.correspManageCorresp.actions.close"

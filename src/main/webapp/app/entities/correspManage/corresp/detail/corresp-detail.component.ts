@@ -1535,6 +1535,37 @@ export class CorrespDetailComponent implements OnInit {
     ];
   }
 
+  get canSoumettreCorresp(): boolean {
+    if (!this.correspLoaded) return false;
+    const status = this.correspLoaded.status;
+    const isEditableLeft = status === CorrespStatus.DRAFT || status === CorrespStatus.DISPATCH;
+
+    if (!isEditableLeft) return false;
+
+    // INCOMING : logique actuelle (admin/boc uniquement)
+    if (this.correspLoaded.corresptype === 'INCOMING') {
+      return this.isAdminOrBoc;
+    }
+
+    // OUTGOING / INTERNAL : admin/boc OU ACL write
+    return this.isAdminOrBoc || this.canWriteCorresp || this.canAdminCorresp;
+  }
+
+  get canCloturerCorresp(): boolean {
+    if (!this.correspLoaded) return false;
+    const status = this.correspLoaded.status;
+
+    if (status !== CorrespStatus.IN_PROGRESS) return false;
+
+    // INCOMING : logique actuelle (admin/boc uniquement)
+    if (this.correspLoaded.corresptype === 'INCOMING') {
+      return this.isAdminOrBoc;
+    }
+
+    // OUTGOING / INTERNAL : admin/boc OU ACL write
+    return this.isAdminOrBoc || this.canWriteCorresp || this.canAdminCorresp;
+  }
+
   get taskCompletionPercentage(): number {
     if (!this.tachesAssociees || this.tachesAssociees.length === 0) {
       return 0;
@@ -2265,7 +2296,7 @@ export class CorrespDetailComponent implements OnInit {
   }
 
   soumettreCorresp(correspId: number): void {
-    if (!this.canWriteCorresp) {
+    if (!this.canSoumettreCorresp) {
       this.showNotification('Vous n’avez pas le droit de soumettre ce courrier', 'error');
       return;
     }
@@ -2281,7 +2312,7 @@ export class CorrespDetailComponent implements OnInit {
   }
 
   cloturerCorresp(correspId: number): void {
-    if (!(this.canWriteCorresp || this.canAdminCorresp || this.isAdminOrBoc)) {
+    if (!this.canCloturerCorresp) {
       this.showNotification('Vous n’avez pas le droit de clôturer ce courrier', 'error');
       return;
     }
