@@ -1,0 +1,90 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <div *ngIf="smtpConfig">
+      <h2 data-cy="smtpConfigDetailsHeading">
+        <span jhiTranslate="correspCareApp.correspManageSmtpConfig.detail.title">Smtp Config</span>
+      </h2>
+
+      <hr />
+
+      <jhi-alert-error></jhi-alert-error>
+
+      <jhi-alert></jhi-alert>
+
+      <dl class="row-md jh-entity-details">
+        <dt><span jhiTranslate="global.field.id">ID</span></dt>
+        <dd>
+          <span>{{ smtpConfig.id }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageSmtpConfig.name">Name</span></dt>
+        <dd>
+          <span>{{ smtpConfig.name }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageSmtpConfig.smtpHost">Smtp Host</span></dt>
+        <dd>
+          <span>{{ smtpConfig.smtpHost }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageSmtpConfig.smtpPort">Smtp Port</span></dt>
+        <dd>
+          <span>{{ smtpConfig.smtpPort }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageSmtpConfig.username">Username</span></dt>
+        <dd>
+          <span>{{ smtpConfig.username }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageSmtpConfig.password">Password</span></dt>
+        <dd>
+          <span>{{ smtpConfig.password }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageSmtpConfig.useAuth">Use Auth</span></dt>
+        <dd>
+          <span>{{ smtpConfig.useAuth }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageSmtpConfig.useTls">Use Tls</span></dt>
+        <dd>
+          <span>{{ smtpConfig.useTls }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageSmtpConfig.useSsl">Use Ssl</span></dt>
+        <dd>
+          <span>{{ smtpConfig.useSsl }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageSmtpConfig.fromAddress">From Address</span></dt>
+        <dd>
+          <span>{{ smtpConfig.fromAddress }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageSmtpConfig.fromName">From Name</span></dt>
+        <dd>
+          <span>{{ smtpConfig.fromName }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageSmtpConfig.lacalhostName">Lacalhost Name</span></dt>
+        <dd>
+          <span>{{ smtpConfig.lacalhostName }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageSmtpConfig.connectionTimeout">Connection Timeout</span></dt>
+        <dd>
+          <span>{{ smtpConfig.connectionTimeout }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageSmtpConfig.timeout">Timeout</span></dt>
+        <dd>
+          <span>{{ smtpConfig.timeout }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageSmtpConfig.active">Active</span></dt>
+        <dd>
+          <span>{{ smtpConfig.active }}</span>
+        </dd>
+        <dt><span jhiTranslate="correspCareApp.correspManageSmtpConfig.description">Description</span></dt>
+        <dd>
+          <span>{{ smtpConfig.description }}</span>
+        </dd>
+      </dl>
+
+      <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+        <fa-icon icon="arrow-left"></fa-icon>&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+      </button>
+
+      <button type="button" [routerLink]="['/smtp-config', smtpConfig.id, 'edit']" class="btn btn-primary">
+        <fa-icon icon="pencil-alt"></fa-icon>&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+      </button>
+    </div>
+  </div>
+</div>

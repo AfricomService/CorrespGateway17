@@ -150,3 +150,72 @@
   align-items: center;
   gap: 6px;
 }
+// ── Overlay prévisualisation
+.mn-preview-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+// ── Modale prévisualisation
+.mn-preview-modal {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  max-width: 860px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 20px;
+    background: #f1f5f9;
+    border-bottom: 1px solid #e2e8f0;
+    font-weight: 700;
+    font-size: 13px;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    .mn-preview-close-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      color: #334155;
+      line-height: 1;
+      padding: 2px 6px;
+      border-radius: 4px;
+      opacity: 0.7;
+      transition: opacity 0.15s, background 0.15s;
+
+      &:hover {
+        opacity: 1;
+        background: #e2e8f0;
+      }
+    }
+  }
+
+  &__body {
+    flex: 1;
+    overflow: hidden;
+    padding: 0;
+  }
+}
+
+// ── iframe de rendu HTML
+.mn-preview-iframe {
+  width: 100%;
+  height: 70vh;
+  border: none;
+  display: block;
+}

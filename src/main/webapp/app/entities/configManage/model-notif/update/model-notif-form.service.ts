@@ -39,6 +39,7 @@ type ModelNotifFormGroupContent = {
   senderEmailFormule: FormControl<ModelNotifFormRawValue['senderEmailFormule']>;
   recepientEmailFormule: FormControl<ModelNotifFormRawValue['recepientEmailFormule']>;
   createdDate: FormControl<ModelNotifFormRawValue['createdDate']>;
+  saveCopy: FormControl<ModelNotifFormRawValue['saveCopy']>;
 };
 
 export type ModelNotifFormGroup = FormGroup<ModelNotifFormGroupContent>;
@@ -69,6 +70,7 @@ export class ModelNotifFormService {
         validators: [Validators.required],
       }),
       recepientEmailFormule: new FormControl(modelNotifRawValue.recepientEmailFormule),
+      saveCopy: new FormControl(modelNotifRawValue.saveCopy ?? false),
       createdDate: new FormControl(modelNotifRawValue.createdDate, {
         validators: [Validators.required],
       }),

@@ -1,0 +1,76 @@
+{
+  "changelogDate": "20260410090544",
+  "clientRootFolder": "correspManage",
+  "databaseType": "sql",
+  "dto": "mapstruct",
+  "fields": [
+    {
+      "fieldName": "name",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "smtpHost",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "smtpPort",
+      "fieldType": "Integer"
+    },
+    {
+      "fieldName": "username",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "password",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "useAuth",
+      "fieldType": "Boolean"
+    },
+    {
+      "fieldName": "useTls",
+      "fieldType": "Boolean"
+    },
+    {
+      "fieldName": "useSsl",
+      "fieldType": "Boolean"
+    },
+    {
+      "fieldName": "fromAddress",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "fromName",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "lacalhostName",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "connectionTimeout",
+      "fieldType": "Integer"
+    },
+    {
+      "fieldName": "timeout",
+      "fieldType": "Integer"
+    },
+    {
+      "fieldName": "active",
+      "fieldType": "Boolean"
+    },
+    {
+      "fieldName": "description",
+      "fieldType": "String"
+    }
+  ],
+  "jpaMetamodelFiltering": false,
+  "microserviceName": "correspManage",
+  "microservicePath": "D:\\CODE\\CORRESPCARE\\ManageCorresp17",
+  "name": "SmtpConfig",
+  "pagination": "no",
+  "readOnly": false,
+  "relationships": [],
+  "service": "serviceClass"
+}

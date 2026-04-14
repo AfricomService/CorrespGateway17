@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild, HostListener } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import dayjs from 'dayjs/esm';
 import { ICorresp, IContactCopieCorresp } from '../corresp.model';
@@ -39,6 +39,8 @@ import {
   MergePagesRequest,
 } from 'app/entities/correspManage/pj/service/pjcare.service';
 import { ScanSettingsService } from 'app/entities/correspManage/pj/service/scan-settings.service';
+import { ModelNotifService } from 'app/entities/configManage/model-notif/service/model-notif.service';
+import { IModelNotif } from 'app/entities/configManage/model-notif/model-notif.model';
 
 // export interface ITasks {
 //   id: number;
@@ -178,6 +180,21 @@ export class CorrespDetailComponent implements OnInit {
   scanCoverageThreshold = 5;
   private _pendingDriverFromCookie: string = '';
 
+  // ── Email preview modal (pour Soumettre + Envoyer) ───────────────────────
+  showEmailSubmitModal = false;
+  isLoadingEmailPreview = false;
+  emailPreviewHtml: string = '';
+  emailPreviewSubject: string = '';
+  emailPreviewFrom: string = '';
+  emailPreviewTo: string = '';
+  emailPreviewCc: string = '';
+  emailPreviewModelName: string = '';
+  emailPreviewError: string = '';
+  isSendingEmailOnSubmit = false;
+  sendEmailOnSubmitError: string = '';
+  sendEmailOnSubmitSuccess = false;
+  savedEmailMessageId: number | null = null;
+
   /** Buffer multi-pages du document en cours — toutes les pages formeront UN seul fichier */
   currentDocumentPages: ScannedPage[] = [];
 
@@ -252,6 +269,14 @@ export class CorrespDetailComponent implements OnInit {
   messageReceiverEmails: string[] = [];
   messageCopyToEmails: string[] = [];
 
+  // Modèle email pour le modal soumettre+envoyer
+  models: IModelNotif[] = [];
+  selectedModelNotifForSubmit: IModelNotif | null = null;
+  currentUserFirstNameDetail: string = '';
+  currentUserLastNameDetail: string = '';
+  currentUserDepartementNameDetail: string = '';
+  currentUserEmailDetail: string = '';
+
   /**
    * Vrai si la correspondance est dans un état qui rend la partie gauche
    * (infos générales, tâches, PJ, boutons) éditable : DRAFT ou DISPATCH.
@@ -274,7 +299,8 @@ export class CorrespDetailComponent implements OnInit {
     private accountService: AccountService,
     private sanitizer: DomSanitizer,
     private pjCareService: PjCareService,
-    private scanSettingsService: ScanSettingsService
+    private scanSettingsService: ScanSettingsService,
+    private modelNotifService: ModelNotifService
   ) {}
 
   get safeHtmlContent(): SafeHtml {
@@ -339,13 +365,24 @@ export class CorrespDetailComponent implements OnInit {
       this.isGlobalAdmin = Array.isArray(roles) && roles.includes('ROLE_ADMIN');
       this.isAdminOrBoc = Array.isArray(roles) && (roles.includes(Authority.ADMIN) || roles.includes(Authority.BOC));
       this.applyDispatchPermissionsForAdminOrBoc();
+      // Charger infos utilisateur pour l'email
+      this.currentUserFirstNameDetail = (acc as any)?.firstName || '';
+      this.currentUserLastNameDetail = (acc as any)?.lastName || '';
+      this.currentUserEmailDetail = (acc as any)?.email || (acc as any)?.login || '';
+    });
+    // Charger les modèles email
+    this.modelNotifService.query({ page: 0, size: 1000, sort: ['name,ASC'] }).subscribe({
+      next: (res: HttpResponse<IModelNotif[]>) => {
+        this.models = res.body || [];
+      },
+      error: () => {
+        this.models = [];
+      },
     });
     const qp = this.activatedRoute.snapshot.queryParamMap.get('taskId');
     this.selectedTaskId = qp != null && qp !== '' ? Number(qp) : null;
     this.loadMockData();
-    if (window.innerWidth < 768) {
-      this.accordionStates['infoGen'] = false;
-    }
+    this.onWindowResize();
     const id = this.activatedRoute.snapshot.paramMap.get('id');
 
     this.correspService.find(Number(id)).subscribe(res => {
@@ -382,14 +419,21 @@ export class CorrespDetailComponent implements OnInit {
       this.referenceEmetteur = this.correspLoaded.senderReference || '';
       this.priorite = this.correspLoaded.priority || false;
       this.dispatchType = (this.correspLoaded.dispatchType as DispatchType) || '';
-
-      this.correspService.loadBodyFromFile({ correspId: this.correspLoaded.id }).subscribe({
-        next: res => {
-          this.htmlContent = res;
+      // Utiliser le nouvel endpoint /body qui cible spécifiquement le message DRAFT
+      this.correspService.loadDraftBody(this.correspLoaded.id).subscribe({
+        next: (body: string) => {
+          this.htmlContent = body;
         },
-        error: err => {
-          console.warn('Impossible de charger le corps du courrier (peut ne pas encore exister)', err.status);
-          this.htmlContent = '';
+        error: () => {
+          // Fallback sur l'ancien endpoint pour compatibilité
+          this.correspService.loadBodyFromFile({ correspId: this.correspLoaded.id }).subscribe({
+            next: res => {
+              this.htmlContent = res;
+            },
+            error: () => {
+              this.htmlContent = '';
+            },
+          });
         },
       });
 
@@ -489,6 +533,12 @@ export class CorrespDetailComponent implements OnInit {
     });
 
     this.loadActiveCompanies();
+  }
+
+  @HostListener('window:resize', [])
+  onWindowResize(): void {
+    const isMobile = window.innerWidth < 768;
+    this.accordionStates['infoGen'] = !isMobile;
   }
   // loadCorresp(id: number): void {
   //   this.correspService.find(id).subscribe((res: HttpResponse<ICorresp>) => {
@@ -1524,14 +1574,36 @@ export class CorrespDetailComponent implements OnInit {
     ];
   }
 
-  // --- Logic: Task Progress ---
-  // get taskCompletionPercentage(): number {
-  //   if (!this.tasks || this.tasks.length === 0) {
-  //     return 0;
-  //   }
-  //   const closedTasks = this.tasks.filter(t => t.status === CorrespStatus.CLOSED).length;
-  //   return Math.round((closedTasks / this.tasks.length) * 100);
-  // }
+  get canSoumettreCorresp(): boolean {
+    if (!this.correspLoaded) return false;
+    const status = this.correspLoaded.status;
+    const isEditableLeft = status === CorrespStatus.DRAFT || status === CorrespStatus.DISPATCH;
+
+    if (!isEditableLeft) return false;
+
+    // INCOMING : logique actuelle (admin/boc uniquement)
+    if (this.correspLoaded.corresptype === 'INCOMING') {
+      return this.isAdminOrBoc;
+    }
+
+    // OUTGOING / INTERNAL : admin/boc OU ACL write
+    return this.isAdminOrBoc || this.canWriteCorresp || this.canAdminCorresp;
+  }
+
+  get canCloturerCorresp(): boolean {
+    if (!this.correspLoaded) return false;
+    const status = this.correspLoaded.status;
+
+    if (status !== CorrespStatus.IN_PROGRESS) return false;
+
+    // INCOMING : logique actuelle (admin/boc uniquement)
+    if (this.correspLoaded.corresptype === 'INCOMING') {
+      return this.isAdminOrBoc;
+    }
+
+    // OUTGOING / INTERNAL : admin/boc OU ACL write
+    return this.isAdminOrBoc || this.canWriteCorresp || this.canAdminCorresp;
+  }
 
   get taskCompletionPercentage(): number {
     if (!this.tachesAssociees || this.tachesAssociees.length === 0) {
@@ -2263,10 +2335,23 @@ export class CorrespDetailComponent implements OnInit {
   }
 
   soumettreCorresp(correspId: number): void {
-    if (!this.canWriteCorresp) {
-      this.showNotification('Vous n’avez pas le droit de soumettre ce courrier', 'error');
+    if (!this.canSoumettreCorresp) {
+      this.showNotification("Vous n'avez pas le droit de soumettre ce courrier", 'error');
       return;
     }
+
+    // Si OUTGOING + EMAIL => ouvrir le modal preview email avant soumission
+    if (this.correspLoaded?.corresptype === 'OUTGOING' && this.correspLoaded?.dispatchType === 'EMAIL') {
+      this.openEmailSubmitModal(correspId);
+      return;
+    }
+
+    // Sinon soumettre directement
+    this.doSoumettreCorresp(correspId);
+  }
+
+  /** Soumettre sans envoyer email (logique originale) */
+  doSoumettreCorresp(correspId: number): void {
     this.correspService.soumettreCorresp({ correspId }).subscribe({
       next: () => {
         window.location.reload();
@@ -2278,8 +2363,136 @@ export class CorrespDetailComponent implements OnInit {
     });
   }
 
+  /** Ouvre le modal de prévisualisation email avant soumission */
+  openEmailSubmitModal(correspId: number): void {
+    this.showEmailSubmitModal = true;
+    this.isLoadingEmailPreview = true;
+    this.emailPreviewHtml = '';
+    this.emailPreviewError = '';
+    this.sendEmailOnSubmitError = '';
+    this.sendEmailOnSubmitSuccess = false;
+    this.savedEmailMessageId = null;
+
+    // Trouver le modèle approprié (premier modèle disponible ou celui sélectionné)
+    const modelToUse = this.selectedModelNotifForSubmit || this.models[0] || null;
+    if (!modelToUse) {
+      this.emailPreviewError = 'Aucun modèle email disponible. Vous pouvez soumettre sans envoyer.';
+      this.isLoadingEmailPreview = false;
+      return;
+    }
+    this.selectedModelNotifForSubmit = modelToUse;
+
+    const dateFormatted = this.correspLoaded?.courrierDate
+      ? new Date(this.correspLoaded.courrierDate.toString()).toLocaleDateString('fr-FR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        })
+      : '';
+
+    const receiverEmail = this.messageReceiverEmails.join(', ') || this.correspLoaded?.contactEmail || '';
+    const ccEmail = this.messageCopyToEmails.join(', ') || '';
+
+    const request = {
+      modelNotifId: modelToUse.id,
+      receiver: receiverEmail,
+      copyTo: ccEmail,
+      correspBody: this.htmlContent || '',
+      senderFullName: [this.currentUserFirstNameDetail, this.currentUserLastNameDetail].filter(Boolean).join(' '),
+      senderDepartement: this.correspLoaded?.sender || '',
+      senderEmail: this.currentUserEmailDetail || '',
+      correspObjet: this.correspLoaded?.subject || '',
+      correspDate: dateFormatted,
+      correspReference: this.correspLoaded?.reference || null,
+      destinataireLabel: this.correspLoaded?.labelDestinataire || '',
+    };
+
+    this.correspService.previewCorrespEmail(request).subscribe({
+      next: res => {
+        this.emailPreviewHtml = res.html;
+        this.emailPreviewSubject = res.subject;
+        this.emailPreviewFrom = res.from;
+        this.emailPreviewTo = res.to;
+        this.emailPreviewCc = res.cc;
+        this.emailPreviewModelName = res.modelName;
+        this.isLoadingEmailPreview = false;
+      },
+      error: err => {
+        console.error('Erreur preview email', err);
+        this.emailPreviewError = "Impossible de charger l'aperçu. Vous pouvez soumettre sans envoyer.";
+        this.isLoadingEmailPreview = false;
+      },
+    });
+  }
+
+  closeEmailSubmitModal(): void {
+    this.showEmailSubmitModal = false;
+  }
+
+  /** Soumettre sans envoyer l'email */
+  submitWithoutEmail(): void {
+    this.closeEmailSubmitModal();
+    this.doSoumettreCorresp(this.correspLoaded.id);
+  }
+
+  /** Soumettre ET envoyer l'email */
+  submitAndSendEmail(): void {
+    if (this.isSendingEmailOnSubmit) return;
+    this.isSendingEmailOnSubmit = true;
+    this.sendEmailOnSubmitError = '';
+
+    const modelToUse = this.selectedModelNotifForSubmit;
+    if (!modelToUse) {
+      this.isSendingEmailOnSubmit = false;
+      this.doSoumettreCorresp(this.correspLoaded.id);
+      return;
+    }
+
+    const dateFormatted = this.correspLoaded?.courrierDate
+      ? new Date(this.correspLoaded.courrierDate.toString()).toLocaleDateString('fr-FR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        })
+      : '';
+
+    const receiverEmail = this.messageReceiverEmails.join(', ') || this.correspLoaded?.contactEmail || '';
+    const ccEmail = this.messageCopyToEmails.join(', ') || '';
+
+    const request = {
+      correspId: this.correspLoaded.id,
+      modelNotifId: modelToUse.id,
+      receiver: receiverEmail,
+      copyTo: ccEmail,
+      correspBody: this.htmlContent || '',
+      senderFullName: [this.currentUserFirstNameDetail, this.currentUserLastNameDetail].filter(Boolean).join(' '),
+      senderDepartement: this.correspLoaded?.sender || '',
+      senderEmail: this.currentUserEmailDetail || '',
+      correspObjet: this.correspLoaded?.subject || '',
+      correspDate: dateFormatted,
+      correspReference: this.correspLoaded?.reference || null,
+      destinataireLabel: this.correspLoaded?.labelDestinataire || '',
+    };
+
+    // Envoyer l'email directement (saveCopy=false => envoi direct)
+    this.correspService.sendEmailDirect(request).subscribe({
+      next: () => {
+        this.isSendingEmailOnSubmit = false;
+        this.sendEmailOnSubmitSuccess = true;
+        setTimeout(() => {
+          this.closeEmailSubmitModal();
+          this.doSoumettreCorresp(this.correspLoaded.id);
+        }, 1500);
+      },
+      error: err => {
+        this.isSendingEmailOnSubmit = false;
+        this.sendEmailOnSubmitError = err?.error?.error || "Échec de l'envoi email. Vous pouvez soumettre sans envoyer.";
+      },
+    });
+  }
+
   cloturerCorresp(correspId: number): void {
-    if (!(this.canWriteCorresp || this.canAdminCorresp || this.isAdminOrBoc)) {
+    if (!this.canCloturerCorresp) {
       this.showNotification('Vous n’avez pas le droit de clôturer ce courrier', 'error');
       return;
     }

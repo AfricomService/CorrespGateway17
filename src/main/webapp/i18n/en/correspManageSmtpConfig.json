@@ -1,0 +1,42 @@
+{
+  "correspCareApp": {
+    "correspManageSmtpConfig": {
+      "home": {
+        "title": "Smtp Configs",
+        "refreshListLabel": "Refresh list",
+        "createLabel": "Create a new Smtp Config",
+        "createOrEditLabel": "Create or edit a Smtp Config",
+        "notFound": "No Smtp Configs found"
+      },
+      "delete": {
+        "question": "Are you sure you want to delete Smtp Config {{ id }}?"
+      },
+      "detail": {
+        "title": "Smtp Config"
+      },
+      "id": "ID",
+      "name": "Name",
+      "smtpHost": "Smtp Host",
+      "smtpPort": "Smtp Port",
+      "username": "Username",
+      "password": "Password",
+      "useAuth": "Use Auth",
+      "useTls": "Use Tls",
+      "useSsl": "Use Ssl",
+      "fromAddress": "From Address",
+      "fromName": "From Name",
+      "lacalhostName": "Lacalhost Name",
+      "connectionTimeout": "Connection Timeout",
+      "timeout": "Timeout",
+      "active": "Active",
+      "description": "Description"
+    }
+  },
+  "correspManageApp": {
+    "correspManageSmtpConfig": {
+      "created": "A new Smtp Config is created with identifier {{ param }}",
+      "updated": "A Smtp Config is updated with identifier {{ param }}",
+      "deleted": "A Smtp Config is deleted with identifier {{ param }}"
+    }
+  }
+}

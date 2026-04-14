@@ -53,6 +53,7 @@ export interface ICorresp {
   bordereaux?: Pick<IBordereaux, 'id'>[] | null;
   attachments?: Pick<IPj, 'id'>[] | null;
   tasks?: Pick<ITasks, 'id'>[] | null;
+  modelNotifId?: string | null;
 }
 
 export type NewCorresp = Omit<ICorresp, 'id'> & { id: null };

@@ -46,8 +46,6 @@ import { ScanSettingsService } from 'app/entities/correspManage/pj/service/scan-
 import { ModelNotifService } from 'app/entities/configManage/model-notif/service/model-notif.service';
 import { IModelNotif } from 'app/entities/configManage/model-notif/model-notif.model';
 
-import { IMessage, NewMessage } from '../../message/message.model';
-
 interface FileIndexLink {
   index: number;
   uniqueName: string;
@@ -118,7 +116,7 @@ export class CorrespOutUpdateComponent implements OnInit {
   priorite = 'Normal';
   destinataire = '';
   destinataireLabel = '';
-  dispatchType = '';
+  dispatchType = DispatchType.LETTER;
   contactEmail = '';
   contactEmailCC = '';
   contactEmailCCLabel = '';
@@ -157,6 +155,7 @@ export class CorrespOutUpdateComponent implements OnInit {
     pieces: true,
   };
 
+  // Remplacez la déclaration du tableau tasks par :
   tasks: Array<{
     typeTask: string;
     responsable: any;
@@ -164,6 +163,7 @@ export class CorrespOutUpdateComponent implements OnInit {
     responsableName: string;
     commentaire: string;
     autoBoc?: boolean;
+    isMatricule?: boolean; // ← AJOUT : true si responsable = matricule personne
   }> = [];
 
   minDate!: string;
@@ -388,12 +388,12 @@ export class CorrespOutUpdateComponent implements OnInit {
 
     if (id) {
       const company = this.companies.find(c => c.id === id);
-      this.expediteur = company ? company.nom || '' : '';
-      this.destinataireLabel = company ? company.nom || '' : ''; // ← AJOUT
+      // Ne toucher QUE destinataireLabel, jamais expediteur
+      this.destinataireLabel = company ? company.nom || '' : '';
     } else {
       if (!this.showManualExpediteur) {
-        this.expediteur = '';
-        this.destinataireLabel = ''; // ← AJOUT
+        // Ne pas réinitialiser expediteur ici non plus
+        this.destinataireLabel = '';
       }
     }
 
@@ -443,8 +443,8 @@ export class CorrespOutUpdateComponent implements OnInit {
       this.selectedPersonId = null;
       this.loadingPersons = false;
     } else {
-      this.expediteur = '';
-      this.destinataireLabel = ''; // ← AJOUT
+      // Ne pas toucher expediteur — seulement réinitialiser le champ destinataire
+      this.destinataireLabel = '';
       if (!this.companies || this.companies.length === 0) {
         this.loadActiveCompanies();
       }
@@ -690,13 +690,8 @@ export class CorrespOutUpdateComponent implements OnInit {
     this.validationInfoGenErrors = {};
     if (!this.validateInfoGeneralesForm()) return;
 
-    // Si un modèle email est sélectionné → flux preview avant envoi
-    if (this.selectedModelNotif) {
-      this.startSaveAndPreviewFlow();
-    } else {
-      // Flux simple sans email : save → navigate
-      this.startSimpleSaveFlow();
-    }
+    // Toujours flux simple : save → navigate (la logique email est dans corresp-detail)
+    this.startSimpleSaveFlow();
   }
 
   /** Flux 1 : sans modèle email → save direct */
@@ -710,7 +705,23 @@ export class CorrespOutUpdateComponent implements OnInit {
         next: (savedCorresp: any) => {
           this.isSaving = false;
           if (savedCorresp?.id) {
-            this.router.navigate(['/corresp', savedCorresp.id, 'view']);
+            this.tasksService.getAllTasksByCorrespId({ correspId: savedCorresp.id }).subscribe({
+              next: (tasksRes: HttpResponse<ITasks[]>) => {
+                const savedTasks = tasksRes.body || [];
+                const traitementTask = savedTasks.find(t => t.taskType === 'traitement');
+                if (traitementTask && traitementTask.id) {
+                  this.correspService
+                    .changeTaskStatus({ correspId: savedCorresp.id, taskId: traitementTask.id, status: 'IN_PROGRESS' })
+                    .subscribe({
+                      next: () => this.router.navigate(['/corresp', savedCorresp.id, 'view']),
+                      error: () => this.router.navigate(['/corresp', savedCorresp.id, 'view']),
+                    });
+                } else {
+                  this.router.navigate(['/corresp', savedCorresp.id, 'view']);
+                }
+              },
+              error: () => this.router.navigate(['/corresp', savedCorresp.id, 'view']),
+            });
           } else {
             this.router.navigate(['/corresp']);
           }
@@ -736,8 +747,23 @@ export class CorrespOutUpdateComponent implements OnInit {
             return;
           }
           this.savedCorrespId = savedCorresp.id;
-          // Préparer et persister le message email (FreeMarker)
-          this.prepareEmailThenOpenPreview(savedCorresp.id);
+          this.tasksService.getAllTasksByCorrespId({ correspId: savedCorresp.id }).subscribe({
+            next: (tasksRes: HttpResponse<ITasks[]>) => {
+              const savedTasks = tasksRes.body || [];
+              const traitementTask = savedTasks.find(t => t.taskType === 'traitement');
+              if (traitementTask && traitementTask.id) {
+                this.correspService
+                  .changeTaskStatus({ correspId: savedCorresp.id, taskId: traitementTask.id, status: 'IN_PROGRESS' })
+                  .subscribe({
+                    next: () => this.prepareEmailThenOpenPreview(savedCorresp.id),
+                    error: () => this.prepareEmailThenOpenPreview(savedCorresp.id),
+                  });
+              } else {
+                this.prepareEmailThenOpenPreview(savedCorresp.id);
+              }
+            },
+            error: () => this.prepareEmailThenOpenPreview(savedCorresp.id),
+          });
         },
         error: () => {
           this.isSavingAndPreviewing = false;
@@ -746,6 +772,7 @@ export class CorrespOutUpdateComponent implements OnInit {
   }
 
   /** Appelle send-email (prepareAndPersist) puis ouvre la preview */
+  // APRÈS — même logique, juste s'assurer que correspBody = htmlContent (corps brut)
   private prepareEmailThenOpenPreview(correspId: number): void {
     if (!this.selectedModelNotif?.id) {
       this.isSavingAndPreviewing = false;
@@ -754,11 +781,7 @@ export class CorrespOutUpdateComponent implements OnInit {
     }
 
     const dateFormatted = this.date
-      ? new Date(this.date).toLocaleDateString('fr-FR', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-        })
+      ? new Date(this.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
       : '';
 
     const request = {
@@ -766,7 +789,7 @@ export class CorrespOutUpdateComponent implements OnInit {
       modelNotifId: this.selectedModelNotif.id,
       receiver: this.msgReceiver || '',
       copyTo: this.msgCopyTo || '',
-      correspBody: this.htmlContent || '',
+      correspBody: this.htmlContent || '', // ← corps brut, FreeMarker l'encapsule dans le template
       senderFullName: [this.currentUserFirstName, this.currentUserLastName].filter(Boolean).join(' '),
       senderDepartement: this.currentUserDepartementName || this.expediteur || '',
       senderEmail: this.msgSender || this.expediteurEmail || '',
@@ -776,21 +799,29 @@ export class CorrespOutUpdateComponent implements OnInit {
       destinataireLabel: this.destinataireLabel || '',
     };
 
-    // Appelle POST /corresps/send-email (prepareAndPersist, pas d'envoi SMTP ici)
-    this.correspService.prepareCorrespEmail(request).subscribe({
-      next: (res: any) => {
-        this.savedMessageId = res.messageId;
-        this.isSavingAndPreviewing = false;
-        // Ouvrir la preview (appelle backend FreeMarker pour afficher)
-        this.openEmailPreviewForMessage(correspId, request, res.messageId);
-      },
-      error: err => {
-        console.error('Erreur préparation email', err);
-        this.isSavingAndPreviewing = false;
-        // On navigue quand même
-        this.router.navigate(['/corresp', correspId, 'view']);
-      },
-    });
+    // prepareCorrespEmail → backend crée/met à jour le message EMAIL avec FreeMarker
+    const shouldSave = this.selectedModelNotif?.saveCopy === true;
+
+    if (shouldSave) {
+      // saveCopy=true : persister le message en base puis ouvrir preview
+      this.correspService.prepareCorrespEmail(request).subscribe({
+        next: (res: any) => {
+          this.savedMessageId = res.messageId;
+          this.isSavingAndPreviewing = false;
+          this.openEmailPreviewForMessage(correspId, request, res.messageId);
+        },
+        error: err => {
+          console.error('Erreur préparation email', err);
+          this.isSavingAndPreviewing = false;
+          this.router.navigate(['/corresp', correspId, 'view']);
+        },
+      });
+    } else {
+      // saveCopy=false : ouvrir preview sans persister, envoi direct au clic "Envoyer"
+      this.savedMessageId = null;
+      this.isSavingAndPreviewing = false;
+      this.openEmailPreviewForMessage(correspId, request, -1);
+    }
   }
 
   /** Construit this.corresp et this.tasksToSave depuis le formulaire */
@@ -816,18 +847,24 @@ export class CorrespOutUpdateComponent implements OnInit {
     this.tasks.forEach(t => {
       const taskModel: ITasks = {} as ITasks;
       taskModel.responsible = t.responsable;
-      taskModel.dueDate = dayjs(t.dateLimite);
+      taskModel.dueDate = t.dateLimite ? dayjs(t.dateLimite) : undefined;
       taskModel.taskType = t.typeTask;
       taskModel.commentaire = t.commentaire;
+
       if (t.autoBoc) {
         taskModel.responsables = [{ matriculePers: t.responsable }];
-      } else if (t.responsable) {
+      } else if (t.isMatricule) {
+        taskModel.responsables = [{ matriculePers: t.responsable }];
+      } else {
         taskModel.responsables = [{ codeDept: t.responsable }];
       }
+
       this.tasksToSave.push(taskModel);
     });
 
     if (this.generatedReference) this.corresp!.reference = this.generatedReference;
+    // Transmettre l'id du modèle choisi pour conditionner saveCopy côté backend
+    this.corresp!.modelNotifId = this.selectedModelNotif?.id ?? null;
   }
 
   /** Ouvre le modal en appelant l'API preview (affichage FreeMarker rendu) */
@@ -859,26 +896,60 @@ export class CorrespOutUpdateComponent implements OnInit {
 
   /** Appelé par le bouton "Envoyer" dans le modal */
   sendEmail(): void {
-    if (!this.savedMessageId || this.isSendingEmail) return;
-
+    if (this.isSendingEmail) return;
     this.isSendingEmail = true;
     this.sendEmailError = '';
 
-    this.correspService.sendEmailFromMessage(this.savedMessageId, this.previewEmailSubject).subscribe({
-      next: res => {
-        this.isSendingEmail = false;
-        this.sendEmailSuccess = true;
-        // Naviguer vers la vue après 1.5s
-        setTimeout(() => {
-          this.closeEmailPreview();
-          this.router.navigate(['/corresp', this.savedCorrespId, 'view']);
-        }, 1500);
-      },
-      error: err => {
-        this.isSendingEmail = false;
-        this.sendEmailError = err?.error?.error || "Échec de l'envoi. Vérifiez la configuration SMTP.";
-      },
-    });
+    if (this.savedMessageId) {
+      // saveCopy=true : message persisté en base → envoi normal
+      this.correspService.sendEmailFromMessage(this.savedMessageId, this.previewEmailSubject).subscribe({
+        next: () => {
+          this.isSendingEmail = false;
+          this.sendEmailSuccess = true;
+          setTimeout(() => {
+            this.closeEmailPreview();
+            this.router.navigate(['/corresp', this.savedCorrespId, 'view']);
+          }, 1500);
+        },
+        error: err => {
+          this.isSendingEmail = false;
+          this.sendEmailError = err?.error?.error || "Échec de l'envoi. Vérifiez la configuration SMTP.";
+        },
+      });
+    } else {
+      // saveCopy=false : envoi direct sans message persisté
+      const dateFormatted = this.date
+        ? new Date(this.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+        : '';
+      const request = {
+        correspId: this.savedCorrespId!,
+        modelNotifId: this.selectedModelNotif!.id,
+        receiver: this.msgReceiver || '',
+        copyTo: this.msgCopyTo || '',
+        correspBody: this.htmlContent || '',
+        senderFullName: [this.currentUserFirstName, this.currentUserLastName].filter(Boolean).join(' '),
+        senderDepartement: this.currentUserDepartementName || this.expediteur || '',
+        senderEmail: this.msgSender || this.expediteurEmail || '',
+        correspObjet: this.objet || '',
+        correspDate: dateFormatted,
+        correspReference: this.generatedReference || null,
+        destinataireLabel: this.destinataireLabel || '',
+      };
+      this.correspService.sendEmailDirect(request).subscribe({
+        next: () => {
+          this.isSendingEmail = false;
+          this.sendEmailSuccess = true;
+          setTimeout(() => {
+            this.closeEmailPreview();
+            this.router.navigate(['/corresp', this.savedCorrespId, 'view']);
+          }, 1500);
+        },
+        error: err => {
+          this.isSendingEmail = false;
+          this.sendEmailError = err?.error?.error || "Échec de l'envoi direct. Vérifiez la configuration SMTP.";
+        },
+      });
+    }
   }
 
   /** Navigue vers la vue corresp sans envoyer l'email */
@@ -958,8 +1029,14 @@ export class CorrespOutUpdateComponent implements OnInit {
 
     const selections = this.selectedResponsables || [];
     if (selections.length > 0) {
-      const createdItems: Array<{ typeTask: string; responsable: any; dateLimite: string; responsableName: string; commentaire: string }> =
-        [];
+      const createdItems: Array<{
+        typeTask: string;
+        responsable: any;
+        dateLimite: string;
+        responsableName: string;
+        commentaire: string;
+        isMatricule?: boolean;
+      }> = [];
       for (const sel of selections) {
         const codeOrMatricule = sel.matriculePers ? sel.matriculePers : sel.codeDept || '';
         const displayLabel = sel.displayName || codeOrMatricule;
@@ -969,6 +1046,7 @@ export class CorrespOutUpdateComponent implements OnInit {
           dateLimite: this.dateLimite,
           responsableName: displayLabel,
           commentaire: this.commentaire,
+          isMatricule: !!sel.matriculePers,
         });
       }
       if (this.isEditMode && this.editingTaskIndex !== null && createdItems.length === 1) {
@@ -984,6 +1062,7 @@ export class CorrespOutUpdateComponent implements OnInit {
         dateLimite: this.dateLimite,
         responsableName: this.selectedDepartementName || responsibleText,
         commentaire: this.commentaire,
+        isMatricule: false,
       };
       if (this.isEditMode && this.editingTaskIndex !== null) {
         this.tasks[this.editingTaskIndex] = taskData;
