@@ -1596,13 +1596,18 @@ export class CorrespDetailComponent implements OnInit {
 
     if (status !== CorrespStatus.IN_PROGRESS) return false;
 
-    // INCOMING : logique actuelle (admin/boc uniquement)
-    if (this.correspLoaded.corresptype === 'INCOMING') {
-      return this.isAdminOrBoc;
+    // OUTGOING : rien ne change (admin/boc OU ACL write)
+    if (this.correspLoaded.corresptype === 'OUTGOING') {
+      return this.isAdminOrBoc || this.canWriteCorresp || this.canAdminCorresp;
     }
 
-    // OUTGOING / INTERNAL : admin/boc OU ACL write
-    return this.isAdminOrBoc || this.canWriteCorresp || this.canAdminCorresp;
+    // INCOMING et INTERNAL : uniquement le user ayant une tâche TRAITEMENT IN_PROGRESS avec ACL
+    const hasActiveTraitementTask = (this.tachesAssociees || []).some(t => {
+      const tt = (t.taskType || '').toLowerCase();
+      return tt === 'traitement' && t.status === CorrespStatus.IN_PROGRESS && this.userAclTaskIds.has(t.id);
+    });
+
+    return this.canAdminCorresp || hasActiveTraitementTask;
   }
 
   get taskCompletionPercentage(): number {

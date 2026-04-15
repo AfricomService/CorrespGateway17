@@ -1806,8 +1806,8 @@
         </button>
         <button
           (click)="cloturerCorresp(correspLoaded?.id!)"
-          *ngIf="canCloturerCorresp && correspLoaded?.corresptype !== 'OUTGOING'"
-          [disabled]="!(canWriteCorresp || canAdminCorresp || isAdminOrBoc)"
+          *ngIf="canCloturerCorresp"
+          [disabled]="!canCloturerCorresp"
           class="btn btn-danger"
           jhiTranslate="correspCareApp.correspManageCorresp.actions.close"
           style="font-weight: 600; text-transform: uppercase; min-width: 120px"
