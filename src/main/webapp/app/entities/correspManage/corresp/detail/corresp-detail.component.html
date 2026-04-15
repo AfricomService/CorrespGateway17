@@ -1227,7 +1227,8 @@
                           (click)="changeTasksStatus(correspLoaded?.id!, task.id, 'CANCELLED')"
                           *ngIf="
                             CorrespStatus.IN_PROGRESS === task.status &&
-                            (isGlobalAdmin || canAdminCorresp || taskPermissions[task.id]?.canWrite || userAclTaskIds.has(task.id))
+                            (isGlobalAdmin || canAdminCorresp || taskPermissions[task.id]?.canWrite || userAclTaskIds.has(task.id)) &&
+                            !isTaskInCompletionMode(task.id)
                           "
                           [style.background-color]="'#6a2020'"
                           class="badge"
@@ -1242,10 +1243,11 @@
                         </span>
 
                         <span
-                          (click)="changeTasksStatus(correspLoaded?.id!, task.id, 'CLOSED')"
+                          (click)="initiateTaskCompletion(task.id)"
                           *ngIf="
                             CorrespStatus.IN_PROGRESS === task.status &&
-                            (isGlobalAdmin || canAdminCorresp || taskPermissions[task.id]?.canWrite || userAclTaskIds.has(task.id))
+                            (isGlobalAdmin || canAdminCorresp || taskPermissions[task.id]?.canWrite || userAclTaskIds.has(task.id)) &&
+                            !isTaskInCompletionMode(task.id)
                           "
                           [style.background-color]="'#198754'"
                           class="badge"
@@ -1278,6 +1280,85 @@
                         {{ task.commentaire }}
                       </p>
                     </div>
+
+                    <!-- ===== BLOC SAISIE COMMENTAIRE AVANT TERMINER ===== -->
+                    <div
+                      *ngIf="CorrespStatus.IN_PROGRESS === task.status && isTaskInCompletionMode(task.id)"
+                      style="
+                        margin-top: 10px;
+                        padding: 10px;
+                        background: #f0f4ff;
+                        border: 1px solid #c7d7f9;
+                        border-radius: 8px;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 8px;
+                        animation: fadeIn 0.2s ease;
+                      "
+                    >
+                      <!-- Champ texte commentaire -->
+                      <textarea
+                        [value]="getTaskCompletionComment(task.id)"
+                        (input)="setTaskCompletionComment(task.id, $any($event.target).value)"
+                        rows="2"
+                        class="form-control"
+                        style="font-size: 12px; border-radius: 6px; resize: vertical; border-color: #a5b4fc; background: #fff"
+                        placeholder="Ajouter un commentaire de traitement (optionnel)…"
+                      ></textarea>
+
+                      <!-- Boutons d'action -->
+                      <div style="display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; align-items: center">
+                        <!-- Bouton Reset : revenir à l'état avant le clic Terminer -->
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-outline-secondary"
+                          (click)="resetTaskCompletion(task.id)"
+                          style="
+                            font-size: 11px;
+                            font-weight: 600;
+                            border-radius: 6px;
+                            padding: 4px 10px;
+                            display: flex;
+                            align-items: center;
+                            gap: 4px;
+                          "
+                          title="Revenir à l'état précédent"
+                        >
+                          ↩ Annuler
+                        </button>
+
+                        <!-- Bouton Confirmer : label dynamique selon si commentaire saisi ou non -->
+                        <button
+                          type="button"
+                          (click)="confirmTaskCompletion(correspLoaded?.id!, task.id)"
+                          style="
+                            font-size: 11px;
+                            font-weight: 700;
+                            border-radius: 6px;
+                            padding: 4px 14px;
+                            border: none;
+                            cursor: pointer;
+                            display: flex;
+                            align-items: center;
+                            gap: 5px;
+                            color: #fff;
+                            transition: background-color 0.2s ease;
+                          "
+                          [style.background-color]="getTaskCompletionComment(task.id).trim().length > 0 ? '#0d6efd' : '#198754'"
+                          [title]="
+                            getTaskCompletionComment(task.id).trim().length > 0
+                              ? 'Terminer et enregistrer le commentaire de traitement'
+                              : 'Terminer sans commentaire'
+                          "
+                        >
+                          <span>✔</span>
+                          <span>{{
+                            getTaskCompletionComment(task.id).trim().length > 0 ? 'Terminer avec commentaire' : 'Terminer sans commentaire'
+                          }}</span>
+                        </button>
+                      </div>
+                    </div>
+                    <!-- ===== FIN BLOC SAISIE COMMENTAIRE ===== -->
                   </div>
                 </ng-container>
               </div>

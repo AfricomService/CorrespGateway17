@@ -1922,6 +1922,8 @@ export class CorrespDetailComponent implements OnInit {
   }
 
   validationErrors: { [key: string]: string } = {};
+  // State pour le mode "commentaire avant terminer" par tâche
+  taskCompletionState: Map<number, { showComment: boolean; comment: string }> = new Map();
 
   openTasksModal(content: any): void {
     // Bloquer uniquement si aucun droit du tout
@@ -3453,6 +3455,57 @@ export class CorrespDetailComponent implements OnInit {
       if (node.children?.length) {
         this.expandAllFilteredNodes(node.children, expandedSet);
       }
+    }
+  }
+
+  /** Active le mode saisie de commentaire pour une tâche */
+  initiateTaskCompletion(taskId: number): void {
+    this.taskCompletionState.set(taskId, { showComment: true, comment: '' });
+  }
+
+  /** Annule le mode commentaire et revient à l'état précédent */
+  resetTaskCompletion(taskId: number): void {
+    this.taskCompletionState.delete(taskId);
+  }
+
+  /** Vérifie si la tâche est en mode saisie de commentaire */
+  isTaskInCompletionMode(taskId: number): boolean {
+    return this.taskCompletionState.get(taskId)?.showComment === true;
+  }
+
+  /** Retourne le commentaire en cours de saisie */
+  getTaskCompletionComment(taskId: number): string {
+    return this.taskCompletionState.get(taskId)?.comment ?? '';
+  }
+
+  /** Met à jour le commentaire en cours de saisie */
+  setTaskCompletionComment(taskId: number, value: string): void {
+    const existing = this.taskCompletionState.get(taskId);
+    if (existing) {
+      existing.comment = value;
+    }
+  }
+
+  /** Confirme la clôture de la tâche, avec ou sans commentaire */
+  confirmTaskCompletion(correspId: number, taskId: number): void {
+    const comment = this.getTaskCompletionComment(taskId).trim();
+
+    if (comment.length > 0) {
+      // Sauvegarder commentaireTraitement via PATCH puis changer le statut
+      this.taskService.partialUpdate({ id: taskId, commentaireTraitement: comment } as any).subscribe({
+        next: () => {
+          this.resetTaskCompletion(taskId);
+          this.changeTasksStatus(correspId, taskId, 'CLOSED');
+        },
+        error: () => {
+          // En cas d'erreur de sauvegarde du commentaire, on clôture quand même
+          this.resetTaskCompletion(taskId);
+          this.changeTasksStatus(correspId, taskId, 'CLOSED');
+        },
+      });
+    } else {
+      this.resetTaskCompletion(taskId);
+      this.changeTasksStatus(correspId, taskId, 'CLOSED');
     }
   }
 }
