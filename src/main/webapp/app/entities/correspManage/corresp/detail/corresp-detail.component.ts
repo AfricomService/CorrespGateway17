@@ -1924,6 +1924,7 @@ export class CorrespDetailComponent implements OnInit {
   validationErrors: { [key: string]: string } = {};
   // State pour le mode "commentaire avant terminer" par tâche
   taskCompletionState: Map<number, { showComment: boolean; comment: string }> = new Map();
+  taskCancellationState: Map<number, { showComment: boolean; comment: string }> = new Map();
 
   openTasksModal(content: any): void {
     // Bloquer uniquement si aucun droit du tout
@@ -2361,7 +2362,7 @@ export class CorrespDetailComponent implements OnInit {
   doSoumettreCorresp(correspId: number): void {
     this.correspService.soumettreCorresp({ correspId }).subscribe({
       next: () => {
-        window.location.reload();
+        this.router.navigate(['/']);
       },
       error: err => {
         console.error(err);
@@ -3506,6 +3507,55 @@ export class CorrespDetailComponent implements OnInit {
     } else {
       this.resetTaskCompletion(taskId);
       this.changeTasksStatus(correspId, taskId, 'CLOSED');
+    }
+  }
+
+  /** Active le mode saisie de commentaire pour ANNULER une tâche */
+  initiateTaskCancellation(taskId: number): void {
+    this.taskCancellationState.set(taskId, { showComment: true, comment: '' });
+  }
+
+  /** Annule le mode commentaire d'annulation */
+  resetTaskCancellation(taskId: number): void {
+    this.taskCancellationState.delete(taskId);
+  }
+
+  /** Vérifie si la tâche est en mode saisie commentaire d'annulation */
+  isTaskInCancellationMode(taskId: number): boolean {
+    return this.taskCancellationState.get(taskId)?.showComment === true;
+  }
+
+  /** Retourne le commentaire d'annulation en cours de saisie */
+  getTaskCancellationComment(taskId: number): string {
+    return this.taskCancellationState.get(taskId)?.comment ?? '';
+  }
+
+  /** Met à jour le commentaire d'annulation */
+  setTaskCancellationComment(taskId: number, value: string): void {
+    const existing = this.taskCancellationState.get(taskId);
+    if (existing) {
+      existing.comment = value;
+    }
+  }
+
+  /** Confirme l'annulation de la tâche, avec ou sans commentaire */
+  confirmTaskCancellation(correspId: number, taskId: number): void {
+    const comment = this.getTaskCancellationComment(taskId).trim();
+
+    if (comment.length > 0) {
+      this.taskService.partialUpdate({ id: taskId, commentaireTraitement: comment } as any).subscribe({
+        next: () => {
+          this.resetTaskCancellation(taskId);
+          this.changeTasksStatus(correspId, taskId, 'CANCELLED');
+        },
+        error: () => {
+          this.resetTaskCancellation(taskId);
+          this.changeTasksStatus(correspId, taskId, 'CANCELLED');
+        },
+      });
+    } else {
+      this.resetTaskCancellation(taskId);
+      this.changeTasksStatus(correspId, taskId, 'CANCELLED');
     }
   }
 }

@@ -1224,11 +1224,12 @@
                         </span>
 
                         <span
-                          (click)="changeTasksStatus(correspLoaded?.id!, task.id, 'CANCELLED')"
+                          (click)="initiateTaskCancellation(task.id)"
                           *ngIf="
                             CorrespStatus.IN_PROGRESS === task.status &&
                             (isGlobalAdmin || canAdminCorresp || taskPermissions[task.id]?.canWrite || userAclTaskIds.has(task.id)) &&
-                            !isTaskInCompletionMode(task.id)
+                            !isTaskInCompletionMode(task.id) &&
+                            !isTaskInCancellationMode(task.id)
                           "
                           [style.background-color]="'#6a2020'"
                           class="badge"
@@ -1247,7 +1248,8 @@
                           *ngIf="
                             CorrespStatus.IN_PROGRESS === task.status &&
                             (isGlobalAdmin || canAdminCorresp || taskPermissions[task.id]?.canWrite || userAclTaskIds.has(task.id)) &&
-                            !isTaskInCompletionMode(task.id)
+                            !isTaskInCompletionMode(task.id) &&
+                            !isTaskInCancellationMode(task.id)
                           "
                           [style.background-color]="'#198754'"
                           class="badge"
@@ -1278,6 +1280,28 @@
                     <div *ngIf="task.commentaire">
                       <p style="margin: 0; color: #212529; line-height: 1.4; font-size: 0.95em">
                         {{ task.commentaire }}
+                      </p>
+                    </div>
+
+                    <!-- Commentaire de traitement (saisi lors de la clôture ou annulation) -->
+                    <div
+                      *ngIf="task.commentaireTraitement"
+                      style="
+                        margin-top: 6px;
+                        padding: 6px 10px;
+                        background: #f8f9fa;
+                        border-left: 3px solid #6c757d;
+                        border-radius: 4px;
+                        display: flex;
+                        align-items: flex-start;
+                        gap: 6px;
+                      "
+                    >
+                      <span style="font-size: 12px; flex-shrink: 0">
+                        {{ task.status === CorrespStatus.CANCELLED ? '⚠️' : '💬' }}
+                      </span>
+                      <p style="margin: 0; color: #495057; line-height: 1.4; font-size: 0.88em; font-style: italic">
+                        {{ task.commentaireTraitement }}
                       </p>
                     </div>
 
@@ -1359,6 +1383,82 @@
                       </div>
                     </div>
                     <!-- ===== FIN BLOC SAISIE COMMENTAIRE ===== -->
+                    <!-- ===== BLOC SAISIE COMMENTAIRE AVANT ANNULER ===== -->
+                    <div
+                      *ngIf="CorrespStatus.IN_PROGRESS === task.status && isTaskInCancellationMode(task.id)"
+                      style="
+                        margin-top: 10px;
+                        padding: 10px;
+                        background: #fff5f5;
+                        border: 1px solid #f5c2c7;
+                        border-radius: 8px;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 8px;
+                        animation: fadeIn 0.2s ease;
+                      "
+                    >
+                      <div style="font-size: 11px; font-weight: 700; color: #842029; text-transform: uppercase; letter-spacing: 0.5px">
+                        ⚠️ Motif d'annulation
+                      </div>
+
+                      <textarea
+                        [value]="getTaskCancellationComment(task.id)"
+                        (input)="setTaskCancellationComment(task.id, $any($event.target).value)"
+                        rows="2"
+                        class="form-control"
+                        style="font-size: 12px; border-radius: 6px; resize: vertical; border-color: #f5c2c7; background: #fff"
+                        placeholder="Ajouter un motif d'annulation (optionnel)…"
+                      ></textarea>
+
+                      <div style="display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; align-items: center">
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-outline-secondary"
+                          (click)="resetTaskCancellation(task.id)"
+                          style="
+                            font-size: 11px;
+                            font-weight: 600;
+                            border-radius: 6px;
+                            padding: 4px 10px;
+                            display: flex;
+                            align-items: center;
+                            gap: 4px;
+                          "
+                          title="Revenir à l'état précédent"
+                        >
+                          ↩ Retour
+                        </button>
+
+                        <button
+                          type="button"
+                          (click)="confirmTaskCancellation(correspLoaded?.id!, task.id)"
+                          style="
+                            font-size: 11px;
+                            font-weight: 700;
+                            border-radius: 6px;
+                            padding: 4px 14px;
+                            border: none;
+                            cursor: pointer;
+                            display: flex;
+                            align-items: center;
+                            gap: 5px;
+                            color: #fff;
+                            transition: background-color 0.2s ease;
+                          "
+                          [style.background-color]="getTaskCancellationComment(task.id).trim().length > 0 ? '#6a2020' : '#dc3545'"
+                          [title]="
+                            getTaskCancellationComment(task.id).trim().length > 0 ? 'Annuler et enregistrer le motif' : 'Annuler sans motif'
+                          "
+                        >
+                          <span>✕</span>
+                          <span>{{
+                            getTaskCancellationComment(task.id).trim().length > 0 ? 'Annuler avec motif' : 'Annuler sans motif'
+                          }}</span>
+                        </button>
+                      </div>
+                    </div>
+                    <!-- ===== FIN BLOC SAISIE COMMENTAIRE ANNULER ===== -->
                   </div>
                 </ng-container>
               </div>

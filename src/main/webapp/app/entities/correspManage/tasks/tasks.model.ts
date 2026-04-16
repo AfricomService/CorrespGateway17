@@ -22,6 +22,7 @@ export interface ITasks {
   corresps?: Pick<ICorresp, 'id'>[] | null;
   responsables?: ResponsableSelection[] | null;
   canModify?: boolean;
+  commentaireTraitement?: string | null;
 }
 
 export type NewTasks = Omit<ITasks, 'id'> & { id: null };
