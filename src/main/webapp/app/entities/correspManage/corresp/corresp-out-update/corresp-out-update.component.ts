@@ -113,7 +113,7 @@ export class CorrespOutUpdateComponent implements OnInit {
   courrier = '';
   reponseSur = '';
   etape = '';
-  priorite = 'Normal';
+  priorite: boolean = false;
   destinataire = '';
   destinataireLabel = '';
   dispatchType = DispatchType.LETTER;
@@ -839,7 +839,7 @@ export class CorrespOutUpdateComponent implements OnInit {
     this.corresp!.contactCopies = this.selectedCcDepts.length > 0 ? [...this.selectedCcDepts] : null;
     this.corresp!.responseTo = this.reponseSur;
     this.corresp!.senderReference = this.referenceEmetteur;
-    this.corresp!.priority = this.priorite === 'Prioritaire';
+    this.corresp!.priority = this.priorite === true || (this.priorite as any) === 'Prioritaire';
     this.corresp!.body = this.htmlContent;
     this.corresp!.dispatchType = (this.dispatchType as DispatchType) || DispatchType.LETTER;
     this.corresp!.corresptype = CorrespType.OUTGOING;
