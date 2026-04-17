@@ -1450,6 +1450,9 @@ export class CorrespDetailComponent implements OnInit {
       dispatchType: this.correspLoaded.dispatchType || 'NORMAL',
       labelDestinataire: this.destinataireLabel || '',
       labelContactCC: this.contactEmailCCLabel || '',
+      msgSender: this.currentUserEmailDetail || '',
+      msgReceiver: this.messageReceiverEmails.join(', ') || this.draftEmailReceiver || '',
+      msgCopyTo: this.messageCopyToEmails.join(', ') || this.draftEmailCopyTo || '',
     };
 
     const typeDocumentDTO = this.selectedTypeDocument!;
@@ -3308,14 +3311,11 @@ export class CorrespDetailComponent implements OnInit {
     );
   }
 
+  // NOUVEAU — ajouter à la fin, avant modalRef.close()
   confirmCcSelection(modalRef: any): void {
     this.updateCcLabelsFromSelection();
 
-    // Resynchroniser les pendingTasks lecture avec la sélection CC actuelle
-    // Supprimer toutes les tâches lecture existantes
     this.pendingTasks = this.pendingTasks.filter(t => t.typeTask !== 'lecture');
-
-    // Recréer une tâche lecture par département CC sélectionné
     for (const cc of this.selectedCcDepts) {
       this.pendingTasks.push({
         typeTask: 'lecture',
@@ -3324,6 +3324,19 @@ export class CorrespDetailComponent implements OnInit {
         responsableName: cc.nomDept ?? cc.codeDept ?? '',
         commentaire: '',
       });
+    }
+
+    // Mettre à jour msgCopyTo avec les emails des départements CC
+    const ccEmails = this.selectedCcDepts
+      .map(d => d.emailDept || '')
+      .filter(Boolean)
+      .join(', ');
+    if (ccEmails) {
+      this.draftEmailCopyTo = ccEmails;
+      this.messageCopyToEmails = ccEmails
+        .split(',')
+        .map(e => e.trim())
+        .filter(Boolean);
     }
 
     modalRef.close();

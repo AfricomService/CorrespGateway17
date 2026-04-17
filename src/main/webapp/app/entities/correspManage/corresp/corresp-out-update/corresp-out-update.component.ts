@@ -845,8 +845,8 @@ export class CorrespOutUpdateComponent implements OnInit {
     this.corresp!.priority = this.priorite === true || (this.priorite as any) === 'Prioritaire';
     this.corresp!.body = this.htmlContent;
     // Stocker receiver et copyTo pour la persistance en base
-    //(this.corresp as any).msgReceiver = this.msgReceiver || '';
-    //(this.corresp as any).msgCopyTo = this.msgCopyTo || '';
+    (this.corresp as any).msgReceiver = this.msgReceiver || '';
+    (this.corresp as any).msgCopyTo = this.msgCopyTo || '';
     this.corresp!.dispatchType = (this.dispatchType as DispatchType) || DispatchType.LETTER;
     this.corresp!.corresptype = CorrespType.OUTGOING;
 
@@ -871,6 +871,7 @@ export class CorrespOutUpdateComponent implements OnInit {
     if (this.generatedReference) this.corresp!.reference = this.generatedReference;
     // Transmettre l'id du modèle choisi pour conditionner saveCopy côté backend
     this.corresp!.modelNotifId = this.selectedModelNotif?.id ?? null;
+    (this.corresp as any).msgSender = this.msgSender || this.expediteurEmail || '';
   }
 
   /** Ouvre le modal en appelant l'API preview (affichage FreeMarker rendu) */
