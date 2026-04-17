@@ -276,6 +276,10 @@ export class CorrespDetailComponent implements OnInit {
   currentUserLastNameDetail: string = '';
   currentUserDepartementNameDetail: string = '';
   currentUserEmailDetail: string = '';
+  /** Champs éditables À et CC si aucun email en base (mode DRAFT OUTGOING) */
+  draftEmailReceiver: string = '';
+  draftEmailCopyTo: string = '';
+  loadingModels = false;
 
   /**
    * Vrai si la correspondance est dans un état qui rend la partie gauche
@@ -521,6 +525,9 @@ export class CorrespDetailComponent implements OnInit {
           );
           this.messageReceiverEmails = this.extractEmails(msg.receiver);
           this.messageCopyToEmails = this.extractEmails(msg.copyTo);
+          // Pré-remplir les champs éditables depuis la base
+          this.draftEmailReceiver = this.messageReceiverEmails.join(', ');
+          this.draftEmailCopyTo = this.messageCopyToEmails.join(', ');
           console.log('[CorrespDetail] Emails extraits — receiver:', this.messageReceiverEmails, '| copyTo:', this.messageCopyToEmails);
         } else {
           console.warn('[CorrespDetail] Aucun message trouvé pour correspId:', id);
