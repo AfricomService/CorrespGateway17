@@ -276,6 +276,10 @@ export class CorrespDetailComponent implements OnInit {
   currentUserLastNameDetail: string = '';
   currentUserDepartementNameDetail: string = '';
   currentUserEmailDetail: string = '';
+  /** Champs éditables À et CC si aucun email en base (mode DRAFT OUTGOING) */
+  draftEmailReceiver: string = '';
+  draftEmailCopyTo: string = '';
+  loadingModels = false;
 
   /**
    * Vrai si la correspondance est dans un état qui rend la partie gauche
@@ -521,6 +525,9 @@ export class CorrespDetailComponent implements OnInit {
           );
           this.messageReceiverEmails = this.extractEmails(msg.receiver);
           this.messageCopyToEmails = this.extractEmails(msg.copyTo);
+          // Pré-remplir les champs éditables depuis la base
+          this.draftEmailReceiver = this.messageReceiverEmails.join(', ');
+          this.draftEmailCopyTo = this.messageCopyToEmails.join(', ');
           console.log('[CorrespDetail] Emails extraits — receiver:', this.messageReceiverEmails, '| copyTo:', this.messageCopyToEmails);
         } else {
           console.warn('[CorrespDetail] Aucun message trouvé pour correspId:', id);
@@ -1443,6 +1450,9 @@ export class CorrespDetailComponent implements OnInit {
       dispatchType: this.correspLoaded.dispatchType || 'NORMAL',
       labelDestinataire: this.destinataireLabel || '',
       labelContactCC: this.contactEmailCCLabel || '',
+      msgSender: this.currentUserEmailDetail || '',
+      msgReceiver: this.messageReceiverEmails.join(', ') || this.draftEmailReceiver || '',
+      msgCopyTo: this.messageCopyToEmails.join(', ') || this.draftEmailCopyTo || '',
     };
 
     const typeDocumentDTO = this.selectedTypeDocument!;
@@ -1596,13 +1606,18 @@ export class CorrespDetailComponent implements OnInit {
 
     if (status !== CorrespStatus.IN_PROGRESS) return false;
 
-    // INCOMING : logique actuelle (admin/boc uniquement)
-    if (this.correspLoaded.corresptype === 'INCOMING') {
-      return this.isAdminOrBoc;
+    // OUTGOING : rien ne change (admin/boc OU ACL write)
+    if (this.correspLoaded.corresptype === 'OUTGOING') {
+      return this.isAdminOrBoc || this.canWriteCorresp || this.canAdminCorresp;
     }
 
-    // OUTGOING / INTERNAL : admin/boc OU ACL write
-    return this.isAdminOrBoc || this.canWriteCorresp || this.canAdminCorresp;
+    // INCOMING et INTERNAL : uniquement le user ayant une tâche TRAITEMENT IN_PROGRESS avec ACL
+    const hasActiveTraitementTask = (this.tachesAssociees || []).some(t => {
+      const tt = (t.taskType || '').toLowerCase();
+      return tt === 'traitement' && t.status === CorrespStatus.IN_PROGRESS && this.userAclTaskIds.has(t.id);
+    });
+
+    return this.canAdminCorresp || hasActiveTraitementTask;
   }
 
   get taskCompletionPercentage(): number {
@@ -1917,6 +1932,9 @@ export class CorrespDetailComponent implements OnInit {
   }
 
   validationErrors: { [key: string]: string } = {};
+  // State pour le mode "commentaire avant terminer" par tâche
+  taskCompletionState: Map<number, { showComment: boolean; comment: string }> = new Map();
+  taskCancellationState: Map<number, { showComment: boolean; comment: string }> = new Map();
 
   openTasksModal(content: any): void {
     // Bloquer uniquement si aucun droit du tout
@@ -2354,7 +2372,7 @@ export class CorrespDetailComponent implements OnInit {
   doSoumettreCorresp(correspId: number): void {
     this.correspService.soumettreCorresp({ correspId }).subscribe({
       next: () => {
-        window.location.reload();
+        this.router.navigate(['/']);
       },
       error: err => {
         console.error(err);
@@ -3293,14 +3311,11 @@ export class CorrespDetailComponent implements OnInit {
     );
   }
 
+  // NOUVEAU — ajouter à la fin, avant modalRef.close()
   confirmCcSelection(modalRef: any): void {
     this.updateCcLabelsFromSelection();
 
-    // Resynchroniser les pendingTasks lecture avec la sélection CC actuelle
-    // Supprimer toutes les tâches lecture existantes
     this.pendingTasks = this.pendingTasks.filter(t => t.typeTask !== 'lecture');
-
-    // Recréer une tâche lecture par département CC sélectionné
     for (const cc of this.selectedCcDepts) {
       this.pendingTasks.push({
         typeTask: 'lecture',
@@ -3309,6 +3324,19 @@ export class CorrespDetailComponent implements OnInit {
         responsableName: cc.nomDept ?? cc.codeDept ?? '',
         commentaire: '',
       });
+    }
+
+    // Mettre à jour msgCopyTo avec les emails des départements CC
+    const ccEmails = this.selectedCcDepts
+      .map(d => d.emailDept || '')
+      .filter(Boolean)
+      .join(', ');
+    if (ccEmails) {
+      this.draftEmailCopyTo = ccEmails;
+      this.messageCopyToEmails = ccEmails
+        .split(',')
+        .map(e => e.trim())
+        .filter(Boolean);
     }
 
     modalRef.close();
@@ -3448,6 +3476,106 @@ export class CorrespDetailComponent implements OnInit {
       if (node.children?.length) {
         this.expandAllFilteredNodes(node.children, expandedSet);
       }
+    }
+  }
+
+  /** Active le mode saisie de commentaire pour une tâche */
+  initiateTaskCompletion(taskId: number): void {
+    this.taskCompletionState.set(taskId, { showComment: true, comment: '' });
+  }
+
+  /** Annule le mode commentaire et revient à l'état précédent */
+  resetTaskCompletion(taskId: number): void {
+    this.taskCompletionState.delete(taskId);
+  }
+
+  /** Vérifie si la tâche est en mode saisie de commentaire */
+  isTaskInCompletionMode(taskId: number): boolean {
+    return this.taskCompletionState.get(taskId)?.showComment === true;
+  }
+
+  /** Retourne le commentaire en cours de saisie */
+  getTaskCompletionComment(taskId: number): string {
+    return this.taskCompletionState.get(taskId)?.comment ?? '';
+  }
+
+  /** Met à jour le commentaire en cours de saisie */
+  setTaskCompletionComment(taskId: number, value: string): void {
+    const existing = this.taskCompletionState.get(taskId);
+    if (existing) {
+      existing.comment = value;
+    }
+  }
+
+  /** Confirme la clôture de la tâche, avec ou sans commentaire */
+  confirmTaskCompletion(correspId: number, taskId: number): void {
+    const comment = this.getTaskCompletionComment(taskId).trim();
+
+    if (comment.length > 0) {
+      // Sauvegarder commentaireTraitement via PATCH puis changer le statut
+      this.taskService.partialUpdate({ id: taskId, commentaireTraitement: comment } as any).subscribe({
+        next: () => {
+          this.resetTaskCompletion(taskId);
+          this.changeTasksStatus(correspId, taskId, 'CLOSED');
+        },
+        error: () => {
+          // En cas d'erreur de sauvegarde du commentaire, on clôture quand même
+          this.resetTaskCompletion(taskId);
+          this.changeTasksStatus(correspId, taskId, 'CLOSED');
+        },
+      });
+    } else {
+      this.resetTaskCompletion(taskId);
+      this.changeTasksStatus(correspId, taskId, 'CLOSED');
+    }
+  }
+
+  /** Active le mode saisie de commentaire pour ANNULER une tâche */
+  initiateTaskCancellation(taskId: number): void {
+    this.taskCancellationState.set(taskId, { showComment: true, comment: '' });
+  }
+
+  /** Annule le mode commentaire d'annulation */
+  resetTaskCancellation(taskId: number): void {
+    this.taskCancellationState.delete(taskId);
+  }
+
+  /** Vérifie si la tâche est en mode saisie commentaire d'annulation */
+  isTaskInCancellationMode(taskId: number): boolean {
+    return this.taskCancellationState.get(taskId)?.showComment === true;
+  }
+
+  /** Retourne le commentaire d'annulation en cours de saisie */
+  getTaskCancellationComment(taskId: number): string {
+    return this.taskCancellationState.get(taskId)?.comment ?? '';
+  }
+
+  /** Met à jour le commentaire d'annulation */
+  setTaskCancellationComment(taskId: number, value: string): void {
+    const existing = this.taskCancellationState.get(taskId);
+    if (existing) {
+      existing.comment = value;
+    }
+  }
+
+  /** Confirme l'annulation de la tâche, avec ou sans commentaire */
+  confirmTaskCancellation(correspId: number, taskId: number): void {
+    const comment = this.getTaskCancellationComment(taskId).trim();
+
+    if (comment.length > 0) {
+      this.taskService.partialUpdate({ id: taskId, commentaireTraitement: comment } as any).subscribe({
+        next: () => {
+          this.resetTaskCancellation(taskId);
+          this.changeTasksStatus(correspId, taskId, 'CANCELLED');
+        },
+        error: () => {
+          this.resetTaskCancellation(taskId);
+          this.changeTasksStatus(correspId, taskId, 'CANCELLED');
+        },
+      });
+    } else {
+      this.resetTaskCancellation(taskId);
+      this.changeTasksStatus(correspId, taskId, 'CANCELLED');
     }
   }
 }

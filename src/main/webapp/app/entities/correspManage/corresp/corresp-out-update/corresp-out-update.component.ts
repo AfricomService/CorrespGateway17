@@ -113,7 +113,7 @@ export class CorrespOutUpdateComponent implements OnInit {
   courrier = '';
   reponseSur = '';
   etape = '';
-  priorite = 'Normal';
+  priorite: boolean = false;
   destinataire = '';
   destinataireLabel = '';
   dispatchType = DispatchType.LETTER;
@@ -385,11 +385,13 @@ export class CorrespOutUpdateComponent implements OnInit {
     this.selectedPersonId = null;
     this.contactEmail = '';
     this.contactEmailLabel = '';
+    //destinataireEmail: string = ''; // email de la société externe sélectionnée
 
     if (id) {
       const company = this.companies.find(c => c.id === id);
       // Ne toucher QUE destinataireLabel, jamais expediteur
       this.destinataireLabel = company ? company.nom || '' : '';
+      //this.destinataireEmail = company ? company.email || '' : '';
     } else {
       if (!this.showManualExpediteur) {
         // Ne pas réinitialiser expediteur ici non plus
@@ -833,14 +835,18 @@ export class CorrespOutUpdateComponent implements OnInit {
     this.corresp!.subject = this.objet;
     this.corresp!.sender = this.expediteur;
     this.corresp!.contact = this.destinataire;
+    //this.corresp!.contactEmail = this.destinataireEmail || this.contactEmail;
     this.corresp!.labelDestinataire = this.destinataireLabel;
     this.corresp!.contactEmail = this.contactEmail;
     this.corresp!.labelContactCC = this.contactEmailCCLabel;
     this.corresp!.contactCopies = this.selectedCcDepts.length > 0 ? [...this.selectedCcDepts] : null;
     this.corresp!.responseTo = this.reponseSur;
     this.corresp!.senderReference = this.referenceEmetteur;
-    this.corresp!.priority = this.priorite === 'Prioritaire';
+    this.corresp!.priority = this.priorite === true || (this.priorite as any) === 'Prioritaire';
     this.corresp!.body = this.htmlContent;
+    // Stocker receiver et copyTo pour la persistance en base
+    (this.corresp as any).msgReceiver = this.msgReceiver || '';
+    (this.corresp as any).msgCopyTo = this.msgCopyTo || '';
     this.corresp!.dispatchType = (this.dispatchType as DispatchType) || DispatchType.LETTER;
     this.corresp!.corresptype = CorrespType.OUTGOING;
 
@@ -865,6 +871,7 @@ export class CorrespOutUpdateComponent implements OnInit {
     if (this.generatedReference) this.corresp!.reference = this.generatedReference;
     // Transmettre l'id du modèle choisi pour conditionner saveCopy côté backend
     this.corresp!.modelNotifId = this.selectedModelNotif?.id ?? null;
+    (this.corresp as any).msgSender = this.msgSender || this.expediteurEmail || '';
   }
 
   /** Ouvre le modal en appelant l'API preview (affichage FreeMarker rendu) */
