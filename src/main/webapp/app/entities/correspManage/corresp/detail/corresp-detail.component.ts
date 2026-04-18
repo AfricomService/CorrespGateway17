@@ -1627,7 +1627,9 @@ export class CorrespDetailComponent implements OnInit {
 
     // Pour les utilisateurs non-admin/BOC, exclure les tâches DRAFT du calcul
     const baseTasks =
-      this.isAdminOrBoc || this.isGlobalAdmin ? this.tachesAssociees : this.tachesAssociees.filter(t => t.status !== CorrespStatus.DRAFT);
+      this.isAdminOrBoc || this.isGlobalAdmin || this.correspLoaded?.corresptype === 'OUTGOING'
+        ? this.tachesAssociees
+        : this.tachesAssociees.filter(t => t.status !== CorrespStatus.DRAFT);
 
     const activeTasks = baseTasks.filter(t => t.status !== CorrespStatus.CANCELLED);
     if (activeTasks.length === 0) {
@@ -3429,7 +3431,9 @@ export class CorrespDetailComponent implements OnInit {
   }
 
   get visibleTasksCount(): number {
-    return (this.tachesAssociees || []).filter(t => t.status !== CorrespStatus.DRAFT || this.isAdminOrBoc || this.isGlobalAdmin).length;
+    return (this.tachesAssociees || []).filter(
+      t => t.status !== CorrespStatus.DRAFT || this.isAdminOrBoc || this.isGlobalAdmin || this.correspLoaded?.corresptype === 'OUTGOING'
+    ).length;
   }
 
   get isReadOnlyAclUser(): boolean {
