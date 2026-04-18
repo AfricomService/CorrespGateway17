@@ -1139,7 +1139,9 @@
               >
                 <ng-container *ngFor="let task of tachesAssociees">
                   <div
-                    *ngIf="task.status !== CorrespStatus.DRAFT || isAdminOrBoc || isGlobalAdmin"
+                    *ngIf="
+                      task.status !== CorrespStatus.DRAFT || isAdminOrBoc || isGlobalAdmin || correspLoaded?.corresptype === 'OUTGOING'
+                    "
                     [attr.id]="'task-' + task.id"
                     [style.background-color]="getTaskTypeBg(task.taskType)"
                     [style.border-left]="'5px solid ' + getTaskColor(task.status)"
