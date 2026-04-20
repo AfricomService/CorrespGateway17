@@ -71,6 +71,11 @@ export interface PagedReferenceResponse {
   hasPrevious: boolean;
 }
 
+export interface SocieteItem {
+  id: number;
+  raisonSociale: string;
+}
+
 export type RestCorresp = RestOf<ICorresp>;
 
 export type NewRestCorresp = RestOf<NewCorresp>;
@@ -634,5 +639,11 @@ export class CorrespService {
         return of(new HttpResponse<IMessage[]>({ body: [] }));
       })
     );
+  }
+
+  getMySocietes(): Observable<SocieteItem[]> {
+    return this.http
+      .get<SocieteItem[]>(`${this.applicationConfigService.getEndpointFor('api/corresps/my-societes', 'correspmanage')}`)
+      .pipe(catchError(() => of([])));
   }
 }
