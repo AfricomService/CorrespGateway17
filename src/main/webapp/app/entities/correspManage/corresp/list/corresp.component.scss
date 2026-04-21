@@ -1,4 +1,11 @@
 /* Target accordion item titles */
+:host {
+  --brand-primary: #1e40af;
+  --brand-light: #3b82f6;
+  --brand-bg: #eff6ff;
+  --brand-border: #bfdbfe;
+}
+
 .custom-accordion .dx-accordion-item .dx-accordion-item-title {
   background-color: #f0f0f0; /* Light gray background */
   font-weight: 700; /* Thicker font */
@@ -26,7 +33,7 @@
 }
 
 .filter-chip {
-  background: #2c3e50;
+  background: var(--brand-primary);
   border: 1px solid #ccc;
   color: white;
   font-weight: bold;
@@ -82,8 +89,8 @@ modal-body {
 }
 
 .search-card.selected {
-  border-color: #2c3e50; /* dark slate */
-  background: #2c3e50;
+  border-color: var(--brand-primary); /* dark slate */
+  background: var(--brand-primary);
   color: #ecf0f1; /* make text readable on dark background */
 }
 
@@ -117,8 +124,8 @@ modal-body {
 /* Default inverted colors */
 .filter-chip-custom-filter {
   background: white;
-  color: #2c3e50;
-  border: 1px solid #2c3e50;
+  color: var(--brand-primary);
+  border: 1px solid var(--brand-primary);
   font-weight: bold;
   border-radius: 16px;
   padding: 0.4em 0.8em;
@@ -131,7 +138,7 @@ modal-body {
 
 /* Active (clicked) state → original dark style */
 .filter-chip-custom-filter.active-custom-filter {
-  background: #2c3e50;
+  background: var(--brand-primary);
   color: white;
   border: 1px solid #ccc;
 }
@@ -177,7 +184,7 @@ modal-body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #2c3e50;
+  background: var(--brand-primary);
   color: white;
   padding: 0.75em 1em;
 }
@@ -227,4 +234,42 @@ modal-body {
   padding: 0;
   margin: 0;
   border: none;
+}
+
+.quick-search-bar {
+  margin-bottom: 1rem;
+  .input-group {
+    max-width: 700px;
+  }
+}
+
+.btn-outline-filter {
+  border: 1px solid var(--brand-primary);
+  color: var(--brand-primary);
+  background: white;
+  border-radius: 8px;
+  padding: 0.45em 1em;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+
+  &:hover,
+  &.active {
+    background: var(--brand-primary);
+    color: white;
+  }
+}
+
+.filter-header {
+  background: linear-gradient(90deg, #3b82f6, #1e40af); // ← même gradient que navbar
+  color: white;
+  padding: 0.75em 1em;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 8px 8px 0 0;
 }
