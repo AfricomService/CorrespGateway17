@@ -16,6 +16,7 @@ import {
 } from 'devextreme-angular';
 import { FilePreviewComponent } from '../pj/file-preview/file-preview.component';
 import { CorrespOutUpdateComponent } from './corresp-out-update/corresp-out-update.component';
+import { CorrespDetailOutgoingComponent } from './corresp-detail-outgoing/corresp-detail-outgoing.component';
 
 @NgModule({
   imports: [
@@ -30,6 +31,13 @@ import { CorrespOutUpdateComponent } from './corresp-out-update/corresp-out-upda
     DxButtonModule,
     DxSelectBoxModule,
   ],
-  declarations: [CorrespComponent, CorrespDetailComponent, CorrespUpdateComponent, CorrespDeleteDialogComponent, CorrespOutUpdateComponent],
+  declarations: [
+    CorrespComponent,
+    CorrespDetailComponent,
+    CorrespUpdateComponent,
+    CorrespDeleteDialogComponent,
+    CorrespOutUpdateComponent,
+    CorrespDetailOutgoingComponent,
+  ],
 })
 export class CorrespManageCorrespModule {}
