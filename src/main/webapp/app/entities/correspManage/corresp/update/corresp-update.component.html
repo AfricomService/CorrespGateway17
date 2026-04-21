@@ -135,6 +135,49 @@
               [style.padding]="accordionStates['infoGen'] ? '16px' : '0 16px'"
             >
               <form>
+                <!-- ===== SOCIÉTÉ ===== -->
+                <div style="margin-bottom: 1.5em; padding-bottom: 1.5em; border-bottom: 1px dashed #5570a3">
+                  <!-- Chargement -->
+                  <div *ngIf="loadingSocietes" style="color: #6c757d; font-size: 13px">
+                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                    Chargement des sociétés...
+                  </div>
+
+                  <!-- Aucune société -->
+                  <div *ngIf="!loadingSocietes && mySocietes.length === 0" style="color: #6c757d; font-style: italic; font-size: 13px">
+                    Aucune société associée à votre compte.
+                  </div>
+
+                  <!-- Une seule société → champ read-only -->
+                  <div *ngIf="!loadingSocietes && mySocietes.length === 1">
+                    <label class="form-label fw-semibold">Société</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      [value]="mySocietes[0].raisonSociale"
+                      disabled
+                      style="background-color: #f8f9fa; cursor: default"
+                    />
+                  </div>
+
+                  <!-- Plusieurs sociétés → liste déroulante obligatoire -->
+                  <div *ngIf="!loadingSocietes && mySocietes.length > 1">
+                    <label class="form-label fw-semibold"> Société <span class="text-danger">*</span> </label>
+                    <select
+                      class="form-select"
+                      [(ngModel)]="selectedSociete"
+                      name="selectedSociete"
+                      [compareWith]="compareSociete"
+                      required
+                    >
+                      <option [ngValue]="null">-- Sélectionner une société --</option>
+                      <option *ngFor="let s of mySocietes" [ngValue]="s">
+                        {{ s.raisonSociale }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+                <!-- ===== FIN SOCIÉTÉ ===== -->
                 <div style="padding-bottom: 1.5em; display: flex; gap: 12px; border-bottom: 1px dashed #5570a3">
                   <div style="flex: 1">
                     <label class="form-label fw-semibold"

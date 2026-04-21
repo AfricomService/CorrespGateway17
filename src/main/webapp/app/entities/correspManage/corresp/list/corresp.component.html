@@ -1,13 +1,31 @@
 <div>
   <h3 class="title">Consultation des Correspondances</h3>
 
-  <div class="filter-panel-container">
-    <div class="filter-header" (click)="togglePanel()">
-      <h5 style="margin: 0; font-weight: bold; font-style: italic; text-transform: uppercase">Filtres</h5>
-      <span [class.open]="isOpen" class="arrow">
-        <i class="arrow" [style.transform]="isOpen ? 'rotate(180deg)' : 'rotate(0deg)'">&#9660;</i>
+  <!-- Barre de recherche rapide -->
+  <div class="quick-search-bar">
+    <div class="input-group">
+      <span class="input-group-text">
+        <i class="fas fa-search"></i>
       </span>
+      <input
+        type="text"
+        class="form-control"
+        [(ngModel)]="quickSearch"
+        placeholder="Rechercher par référence, sujet ou expéditeur..."
+        (keyup.enter)="onQuickSearch()"
+        (input)="quickSearch.trim() === '' && clearQuickSearch()"
+      />
+      <button class="btn btn-primary" (click)="onQuickSearch()" [disabled]="!quickSearch.trim()">Rechercher</button>
+      <button *ngIf="isSearching" class="btn btn-outline-secondary" (click)="clearQuickSearch()">✕ Effacer</button>
     </div>
+  </div>
+
+  <div class="filter-panel-container">
+    <!-- Dans la quick-search-bar, ajoutez avant le bouton Rechercher : -->
+    <button class="btn btn-outline-filter" [class.active]="isOpen" (click)="togglePanel()">
+      <i class="fas fa-filter"></i>
+      Filtres avancés
+    </button>
 
     <div class="filter-content" [class.open]="isOpen">
       <div class="filter-panel">
@@ -134,15 +152,15 @@
   >
     <dxo-paging [enabled]="true" [pageSize]="15"></dxo-paging>
 
-    <dxi-column dataField="reference" caption="Reference"></dxi-column>
-    <dxi-column dataField="subject" caption="Subject"></dxi-column>
-    <dxi-column dataField="courrierDate" caption="Courrier Date" dataType="date"></dxi-column>
-    <dxi-column dataField="status" caption="Status"></dxi-column>
-    <dxi-column dataField="step" caption="Step"></dxi-column>
-    <dxi-column dataField="dispatchType" caption="Dispatch Type"></dxi-column>
+    <dxi-column dataField="reference" caption="Référence"></dxi-column>
+    <dxi-column dataField="corresptype" caption="Type"></dxi-column>
+    <dxi-column dataField="courrierDate" caption="Date courrier" dataType="date"></dxi-column>
+    <dxi-column dataField="msgSender" caption="Expéditeur"></dxi-column>
+    <dxi-column dataField="msgReceiver" caption="Destinataire(s)"></dxi-column>
+    <dxi-column dataField="status" caption="Statut"></dxi-column>
 
-    <dxi-column caption="Priorité" alignment="center" [fixed]="true" fixedPosition="right" cellTemplate="ActionTemplate">
-      <div *dxTemplate="let d of 'ActionTemplate'">
+    <dxi-column caption="Priorité" alignment="center" [fixed]="true" fixedPosition="right" cellTemplate="PrioriteTemplate">
+      <div *dxTemplate="let d of 'PrioriteTemplate'">
         <span *ngIf="d.data.priority" style="color: red; font-weight: bold">🚨</span>
       </div>
     </dxi-column>

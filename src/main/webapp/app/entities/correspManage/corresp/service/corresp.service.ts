@@ -71,6 +71,34 @@ export interface PagedReferenceResponse {
   hasPrevious: boolean;
 }
 
+export interface SocieteItem {
+  id: number;
+  raisonSociale: string;
+}
+
+// Nouveau DTO de liste
+export interface CorrespListItemDTO {
+  id: number;
+  reference?: string | null;
+  corresptype?: string | null;
+  courrierDate?: string | null;
+  subject?: string | null;
+  status?: string | null;
+  priority?: boolean | null;
+  msgSender?: string | null;
+  msgReceiver?: string | null;
+}
+
+export interface PagedCorrespListResponse {
+  content: CorrespListItemDTO[];
+  currentPage: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+}
+
 export type RestCorresp = RestOf<ICorresp>;
 
 export type NewRestCorresp = RestOf<NewCorresp>;
@@ -634,5 +662,79 @@ export class CorrespService {
         return of(new HttpResponse<IMessage[]>({ body: [] }));
       })
     );
+  }
+
+  getMySocietes(): Observable<SocieteItem[]> {
+    return this.http
+      .get<SocieteItem[]>(`${this.applicationConfigService.getEndpointFor('api/corresps/my-societes', 'correspmanage')}`)
+      .pipe(catchError(() => of([])));
+  }
+
+  searchCorresps(userId: number, q: string = '', page: number = 1, size: number = 15): Observable<PagedCorrespResponse> {
+    const params = createRequestOption({ userId, q, page, size });
+    return this.http.get<any>(`${this.applicationConfigService.getEndpointFor('api/corresps/search', 'correspmanage')}`, { params }).pipe(
+      map(response => ({
+        content: (response.content ?? []).map((item: RestCorresp) => this.convertDateFromServer(item)),
+        currentPage: response.currentPage,
+        pageSize: response.pageSize,
+        totalItems: response.totalItems,
+        totalPages: response.totalPages,
+        hasNext: response.hasNext,
+        hasPrevious: response.hasPrevious,
+      })),
+      catchError(() =>
+        of({
+          content: [],
+          currentPage: page,
+          pageSize: size,
+          totalItems: 0,
+          totalPages: 0,
+          hasNext: false,
+          hasPrevious: false,
+        })
+      )
+    );
+  }
+
+  // Méthode Admin/BOC
+  getCorrespList(
+    userId: number,
+    page: number = 1,
+    size: number = 15,
+    q: string = '',
+    filters?: { reference?: string; status?: string; dispatchType?: string; startDate?: string; endDate?: string }
+  ): Observable<PagedCorrespListResponse> {
+    let params: any = { userId, page, size };
+    if (q) params['q'] = q;
+    if (filters?.reference) params['reference'] = filters.reference;
+    if (filters?.status) params['status'] = filters.status;
+    if (filters?.dispatchType) params['dispatchType'] = filters.dispatchType;
+    if (filters?.startDate) params['startDate'] = filters.startDate;
+    if (filters?.endDate) params['endDate'] = filters.endDate;
+
+    return this.http
+      .get<PagedCorrespListResponse>(`${this.applicationConfigService.getEndpointFor('api/corresps/list', 'correspmanage')}`, {
+        params: createRequestOption(params),
+      })
+      .pipe(
+        catchError(() =>
+          of({ content: [], currentPage: page, pageSize: size, totalItems: 0, totalPages: 0, hasNext: false, hasPrevious: false })
+        )
+      );
+  }
+
+  // Méthode user simple
+  getCorrespListByAcl(userId: number, page: number = 1, size: number = 15, q: string = ''): Observable<PagedCorrespListResponse> {
+    const params: any = { userId, page, size };
+    if (q) params['q'] = q;
+    return this.http
+      .get<PagedCorrespListResponse>(`${this.applicationConfigService.getEndpointFor('api/corresps/list-by-acl', 'correspmanage')}`, {
+        params: createRequestOption(params),
+      })
+      .pipe(
+        catchError(() =>
+          of({ content: [], currentPage: page, pageSize: size, totalItems: 0, totalPages: 0, hasNext: false, hasPrevious: false })
+        )
+      );
   }
 }

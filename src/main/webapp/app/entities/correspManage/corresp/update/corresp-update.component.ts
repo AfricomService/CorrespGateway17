@@ -24,7 +24,7 @@ import { DispatchType } from 'app/entities/enumerations/dispatch-type.model';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { UserService } from '../../../user/user.service';
 import { IUser } from '../../../../admin/user-management/user-management.model';
-import { NgForm } from '@angular/forms';
+import { SocieteItem } from '../service/corresp.service';
 
 import dayjs from 'dayjs/esm';
 import { ITypedocument } from '../../../configManage/typedocument/typedocument.model';
@@ -134,6 +134,10 @@ export class CorrespUpdateComponent implements OnInit {
   refsModalLoading = false;
   refsModalSearchQuery = '';
   refsSelectedItem: CorrespReferenceItem | null = null;
+
+  mySocietes: SocieteItem[] = [];
+  selectedSociete: SocieteItem | null = null;
+  loadingSocietes = false;
 
   editForm: CorrespFormGroup = this.correspFormService.createCorrespFormGroup();
 
@@ -331,6 +335,7 @@ export class CorrespUpdateComponent implements OnInit {
 
     this.loadUsers();
     this.loadActiveCompanies();
+    this.loadMySocietes();
   }
 
   // --------------------------------------------------------------------------
@@ -887,6 +892,12 @@ export class CorrespUpdateComponent implements OnInit {
 
     // Mémoriser si une tâche BOC auto-créée existe avant le save
     const hasAutoBocTask = this.tasks.some(t => t.autoBoc === true);
+
+    // Persister la société sélectionnée
+    if (this.selectedSociete) {
+      this.corresp!.idSociete = this.selectedSociete.id;
+      this.corresp!.nomSociete = this.selectedSociete.raisonSociale;
+    }
 
     this.correspService
       .saveCorrespWithTasksAndPj(this.corresp, this.tasksToSave, this.pjsToSave, this.selectedTypeDocument, false)
@@ -2044,6 +2055,28 @@ export class CorrespUpdateComponent implements OnInit {
           this.scanError = 'PjCare inaccessible. Vérifiez que le service tourne.';
         },
       });
+  }
+
+  loadMySocietes(): void {
+    this.loadingSocietes = true;
+    this.correspService.getMySocietes().subscribe({
+      next: societes => {
+        this.mySocietes = societes;
+        // Si une seule société → sélection automatique
+        if (societes.length === 1) {
+          this.selectedSociete = societes[0];
+        }
+        this.loadingSocietes = false;
+      },
+      error: () => {
+        this.mySocietes = [];
+        this.loadingSocietes = false;
+      },
+    });
+  }
+
+  compareSociete(a: SocieteItem | null, b: SocieteItem | null): boolean {
+    return a != null && b != null && a.id === b.id;
   }
 
   removePage(index: number): void {

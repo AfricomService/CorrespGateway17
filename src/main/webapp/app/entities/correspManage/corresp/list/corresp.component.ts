@@ -121,6 +121,9 @@ export class CorrespComponent implements OnInit {
     endDate: 'Date de fin',
   };
 
+  quickSearch: string = '';
+  isSearching: boolean = false;
+
   htmlContent: string = '<p>Hello DevExtreme!</p>';
 
   // Dynamic list depending on active filters
@@ -215,9 +218,7 @@ export class CorrespComponent implements OnInit {
         const skip = loadOptions.skip ?? 0;
         const take = loadOptions.take ?? 15;
         const pageIndex = Math.floor(skip / take) + 1;
-        const pageSize = take;
 
-        // Construire les filtres depuis activeFilters
         const filters: any = {};
         if (filter && filter.length > 0) {
           filter.forEach(f => {
@@ -239,18 +240,10 @@ export class CorrespComponent implements OnInit {
           });
         }
 
-        // Construire l'URL pour la sauvegarde de filtre (compatibilité saveCustomFilters)
-        this.endpoint = `${this.resourceUrl}-filter?pageIndex=${pageIndex}&pageSize=${pageSize}&userId=${this.currentUserId ?? ''}`;
-        Object.entries(filters).forEach(([k, v]) => {
-          this.endpoint += `&${k}=${v}`;
-        });
-
-        const response = await firstValueFrom(this.correspService.getCorrespsFiltered(this.currentUserId!, pageIndex, pageSize, filters));
-
-        return {
-          data: response.content,
-          totalCount: response.totalItems,
-        };
+        const response = await firstValueFrom(
+          this.correspService.getCorrespList(this.currentUserId!, pageIndex, take, this.quickSearch.trim(), filters)
+        );
+        return { data: response.content, totalCount: response.totalItems };
       },
     });
   }
@@ -352,17 +345,10 @@ export class CorrespComponent implements OnInit {
       load: async (loadOptions: any) => {
         const skip = loadOptions.skip ?? 0;
         const take = loadOptions.take ?? 15;
-
-        // pageIndex commence à 1 (convention backend)
         const pageIndex = Math.floor(skip / take) + 1;
-        const pageSize = take;
 
-        const response = await firstValueFrom(this.correspService.getCorrespsByUserAclPaged(userId, pageIndex, pageSize));
-
-        return {
-          data: response.content,
-          totalCount: response.totalItems,
-        };
+        const response = await firstValueFrom(this.correspService.getCorrespListByAcl(userId, pageIndex, take, this.quickSearch.trim()));
+        return { data: response.content, totalCount: response.totalItems };
       },
     });
   }
@@ -684,5 +670,38 @@ export class CorrespComponent implements OnInit {
 
   togglePanel() {
     this.isOpen = !this.isOpen;
+  }
+
+  onQuickSearch(): void {
+    if (!this.currentUserId) return;
+    const q = this.quickSearch.trim();
+
+    if (!q) {
+      // Réinitialiser vers le datasource normal
+      this.load();
+      return;
+    }
+
+    this.isSearching = true;
+    this.datasource = new CustomStore({
+      key: 'id',
+      load: async (loadOptions: any) => {
+        const skip = loadOptions.skip ?? 0;
+        const take = loadOptions.take ?? 15;
+        const pageIndex = Math.floor(skip / take) + 1;
+
+        const response = await firstValueFrom(this.correspService.searchCorresps(this.currentUserId!, q, pageIndex, take));
+        return {
+          data: response.content,
+          totalCount: response.totalItems,
+        };
+      },
+    });
+  }
+
+  clearQuickSearch(): void {
+    this.quickSearch = '';
+    this.isSearching = false;
+    this.load();
   }
 }

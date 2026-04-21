@@ -54,6 +54,8 @@ export interface ICorresp {
   attachments?: Pick<IPj, 'id'>[] | null;
   tasks?: Pick<ITasks, 'id'>[] | null;
   modelNotifId?: string | null;
+  idSociete?: number | null;
+  nomSociete?: string | null;
   //msgReceiver?: string | null;  // transient, pour passer au backend
   //msgCopyTo?: string | null;    // transient
 }
