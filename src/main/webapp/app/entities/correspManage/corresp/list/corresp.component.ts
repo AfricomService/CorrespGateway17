@@ -45,37 +45,20 @@ export class CorrespComponent implements OnInit {
   page = 1;
   selectedItemsAcc: string[] = [];
 
-  selection = {
-    deferred: false,
-    mode: 'single',
-  };
-
-  loadPanel = {
-    enabled: true,
-  };
-
-  sorting = {
-    mode: 'none',
-  };
+  selection = { deferred: false, mode: 'single' };
+  loadPanel = { enabled: true };
+  sorting = { mode: 'none' };
 
   datasource: any = {};
 
-  // selectedFilter: string = '';
-  // filterValue: any = '';
-  // dateRange = {startDate: '', endDate: ''};
-  //
-  // activeFilters: { key: string, value: any, label: string, displayValue: string }[] = [];
-
   selectedFilter: string | null = null;
   filterValue: any = null;
-  dateRange = { startDate: null, endDate: null };
+  dateRange: { startDate: string | null; endDate: string | null } = { startDate: null, endDate: null };
 
   activeFilters: Filter[] = [];
 
   endpoint!: string;
-
   presentFilter = false;
-
   filterApplied = false;
 
   isAdmin = false;
@@ -83,17 +66,16 @@ export class CorrespComponent implements OnInit {
   currentUserId: number | null = null;
 
   isSaving = false;
-
   nameFilter = '';
 
   loadedFiltres: CustomSearchView[] = [];
-
   selectedSearch: CustomSearchView | null = null;
 
-  // Options
+  // ── Options ────────────────────────────────────────────────────
   statusOptions = [
     { value: 'DRAFT', label: 'Brouillon' },
     { value: 'IN_PROGRESS', label: 'En cours' },
+    { value: 'DISPATCH', label: 'Dispatché' },
     { value: 'CLOSED', label: 'Clôturé' },
     { value: 'CANCELLED', label: 'Annulé' },
   ];
@@ -105,46 +87,29 @@ export class CorrespComponent implements OnInit {
     { value: 'FAX', label: 'Fax' },
   ];
 
-  // All possible filters
   allFilters = [
     { value: 'reference', label: 'Référence' },
     { value: 'status', label: 'Statut' },
-    { value: 'dispatchType', label: 'Type d’envoi' },
+    { value: 'dispatchType', label: "Type d'envoi" },
     { value: 'courrierDate', label: 'Date courrier' },
   ];
 
   FILTER_LABELS_FR: { [key: string]: string } = {
     reference: 'Référence',
-    dispatchType: 'Type d’envoi',
+    dispatchType: "Type d'envoi",
     status: 'Statut',
     startDate: 'Date de début',
     endDate: 'Date de fin',
   };
 
-  quickSearch: string = '';
-  isSearching: boolean = false;
+  quickSearch = '';
+  isSearching = false;
+  isOpen = true;
 
-  htmlContent: string = '<p>Hello DevExtreme!</p>';
-
-  getCorrespTypeLabel(type: string): string {
-    switch (type) {
-      case 'INCOMING':
-        return 'Arrivée';
-      case 'OUTGOING':
-        return 'Départ';
-      case 'INTERNAL':
-        return 'Interne';
-      default:
-        return type;
-    }
-  }
-
-  isFirstCall = true;
-
-  // Dynamic list depending on active filters
+  // ── Dynamic filter list ────────────────────────────────────────
   get availableFilters() {
-    const usedFields = this.activeFilters.map(f => f.field);
-    return this.allFilters.filter(f => !usedFields.includes(f.value));
+    const used = this.activeFilters.map(f => f.field);
+    return this.allFilters.filter(f => !used.includes(f.value));
   }
 
   public resourceUrl = SERVER_API_URL + 'services/correspmanage/api/corresps';
@@ -162,13 +127,11 @@ export class CorrespComponent implements OnInit {
     protected accountService: AccountService
   ) {}
 
-  trackId = (_index: number, item: ICorresp): number => this.correspService.getCorrespIdentifier(item);
-
+  // ── Lifecycle ──────────────────────────────────────────────────
   ngOnInit(): void {
     this.selectedItemsAcc = ['Information Generales', 'Tasks'];
     this.customSearchService.getByUserLogin().subscribe(res => (this.loadedFiltres = res));
 
-    // Vérifier le rôle de l'utilisateur avant de charger les données
     this.accountService.identity().subscribe((account: Account | null) => {
       if (account) {
         this.isAdmin = this.accountService.hasAnyAuthority(Authority.ADMIN);
@@ -179,40 +142,41 @@ export class CorrespComponent implements OnInit {
     });
   }
 
+  // ── Helpers ────────────────────────────────────────────────────
+  trackId = (_index: number, item: ICorresp): number => this.correspService.getCorrespIdentifier(item);
+
   byteSize(base64String: string): string {
     return this.dataUtils.byteSize(base64String);
   }
-
   openFile(base64String: string, contentType: string | null | undefined): void {
     return this.dataUtils.openFile(base64String, contentType);
   }
 
-  delete(corresp: ICorresp): void {
-    const modalRef = this.modalService.open(CorrespDeleteDialogComponent, { size: 'lg', backdrop: 'static' });
-    modalRef.componentInstance.corresp = corresp;
-    // unsubscribe not needed because closed completes on modal close
-    modalRef.closed
-      .pipe(
-        filter(reason => reason === ITEM_DELETED_EVENT),
-        switchMap(() => this.loadFromBackendWithRouteInformations())
-      )
-      .subscribe({
-        next: (res: EntityArrayResponseType) => {
-          this.onResponseSuccess(res);
-        },
-      });
+  getCorrespTypeLabel(type: string): string {
+    const map: Record<string, string> = {
+      INCOMING: 'Arrivée',
+      OUTGOING: 'Départ',
+      INTERNAL: 'Interne',
+    };
+    return map[type] ?? type;
   }
 
-  // onRowPrepared(e: any) {
-  //   if (e.data.priority === true) {
-  //     e.rowElement.style.backgroundColor = '#ffcccc';
-  //   }
-  // }
+  getFilterEntries(filters: { [key: string]: string }) {
+    return Object.entries(filters).map(([key, value]) => ({
+      key: this.FILTER_LABELS_FR[key] || key,
+      value,
+    }));
+  }
 
-  onRowPrepared(e: any) {
-    if (e.rowType !== 'data') {
-      return;
-    }
+  formatFilters(filters: { [key: string]: string }): string {
+    return Object.entries(filters)
+      .map(([k, v]) => `${k}: ${v}`)
+      .join('\n');
+  }
+
+  // ── Row preparation ────────────────────────────────────────────
+  onRowPrepared(e: any): void {
+    if (e.rowType !== 'data') return;
     switch (e.data.corresptype) {
       case CorrespType.INCOMING:
         e.rowElement.classList.add('row-incoming');
@@ -226,7 +190,25 @@ export class CorrespComponent implements OnInit {
     }
   }
 
-  createDataSource(filter?: Filter[]): CustomStore {
+  // ── Navigation ─────────────────────────────────────────────────
+  onRowDoubleClick(e: any): void {
+    window.open(`/corresp/${e.data.id}/view`, '_blank');
+  }
+
+  togglePanel(): void {
+    this.isOpen = !this.isOpen;
+  }
+
+  // ── Data sources ───────────────────────────────────────────────
+  load(): void {
+    if (this.isAdmin || this.isBoc) {
+      this.datasource = this.createDataSource();
+    } else if (this.currentUserId != null) {
+      this.datasource = this.createDataSourceByUserAcl(this.currentUserId);
+    }
+  }
+
+  createDataSource(filters?: Filter[]): CustomStore {
     return new CustomStore({
       key: 'id',
       load: async (loadOptions: any) => {
@@ -234,126 +216,35 @@ export class CorrespComponent implements OnInit {
         const take = loadOptions.take ?? 15;
         const pageIndex = Math.floor(skip / take) + 1;
 
-        const filters: any = {};
-        if (filter && filter.length > 0) {
-          filter.forEach(f => {
+        const params: any = {};
+        if (filters?.length) {
+          filters.forEach(f => {
             switch (f.field) {
               case 'reference':
-                filters.reference = f.value;
+                params.reference = f.value;
                 break;
               case 'status':
-                filters.status = f.value;
+                params.status = f.value;
                 break;
               case 'dispatchType':
-                filters.dispatchType = f.value;
+                params.dispatchType = f.value;
                 break;
               case 'courrierDate':
-                filters.startDate = f.value.startDate;
-                filters.endDate = f.value.endDate;
+                params.startDate = f.value.startDate;
+                params.endDate = f.value.endDate;
                 break;
             }
           });
         }
 
         const response = await firstValueFrom(
-          this.correspService.getCorrespList(this.currentUserId!, pageIndex, take, this.quickSearch.trim(), filters)
+          this.correspService.getCorrespList(this.currentUserId!, pageIndex, take, this.quickSearch.trim(), params)
         );
         return { data: response.content, totalCount: response.totalItems };
       },
     });
   }
 
-  // resetFilterValue() {
-  //   this.filterValue = '';
-  //   this.dateRange = {startDate: '', endDate: ''};
-  // }
-  //
-  // applyFilter() {
-  //   if (!this.selectedFilter) return;
-  //
-  //   let label = '';
-  //   let displayValue = '';
-  //
-  //   switch (this.selectedFilter) {
-  //     case 'reference':
-  //       label = 'Référence';
-  //       displayValue = this.filterValue;
-  //       break;
-  //     case 'status':
-  //       label = 'Statut';
-  //       displayValue = this.filterValue;
-  //       break;
-  //     case 'dispatchType':
-  //       label = 'Type d’envoi';
-  //       displayValue = this.filterValue;
-  //       break;
-  //     case 'courrierDate':
-  //       label = 'Date courrier';
-  //       displayValue = `${this.dateRange.startDate} → ${this.dateRange.endDate}`;
-  //       break;
-  //   }
-  //
-  //   this.activeFilters.push({
-  //     key: this.selectedFilter,
-  //     value: this.selectedFilter === 'courrierDate' ? this.dateRange : this.filterValue,
-  //     label,
-  //     displayValue,
-  //   });
-  //
-  //   this.load(); // reload datasource
-  //   this.resetFilterValue();
-  //   this.selectedFilter = '';
-  // }
-
-  // removeFilter(index: number) {
-  //   this.activeFilters.splice(index, 1);
-  //   this.load(); // reload datasource
-  // }
-
-  // createDataSource(): CustomStore {
-  //   return new CustomStore({
-  //     key: 'id',
-  //     load: (loadOptions: any) => {
-  //
-  //
-  //       const params = {
-  //         ...loadOptions,
-  //         $paging: this.constructPage(loadOptions.skip, loadOptions.take),
-  //       };
-  //
-  //       let endpoint = `${this.resourceUrl}-page?${params.$paging}`;
-  //
-  //       console.log("endpoint", endpoint);
-  //
-  //       return this.http.get(endpoint).toPromise().then((data: any) => ({
-  //         data: data.content,
-  //         totalCount: data.totalElements,
-  //       }));
-  //     },
-  //   });
-  // }
-
-  load(): void {
-    if (this.isAdmin || this.isBoc) {
-      // Admin ou BOC : charger toutes les corresps via le datasource paginé avec filtres + dispatched
-      this.datasource = this.createDataSource();
-    } else if (this.currentUserId != null) {
-      // Simple user : charger uniquement les corresps par ACL
-      this.datasource = this.createDataSourceByUserAcl(this.currentUserId);
-    }
-
-    // this.loadFromBackendWithRouteInformations().subscribe({
-    //   next: (res: EntityArrayResponseType) => {
-    //     this.onResponseSuccess(res);
-    //   },
-    // });
-  }
-
-  /**
-   * Crée un CustomStore qui charge les corresps par ACL utilisateur.
-   * L'API retourne toutes les corresps d'un coup (pas de pagination serveur),
-   * donc on pagine côté client avec skip/take de DevExtreme.
-   */
   createDataSourceByUserAcl(userId: number): CustomStore {
     return new CustomStore({
       key: 'id',
@@ -368,84 +259,17 @@ export class CorrespComponent implements OnInit {
     });
   }
 
-  private constructFilter(filter: any): string {
-    if (!filter) {
-      return '';
-    }
-
-    let apiReq = '?';
-
-    if (Array.isArray(filter)) {
-      //ONLY ONE FILTER
-      if (filter[0] !== 'and' && !Array.isArray(filter[0])) {
-        apiReq += filter[0] + '=' + filter[2] + '&';
-      }
-
-      if (Array.isArray(filter[0]) && (filter[0][0] === 'dateCreated' || filter[0][0] === 'courrierDate')) {
-        if (String(filter[0][2]).toUpperCase().includes('TIME')) {
-          console.log('INSIDE PLANIFICATION CONDITION'); // eslint-disable-line no-console
-
-          const inputDateString = filter[0][2];
-          // console.log(this.isISO8601Format(inputDateString)); // eslint-disable-line no-console
-
-          const parsedDate = moment(inputDateString, 'ddd MMM DD YYYY HH:mm:ss [GMT]ZZ (zz)');
-          // console.log(parsedDate); // eslint-disable-line no-console
-
-          const outputDateString = parsedDate.format('YYYY-MM-DDTHH:mm:ss.SSSZ');
-          // console.log(outputDateString); // eslint-disable-line no-console
-
-          apiReq += filter[0][0] + '=' + outputDateString + '&';
-        } else {
-          apiReq += filter[0][0] + '=' + filter[0][2] + '&';
-        }
-      }
-
-      //MULTIPLE FILTERS
-      if (Array.isArray(filter[0]) && filter[0][0] !== 'dateCreated' && filter[0][0] !== 'courrierDate') {
-        filter.forEach(filterArr => {
-          if (Array.isArray(filterArr)) {
-            if (Array.isArray(filterArr[0])) {
-              if (String(filterArr[0][2]).toUpperCase().includes('TIME')) {
-                // console.log("INSIDE PLANIFICATION CONDITION"); // eslint-disable-line no-console
-
-                const inputDateString = filterArr[0][2];
-
-                const parsedDate = moment(inputDateString, 'ddd MMM DD YYYY HH:mm:ss [GMT]ZZ (zz)');
-                // console.log(parsedDate); // eslint-disable-line no-console
-
-                const outputDateString = parsedDate.format('YYYY-MM-DDTHH:mm:ss.SSSZ');
-                // console.log(outputDateString); // eslint-disable-line no-console
-
-                apiReq += filterArr[0][0] + '=' + outputDateString + '&';
-              } else {
-                apiReq += filterArr[0][0] + '=' + filterArr[0][2] + '&';
-              }
-            } else {
-              apiReq += filterArr[0] + '=' + filterArr[2] + '&';
-            }
-          }
-        });
-      }
-    }
-
-    return apiReq.slice(0, -1);
-    // return apiReq;
-  }
-
-  private constructPage(skip: number, take: number): string {
-    return `pageIndex=${(skip + take) / take}&pageSize=${take}`;
-  }
-
-  resetFilterValue() {
+  // ── Filters ────────────────────────────────────────────────────
+  resetFilterValue(): void {
     this.filterValue = null;
     this.dateRange = { startDate: null, endDate: null };
   }
 
-  addFilter() {
+  addFilter(): void {
     if (!this.selectedFilter) return;
 
-    let displayValue = '';
     let value: any = null;
+    let displayValue = '';
     let label = '';
 
     switch (this.selectedFilter) {
@@ -454,19 +278,16 @@ export class CorrespComponent implements OnInit {
         displayValue = value;
         label = 'Référence';
         break;
-
       case 'status':
         value = this.filterValue;
-        displayValue = this.statusOptions.find(s => s.value === value)?.label || value;
+        displayValue = this.statusOptions.find(s => s.value === value)?.label ?? value;
         label = 'Statut';
         break;
-
       case 'dispatchType':
         value = this.filterValue;
-        displayValue = this.dispatchOptions.find(d => d.value === value)?.label || value;
-        label = 'Type d’envoi';
+        displayValue = this.dispatchOptions.find(d => d.value === value)?.label ?? value;
+        label = "Type d'envoi";
         break;
-
       case 'courrierDate':
         value = { ...this.dateRange };
         displayValue = `${value.startDate} → ${value.endDate}`;
@@ -481,218 +302,85 @@ export class CorrespComponent implements OnInit {
     }
   }
 
-  removeFilter(index: number) {
+  removeFilter(index: number): void {
     this.activeFilters.splice(index, 1);
-    if (this.isAdmin || this.isBoc) {
-      this.datasource = this.createDataSource(this.activeFilters);
-    } else if (this.currentUserId != null) {
-      this.datasource = this.createDataSourceByUserAcl(this.currentUserId);
-    }
-
+    this._reloadWithFilters();
     this.isSaving = false;
     this.filterApplied = this.activeFilters.length > 0;
   }
 
-  applyFilters() {
-    console.log('Filters applied:', this.activeFilters);
-    if (this.isAdmin || this.isBoc) {
-      this.datasource = this.createDataSource(this.activeFilters);
-    } else if (this.currentUserId != null) {
-      this.datasource = this.createDataSourceByUserAcl(this.currentUserId);
-    }
-
+  applyFilters(): void {
+    this._reloadWithFilters();
     this.isSaving = false;
     this.filterApplied = this.activeFilters.length > 0;
-
     this.loadedFiltres.forEach(f => (f.active = false));
   }
 
-  navigateToWithComponentValues(): void {
-    this.handleNavigation(this.page, this.predicate, this.ascending);
-  }
-
-  navigateToPage(page = this.page): void {
-    this.handleNavigation(page, this.predicate, this.ascending);
-  }
-
-  protected loadFromBackendWithRouteInformations(): Observable<EntityArrayResponseType> {
-    return combineLatest([this.activatedRoute.queryParamMap, this.activatedRoute.data]).pipe(
-      tap(([params, data]) => this.fillComponentAttributeFromRoute(params, data)),
-      switchMap(() => this.queryBackend(this.page, this.predicate, this.ascending))
-    );
-  }
-
-  protected fillComponentAttributeFromRoute(params: ParamMap, data: Data): void {
-    const page = params.get(PAGE_HEADER);
-    this.page = +(page ?? 1);
-    const sort = (params.get(SORT) ?? data[DEFAULT_SORT_DATA]).split(',');
-    this.predicate = sort[0];
-    this.ascending = sort[1] === ASC;
-  }
-
-  protected onResponseSuccess(response: EntityArrayResponseType): void {
-    this.fillComponentAttributesFromResponseHeader(response.headers);
-    const dataFromBody = this.fillComponentAttributesFromResponseBody(response.body);
-    this.corresps = dataFromBody;
-  }
-
-  protected fillComponentAttributesFromResponseBody(data: ICorresp[] | null): ICorresp[] {
-    return data ?? [];
-  }
-
-  protected fillComponentAttributesFromResponseHeader(headers: HttpHeaders): void {
-    this.totalItems = Number(headers.get(TOTAL_COUNT_RESPONSE_HEADER));
-  }
-
-  protected queryBackend(page?: number, predicate?: string, ascending?: boolean): Observable<EntityArrayResponseType> {
-    this.isLoading = true;
-    const pageToLoad: number = page ?? 1;
-    const queryObject = {
-      page: pageToLoad - 1,
-      size: this.itemsPerPage,
-      eagerload: true,
-      sort: this.getSortQueryParam(predicate, ascending),
-    };
-    return this.correspService.query(queryObject).pipe(tap(() => (this.isLoading = false)));
-  }
-
-  protected handleNavigation(page = this.page, predicate?: string, ascending?: boolean): void {
-    const queryParamsObj = {
-      page,
-      size: this.itemsPerPage,
-      sort: this.getSortQueryParam(predicate, ascending),
-    };
-
-    this.router.navigate(['./'], {
-      relativeTo: this.activatedRoute,
-      queryParams: queryParamsObj,
-    });
-  }
-
-  protected getSortQueryParam(predicate = this.predicate, ascending = this.ascending): string[] {
-    const ascendingQueryParam = ascending ? ASC : DESC;
-    if (predicate === '') {
-      return [];
-    } else {
-      return [predicate + ',' + ascendingQueryParam];
+  private _reloadWithFilters(): void {
+    if (this.isAdmin || this.isBoc) {
+      this.datasource = this.createDataSource(this.activeFilters);
+    } else if (this.currentUserId != null) {
+      this.datasource = this.createDataSourceByUserAcl(this.currentUserId);
     }
   }
 
-  // onRowDoubleClick(e: any): void {
-  //   const url = this.router.serializeUrl(this.router.createUrlTree([`/corresp/${e.data.id}/view`]));
-  //   window.open('/cc' + url);
-  // }
-
-  onRowDoubleClick(e: any): void {
-    const url = `/corresp/${e.data.id}/view`;
-    window.open(url, '_blank');
+  // ── Saved filters ──────────────────────────────────────────────
+  selectOnlyThisFilter(selected: CustomSearchView): void {
+    this.loadedFiltres.forEach(f => {
+      if (f === selected) {
+        f.active = !f.active;
+        if (f.active) {
+          const filtersArr: Filter[] = Object.keys(selected.filters).map(key => ({
+            field: key,
+            label: key,
+            value: selected.filters[key],
+            displayValue: '',
+          }));
+          this._applyCustomFilters(filtersArr);
+        } else {
+          this._reloadWithFilters();
+        }
+      } else {
+        f.active = false;
+      }
+    });
   }
 
-  // onRowDoubleClick(e: any): void {
-  //   const url = this.router.serializeUrl(this.router.createUrlTree([e.data.id, 'view']));
-  //   window.open(url);
-  // }
-
-  // saveCustomFilters():void {
-  //   this.customSearchService.saveCustomSearch({request:this.endpoint,entitySearching:"CORRESP"}).subscribe(res => {
-  //     console.log(res)
-  //   })
-  // }
+  private _applyCustomFilters(filters: Filter[]): void {
+    if (this.isAdmin || this.isBoc) {
+      this.datasource = this.createDataSource(filters);
+    } else if (this.currentUserId != null) {
+      this.datasource = this.createDataSourceByUserAcl(this.currentUserId);
+    }
+  }
 
   openCustomSearchModal(content: any): void {
     this.nameFilter = '';
-    this.modalService.open(content, { size: 'xl' });
+    this.modalService.open(content, { size: 'lg' });
   }
 
   saveCustomFilters(): void {
     if (this.isSaving) return;
-
-    console.log('name filter', this.nameFilter);
-
     this.customSearchService.saveCustomSearch({ request: this.endpoint, entitySearching: 'CORRESP', name: this.nameFilter }).subscribe({
-      next: res => {
-        console.log(res);
+      next: () => {
         this.isSaving = true;
         this.customSearchService.getByUserLogin().subscribe(res => (this.loadedFiltres = res));
         this.nameFilter = '';
         this.modalService.dismissAll();
       },
-      error: err => {
-        console.error(err);
-      },
+      error: err => console.error(err),
     });
   }
 
   selectSearch(search: CustomSearchView): void {
     this.selectedSearch = search;
-    console.log('Selected search:', search);
   }
 
-  formatFilters(filters: { [key: string]: string }): string {
-    return Object.entries(filters)
-      .map(([key, value]) => `${key}: ${value}`)
-      .join('\n'); // newline for each filter
-  }
-
-  // getFilterEntries(filters: { [key: string]: string }) {
-  //   return Object.entries(filters).map(([key, value]) => ({ key, value }));
-  // }
-
-  getFilterEntries(filters: { [key: string]: string }) {
-    return Object.entries(filters).map(([key, value]) => ({
-      key: this.FILTER_LABELS_FR[key] || key, // fallback to key if not in map
-      value,
-    }));
-  }
-
-  toggleFilterColor(filter: CustomSearchView): void {
-    filter.active = !filter.active;
-  }
-
-  selectOnlyThisFilter(selectedFilter: CustomSearchView): void {
-    this.loadedFiltres.forEach(filter => {
-      if (filter === selectedFilter) {
-        filter.active = !filter.active;
-
-        if (filter.active) {
-          const filtersArray: Filter[] = Object.keys(selectedFilter.filters).map(key => {
-            return {
-              field: key,
-              label: key,
-              value: selectedFilter.filters[key],
-              displayValue: '',
-            };
-          });
-          if (this.isAdmin || this.isBoc) {
-            this.datasource = this.createDataSource(filtersArray);
-          } else if (this.currentUserId != null) {
-            this.datasource = this.createDataSourceByUserAcl(this.currentUserId);
-          }
-        } else {
-          if (this.isAdmin || this.isBoc) {
-            this.datasource = this.createDataSource();
-          } else if (this.currentUserId != null) {
-            this.datasource = this.createDataSourceByUserAcl(this.currentUserId);
-          }
-        }
-      } else {
-        filter.active = false;
-      }
-    });
-  }
-
-  isOpen = true; // default open
-
-  togglePanel() {
-    this.isOpen = !this.isOpen;
-  }
-
+  // ── Quick search ───────────────────────────────────────────────
   onQuickSearch(): void {
     if (!this.currentUserId) return;
     const q = this.quickSearch.trim();
-
     if (!q) {
-      // Réinitialiser vers le datasource normal
       this.load();
       return;
     }
@@ -706,10 +394,7 @@ export class CorrespComponent implements OnInit {
         const pageIndex = Math.floor(skip / take) + 1;
 
         const response = await firstValueFrom(this.correspService.searchCorresps(this.currentUserId!, q, pageIndex, take));
-        return {
-          data: response.content,
-          totalCount: response.totalItems,
-        };
+        return { data: response.content, totalCount: response.totalItems };
       },
     });
   }
@@ -718,5 +403,78 @@ export class CorrespComponent implements OnInit {
     this.quickSearch = '';
     this.isSearching = false;
     this.load();
+  }
+
+  // ── Delete ─────────────────────────────────────────────────────
+  delete(corresp: ICorresp): void {
+    const modalRef = this.modalService.open(CorrespDeleteDialogComponent, { size: 'lg', backdrop: 'static' });
+    modalRef.componentInstance.corresp = corresp;
+    modalRef.closed
+      .pipe(
+        filter(reason => reason === ITEM_DELETED_EVENT),
+        switchMap(() => this.loadFromBackendWithRouteInformations())
+      )
+      .subscribe({ next: (res: EntityArrayResponseType) => this.onResponseSuccess(res) });
+  }
+
+  // ── Legacy route helpers (kept for compatibility) ──────────────
+  navigateToWithComponentValues(): void {
+    this.handleNavigation(this.page, this.predicate, this.ascending);
+  }
+  navigateToPage(page = this.page): void {
+    this.handleNavigation(page, this.predicate, this.ascending);
+  }
+
+  protected loadFromBackendWithRouteInformations(): Observable<EntityArrayResponseType> {
+    return combineLatest([this.activatedRoute.queryParamMap, this.activatedRoute.data]).pipe(
+      tap(([params, data]) => this.fillComponentAttributeFromRoute(params, data)),
+      switchMap(() => this.queryBackend(this.page, this.predicate, this.ascending))
+    );
+  }
+
+  protected fillComponentAttributeFromRoute(params: ParamMap, data: Data): void {
+    this.page = +(params.get(PAGE_HEADER) ?? 1);
+    const sort = (params.get(SORT) ?? data[DEFAULT_SORT_DATA]).split(',');
+    this.predicate = sort[0];
+    this.ascending = sort[1] === ASC;
+  }
+
+  protected onResponseSuccess(response: EntityArrayResponseType): void {
+    this.fillComponentAttributesFromResponseHeader(response.headers);
+    this.corresps = this.fillComponentAttributesFromResponseBody(response.body);
+  }
+
+  protected fillComponentAttributesFromResponseBody(data: ICorresp[] | null): ICorresp[] {
+    return data ?? [];
+  }
+  protected fillComponentAttributesFromResponseHeader(headers: HttpHeaders): void {
+    this.totalItems = Number(headers.get(TOTAL_COUNT_RESPONSE_HEADER));
+  }
+
+  protected queryBackend(page?: number, predicate?: string, ascending?: boolean): Observable<EntityArrayResponseType> {
+    this.isLoading = true;
+    return this.correspService
+      .query({
+        page: (page ?? 1) - 1,
+        size: this.itemsPerPage,
+        eagerload: true,
+        sort: this.getSortQueryParam(predicate, ascending),
+      })
+      .pipe(tap(() => (this.isLoading = false)));
+  }
+
+  protected handleNavigation(page = this.page, predicate?: string, ascending?: boolean): void {
+    this.router.navigate(['./'], {
+      relativeTo: this.activatedRoute,
+      queryParams: { page, size: this.itemsPerPage, sort: this.getSortQueryParam(predicate, ascending) },
+    });
+  }
+
+  protected getSortQueryParam(predicate = this.predicate, ascending = this.ascending): string[] {
+    return predicate ? [`${predicate},${ascending ? ASC : DESC}`] : [];
+  }
+
+  private constructPage(skip: number, take: number): string {
+    return `pageIndex=${(skip + take) / take}&pageSize=${take}`;
   }
 }
