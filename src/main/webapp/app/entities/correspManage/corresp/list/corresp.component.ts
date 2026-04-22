@@ -126,6 +126,21 @@ export class CorrespComponent implements OnInit {
 
   htmlContent: string = '<p>Hello DevExtreme!</p>';
 
+  getCorrespTypeLabel(type: string): string {
+    switch (type) {
+      case 'INCOMING':
+        return 'Arrivée';
+      case 'OUTGOING':
+        return 'Départ';
+      case 'INTERNAL':
+        return 'Interne';
+      default:
+        return type;
+    }
+  }
+
+  isFirstCall = true;
+
   // Dynamic list depending on active filters
   get availableFilters() {
     const usedFields = this.activeFilters.map(f => f.field);
@@ -200,13 +215,13 @@ export class CorrespComponent implements OnInit {
     }
     switch (e.data.corresptype) {
       case CorrespType.INCOMING:
-        e.rowElement.style.backgroundColor = '#d1f7d6'; // light green
+        e.rowElement.classList.add('row-incoming');
         break;
       case CorrespType.OUTGOING:
-        e.rowElement.style.backgroundColor = '#ffe0b3'; // light orange
+        e.rowElement.classList.add('row-outgoing');
         break;
       case CorrespType.INTERNAL:
-        e.rowElement.style.backgroundColor = '#cce5ff'; // light blue
+        e.rowElement.classList.add('row-internal');
         break;
     }
   }

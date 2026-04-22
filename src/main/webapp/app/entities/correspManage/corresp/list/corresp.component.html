@@ -1,6 +1,14 @@
 <div>
-  <h3 class="title">Consultation des Correspondances</h3>
-
+  <div class="page-header">
+    <div>
+      <div class="page-title">Consultation des correspondances</div>
+      <div class="page-subtitle">Gestion des courriers entrants, sortants et internes</div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-outline"><i class="fas fa-file-export"></i> Exporter</button>
+      <button class="btn btn-primary" routerLink="/corresp/new"><i class="fas fa-plus"></i> Nouveau courrier</button>
+    </div>
+  </div>
   <!-- Barre de recherche rapide -->
   <div class="quick-search-bar">
     <div class="input-group">
@@ -126,7 +134,7 @@
       </div>
       <div class="active-filters" *ngIf="activeFilters.length > 0">
         <div style="display: flex; flex-direction: row; gap: 1em; flex-wrap: wrap">
-          <span style="display: flex; gap: 0.5em" *ngFor="let filter of activeFilters; let i = index" class="filter-chip">
+          <span style="display: flex; gap: 0.5em" *ngFor="let filter of activeFilters" class="filter-chip">
             {{ filter.label }} : {{ filter.displayValue }}
           </span>
         </div>
@@ -141,6 +149,21 @@
     </div>
   </ng-template>
 
+  <div class="type-legend">
+    <div class="legend-item">
+      <div class="legend-dot" style="background: #d1fae5; border: 0.5px solid #6ee7b7"></div>
+      Arrivée
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background: #ffedd5; border: 0.5px solid #fdba74"></div>
+      Départ
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background: #dbeafe; border: 0.5px solid #93c5fd"></div>
+      Interne
+    </div>
+  </div>
+
   <dx-data-grid
     [dataSource]="datasource"
     [showBorders]="true"
@@ -152,12 +175,67 @@
   >
     <dxo-paging [enabled]="true" [pageSize]="15"></dxo-paging>
 
-    <dxi-column dataField="reference" caption="Référence"></dxi-column>
-    <dxi-column dataField="corresptype" caption="Type"></dxi-column>
+    <dxi-column dataField="reference" caption="Référence" cellTemplate="referenceTemplate"></dxi-column>
+
+    <div *dxTemplate="let d of 'referenceTemplate'">
+      <span
+        class="ref-badge"
+        [ngClass]="{
+          incoming: d.data.corresptype === 'INCOMING',
+          outgoing: d.data.corresptype === 'OUTGOING',
+          internal: d.data.corresptype === 'INTERNAL'
+        }"
+      >
+        {{ d.data.reference }}
+      </span>
+    </div>
+    <dxi-column dataField="corresptype" caption="Type" alignment="center" [width]="60" cellTemplate="typeTemplate"></dxi-column>
+    <div *dxTemplate="let d of 'typeTemplate'" style="display: flex; justify-content: center">
+      <ng-container [ngSwitch]="d.data.corresptype">
+        <span *ngSwitchCase="'INCOMING'" class="type-badge badge-in" ngbTooltip="Arrivée" placement="top">
+          <!-- icône flèche bas -->
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+            <path d="M8 3v10M3 8l5 5 5-5" />
+          </svg>
+        </span>
+        <span *ngSwitchCase="'OUTGOING'" class="type-badge badge-out" ngbTooltip="Départ" placement="top">
+          <!-- icône flèche haut -->
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+            <path d="M8 13V3M3 8l5-5 5 5" />
+          </svg>
+        </span>
+        <span *ngSwitchCase="'INTERNAL'" class="type-badge badge-int" ngbTooltip="Interne" placement="top">
+          <!-- icône flèches doubles -->
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+            <path d="M3 6h10M8 1l5 5M13 10H3M8 15l-5-5" />
+          </svg>
+        </span>
+      </ng-container>
+    </div>
     <dxi-column dataField="courrierDate" caption="Date courrier" dataType="date"></dxi-column>
+    <dxi-column dataField="subject" caption="Objet" cellTemplate="subjectTemplate"></dxi-column>
+    <div *dxTemplate="let d of 'subjectTemplate'">
+      <div style="font-weight: 500; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">
+        {{ d.data.subject }}
+      </div>
+      <div style="font-size: 10px; color: #6b7280">{{ d.data.reference }} • {{ getCorrespTypeLabel(d.data.corresptype) }}</div>
+    </div>
     <dxi-column dataField="msgSender" caption="Expéditeur"></dxi-column>
     <dxi-column dataField="msgReceiver" caption="Destinataire(s)"></dxi-column>
-    <dxi-column dataField="status" caption="Statut"></dxi-column>
+    <dxi-column dataField="status" caption="Statut" cellTemplate="statusTemplate"></dxi-column>
+    <div *dxTemplate="let d of 'statusTemplate'">
+      <span
+        class="status-badge"
+        [ngClass]="{
+          'status-draft': d.data.status === 'DRAFT',
+          'status-progress': d.data.status === 'IN_PROGRESS',
+          'status-dispatch': d.data.status === 'DISPATCH',
+          'status-closed': d.data.status === 'CLOSED',
+          'status-cancel': d.data.status === 'CANCELLED'
+        }"
+        >{{ d.displayValue }}</span
+      >
+    </div>
 
     <dxi-column caption="Priorité" alignment="center" [fixed]="true" fixedPosition="right" cellTemplate="PrioriteTemplate">
       <div *dxTemplate="let d of 'PrioriteTemplate'">

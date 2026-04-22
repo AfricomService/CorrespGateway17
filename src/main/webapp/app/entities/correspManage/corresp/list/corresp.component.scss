@@ -273,3 +273,83 @@ modal-body {
   align-items: center;
   border-radius: 8px 8px 0 0;
 }
+
+// ── Couleurs de lignes par type ──────────────────────────────
+::ng-deep .dx-data-grid .row-incoming td {
+  background: #edfaf1 !important;
+}
+::ng-deep .dx-data-grid .row-outgoing td {
+  background: #fff6ed !important;
+}
+::ng-deep .dx-data-grid .row-internal td {
+  background: #eef4ff !important;
+}
+
+// ── Badge de référence ───────────────────────────────────────
+.ref-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 0.5px solid;
+}
+.ref-badge.incoming {
+  background: #d1fae5;
+  color: #065f46;
+  border-color: #6ee7b7;
+}
+.ref-badge.outgoing {
+  background: #ffedd5;
+  color: #9a3412;
+  border-color: #fdba74;
+}
+.ref-badge.internal {
+  background: #dbeafe;
+  color: #1e40af;
+  border-color: #93c5fd;
+}
+
+// ── Icône de type ────────────────────────────────────────────
+.type-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.badge-in {
+  background: #d1fae5;
+  color: #065f46;
+}
+.badge-out {
+  background: #ffedd5;
+  color: #9a3412;
+}
+.badge-int {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+// ── Légende en haut du tableau ───────────────────────────────
+.type-legend {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: #6b7280;
+  }
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+  }
+}
