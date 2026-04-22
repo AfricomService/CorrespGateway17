@@ -88,6 +88,12 @@ export interface CorrespListItemDTO {
   msgSender?: string | null;
   msgReceiver?: string | null;
 }
+export interface ApiFilter {
+  field: string;
+  label: string;
+  value: any;
+  displayValue: string;
+}
 
 export interface PagedCorrespListResponse {
   content: CorrespListItemDTO[];
@@ -702,7 +708,15 @@ export class CorrespService {
     page: number = 1,
     size: number = 15,
     q: string = '',
-    filters?: { reference?: string; status?: string; dispatchType?: string; startDate?: string; endDate?: string }
+    filters?: {
+      reference?: string;
+      status?: string;
+      dispatchType?: string;
+      startDate?: string;
+      endDate?: string;
+      corresptype?: string;
+      priority?: boolean;
+    }
   ): Observable<PagedCorrespListResponse> {
     let params: any = { userId, page, size };
     if (q) params['q'] = q;
@@ -711,6 +725,8 @@ export class CorrespService {
     if (filters?.dispatchType) params['dispatchType'] = filters.dispatchType;
     if (filters?.startDate) params['startDate'] = filters.startDate;
     if (filters?.endDate) params['endDate'] = filters.endDate;
+    if (filters?.corresptype) params['corresptype'] = filters.corresptype;
+    if (filters?.priority != null) params['priority'] = filters.priority;
 
     return this.http
       .get<PagedCorrespListResponse>(`${this.applicationConfigService.getEndpointFor('api/corresps/list', 'correspmanage')}`, {
@@ -724,9 +740,43 @@ export class CorrespService {
   }
 
   // Méthode user simple
-  getCorrespListByAcl(userId: number, page: number = 1, size: number = 15, q: string = ''): Observable<PagedCorrespListResponse> {
+  getCorrespListByAcl(
+    userId: number,
+    page: number = 1,
+    size: number = 15,
+    q: string = '',
+    filters?: ApiFilter[]
+  ): Observable<PagedCorrespListResponse> {
     const params: any = { userId, page, size };
     if (q) params['q'] = q;
+
+    // Appliquer les filtres si présents
+    if (filters?.length) {
+      filters.forEach(f => {
+        switch (f.field) {
+          case 'corresptype':
+            params['corresptype'] = f.value;
+            break;
+          case 'reference':
+            params['reference'] = f.value;
+            break;
+          case 'status':
+            params['status'] = f.value;
+            break;
+          case 'dispatchType':
+            params['dispatchType'] = f.value;
+            break;
+          case 'priority':
+            params['priority'] = f.value;
+            break;
+          case 'courrierDate':
+            params['startDate'] = f.value.startDate;
+            params['endDate'] = f.value.endDate;
+            break;
+        }
+      });
+    }
+
     return this.http
       .get<PagedCorrespListResponse>(`${this.applicationConfigService.getEndpointFor('api/corresps/list-by-acl', 'correspmanage')}`, {
         params: createRequestOption(params),

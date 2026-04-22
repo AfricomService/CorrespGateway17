@@ -9,11 +9,12 @@
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          stroke-width="1.8"
+          stroke-width="2.2"
           stroke-linecap="round"
           stroke-linejoin="round"
         >
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          <rect x="2" y="4" width="20" height="16" rx="2" />
+          <polyline points="2,4 12,13 22,4" />
         </svg>
       </div>
       <div>
@@ -39,19 +40,29 @@
         </svg>
         Exporter
       </button>
-      <button class="btn btn-primary" routerLink="/corresp/new">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-          <line x1="12" y1="5" x2="12" y2="19" />
-          <line x1="5" y1="12" x2="19" y2="12" />
+      <button class="btn btn-refresh" (click)="load()" [class.spinning]="isLoading">
+        <svg
+          width="15"
+          height="15"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <polyline points="1 4 1 10 7 10" />
+          <path d="M3.51 15a9 9 0 1 0 .49-3.7" />
         </svg>
-        Nouveau courrier
+        Actualiser
       </button>
     </div>
   </div>
 
-  <!-- ═══ SEARCH & FILTERS ══════════════════════════════════════════════════ -->
-  <div class="search-section">
-    <div class="search-bar-wrapper">
+  <!-- ═══ SEARCH CARD ════════════════════════════════════════════════════════ -->
+  <div class="search-card">
+    <!-- ── Top row: input + actions ──────────────────────────────────────── -->
+    <div class="search-bar-row">
       <div class="search-input-group">
         <svg
           class="search-icon"
@@ -70,7 +81,7 @@
           type="text"
           class="search-input"
           [(ngModel)]="quickSearch"
-          placeholder="Rechercher par référence, sujet ou expéditeur..."
+          placeholder="Rechercher par référence et / ou objet"
           (keyup.enter)="onQuickSearch()"
           (input)="quickSearch.trim() === '' && clearQuickSearch()"
         />
@@ -86,7 +97,7 @@
           <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
         </svg>
         Filtres avancés
-        <span class="filter-count" *ngIf="activeFilters.length > 0">{{ activeFilters.length }}</span>
+        <span class="filter-active-dot" *ngIf="filterApplied"></span>
       </button>
       <button class="btn btn-primary search-btn" (click)="onQuickSearch()" [disabled]="!quickSearch.trim()">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
@@ -97,119 +108,153 @@
       </button>
     </div>
 
-    <!-- Filter Panel -->
-    <div class="filter-panel-wrapper" [class.open]="isOpen">
-      <div class="filter-panel">
-        <div class="filter-row">
-          <div class="filter-select-group">
-            <label class="filter-label">Critère</label>
-            <select class="form-select" [(ngModel)]="selectedFilter" (change)="resetFilterValue()">
-              <option value="" disabled selected>Choisir un filtre</option>
-              <option *ngFor="let opt of availableFilters" [value]="opt.value">{{ opt.label }}</option>
-            </select>
-          </div>
-
-          <div class="filter-value-group">
-            <label class="filter-label">Valeur</label>
-            <ng-container [ngSwitch]="selectedFilter">
-              <input
-                class="form-control"
-                *ngSwitchCase="'reference'"
-                type="text"
-                [(ngModel)]="filterValue"
-                placeholder="Entrer une référence"
-              />
-              <select class="form-select" *ngSwitchCase="'status'" [(ngModel)]="filterValue">
-                <option *ngFor="let s of statusOptions" [value]="s.value">{{ s.label }}</option>
-              </select>
-              <select class="form-select" *ngSwitchCase="'dispatchType'" [(ngModel)]="filterValue">
-                <option *ngFor="let d of dispatchOptions" [value]="d.value">{{ d.label }}</option>
-              </select>
-              <div class="date-range-inputs" *ngSwitchCase="'courrierDate'">
-                <input class="form-control" type="date" [(ngModel)]="dateRange.startDate" placeholder="Début" />
-                <span class="date-range-sep">→</span>
-                <input class="form-control" type="date" [(ngModel)]="dateRange.endDate" placeholder="Fin" />
-              </div>
-              <div *ngSwitchDefault class="filter-placeholder">Sélectionnez d'abord un critère</div>
-            </ng-container>
-          </div>
-
-          <div class="filter-actions-group">
-            <label class="filter-label">&nbsp;</label>
-            <div style="display: flex; gap: 0.5em">
-              <button
-                class="btn btn-add-filter"
-                [disabled]="
-                  !selectedFilter ||
-                  (selectedFilter !== 'courrierDate' && !filterValue) ||
-                  (selectedFilter === 'courrierDate' && (!dateRange.startDate || !dateRange.endDate))
-                "
-                (click)="addFilter()"
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-                Ajouter
-              </button>
-              <button class="btn btn-apply" (click)="applyFilters()" [disabled]="activeFilters.length === 0">Appliquer</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Saved filters -->
-        <div class="saved-filters" *ngIf="!(activeFilters.length > 0) && loadedFiltres.length > 0">
-          <span class="saved-filters__label">Filtres sauvegardés :</span>
-          <div class="saved-filters__chips">
-            <div class="filter-chip-wrapper" *ngFor="let filter of loadedFiltres">
-              <span class="saved-chip" [class.active]="filter.active" (click)="selectOnlyThisFilter(filter)">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                  <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-                </svg>
-                {{ filter.name }}
-              </span>
-              <div class="chip-tooltip">
-                <div *ngFor="let entry of getFilterEntries(filter.filters)">
-                  <strong>{{ entry.key }}</strong
-                  >: {{ entry.value }}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Active filters -->
-        <div class="active-filters-row" *ngIf="activeFilters.length > 0">
-          <span class="saved-filters__label">Filtres actifs :</span>
-          <div class="active-chips">
-            <span class="active-chip" *ngFor="let filter of activeFilters; let i = index">
-              <span class="active-chip__label">{{ filter.label }}</span>
-              <span class="active-chip__value">{{ filter.displayValue }}</span>
-              <button class="active-chip__remove" (click)="removeFilter(i)">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
-            </span>
-            <span
-              *ngIf="filterApplied"
-              class="save-filter-chip"
-              (click)="openCustomSearchModal(saveFilterModal)"
-              [class.disabled]="isSaving"
-            >
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                <polyline points="17 21 17 13 7 13 7 21" />
-                <polyline points="7 3 7 8 15 8" />
+    <!-- ── Saved filters — always visible ────────────────────────────────── -->
+    <div class="favorites-row" *ngIf="loadedFiltres.length > 0">
+      <span class="favorites-label">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+        </svg>
+        Filtres favoris <span class="favorites-hint">(Cliquez pour appliquer)</span>
+      </span>
+      <div class="favorites-chips">
+        <div class="fav-chip-outer" *ngFor="let fav of loadedFiltres">
+          <button class="fav-chip" [class.active]="fav.active" (click)="selectOnlyThisFilter(fav)">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+            </svg>
+            {{ fav.name }}
+            <span class="fav-chip__x" (click)="$event.stopPropagation(); removeSavedFilter(fav)">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
-              {{ isSaving ? 'Filtre sauvegardé ✓' : 'Sauvegarder ce filtre' }}
             </span>
+          </button>
+          <div class="fav-tooltip">
+            <div *ngFor="let entry of getFilterEntries(fav.filters)">
+              <strong>{{ entry.key }}</strong
+              >: {{ entry.value }}
+            </div>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- ── Collapsible filter panel ───────────────────────────────────────── -->
+    <div class="filter-panel-wrapper" [class.open]="isOpen">
+      <div class="filter-panel">
+        <!-- Panel header -->
+        <div class="fp-header">
+          <span class="fp-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+            </svg>
+            Filtres avancés
+          </span>
+          <button class="btn-reset" (click)="resetAllFilters()" *ngIf="filterApplied">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+              <polyline points="1 4 1 10 7 10" />
+              <path d="M3.51 15a9 9 0 1 0 .49-3.7" />
+            </svg>
+            Réinitialiser
+          </button>
+        </div>
+
+        <!-- Grid of all filter fields side by side -->
+        <div class="fp-fields">
+          <div class="fp-field">
+            <label class="fp-label">TYPE DE COURRIER</label>
+            <select class="fp-select" [(ngModel)]="flatFilters.corresptype">
+              <option [ngValue]="null">Tous les types</option>
+              <option value="INCOMING">Arrivée</option>
+              <option value="OUTGOING">Départ</option>
+              <option value="INTERNAL">Interne</option>
+            </select>
+          </div>
+
+          <div class="fp-field">
+            <label class="fp-label">STATUT</label>
+            <select class="fp-select" [(ngModel)]="flatFilters.status">
+              <option [ngValue]="null">Tous les statuts</option>
+              <option *ngFor="let s of statusOptions" [value]="s.value">{{ s.label }}</option>
+            </select>
+          </div>
+
+          <div class="fp-field">
+            <label class="fp-label">TYPE D'ENVOI</label>
+            <select class="fp-select" [(ngModel)]="flatFilters.dispatchType">
+              <option [ngValue]="null">Tous les envois</option>
+              <option *ngFor="let d of dispatchOptions" [value]="d.value">{{ d.label }}</option>
+            </select>
+          </div>
+
+          <div class="fp-field">
+            <label class="fp-label">PRIORITÉ</label>
+            <select class="fp-select" [(ngModel)]="flatFilters.priority">
+              <option [ngValue]="null">Toutes priorités</option>
+              <option [ngValue]="true">Prioritaire</option>
+              <option [ngValue]="false">Normale</option>
+            </select>
+          </div>
+
+          <div class="fp-field fp-field--date">
+            <label class="fp-label">PÉRIODE</label>
+            <div class="fp-date-range">
+              <input class="fp-input" type="date" [(ngModel)]="flatFilters.startDate" />
+              <span class="fp-date-sep">à</span>
+              <input class="fp-input" type="date" [(ngModel)]="flatFilters.endDate" />
+            </div>
+          </div>
+
+          <div class="fp-field">
+            <label class="fp-label">RÉFÉRENCE</label>
+            <input class="fp-input" type="text" [(ngModel)]="flatFilters.reference" placeholder="Ex: AR_26_00046..." />
+          </div>
+        </div>
+
+        <!-- Apply button -->
+        <div class="fp-apply-row">
+          <button class="btn btn-apply-filters" (click)="applyFlatFilters()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            Appliquer les filtres
+          </button>
+          <button class="btn btn-reset-filters" (click)="resetAllFilters()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+              <polyline points="1 4 1 10 7 10" />
+              <path d="M3.51 15a9 9 0 1 0 .49-3.7" />
+            </svg>
+            Réinitialiser
+          </button>
+        </div>
+
+        <!-- Save favourite section -->
+        <div class="fp-save-section">
+          <div class="fp-save-divider"></div>
+          <p class="fp-save-label">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+            </svg>
+            Nom du filtre favori
+          </p>
+          <div class="fp-save-row">
+            <input class="fp-save-input" type="text" [(ngModel)]="nameFilter" placeholder="Ex: Courriers urgents arrivée..." />
+            <button class="btn btn-save-fav" (click)="saveCustomFilters()" [disabled]="!nameFilter.trim() || isSaving">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                <polyline points="17 21 17 13 7 13 7 21" />
+                <polyline points="7 3 7 8 15 8" />
+              </svg>
+              {{ isSaving ? 'Sauvegardé ✓' : 'Sauvegarder ce filtre' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- end collapsible panel -->
   </div>
+  <!-- end search-card -->
 
   <!-- ═══ TYPE LEGEND ═══════════════════════════════════════════════════════ -->
   <div class="type-legend">
@@ -239,7 +284,7 @@
     </div>
   </div>
 
-  <!-- ═══ DATA GRID ═══════════════════════════════════════════════════════════ -->
+  <!-- ═══ DATA GRID ══════════════════════════════════════════════════════════ -->
   <div class="grid-card">
     <dx-data-grid
       [dataSource]="datasource"
@@ -252,7 +297,7 @@
     >
       <dxo-paging [enabled]="true" [pageSize]="15"></dxo-paging>
 
-      <!-- Référence -->
+      <!-- N° -->
       <dxi-column dataField="reference" caption="N°" [width]="145" cellTemplate="referenceTemplate"></dxi-column>
       <div *dxTemplate="let d of 'referenceTemplate'">
         <span
@@ -263,8 +308,7 @@
             'ref-int': d.data.corresptype === 'INTERNAL'
           }"
         >
-          <span class="ref-dot"></span>
-          {{ d.data.reference }}
+          <span class="ref-dot"></span>{{ d.data.reference }}
         </span>
       </div>
 
@@ -272,30 +316,79 @@
       <dxi-column dataField="corresptype" caption="Type" alignment="center" [width]="64" cellTemplate="typeTemplate"></dxi-column>
       <div *dxTemplate="let d of 'typeTemplate'" style="display: flex; justify-content: center; align-items: center">
         <ng-container [ngSwitch]="d.data.corresptype">
+          <!-- ARRIVÉE : boîte bleue + flèche rouge descendante -->
           <span *ngSwitchCase="'INCOMING'" class="type-icon type-in" ngbTooltip="Arrivée" placement="top">
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-              <path d="M8 3v10M3 8l5 5 5-5" />
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="32" height="32" fill="none">
+              <path
+                d="M8,20 L8,48 A6,6 0 0,0 14,54 L50,54 A6,6 0 0,0 56,48 L56,20"
+                stroke="#3b82f6"
+                stroke-width="4"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M8,20 L20,20 L24,34 L40,34 L44,20 L56,20"
+                stroke="#3b82f6"
+                stroke-width="4"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                fill="#eff6ff"
+              />
+              <path
+                d="M32,8 L32,42 M20,30 L32,42 L44,30"
+                stroke="#ef4444"
+                stroke-width="5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
             </svg>
           </span>
+
+          <!-- DÉPART : boîte bleue + flèche rouge montante -->
           <span *ngSwitchCase="'OUTGOING'" class="type-icon type-out" ngbTooltip="Départ" placement="top">
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-              <path d="M8 13V3M3 8l5-5 5 5" />
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="32" height="32" fill="none">
+              <path
+                d="M8,20 L8,48 A6,6 0 0,0 14,54 L50,54 A6,6 0 0,0 56,48 L56,20"
+                stroke="#3b82f6"
+                stroke-width="4"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M8,20 L20,20 L24,34 L40,34 L44,20 L56,20"
+                stroke="#3b82f6"
+                stroke-width="4"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                fill="#eff6ff"
+              />
+              <path
+                d="M32,44 L32,10 M20,22 L32,10 L44,22"
+                stroke="#ef4444"
+                stroke-width="5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
             </svg>
           </span>
+
+          <!-- INTERNE : clipboard beige/orange -->
           <span *ngSwitchCase="'INTERNAL'" class="type-icon type-int" ngbTooltip="Interne" placement="top">
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-              <path d="M3 6h10M8 1l5 5M13 10H3M8 15l-5-5" />
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="32" height="32" fill="none">
+              <rect x="14" y="10" width="36" height="48" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="3" />
+              <path d="M26,10 L26,6 A2,2 0 0,1 28,4 L36,4 A2,2 0 0,1 38,6 L38,10" fill="#9ca3af" stroke="#4b5563" stroke-width="3" />
+              <line x1="22" y1="24" x2="42" y2="24" stroke="#d97706" stroke-width="2" stroke-linecap="round" />
+              <line x1="22" y1="32" x2="42" y2="32" stroke="#d97706" stroke-width="2" stroke-linecap="round" />
+              <line x1="22" y1="40" x2="42" y2="40" stroke="#d97706" stroke-width="2" stroke-linecap="round" />
             </svg>
           </span>
         </ng-container>
       </div>
 
       <!-- Date -->
-      <dxi-column dataField="courrierDate" caption="Date" dataType="date" [width]="120" cellTemplate="dateTemplate"></dxi-column>
+      <dxi-column dataField="courrierDate" caption="Date" dataType="date" [width]="115" cellTemplate="dateTemplate"></dxi-column>
       <div *dxTemplate="let d of 'dateTemplate'">
-        <div class="date-cell">
-          <span class="date-main">{{ d.data.courrierDate | date: 'dd/MM/yyyy' }}</span>
-        </div>
+        <span class="date-main">{{ d.data.courrierDate | date: 'dd/MM/yyyy' }}</span>
       </div>
 
       <!-- Objet -->
@@ -338,8 +431,7 @@
             'status-cancel': d.data.status === 'CANCELLED'
           }"
         >
-          <span class="status-dot"></span>
-          {{ d.displayValue }}
+          <span class="status-dot"></span>{{ d.displayValue }}
         </span>
       </div>
 
@@ -356,8 +448,8 @@
         <ng-container *ngIf="d.data.priority; else noPriority">
           <span class="priority-high" ngbTooltip="Priorité haute" placement="top">
             <svg
-              width="16"
-              height="16"
+              width="15"
+              height="15"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -374,8 +466,8 @@
         <ng-template #noPriority>
           <span class="priority-low" ngbTooltip="Priorité normale" placement="top">
             <svg
-              width="16"
-              height="16"
+              width="15"
+              height="15"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -393,36 +485,3 @@
     </dx-data-grid>
   </div>
 </div>
-
-<!-- ═══ SAVE FILTER MODAL ═══════════════════════════════════════════════════ -->
-<ng-template #saveFilterModal let-saveFilterModal>
-  <div class="modal-header custom-modal-header">
-    <h5 class="modal-title">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-        <polyline points="17 21 17 13 7 13 7 21" />
-        <polyline points="7 3 7 8 15 8" />
-      </svg>
-      Sauvegarder un filtre personnalisé
-    </h5>
-  </div>
-  <div class="modal-body custom-modal-body">
-    <input class="form-control" type="text" [(ngModel)]="nameFilter" placeholder="Nom du filtre personnalisé" />
-    <div class="modal-filter-preview" *ngIf="activeFilters.length > 0">
-      <span class="active-chip" *ngFor="let filter of activeFilters">
-        <span class="active-chip__label">{{ filter.label }}</span>
-        <span class="active-chip__value">{{ filter.displayValue }}</span>
-      </span>
-    </div>
-  </div>
-  <div class="modal-footer custom-modal-footer">
-    <button type="button" class="btn btn-ghost" (click)="saveFilterModal.close('Close click')">Annuler</button>
-    <button type="submit" class="btn btn-primary" (click)="saveCustomFilters()">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-        <polyline points="17 21 17 13 7 13 7 21" />
-      </svg>
-      Enregistrer
-    </button>
-  </div>
-</ng-template>
