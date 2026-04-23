@@ -21,6 +21,7 @@ type NumsequentielleFormGroupContent = {
   prefix: FormControl<INumsequentielle['prefix']>;
   nextNumber: FormControl<INumsequentielle['nextNumber']>;
   format: FormControl<INumsequentielle['format']>;
+  codeNumSeq: FormControl<INumsequentielle['codeNumSeq']>;
 };
 
 export type NumsequentielleFormGroup = FormGroup<NumsequentielleFormGroupContent>;
@@ -33,18 +34,13 @@ export class NumsequentielleFormService {
       ...numsequentielle,
     };
     return new FormGroup<NumsequentielleFormGroupContent>({
-      id: new FormControl(
-        { value: numsequentielleRawValue.id, disabled: true },
-        {
-          nonNullable: true,
-          validators: [Validators.required],
-        }
-      ),
+      id: new FormControl({ value: numsequentielleRawValue.id, disabled: true }, { nonNullable: true, validators: [Validators.required] }),
       prefix: new FormControl(numsequentielleRawValue.prefix),
       nextNumber: new FormControl(numsequentielleRawValue.nextNumber, {
         validators: [Validators.required],
       }),
       format: new FormControl(numsequentielleRawValue.format),
+      codeNumSeq: new FormControl(numsequentielleRawValue.codeNumSeq),
     });
   }
 

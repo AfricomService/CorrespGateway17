@@ -19,6 +19,7 @@ type ParentClassdefFormDefaults = Pick<NewParentClassdef, 'id'>;
 type ParentClassdefFormGroupContent = {
   id: FormControl<IParentClassdef['id'] | NewParentClassdef['id']>;
   type: FormControl<IParentClassdef['type']>;
+  formule: FormControl<IParentClassdef['formule']>;
   sequenceId: FormControl<IParentClassdef['sequenceId']>;
 };
 
@@ -40,6 +41,7 @@ export class ParentClassdefFormService {
         }
       ),
       type: new FormControl(parentClassdefRawValue.type),
+      formule: new FormControl(parentClassdefRawValue.formule),
       sequenceId: new FormControl(parentClassdefRawValue.sequenceId),
     });
   }
