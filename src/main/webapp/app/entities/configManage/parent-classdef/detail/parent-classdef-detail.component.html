@@ -20,6 +20,26 @@
         <dd>
           <span jhiTranslate="{{ 'correspCareApp.CorrespType.' + parentClassdef.type }}">{{ parentClassdef.type }}</span>
         </dd>
+        <dt><span jhiTranslate="correspCareApp.configManageParentClassdef.formule">Formule</span></dt>
+        <dd>
+          <pre
+            *ngIf="parentClassdef.formule"
+            style="
+              background: #0f172a;
+              color: #e2e8f0;
+              font-family: 'Courier New', monospace;
+              font-size: 13px;
+              padding: 12px 16px;
+              border-radius: 8px;
+              white-space: pre-wrap;
+              word-break: break-all;
+              margin: 0;
+            "
+            >{{ parentClassdef.formule }}</pre
+          >
+          <span *ngIf="!parentClassdef.formule" class="text-muted">—</span>
+        </dd>
+
         <dt><span jhiTranslate="correspCareApp.configManageParentClassdef.sequenceId">Sequence Id</span></dt>
         <dd>
           <div *ngIf="parentClassdef.sequenceId">
