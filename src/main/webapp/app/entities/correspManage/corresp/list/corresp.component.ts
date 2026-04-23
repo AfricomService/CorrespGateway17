@@ -29,6 +29,7 @@ interface FlatFilters {
   startDate: string | null;
   endDate: string | null;
   reference: string | null;
+  nomSociete: string | null;
 }
 
 const EMPTY_FLAT: FlatFilters = {
@@ -39,6 +40,7 @@ const EMPTY_FLAT: FlatFilters = {
   startDate: null,
   endDate: null,
   reference: null,
+  nomSociete: null,
 };
 
 @Component({
@@ -81,6 +83,7 @@ export class CorrespComponent implements OnInit {
 
   quickSearch = '';
   isSearching = false;
+  societes: { id: number; raisonSociale: string }[] = [];
 
   // ── Static option lists ────────────────────────────────────────
   statusOptions = [
@@ -106,6 +109,7 @@ export class CorrespComponent implements OnInit {
     priority: 'Priorité',
     startDate: 'Date de début',
     endDate: 'Date de fin',
+    nomSociete: 'Société',
   };
 
   public resourceUrl = SERVER_API_URL + 'services/correspmanage/api/corresps';
@@ -126,6 +130,7 @@ export class CorrespComponent implements OnInit {
   // ── Lifecycle ──────────────────────────────────────────────────
   ngOnInit(): void {
     this.customSearchService.getByUserLogin().subscribe(res => (this.loadedFiltres = res));
+    this.correspService.getAllSocietes().subscribe(res => (this.societes = res));
 
     this.accountService.identity().subscribe((account: Account | null) => {
       if (account) {
@@ -219,6 +224,9 @@ export class CorrespComponent implements OnInit {
               case 'priority':
                 params.priority = f.value;
                 break;
+              case 'nomSociete':
+                params.nomSociete = f.value;
+                break;
               case 'courrierDate':
                 params.startDate = f.value.startDate;
                 params.endDate = f.value.endDate;
@@ -236,6 +244,7 @@ export class CorrespComponent implements OnInit {
             priority: params.priority,
             startDate: params.startDate,
             endDate: params.endDate,
+            nomSociete: params.nomSociete,
           })
         );
         return { data: response.content, totalCount: response.totalItems };
@@ -296,6 +305,14 @@ export class CorrespComponent implements OnInit {
         displayValue: this.flatFilters.reference.trim(),
       });
     }
+    if (this.flatFilters.nomSociete?.trim()) {
+      apiFilters.push({
+        field: 'nomSociete',
+        label: 'Société',
+        value: this.flatFilters.nomSociete.trim(),
+        displayValue: this.flatFilters.nomSociete.trim(),
+      });
+    }
     if (this.flatFilters.startDate && this.flatFilters.endDate) {
       apiFilters.push({
         field: 'courrierDate',
@@ -354,11 +371,18 @@ export class CorrespComponent implements OnInit {
 
   /** Remove a saved favourite filter (client-side only — add API call if needed) */
   removeSavedFilter(fav: CustomSearchView): void {
-    this.loadedFiltres = this.loadedFiltres.filter(f => f !== fav);
-    if (fav.active) {
-      this.filterApplied = false;
-      this.load();
-    }
+    if (!fav.id) return;
+
+    this.customSearchService.delete(fav.id).subscribe({
+      next: () => {
+        this.loadedFiltres = this.loadedFiltres.filter(f => f !== fav);
+        if (fav.active) {
+          this.filterApplied = false;
+          this.load();
+        }
+      },
+      error: err => console.error('Erreur suppression filtre', err),
+    });
   }
 
   saveCustomFilters(): void {

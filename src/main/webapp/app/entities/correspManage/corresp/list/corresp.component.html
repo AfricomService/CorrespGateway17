@@ -210,6 +210,14 @@
             <label class="fp-label">RÉFÉRENCE</label>
             <input class="fp-input" type="text" [(ngModel)]="flatFilters.reference" placeholder="Ex: AR_26_00046..." />
           </div>
+
+          <div class="fp-field">
+            <label class="fp-label">SOCIÉTÉ</label>
+            <select class="fp-select" [(ngModel)]="flatFilters.nomSociete">
+              <option [ngValue]="null">Toutes les sociétés</option>
+              <option *ngFor="let s of societes" [value]="s.raisonSociale">{{ s.raisonSociale }}</option>
+            </select>
+          </div>
         </div>
 
         <!-- Apply button -->

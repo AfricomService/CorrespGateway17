@@ -716,6 +716,7 @@ export class CorrespService {
       endDate?: string;
       corresptype?: string;
       priority?: boolean;
+      nomSociete?: string;
     }
   ): Observable<PagedCorrespListResponse> {
     let params: any = { userId, page, size };
@@ -727,6 +728,7 @@ export class CorrespService {
     if (filters?.endDate) params['endDate'] = filters.endDate;
     if (filters?.corresptype) params['corresptype'] = filters.corresptype;
     if (filters?.priority != null) params['priority'] = filters.priority;
+    if (filters?.nomSociete) params['nomSociete'] = filters.nomSociete;
 
     return this.http
       .get<PagedCorrespListResponse>(`${this.applicationConfigService.getEndpointFor('api/corresps/list', 'correspmanage')}`, {
@@ -769,6 +771,9 @@ export class CorrespService {
           case 'priority':
             params['priority'] = f.value;
             break;
+          case 'nomSociete':
+            params['nomSociete'] = f.value;
+            break;
           case 'courrierDate':
             params['startDate'] = f.value.startDate;
             params['endDate'] = f.value.endDate;
@@ -786,5 +791,11 @@ export class CorrespService {
           of({ content: [], currentPage: page, pageSize: size, totalItems: 0, totalPages: 0, hasNext: false, hasPrevious: false })
         )
       );
+  }
+
+  getAllSocietes(): Observable<{ id: number; raisonSociale: string }[]> {
+    return this.http
+      .get<{ id: number; raisonSociale: string }[]>(`${this.applicationConfigService.getEndpointFor('api/societes/list', 'orgacare')}`)
+      .pipe(catchError(() => of([])));
   }
 }
