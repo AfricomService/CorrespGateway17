@@ -20,7 +20,8 @@
         <div class="row mb-3">
           <label class="form-label" jhiTranslate="correspCareApp.configManageParentClassdef.type" for="field_type">Type</label>
           <select class="form-control" name="type" formControlName="type" id="field_type" data-cy="type">
-            <option [ngValue]="null">{{ 'correspCareApp.CorrespType.null' | translate }}</option>
+            <!--<option [ngValue]="null">{{ 'correspCareApp.CorrespType.null' | translate }}</option>-->
+            <option [ngValue]="null" disabled selected>-- Choisir un type --</option>
             <option *ngFor="let correspType of correspTypeValues" [value]="correspType">
               {{ 'correspCareApp.CorrespType.' + correspType | translate }}
             </option>
@@ -43,9 +44,18 @@
             "
           >
             <strong>Variables disponibles :</strong>
-            <code style="background: #dbeafe; padding: 1px 4px; border-radius: 3px; margin: 0 3px">&#36;&#123;prefix&#125;</code>
-            <code style="background: #dbeafe; padding: 1px 4px; border-radius: 3px; margin: 0 3px">&#36;&#123;year&#125;</code>
-            <code style="background: #dbeafe; padding: 1px 4px; border-radius: 3px; margin: 0 3px">&#36;&#123;number&#125;</code>
+            <code style="background: #dbeafe; padding: 1px 4px; border-radius: 3px; margin: 0 3px">&#36;&#123;correspTypeCode&#125;</code>
+            <code style="background: #dbeafe; padding: 1px 4px; border-radius: 3px; margin: 0 3px">&#36;&#123;societeCode&#125;</code>
+            <div style="margin-top: 6px; font-size: 11px; color: #3b82f6">
+              Formule standard :
+              <code style="background: #dbeafe; padding: 1px 4px; border-radius: 3px"
+                >&#36;&#123;correspTypeCode&#125;-&#36;&#123;societeCode&#125;</code
+              >
+            </div>
+            <div style="margin-top: 4px; font-size: 11px; color: #64748b">
+              correspTypeCode : AR (INCOMING), SR (OUTGOING), IN (INTERNAL) &nbsp;|&nbsp; societeCode : code unique de la société (ex: AF,
+              GDC)
+            </div>
           </div>
           <textarea
             class="form-control"
@@ -64,34 +74,34 @@
               padding: 14px;
               border: 1px solid #334155;
             "
-            placeholder='Ex : ${prefix}-${year}-${number?string["000"]}'
+            placeholder="Ex : ${correspTypeCode}-${societeCode}"
           ></textarea>
           <div style="margin-top: 6px; font-size: 11px; color: #64748b">
             💡 Ex :
             <code style="background: #f1f5f9; padding: 1px 4px; border-radius: 3px"
-              >&#36;&#123;prefix&#125;/&#36;&#123;year?c&#125;/&#36;&#123;number?string[&quot;0000&quot;]&#125;</code
+              >&#36;&#123;correspTypeCode&#125;-&#36;&#123;societeCode&#125;</code
             >
           </div>
         </div>
 
-        <div class="row mb-3">
-          <label class="form-label" jhiTranslate="correspCareApp.configManageParentClassdef.sequenceId" for="field_sequenceId"
-            >Sequence Id</label
-          >
-          <select
-            class="form-control"
-            id="field_sequenceId"
-            data-cy="sequenceId"
-            name="sequenceId"
-            formControlName="sequenceId"
-            [compareWith]="compareNumsequentielle"
-          >
-            <option [ngValue]="null"></option>
-            <option [ngValue]="numsequentielleOption" *ngFor="let numsequentielleOption of numsequentiellesSharedCollection">
-              {{ numsequentielleOption.id }}
-            </option>
-          </select>
-        </div>
+        <!-- <div class="row mb-3">
+           <label class="form-label" jhiTranslate="correspCareApp.configManageParentClassdef.sequenceId" for="field_sequenceId"
+             >Sequence Id</label
+           >
+           <select
+             class="form-control"
+             id="field_sequenceId"
+             data-cy="sequenceId"
+             name="sequenceId"
+             formControlName="sequenceId"
+             [compareWith]="compareNumsequentielle"
+           >
+             <option [ngValue]="null"></option>
+             <option [ngValue]="numsequentielleOption" *ngFor="let numsequentielleOption of numsequentiellesSharedCollection">
+               {{ numsequentielleOption.id }}
+             </option>
+           </select>
+         </div>-->
       </div>
 
       <div>

@@ -800,12 +800,14 @@ export class CorrespUpdateComponent implements OnInit {
     }
 
     this.isGeneratingReference = true;
-    this.parentClassdefService.getNextNumber(correspTypeValue).subscribe({
+    // Récupérer le codeSociete depuis la société sélectionnée
+    const societeCode = this.selectedSociete?.codeSociete ?? null;
+
+    this.parentClassdefService.getNextNumber(correspTypeValue, societeCode).subscribe({
       next: nextNumber => {
         this.generatedReference = nextNumber || '';
         this.isGeneratingReference = false;
         this.showNotification(`Référence générée : ${this.generatedReference}`, 'success');
-        // Après génération de la référence, sauvegarder et naviguer vers le détail
         this.saveCorresp(false, true);
       },
       error: () => {
