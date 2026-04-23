@@ -59,9 +59,11 @@ export class ParentClassdefService {
    * Récupère le numéro suivant pour le type donné (renvoie une chaîne plain text).
    * Exemple d'URL (via gateway) : /services/configmanage/api/parent-classdefs/next/INCOMING
    */
-  getNextNumber(type: string): Observable<string> {
-    const url = `${this.resourceUrl}/next/${encodeURIComponent(type)}`;
-    // responseType: 'text' => HttpClient renverra Observable<string>
+  getNextNumber(type: string, societeCode?: string | null): Observable<string> {
+    let url = `${this.resourceUrl}/next/${encodeURIComponent(type)}`;
+    if (societeCode) {
+      url += `?societeCode=${encodeURIComponent(societeCode)}`;
+    }
     return this.http.get(url, { responseType: 'text' });
   }
 

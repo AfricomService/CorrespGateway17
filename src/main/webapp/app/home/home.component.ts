@@ -369,12 +369,63 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   // --------- Navigation / interactions ----------
+  // === Société modal state ===
+  societeModalOpen = false;
+  societeModalType = '';
+  societeModalList: { id: number; raisonSociale: string; codeSociete?: string | null }[] = [];
+  societeModalSelected: { id: number; raisonSociale: string; codeSociete?: string | null } | null = null;
+  societeModalLoading = false;
+
   onTypeClicked(type: string): void {
     if (type === 'Sortant') {
       this.router.navigate(['/corresp/new-out']);
-    } else {
-      this.router.navigate(['/corresp/new'], { queryParams: { type } });
+      return;
     }
+    // Charger les sociétés de l'utilisateur
+    this.societeModalLoading = true;
+    this.societeModalSelected = null;
+    this.societeModalType = type;
+    this.correspService.getMySocietes().subscribe({
+      next: societes => {
+        this.societeModalLoading = false;
+        if (societes.length === 0 || societes.length === 1) {
+          // 0 ou 1 société → naviguer directement
+          const queryParams: any = { type };
+          if (societes.length === 1) {
+            queryParams['societeId'] = societes[0].id;
+            queryParams['societeNom'] = societes[0].raisonSociale;
+          }
+          this.router.navigate(['/corresp/new'], { queryParams });
+        } else {
+          // Plusieurs sociétés → ouvrir le modal
+          this.societeModalList = societes;
+          this.societeModalOpen = true;
+        }
+      },
+      error: () => {
+        this.societeModalLoading = false;
+        this.router.navigate(['/corresp/new'], { queryParams: { type } });
+      },
+    });
+  }
+
+  closeSocieteModal(): void {
+    this.societeModalOpen = false;
+    this.societeModalList = [];
+    this.societeModalSelected = null;
+  }
+
+  confirmSocieteSelection(): void {
+    if (!this.societeModalSelected) return;
+    this.router.navigate(['/corresp/new'], {
+      queryParams: {
+        type: this.societeModalType,
+        societeId: this.societeModalSelected.id,
+        societeNom: this.societeModalSelected.raisonSociale,
+        societeCode: this.societeModalSelected.codeSociete ?? '',
+      },
+    });
+    this.closeSocieteModal();
   }
 
   // --- Tabs / boutons ---

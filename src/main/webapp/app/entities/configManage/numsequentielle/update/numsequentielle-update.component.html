@@ -58,6 +58,26 @@
         </div>
 
         <div class="row mb-3">
+          <label class="form-label" for="field_codeNumSeq">
+            Code Num Séq <span class="text-danger">*</span>
+            <small class="text-muted ms-2">(ex: AR-AF, SR-GDC, IN-AF)</small>
+          </label>
+          <input
+            type="text"
+            class="form-control"
+            name="codeNumSeq"
+            id="field_codeNumSeq"
+            data-cy="codeNumSeq"
+            formControlName="codeNumSeq"
+            placeholder="Ex : AR-AF"
+          />
+          <div style="margin-top: 6px; font-size: 12px; color: #6c757d">
+            Convention : <strong>AR</strong>=Arrivée, <strong>SR</strong>=Sortant, <strong>IN</strong>=Interne +
+            <strong>-AF</strong>=Africom, <strong>-GDC</strong>=GDC
+          </div>
+        </div>
+
+        <div class="row mb-3">
           <label class="form-label" jhiTranslate="correspCareApp.configManageNumsequentielle.format" for="field_format">Format</label>
           <input type="text" class="form-control" name="format" id="field_format" data-cy="format" formControlName="format" />
         </div>

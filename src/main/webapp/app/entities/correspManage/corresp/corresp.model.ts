@@ -56,6 +56,8 @@ export interface ICorresp {
   modelNotifId?: string | null;
   idSociete?: number | null;
   nomSociete?: string | null;
+  codeUniqueSociete?: string | null;
+
   //msgReceiver?: string | null;  // transient, pour passer au backend
   //msgCopyTo?: string | null;    // transient
 }

@@ -4,6 +4,7 @@ import { CorrespType } from 'app/entities/enumerations/corresp-type.model';
 export interface IParentClassdef {
   id: number;
   type?: CorrespType | null;
+  formule?: string | null;
   sequenceId?: Pick<INumsequentielle, 'id'> | null;
 }
 
