@@ -74,6 +74,7 @@ export interface PagedReferenceResponse {
 export interface SocieteItem {
   id: number;
   raisonSociale: string;
+  codeSociete?: string | null;
 }
 
 // Nouveau DTO de liste

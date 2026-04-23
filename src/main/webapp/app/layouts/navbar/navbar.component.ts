@@ -10,6 +10,7 @@ import { AccountService } from 'app/core/auth/account.service';
 import { LoginService } from 'app/login/login.service';
 import { ProfileService } from 'app/layouts/profiles/profile.service';
 import { EntityNavbarItems } from 'app/entities/entity-navbar-items';
+import { CorrespService } from 'app/entities/correspManage/corresp/service/corresp.service';
 
 @Component({
   selector: 'jhi-navbar',
@@ -36,7 +37,8 @@ export class NavbarComponent implements OnInit {
     private injector: Injector,
     private accountService: AccountService,
     private profileService: ProfileService,
-    private router: Router
+    private router: Router,
+    private correspService: CorrespService
   ) {
     if (VERSION) {
       this.version = VERSION.toLowerCase().startsWith('v') ? VERSION : `v${VERSION}`;
@@ -82,13 +84,57 @@ export class NavbarComponent implements OnInit {
     this.isNavbarCollapsed = !this.isNavbarCollapsed;
   }
 
+  // === Société modal state ===
+  societeModalOpen = false;
+  societeModalType = '';
+  societeModalList: { id: number; raisonSociale: string; codeSociete?: string | null }[] = [];
+  societeModalSelected: { id: number; raisonSociale: string; codeSociete?: string | null } | null = null;
+
   navigateTo(type: string): void {
     this.collapseNavbar();
     if (type === 'Sortant') {
       this.router.navigate(['/corresp/new-out']);
-    } else {
-      this.router.navigate(['/corresp/new'], { queryParams: { type } });
+      return;
     }
+    this.correspService.getMySocietes().subscribe({
+      next: societes => {
+        if (societes.length <= 1) {
+          const queryParams: any = { type };
+          if (societes.length === 1) {
+            queryParams['societeId'] = societes[0].id;
+            queryParams['societeNom'] = societes[0].raisonSociale;
+          }
+          this.router.navigate(['/corresp/new'], { queryParams });
+        } else {
+          this.societeModalList = societes;
+          this.societeModalType = type;
+          this.societeModalSelected = null;
+          this.societeModalOpen = true;
+        }
+      },
+      error: () => {
+        this.router.navigate(['/corresp/new'], { queryParams: { type } });
+      },
+    });
+  }
+
+  closeSocieteModal(): void {
+    this.societeModalOpen = false;
+    this.societeModalList = [];
+    this.societeModalSelected = null;
+  }
+
+  confirmSocieteModalSelection(): void {
+    if (!this.societeModalSelected) return;
+    this.router.navigate(['/corresp/new'], {
+      queryParams: {
+        type: this.societeModalType,
+        societeId: this.societeModalSelected.id,
+        societeNom: this.societeModalSelected.raisonSociale,
+        societeCode: this.societeModalSelected.codeSociete ?? '',
+      },
+    });
+    this.closeSocieteModal();
   }
 
   private loadModule(moduleType: Type<any>): void {

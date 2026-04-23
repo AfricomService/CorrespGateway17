@@ -148,20 +148,24 @@
                     Aucune société associée à votre compte.
                   </div>
 
-                  <!-- Une seule société → champ read-only -->
-                  <div *ngIf="!loadingSocietes && mySocietes.length === 1">
+                  <!-- Une seule société OU société pré-choisie via modal → lecture seule -->
+                  <div *ngIf="!loadingSocietes && (mySocietes.length === 1 || societeFromModal)">
                     <label class="form-label fw-semibold">Société</label>
                     <input
                       type="text"
                       class="form-control"
-                      [value]="mySocietes[0].raisonSociale"
+                      [value]="selectedSociete?.raisonSociale || ''"
                       disabled
                       style="background-color: #f8f9fa; cursor: default"
                     />
+                    <!-- Petite indication visuelle que la société vient du modal -->
+                    <div *ngIf="societeFromModal" style="margin-top: 4px; font-size: 12px; color: #6c757d; font-style: italic">
+                      ✓ Société sélectionnée avant la création
+                    </div>
                   </div>
 
-                  <!-- Plusieurs sociétés → liste déroulante obligatoire -->
-                  <div *ngIf="!loadingSocietes && mySocietes.length > 1">
+                  <!-- Plusieurs sociétés ET pas de pré-sélection → ne devrait plus arriver -->
+                  <div *ngIf="!loadingSocietes && mySocietes.length > 1 && !societeFromModal">
                     <label class="form-label fw-semibold"> Société <span class="text-danger">*</span> </label>
                     <select
                       class="form-select"

@@ -894,9 +894,11 @@ export class CorrespUpdateComponent implements OnInit {
     const hasAutoBocTask = this.tasks.some(t => t.autoBoc === true);
 
     // Persister la société sélectionnée
+    // Persister la société sélectionnée
     if (this.selectedSociete) {
       this.corresp!.idSociete = this.selectedSociete.id;
       this.corresp!.nomSociete = this.selectedSociete.raisonSociale;
+      this.corresp!.codeUniqueSociete = this.selectedSociete.codeSociete ?? null;
     }
 
     this.correspService
@@ -2057,15 +2059,43 @@ export class CorrespUpdateComponent implements OnInit {
       });
   }
 
+  /** true si la société a été pré-sélectionnée via le modal (queryParam) */
+  societeFromModal = false;
+
   loadMySocietes(): void {
     this.loadingSocietes = true;
+
+    // Lire les queryParams pour voir si une société a déjà été choisie via le modal
+    const societeId = this.route.snapshot.queryParamMap.get('societeId');
+    const societeNom = this.route.snapshot.queryParamMap.get('societeNom');
+
     this.correspService.getMySocietes().subscribe({
       next: societes => {
         this.mySocietes = societes;
-        // Si une seule société → sélection automatique
+
         if (societes.length === 1) {
+          // Cas 3 : une seule société → auto-sélection
           this.selectedSociete = societes[0];
+          this.societeFromModal = false;
+        } else if (societes.length > 1 && societeId) {
+          // Cas 4 : plusieurs sociétés MAIS déjà choisie via le modal
+          const found = societes.find(s => s.id === +societeId);
+          if (found) {
+            this.selectedSociete = found;
+            this.societeFromModal = true;
+            // Si codeSociete n'est pas encore renseigné dans l'objet trouvé,
+            // on le récupère depuis le queryParam
+            if (!found.codeSociete) {
+              const societeCode = this.route.snapshot.queryParamMap.get('societeCode');
+              if (societeCode) {
+                this.selectedSociete = { ...found, codeSociete: societeCode };
+              }
+            }
+          }
         }
+        // Si cas 4 sans queryParam → selectedSociete reste null,
+        // mais on ne devrait jamais arriver ici car le modal aurait été affiché avant
+
         this.loadingSocietes = false;
       },
       error: () => {
