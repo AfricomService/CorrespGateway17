@@ -35,6 +35,27 @@
       >
         {{ correspType }}
       </h5>
+
+      <!-- Badge société -->
+      <div
+        *ngIf="correspLoaded?.nomSociete"
+        style="
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          background: #f0f4ff;
+          border: 1px solid #c7d5f0;
+          border-radius: 20px;
+          padding: 3px 12px;
+          font-size: 13px;
+          font-weight: 600;
+          color: #1a3a6b;
+        "
+      >
+        <fa-icon icon="building" style="opacity: 0.75; font-size: 13px"></fa-icon>
+        {{ correspLoaded.nomSociete }}
+      </div>
+
       <div *ngIf="correspLoaded?.reference; else showButton">
         <span style="font-weight: bold; font-size: 1.2em; color: #2c3e50; font-style: italic">
           {{ correspLoaded?.reference }}

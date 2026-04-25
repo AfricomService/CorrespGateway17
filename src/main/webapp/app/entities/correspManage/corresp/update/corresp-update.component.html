@@ -33,6 +33,27 @@
       >
         {{ correspType }}
       </h5>
+
+      <!-- Société badge dans la toolbar -->
+      <div
+        *ngIf="selectedSociete"
+        style="
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          background: #f0f4ff;
+          border: 1px solid #c7d5f0;
+          border-radius: 20px;
+          padding: 3px 12px;
+          font-size: 13px;
+          font-weight: 600;
+          color: #1a3a6b;
+        "
+      >
+        <fa-icon icon="building" style="opacity: 0.75; flex-shrink: 0; font-size: 14px"></fa-icon>
+        {{ selectedSociete.raisonSociale }}
+      </div>
+
       <div *ngIf="generatedReference" style="font-weight: bold; font-size: 1.1em; color: #2c3e50; font-style: italic">
         {{ generatedReference }}
       </div>
@@ -135,53 +156,6 @@
               [style.padding]="accordionStates['infoGen'] ? '16px' : '0 16px'"
             >
               <form>
-                <!-- ===== SOCIÉTÉ ===== -->
-                <div style="margin-bottom: 1.5em; padding-bottom: 1.5em; border-bottom: 1px dashed #5570a3">
-                  <!-- Chargement -->
-                  <div *ngIf="loadingSocietes" style="color: #6c757d; font-size: 13px">
-                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-                    Chargement des sociétés...
-                  </div>
-
-                  <!-- Aucune société -->
-                  <div *ngIf="!loadingSocietes && mySocietes.length === 0" style="color: #6c757d; font-style: italic; font-size: 13px">
-                    Aucune société associée à votre compte.
-                  </div>
-
-                  <!-- Une seule société OU société pré-choisie via modal → lecture seule -->
-                  <div *ngIf="!loadingSocietes && (mySocietes.length === 1 || societeFromModal)">
-                    <label class="form-label fw-semibold">Société</label>
-                    <input
-                      type="text"
-                      class="form-control"
-                      [value]="selectedSociete?.raisonSociale || ''"
-                      disabled
-                      style="background-color: #f8f9fa; cursor: default"
-                    />
-                    <!-- Petite indication visuelle que la société vient du modal -->
-                    <div *ngIf="societeFromModal" style="margin-top: 4px; font-size: 12px; color: #6c757d; font-style: italic">
-                      ✓ Société sélectionnée avant la création
-                    </div>
-                  </div>
-
-                  <!-- Plusieurs sociétés ET pas de pré-sélection → ne devrait plus arriver -->
-                  <div *ngIf="!loadingSocietes && mySocietes.length > 1 && !societeFromModal">
-                    <label class="form-label fw-semibold"> Société <span class="text-danger">*</span> </label>
-                    <select
-                      class="form-select"
-                      [(ngModel)]="selectedSociete"
-                      name="selectedSociete"
-                      [compareWith]="compareSociete"
-                      required
-                    >
-                      <option [ngValue]="null">-- Sélectionner une société --</option>
-                      <option *ngFor="let s of mySocietes" [ngValue]="s">
-                        {{ s.raisonSociale }}
-                      </option>
-                    </select>
-                  </div>
-                </div>
-                <!-- ===== FIN SOCIÉTÉ ===== -->
                 <div style="padding-bottom: 1.5em; display: flex; gap: 12px; border-bottom: 1px dashed #5570a3">
                   <div style="flex: 1">
                     <label class="form-label fw-semibold"

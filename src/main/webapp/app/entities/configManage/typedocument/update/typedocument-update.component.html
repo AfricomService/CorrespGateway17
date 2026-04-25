@@ -22,6 +22,23 @@
         <!--          />-->
         <!--        </div>-->
 
+        <!-- CODE UNIQUE SOCIETE -->
+        <div class="mb-3">
+          <label class="form-label">Société</label>
+
+          <div *ngIf="loadingSocietes" style="color: #6c757d; font-style: italic; padding: 6px 0">Chargement des sociétés...</div>
+
+          <select
+            *ngIf="!loadingSocietes"
+            class="form-control"
+            formControlName="codeUniqueSociete"
+            (change)="onSocieteChange(editForm.get('codeUniqueSociete')?.value ?? null)"
+          >
+            <option [ngValue]="null">-- Sélectionner une société --</option>
+            <option *ngFor="let s of societes" [value]="s.codeSociete ?? ''">{{ s.raisonSociale }} ({{ s.codeSociete ?? 'N/A' }})</option>
+          </select>
+        </div>
+
         <!-- NOM -->
         <div class="mb-3">
           <label class="form-label" jhiTranslate="correspCareApp.configManageTypedocument.nom">Nom</label>
@@ -36,32 +53,40 @@
 
         <!-- LABEL DEFAUTDEST -->
         <div class="mb-3">
-          <label class="form-label"> Destinataire Par Défaut </label>
-
+          <label class="form-label">Destinataire Par Défaut</label>
           <div class="d-flex" style="gap: 0.5em">
             <input type="text" class="form-control" formControlName="labelDD" readonly />
-
             <input type="text" class="form-control" formControlName="defautdest" readonly />
-
-            <button type="button" class="btn btn-secondary ms-2" (click)="openAddTaskModal(AddTaskModal)">
+            <button
+              type="button"
+              class="btn btn-secondary ms-2"
+              (click)="openAddTaskModal(AddTaskModal)"
+              [disabled]="!selectedSociete"
+              [title]="!selectedSociete ? 'Veuillez d\'abord sélectionner une société' : ''"
+            >
               {{ isEditMode ? 'Modifier' : 'Ajouter' }}
             </button>
           </div>
+          <small *ngIf="!selectedSociete" class="text-muted"> Sélectionnez une société pour activer ce champ. </small>
         </div>
 
         <!-- LABEL DEFAULTENCOPIE -->
         <div class="mb-3">
-          <label class="form-label"> Destinataire En Copie Par Défaut </label>
-
+          <label class="form-label">Destinataire En Copie Par Défaut</label>
           <div class="d-flex" style="gap: 0.5em">
             <input type="text" class="form-control" formControlName="labelDCC" readonly />
-
             <input type="text" class="form-control" formControlName="defaultencopie" readonly />
-
-            <button type="button" class="btn btn-secondary ms-2" (click)="openAddTaskModal1(AddTaskModal1)">
+            <button
+              type="button"
+              class="btn btn-secondary ms-2"
+              (click)="openAddTaskModal1(AddTaskModal1)"
+              [disabled]="!selectedSociete"
+              [title]="!selectedSociete ? 'Veuillez d\'abord sélectionner une société' : ''"
+            >
               {{ isEditMode ? 'Modifier' : 'Ajouter' }}
             </button>
           </div>
+          <small *ngIf="!selectedSociete" class="text-muted"> Sélectionnez une société pour activer ce champ. </small>
         </div>
 
         <!-- USUALSTATUS -->

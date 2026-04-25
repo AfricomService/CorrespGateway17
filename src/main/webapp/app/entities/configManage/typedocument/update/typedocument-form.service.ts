@@ -26,6 +26,7 @@ type TypedocumentFormGroupContent = {
   labelDCC: FormControl<ITypedocument['labelDCC']>;
   labelDD: FormControl<ITypedocument['labelDD']>;
   correspType: FormControl<ITypedocument['correspType']>;
+  codeUniqueSociete: FormControl<ITypedocument['codeUniqueSociete']>;
 };
 
 export type TypedocumentFormGroup = FormGroup<TypedocumentFormGroupContent>;
@@ -53,6 +54,7 @@ export class TypedocumentFormService {
       labelDCC: new FormControl(typedocumentRawValue.labelDCC),
       labelDD: new FormControl(typedocumentRawValue.labelDD),
       correspType: new FormControl(typedocumentRawValue.correspType),
+      codeUniqueSociete: new FormControl(typedocumentRawValue.codeUniqueSociete),
     });
   }
 

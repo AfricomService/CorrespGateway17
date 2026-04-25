@@ -75,6 +75,7 @@ export interface SocieteItem {
   id: number;
   raisonSociale: string;
   codeSociete?: string | null;
+  codeOrganigramme?: string | null;
 }
 
 // Nouveau DTO de liste
@@ -172,6 +173,10 @@ export class CorrespService {
 
   queryOrga(): Observable<HttpResponse<IOrga[]>> {
     return this.http.get<IOrga[]>(this.resourceUrlOrganigramme, { observe: 'response' });
+  }
+
+  getOrgacareByOrgaCode(orgaCode: string): Observable<HttpResponse<any>> {
+    return this.http.get<any>(`${this.resourceUrlOrganigramme}/by-orga-code/${encodeURIComponent(orgaCode)}`, { observe: 'response' });
   }
 
   queryOrgaDeps(req?: any): Observable<HttpResponse<DepartementTreeFeignDTO[]>> {
