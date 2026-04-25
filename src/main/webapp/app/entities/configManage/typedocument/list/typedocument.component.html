@@ -74,6 +74,12 @@
               <fa-icon class="p-1" icon="sort"></fa-icon>
             </div>
           </th>
+          <th scope="col" jhiSortBy="codeUniqueSociete">
+            <div class="d-flex">
+              <span>Société</span>
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
           <th scope="col"></th>
         </tr>
       </thead>
@@ -88,6 +94,7 @@
           <td>{{ typedocument.defaultencopie }}</td>
           <td jhiTranslate="{{ 'correspCareApp.UsualStatus.' + typedocument.usualstatus }}">{{ typedocument.usualstatus }}</td>
           <td>{{ typedocument.correspType }}</td>
+          <td>{{ typedocument.codeUniqueSociete ?? '—' }}</td>
           <td class="text-end">
             <div class="btn-group">
               <button

@@ -10,6 +10,7 @@ export interface ITypedocument {
   labelDCC?: string | null;
   correspType?: string | null;
   usualstatus?: UsualStatus | null;
+  codeUniqueSociete?: string | null;
 }
 
 export type NewTypedocument = Omit<ITypedocument, 'id'> & { id: null };

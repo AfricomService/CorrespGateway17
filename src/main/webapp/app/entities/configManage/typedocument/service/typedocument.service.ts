@@ -9,6 +9,13 @@ import { ITypedocument, NewTypedocument } from '../typedocument.model';
 
 export type PartialUpdateTypedocument = Partial<ITypedocument> & Pick<ITypedocument, 'id'>;
 
+export interface ISocieteLight {
+  id: number;
+  raisonSociale: string;
+  codeSociete: string;
+  codeOrganigramme?: string | null;
+}
+
 export type EntityResponseType = HttpResponse<ITypedocument>;
 export type EntityArrayResponseType = HttpResponse<ITypedocument[]>;
 
@@ -79,5 +86,11 @@ export class TypedocumentService {
       return [...typedocumentsToAdd, ...typedocumentCollection];
     }
     return typedocumentCollection;
+  }
+  getAllSocietes(): Observable<HttpResponse<ISocieteLight[]>> {
+    return this.http.get<ISocieteLight[]>(
+      `${this.applicationConfigService.getEndpointFor('api/typedocuments/societes-list', 'configmanage')}`,
+      { observe: 'response' }
+    );
   }
 }

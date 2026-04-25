@@ -15,6 +15,7 @@ import { IDepartement } from '../../../orgacare/departement/departement.model';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { DepartementTreeFeignDTO } from '../../../correspManage/corresp/update/DepartementTreeFeignDTO';
 // import { DxTreeViewComponent } from 'devextreme-angular';
+import { ISocieteLight } from '../service/typedocument.service';
 
 @Component({
   selector: 'jhi-typedocument-update',
@@ -48,6 +49,12 @@ export class TypedocumentUpdateComponent implements OnInit {
   ccTreeSearchQuery = '';
   selectedDeptDCC: DepartementTreeFeignDTO | null = null;
 
+  societes: ISocieteLight[] = [];
+  loadingSocietes = false;
+
+  selectedSociete: ISocieteLight | null = null; // société sélectionnée
+  selectedOrgaCodeForTree: string | null = null; // code orga résolu
+
   private levelPalette: string[] = ['#1e90ff', '#22c55e', '#f59e0b', '#8b5cf6', '#ef4444', '#14b8a6'];
   expandedNodes: Set<number> = new Set();
   ccExpandedNodes: Set<number> = new Set();
@@ -68,6 +75,7 @@ export class TypedocumentUpdateComponent implements OnInit {
   ngOnInit(): void {
     // this.correspService.queryOrga().subscribe(res => {
     //   this.orgaList = res.body!;
+    this.loadSocietes();
 
     this.activatedRoute.data.subscribe(({ typedocument }) => {
       this.typedocument = typedocument;
@@ -95,6 +103,47 @@ export class TypedocumentUpdateComponent implements OnInit {
       }
     });
     // });
+  }
+
+  // ── Nouvelle méthode : appelée quand l'utilisateur change la société dans le select ──
+  onSocieteChange(codeSociete: string | null): void {
+    // Trouver la société complète dans la liste
+    const societe = this.societes.find(s => s.codeSociete === codeSociete) ?? null;
+    this.selectedSociete = societe;
+
+    // Réinitialiser l'arbre et les sélections
+    this.selectedOrgaCodeForTree = null;
+    this.taskTree = [];
+    this.taskTreeFiltered = [];
+    this.ccTree = [];
+    this.ccTreeFiltered = [];
+    this.selectedDeptDD = null;
+    this.selectedDeptDCC = null;
+    this.editForm.get('defautdest')?.setValue('');
+    this.editForm.get('labelDD')?.setValue('');
+    this.editForm.get('defaultencopie')?.setValue('');
+    this.editForm.get('labelDCC')?.setValue('');
+  }
+
+  private loadSocietes(): void {
+    this.loadingSocietes = true;
+    this.typedocumentService.getAllSocietes().subscribe({
+      next: res => {
+        this.societes = res.body ?? [];
+        this.loadingSocietes = false;
+
+        // Restaurer la société en mode édition APRÈS chargement de la liste
+        const codeUnique = this.editForm.get('codeUniqueSociete')?.value;
+        if (codeUnique) {
+          const found = this.societes.find(s => s.codeSociete === codeUnique) ?? null;
+          this.selectedSociete = found;
+        }
+      },
+      error: () => {
+        this.societes = [];
+        this.loadingSocietes = false;
+      },
+    });
   }
 
   previousState(): void {
@@ -132,53 +181,55 @@ export class TypedocumentUpdateComponent implements OnInit {
   // ── Tree loading ──────────────────────────────────────────────────────────
 
   private prepareAndLoadOrgaThenTree(): void {
-    if (this.selectedOrgaCode) {
-      this.loadTreeForModal(this.selectedOrgaCode);
+    if (this.selectedOrgaCodeForTree) {
+      this.loadTreeForModal(this.selectedOrgaCodeForTree);
       return;
     }
-    this.correspService.queryOrga().subscribe({
+
+    const orgaCode = this.selectedSociete?.codeOrganigramme;
+    if (!orgaCode) {
+      this.taskTree = [];
+      this.taskTreeFiltered = [];
+      return;
+    }
+
+    // Résoudre l'orgaCode via le service corresp (même logique que corresp-update)
+    this.correspService.getOrgacareByOrgaCode(orgaCode).subscribe({
       next: (res: any) => {
-        this.orgaList = res.body || [];
-        const first = this.orgaList?.[0];
-        if (first) {
-          this.selectedOrgaCode = first.code ?? first.orgaCode ?? first.id?.toString() ?? null;
-        }
-        if (this.selectedOrgaCode) {
-          this.loadTreeForModal(this.selectedOrgaCode);
-        } else {
-          this.taskTree = [];
-          this.taskTreeFiltered = [];
-        }
+        const orgacare = res.body;
+        this.selectedOrgaCodeForTree = orgacare?.orgaCode ?? orgacare?.code ?? orgaCode;
+        this.loadTreeForModal(this.selectedOrgaCodeForTree!);
       },
       error: () => {
-        this.taskTree = [];
-        this.taskTreeFiltered = [];
+        // fallback direct sur le code organigramme
+        this.selectedOrgaCodeForTree = orgaCode;
+        this.loadTreeForModal(orgaCode);
       },
     });
   }
 
   private prepareAndLoadOrgaThenCcTree(): void {
-    if (this.selectedOrgaCode) {
-      this.loadCcTreeForModal(this.selectedOrgaCode);
+    if (this.selectedOrgaCodeForTree) {
+      this.loadCcTreeForModal(this.selectedOrgaCodeForTree);
       return;
     }
-    this.correspService.queryOrga().subscribe({
+
+    const orgaCode = this.selectedSociete?.codeOrganigramme;
+    if (!orgaCode) {
+      this.ccTree = [];
+      this.ccTreeFiltered = [];
+      return;
+    }
+
+    this.correspService.getOrgacareByOrgaCode(orgaCode).subscribe({
       next: (res: any) => {
-        this.orgaList = res.body || [];
-        const first = this.orgaList?.[0];
-        if (first) {
-          this.selectedOrgaCode = first.code ?? first.orgaCode ?? first.id?.toString() ?? null;
-        }
-        if (this.selectedOrgaCode) {
-          this.loadCcTreeForModal(this.selectedOrgaCode);
-        } else {
-          this.ccTree = [];
-          this.ccTreeFiltered = [];
-        }
+        const orgacare = res.body;
+        this.selectedOrgaCodeForTree = orgacare?.orgaCode ?? orgacare?.code ?? orgaCode;
+        this.loadCcTreeForModal(this.selectedOrgaCodeForTree!);
       },
       error: () => {
-        this.ccTree = [];
-        this.ccTreeFiltered = [];
+        this.selectedOrgaCodeForTree = orgaCode;
+        this.loadCcTreeForModal(orgaCode);
       },
     });
   }

@@ -1179,32 +1179,33 @@ export class CorrespUpdateComponent implements OnInit {
   }
 
   private prepareAndLoadOrgaThenTree(): void {
-    // Si on a déjà un orgaCode sélectionné, on le charge directement
     if (this.selectedOrgaCode) {
       this.loadTreeForModal(this.selectedOrgaCode);
       return;
     }
 
-    // Sinon on demande la liste des organigrammes puis on charge le premier
-    this.correspService.queryOrga().subscribe({
-      next: (res: HttpResponse<any[]>) => {
-        this.orgaList = res.body || [];
-        // essayer de récupérer un code dans plusieurs schémas possibles
-        const first = this.orgaList?.[0];
-        if (first) {
-          this.selectedOrgaCode = first.code ?? first.orgaCode ?? first.id?.toString() ?? null;
-        }
-        if (this.selectedOrgaCode) {
-          this.loadTreeForModal(this.selectedOrgaCode);
+    const orgaCode = this.selectedSociete?.codeOrganigramme;
+    if (!orgaCode) {
+      console.warn('Aucun codeOrganigramme disponible pour la société sélectionnée.');
+      this.taskTree = [];
+      this.taskTreeFiltered = [];
+      return;
+    }
+
+    this.correspService.getOrgacareByOrgaCode(orgaCode).subscribe({
+      next: (res: HttpResponse<any>) => {
+        const orgacare = res.body;
+        if (orgacare) {
+          this.selectedOrgaCode = orgacare.orgaCode ?? orgacare.code ?? orgaCode;
         } else {
-          // fallback : optionally load a default code
-          console.warn('Aucun organigramme trouvé pour charger l’arbre.');
-          this.taskTree = [];
+          this.selectedOrgaCode = orgaCode;
         }
+        this.loadTreeForModal(this.selectedOrgaCode!);
       },
       error: err => {
-        console.error('Erreur récupération organigrammes', err);
+        console.error('Erreur récupération orgacare', err);
         this.taskTree = [];
+        this.taskTreeFiltered = [];
       },
     });
   }
@@ -1214,19 +1215,19 @@ export class CorrespUpdateComponent implements OnInit {
       this.loadRecipientTreeForModal(this.selectedOrgaCode);
       return;
     }
-    this.correspService.queryOrga().subscribe({
-      next: (res: HttpResponse<any[]>) => {
-        this.orgaList = res.body || [];
-        const first = this.orgaList?.[0];
-        if (first) {
-          this.selectedOrgaCode = first.code ?? first.orgaCode ?? first.id?.toString() ?? null;
-        }
-        if (this.selectedOrgaCode) {
-          this.loadRecipientTreeForModal(this.selectedOrgaCode);
-        } else {
-          this.recipientTree = [];
-          this.recipientTreeFiltered = [];
-        }
+
+    const orgaCode = this.selectedSociete?.codeOrganigramme;
+    if (!orgaCode) {
+      this.recipientTree = [];
+      this.recipientTreeFiltered = [];
+      return;
+    }
+
+    this.correspService.getOrgacareByOrgaCode(orgaCode).subscribe({
+      next: (res: HttpResponse<any>) => {
+        const orgacare = res.body;
+        this.selectedOrgaCode = orgacare?.orgaCode ?? orgacare?.code ?? orgaCode;
+        this.loadRecipientTreeForModal(this.selectedOrgaCode!);
       },
       error: () => {
         this.recipientTree = [];
@@ -1658,19 +1659,19 @@ export class CorrespUpdateComponent implements OnInit {
       this.loadCcTreeForModal(this.selectedOrgaCode);
       return;
     }
-    this.correspService.queryOrga().subscribe({
-      next: (res: HttpResponse<any[]>) => {
-        this.orgaList = res.body || [];
-        const first = this.orgaList?.[0];
-        if (first) {
-          this.selectedOrgaCode = first.code ?? first.orgaCode ?? first.id?.toString() ?? null;
-        }
-        if (this.selectedOrgaCode) {
-          this.loadCcTreeForModal(this.selectedOrgaCode);
-        } else {
-          this.ccTree = [];
-          this.ccTreeFiltered = [];
-        }
+
+    const orgaCode = this.selectedSociete?.codeOrganigramme;
+    if (!orgaCode) {
+      this.ccTree = [];
+      this.ccTreeFiltered = [];
+      return;
+    }
+
+    this.correspService.getOrgacareByOrgaCode(orgaCode).subscribe({
+      next: (res: HttpResponse<any>) => {
+        const orgacare = res.body;
+        this.selectedOrgaCode = orgacare?.orgaCode ?? orgacare?.code ?? orgaCode;
+        this.loadCcTreeForModal(this.selectedOrgaCode!);
       },
       error: () => {
         this.ccTree = [];

@@ -391,6 +391,7 @@ export class CorrespDetailComponent implements OnInit {
 
     this.correspService.find(Number(id)).subscribe(res => {
       this.correspLoaded = res.body!;
+      this.selectedOrgaCode = null; // ← forcer le rechargement de l'arbre
       this.loadPermissionsForCorresp(Number(this.correspLoaded.id));
       this.objet = this.correspLoaded.subject || '';
       this.expediteur = this.correspLoaded.sender || '';
@@ -1960,32 +1961,36 @@ export class CorrespDetailComponent implements OnInit {
   }
 
   private prepareAndLoadOrgaThenTree(): void {
-    // Si on a déjà un orgaCode sélectionné, on le charge directement
     if (this.selectedOrgaCode) {
       this.loadTreeForModal(this.selectedOrgaCode);
       return;
     }
 
-    // Sinon on demande la liste des organigrammes puis on charge le premier
-    this.correspService.queryOrga().subscribe({
-      next: (res: HttpResponse<any[]>) => {
-        this.orgaList = res.body || [];
-        // essayer de récupérer un code dans plusieurs schémas possibles
-        const first = this.orgaList?.[0];
-        if (first) {
-          this.selectedOrgaCode = first.code ?? first.orgaCode ?? first.id?.toString() ?? null;
-        }
-        if (this.selectedOrgaCode) {
-          this.loadTreeForModal(this.selectedOrgaCode);
-        } else {
-          // fallback : optionally load a default code
-          console.warn('Aucun organigramme trouvé pour charger l’arbre.');
+    // Chercher le codeOrganigramme via la société de la corresp
+    this.correspService.getMySocietes().subscribe({
+      next: societes => {
+        const societe = societes.find(s => s.id === this.correspLoaded?.idSociete);
+        const orgaCode = societe?.codeOrganigramme ?? null;
+        if (!orgaCode) {
           this.taskTree = [];
+          this.taskTreeFiltered = [];
+          return;
         }
+        this.correspService.getOrgacareByOrgaCode(orgaCode).subscribe({
+          next: (res: HttpResponse<any>) => {
+            const orgacare = res.body;
+            this.selectedOrgaCode = orgacare?.orgaCode ?? orgacare?.code ?? orgaCode;
+            this.loadTreeForModal(this.selectedOrgaCode!);
+          },
+          error: () => {
+            this.taskTree = [];
+            this.taskTreeFiltered = [];
+          },
+        });
       },
-      error: err => {
-        console.error('Erreur récupération organigrammes', err);
+      error: () => {
         this.taskTree = [];
+        this.taskTreeFiltered = [];
       },
     });
   }
@@ -2887,23 +2892,35 @@ export class CorrespDetailComponent implements OnInit {
   private prepareAndLoadOrgaThenRecipientTree(): void {
     if (this.selectedOrgaCode) {
       this.loadRecipientTree(this.selectedOrgaCode);
-    } else {
-      this.correspService.queryOrga().subscribe({
-        next: (res: HttpResponse<any[]>) => {
-          this.orgaList = res.body || [];
-          const first = this.orgaList?.[0];
-          if (first) {
-            this.selectedOrgaCode = first.code ?? first.orgaCode ?? first.id?.toString() ?? null;
-          }
-          if (this.selectedOrgaCode) {
-            this.loadRecipientTree(this.selectedOrgaCode);
-          }
-        },
-        error: () => {
-          this.recipientTree = [];
-        },
-      });
+      return;
     }
+
+    this.correspService.getMySocietes().subscribe({
+      next: societes => {
+        const societe = societes.find(s => s.id === this.correspLoaded?.idSociete);
+        const orgaCode = societe?.codeOrganigramme ?? null;
+        if (!orgaCode) {
+          this.recipientTree = [];
+          this.recipientTreeFiltered = [];
+          return;
+        }
+        this.correspService.getOrgacareByOrgaCode(orgaCode).subscribe({
+          next: (res: HttpResponse<any>) => {
+            const orgacare = res.body;
+            this.selectedOrgaCode = orgacare?.orgaCode ?? orgacare?.code ?? orgaCode;
+            this.loadRecipientTree(this.selectedOrgaCode!);
+          },
+          error: () => {
+            this.recipientTree = [];
+            this.recipientTreeFiltered = [];
+          },
+        });
+      },
+      error: () => {
+        this.recipientTree = [];
+        this.recipientTreeFiltered = [];
+      },
+    });
   }
 
   private loadRecipientTree(orgaCode: string): void {
@@ -2987,23 +3004,35 @@ export class CorrespDetailComponent implements OnInit {
   private prepareAndLoadOrgaThenCcTree(): void {
     if (this.selectedOrgaCode) {
       this.loadCcTree(this.selectedOrgaCode);
-    } else {
-      this.correspService.queryOrga().subscribe({
-        next: (res: HttpResponse<any[]>) => {
-          this.orgaList = res.body || [];
-          const first = this.orgaList?.[0];
-          if (first) {
-            this.selectedOrgaCode = first.code ?? first.orgaCode ?? first.id?.toString() ?? null;
-          }
-          if (this.selectedOrgaCode) {
-            this.loadCcTree(this.selectedOrgaCode);
-          }
-        },
-        error: () => {
-          this.ccTree = [];
-        },
-      });
+      return;
     }
+
+    this.correspService.getMySocietes().subscribe({
+      next: societes => {
+        const societe = societes.find(s => s.id === this.correspLoaded?.idSociete);
+        const orgaCode = societe?.codeOrganigramme ?? null;
+        if (!orgaCode) {
+          this.ccTree = [];
+          this.ccTreeFiltered = [];
+          return;
+        }
+        this.correspService.getOrgacareByOrgaCode(orgaCode).subscribe({
+          next: (res: HttpResponse<any>) => {
+            const orgacare = res.body;
+            this.selectedOrgaCode = orgacare?.orgaCode ?? orgacare?.code ?? orgaCode;
+            this.loadCcTree(this.selectedOrgaCode!);
+          },
+          error: () => {
+            this.ccTree = [];
+            this.ccTreeFiltered = [];
+          },
+        });
+      },
+      error: () => {
+        this.ccTree = [];
+        this.ccTreeFiltered = [];
+      },
+    });
   }
 
   openScanModal(content: any): void {
