@@ -58,8 +58,12 @@ export class TypedocumentService {
     return typedocument.id;
   }
 
-  findByCorrespType(correspType: string): Observable<EntityArrayResponseType> {
-    return this.http.get<ITypedocument[]>(`${this.resourceUrl}/by-corresp-type`, { params: { correspType }, observe: 'response' });
+  findByCorrespType(correspType: string, codeUniqueSociete?: string | null): Observable<EntityArrayResponseType> {
+    let params: any = { correspType };
+    if (codeUniqueSociete) {
+      params['codeUniqueSociete'] = codeUniqueSociete;
+    }
+    return this.http.get<ITypedocument[]>(`${this.resourceUrl}/by-corresp-type`, { params, observe: 'response' });
   }
 
   compareTypedocument(o1: Pick<ITypedocument, 'id'> | null, o2: Pick<ITypedocument, 'id'> | null): boolean {
