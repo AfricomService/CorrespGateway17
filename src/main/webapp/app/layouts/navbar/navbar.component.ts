@@ -102,7 +102,7 @@ export class NavbarComponent implements OnInit {
           const queryParams: any = { type };
           if (societes.length === 1) {
             queryParams['societeId'] = societes[0].id;
-            queryParams['societeNom'] = societes[0].raisonSociale;
+            queryParams['societeCode'] = societes[0].codeSociete ?? '';
           }
           this.router.navigate(['/corresp/new'], { queryParams });
         } else {
@@ -130,7 +130,6 @@ export class NavbarComponent implements OnInit {
       queryParams: {
         type: this.societeModalType,
         societeId: this.societeModalSelected.id,
-        societeNom: this.societeModalSelected.raisonSociale,
         societeCode: this.societeModalSelected.codeSociete ?? '',
       },
     });

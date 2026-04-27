@@ -81,6 +81,8 @@ export class CorrespComponent implements OnInit {
 
   loadedFiltres: CustomSearchView[] = [];
 
+  isExporting = false;
+
   quickSearch = '';
   isSearching = false;
   societes: { id: number; raisonSociale: string }[] = [];
@@ -511,5 +513,39 @@ export class CorrespComponent implements OnInit {
 
   protected getSortQueryParam(predicate = this.predicate, ascending = this.ascending): string[] {
     return predicate ? [`${predicate},${ascending ? ASC : DESC}`] : [];
+  }
+
+  exportToExcel(): void {
+    if (this.isExporting || !this.currentUserId) return;
+    this.isExporting = true;
+
+    const filters = {
+      q: this.quickSearch.trim() || undefined,
+      corresptype: this.flatFilters.corresptype ?? undefined,
+      reference: this.flatFilters.reference ?? undefined,
+      status: this.flatFilters.status ?? undefined,
+      dispatchType: this.flatFilters.dispatchType ?? undefined,
+      priority: this.flatFilters.priority ?? undefined,
+      startDate: this.flatFilters.startDate ?? undefined,
+      endDate: this.flatFilters.endDate ?? undefined,
+      nomSociete: this.flatFilters.nomSociete ?? undefined,
+    };
+
+    this.correspService.exportCorresps(this.currentUserId, this.isAdmin || this.isBoc, filters).subscribe({
+      next: (blob: Blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        const today = new Date().toISOString().split('T')[0];
+        anchor.href = url;
+        anchor.download = `correspondances_${today}.xlsx`;
+        anchor.click();
+        window.URL.revokeObjectURL(url);
+        this.isExporting = false;
+      },
+      error: err => {
+        console.error('Erreur export Excel', err);
+        this.isExporting = false;
+      },
+    });
   }
 }
