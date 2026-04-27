@@ -271,37 +271,8 @@ export class CorrespUpdateComponent implements OnInit {
     this.route.queryParams.subscribe(params => {
       this.correspType = params['type'];
 
-      // Mapper correspType UI → valeur stockée en base
-      let correspTypeForBackend = '';
-      if (this.correspType === 'Arrivée') {
-        correspTypeForBackend = 'Entrant';
-      } else if (this.correspType === 'Sortant') {
-        correspTypeForBackend = 'Sortant';
-      } else if (this.correspType === 'Interne') {
-        correspTypeForBackend = 'Interne';
-      }
-
-      // Charger les typedocuments filtrés par correspType
-      const codeSociete = this.selectedSociete?.codeSociete ?? null;
-      const loadTypedocs$ = correspTypeForBackend
-        ? this.typeDocumentService.findByCorrespType(correspTypeForBackend, codeSociete)
-        : this.typeDocumentService.query({ page: 0, size: 1000 });
-
-      loadTypedocs$.subscribe(res => {
-        this.typedocuments = res.body || [];
-        const autre: ITypedocument = {
-          id: 0,
-          nom: 'Autre',
-          defautdest: null,
-          defaultobject: null,
-          defaultencopie: null,
-          labelDD: null,
-          labelDCC: null,
-          correspType: null,
-          usualstatus: null,
-        };
-        this.typedocuments.push(autre);
-      });
+      // ✅ NE PAS charger les typedocuments ici — c'est reloadTypedocuments() qui s'en charge
+      // après que loadMySocietes() ait résolu le codeSociete.
 
       // Auto-create a "traitement" task for BOC users creating an Arrivée corresp
       if (this.correspType === 'Arrivée') {
