@@ -804,4 +804,36 @@ export class CorrespService {
       .get<{ id: number; raisonSociale: string }[]>(`${this.applicationConfigService.getEndpointFor('api/societes/list', 'orgacare')}`)
       .pipe(catchError(() => of([])));
   }
+
+  exportCorresps(
+    userId: number,
+    isAdmin: boolean,
+    filters?: {
+      q?: string;
+      corresptype?: string | null;
+      reference?: string | null;
+      status?: string | null;
+      dispatchType?: string | null;
+      priority?: boolean | null;
+      startDate?: string | null;
+      endDate?: string | null;
+      nomSociete?: string | null;
+    }
+  ): Observable<Blob> {
+    let params: any = { userId, isAdmin };
+    if (filters?.q) params['q'] = filters.q;
+    if (filters?.corresptype) params['corresptype'] = filters.corresptype;
+    if (filters?.reference) params['reference'] = filters.reference;
+    if (filters?.status) params['status'] = filters.status;
+    if (filters?.dispatchType) params['dispatchType'] = filters.dispatchType;
+    if (filters?.priority != null) params['priority'] = filters.priority;
+    if (filters?.startDate) params['startDate'] = filters.startDate;
+    if (filters?.endDate) params['endDate'] = filters.endDate;
+    if (filters?.nomSociete) params['nomSociete'] = filters.nomSociete;
+
+    return this.http.get(`${this.applicationConfigService.getEndpointFor('api/corresps/export', 'correspmanage')}`, {
+      params: createRequestOption(params),
+      responseType: 'blob',
+    });
+  }
 }

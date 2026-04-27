@@ -456,8 +456,11 @@ export class CorrespDetailComponent implements OnInit {
         this.correspType = 'Interne';
       }
 
+      // Récupérer le codeSociete depuis la corresp chargée
+      const codeUniqueSociete = this.correspLoaded.codeUniqueSociete ?? null;
+
       const loadTypedocs$ = correspTypeForBackend
-        ? this.typeDocumentService.findByCorrespType(correspTypeForBackend)
+        ? this.typeDocumentService.findByCorrespType(correspTypeForBackend, codeUniqueSociete)
         : this.typeDocumentService.query({ page: 0, size: 1000 });
 
       loadTypedocs$.subscribe(res => {
