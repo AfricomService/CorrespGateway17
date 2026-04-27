@@ -282,8 +282,9 @@ export class CorrespUpdateComponent implements OnInit {
       }
 
       // Charger les typedocuments filtrés par correspType
+      const codeSociete = this.selectedSociete?.codeSociete ?? null;
       const loadTypedocs$ = correspTypeForBackend
-        ? this.typeDocumentService.findByCorrespType(correspTypeForBackend)
+        ? this.typeDocumentService.findByCorrespType(correspTypeForBackend, codeSociete)
         : this.typeDocumentService.query({ page: 0, size: 1000 });
 
       loadTypedocs$.subscribe(res => {
@@ -2067,27 +2068,19 @@ export class CorrespUpdateComponent implements OnInit {
 
   loadMySocietes(): void {
     this.loadingSocietes = true;
-
-    // Lire les queryParams pour voir si une société a déjà été choisie via le modal
     const societeId = this.route.snapshot.queryParamMap.get('societeId');
-    const societeNom = this.route.snapshot.queryParamMap.get('societeNom');
 
     this.correspService.getMySocietes().subscribe({
       next: societes => {
         this.mySocietes = societes;
-
         if (societes.length === 1) {
-          // Cas 3 : une seule société → auto-sélection
           this.selectedSociete = societes[0];
           this.societeFromModal = false;
         } else if (societes.length > 1 && societeId) {
-          // Cas 4 : plusieurs sociétés MAIS déjà choisie via le modal
           const found = societes.find(s => s.id === +societeId);
           if (found) {
             this.selectedSociete = found;
             this.societeFromModal = true;
-            // Si codeSociete n'est pas encore renseigné dans l'objet trouvé,
-            // on le récupère depuis le queryParam
             if (!found.codeSociete) {
               const societeCode = this.route.snapshot.queryParamMap.get('societeCode');
               if (societeCode) {
@@ -2096,15 +2089,50 @@ export class CorrespUpdateComponent implements OnInit {
             }
           }
         }
-        // Si cas 4 sans queryParam → selectedSociete reste null,
-        // mais on ne devrait jamais arriver ici car le modal aurait été affiché avant
-
         this.loadingSocietes = false;
+
+        // ✅ Recharger les typedocuments maintenant qu'on a le codeSociete
+        this.reloadTypedocuments();
       },
       error: () => {
         this.mySocietes = [];
         this.loadingSocietes = false;
       },
+    });
+  }
+
+  private reloadTypedocuments(): void {
+    let correspTypeForBackend = '';
+    if (this.correspType === 'Arrivée') {
+      correspTypeForBackend = 'Entrant';
+    } else if (this.correspType === 'Sortant') {
+      correspTypeForBackend = 'Sortant';
+    } else if (this.correspType === 'Interne') {
+      correspTypeForBackend = 'Interne';
+    }
+
+    const codeSociete = this.selectedSociete?.codeSociete ?? null;
+
+    const loadTypedocs$ = correspTypeForBackend
+      ? this.typeDocumentService.findByCorrespType(correspTypeForBackend, codeSociete)
+      : this.typeDocumentService.query({ page: 0, size: 1000 });
+
+    loadTypedocs$.subscribe(res => {
+      this.typedocuments = res.body || [];
+      const autre: ITypedocument = {
+        id: 0,
+        nom: 'Autre',
+        defautdest: null,
+        defaultobject: null,
+        defaultencopie: null,
+        labelDD: null,
+        labelDCC: null,
+        correspType: null,
+        usualstatus: null,
+      };
+      if (!this.typedocuments.find(t => t.nom === 'Autre')) {
+        this.typedocuments.push(autre);
+      }
     });
   }
 
