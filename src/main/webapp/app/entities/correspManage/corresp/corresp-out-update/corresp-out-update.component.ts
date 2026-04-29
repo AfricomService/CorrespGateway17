@@ -1697,7 +1697,7 @@ export class CorrespOutUpdateComponent implements OnInit {
 
   loadModels(): void {
     this.loadingModels = true;
-    this.modelNotifService.query({ page: 0, size: 1000, sort: ['name,ASC'] }).subscribe({
+    this.modelNotifService.queryByFamilleEmail({ page: 0, size: 1000, sort: ['name,ASC'] }).subscribe({
       next: (res: HttpResponse<IModelNotif[]>) => {
         this.models = res.body || [];
         this.loadingModels = false;
