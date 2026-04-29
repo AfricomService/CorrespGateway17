@@ -40,6 +40,7 @@ type ModelNotifFormGroupContent = {
   recepientEmailFormule: FormControl<ModelNotifFormRawValue['recepientEmailFormule']>;
   createdDate: FormControl<ModelNotifFormRawValue['createdDate']>;
   saveCopy: FormControl<ModelNotifFormRawValue['saveCopy']>;
+  ccEmailFormuleRaw: FormControl<string | null>;
 };
 
 export type ModelNotifFormGroup = FormGroup<ModelNotifFormGroupContent>;
@@ -74,21 +75,40 @@ export class ModelNotifFormService {
       createdDate: new FormControl(modelNotifRawValue.createdDate, {
         validators: [Validators.required],
       }),
+      ccEmailFormuleRaw: new FormControl<string | null>(null),
     });
   }
 
   getModelNotif(form: ModelNotifFormGroup): IModelNotif | NewModelNotif {
-    return this.convertModelNotifRawValueToModelNotif(form.getRawValue() as ModelNotifFormRawValue | NewModelNotifFormRawValue);
+    const raw = form.getRawValue() as any;
+
+    // Conversion ccEmailFormuleRaw (string) → ccEmailFormule (List<Map>)
+    const ccRaw: string = raw.ccEmailFormuleRaw ?? '';
+    const ccEmailFormule = ccRaw.trim() ? ccRaw.split(',').map(s => ({ email: s.trim() })) : [];
+
+    const base = this.convertModelNotifRawValueToModelNotif(raw as ModelNotifFormRawValue | NewModelNotifFormRawValue);
+
+    return {
+      ...base,
+      ccEmailFormule,
+    };
   }
 
   resetForm(form: ModelNotifFormGroup, modelNotif: ModelNotifFormGroupInput): void {
-    const modelNotifRawValue = this.convertModelNotifToModelNotifRawValue({ ...this.getFormDefaults(), ...modelNotif });
-    form.reset(
-      {
-        ...modelNotifRawValue,
-        id: { value: modelNotifRawValue.id, disabled: true },
-      } as any /* cast to workaround https://github.com/angular/angular/issues/46458 */
-    );
+    const modelNotifRawValue = this.convertModelNotifToModelNotifRawValue({
+      ...this.getFormDefaults(),
+      ...modelNotif,
+    });
+
+    // Conversion ccEmailFormule (List<Map>) → ccEmailFormuleRaw (string)
+    const ccList = (modelNotif as IModelNotif).ccEmailFormule ?? [];
+    const ccEmailFormuleRaw = ccList.map((m: Record<string, string>) => m['email'] ?? '').join(', ');
+
+    form.reset({
+      ...modelNotifRawValue,
+      id: { value: modelNotifRawValue.id, disabled: true },
+      ccEmailFormuleRaw,
+    } as any);
   }
 
   private getFormDefaults(): ModelNotifFormDefaults {

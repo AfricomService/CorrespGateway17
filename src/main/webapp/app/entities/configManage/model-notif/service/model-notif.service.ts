@@ -64,6 +64,13 @@ export class ModelNotifService {
       .pipe(map(res => this.convertResponseArrayFromServer(res)));
   }
 
+  queryByFamilleEmail(req?: any): Observable<EntityArrayResponseType> {
+    const options = createRequestOption(req);
+    return this.http
+      .get<RestModelNotif[]>(`${this.resourceUrl}/by-famille-email`, { params: options, observe: 'response' })
+      .pipe(map(res => this.convertResponseArrayFromServer(res)));
+  }
+
   delete(id: string): Observable<HttpResponse<{}>> {
     return this.http.delete(`${this.resourceUrl}/${id}`, { observe: 'response' });
   }
