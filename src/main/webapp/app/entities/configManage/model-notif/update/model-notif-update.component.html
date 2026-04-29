@@ -200,6 +200,24 @@
                   placeholder="Ex : destinataire@domaine.com"
                 />
               </div>
+              <!-- CC Email -->
+              <div class="mn-card__full">
+                <label class="mn-label" for="field_ccEmailFormule"> CC Email (optionnel) </label>
+                <input
+                  type="text"
+                  class="form-control mn-input"
+                  id="field_ccEmailFormule"
+                  formControlName="ccEmailFormuleRaw"
+                  placeholder="Ex : ${emailDestinataire-CHEF} ou fixe@example.com"
+                />
+                <small class="form-text text-muted">
+                  Supporte :
+                  <code>&#36;&#123;emailDestinataire-CHEF&#125;</code>, <code>&#36;&#123;emailDestinataire-MEMBRE&#125;</code>,
+                  <code>&#36;&#123;emailDestinataire-ASSISTANT&#125;</code>,
+                  <code>&#36;&#123;emailDestinataire-INTERIM&#125;</code>
+                  ou un email fixe.
+                </small>
+              </div>
               <div class="mn-card__full">
                 <div class="form-check form-switch">
                   <input class="form-check-input" type="checkbox" id="field_saveCopy" data-cy="saveCopy" formControlName="saveCopy" />
@@ -251,6 +269,26 @@
               <code style="background: #dbeafe; padding: 1px 4px; border-radius: 3px; margin: 0 3px">&#36;&#123;emailCopie&#125;</code>
               <code style="background: #dbeafe; padding: 1px 4px; border-radius: 3px; margin: 0 3px">&#36;&#123;destinataire&#125;</code>
               <code style="background: #dbeafe; padding: 1px 4px; border-radius: 3px; margin: 0 3px">&#36;&#123;dateAujourdhui&#125;</code>
+              <!-- Ajouter ces lignes après les variables existantes -->
+              <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #bfdbfe">
+                <strong>Emails par rôle dans le département (affichage dans le corps) :</strong><br />
+                <code style="background: #dbeafe; padding: 1px 4px; border-radius: 3px; margin: 2px">
+                  $&#123;emailDestinataire-CHEF&#125;
+                </code>
+                <code style="background: #dbeafe; padding: 1px 4px; border-radius: 3px; margin: 2px">
+                  $&#123;emailDestinataire-MEMBRE&#125;
+                </code>
+                <code style="background: #dbeafe; padding: 1px 4px; border-radius: 3px; margin: 2px">
+                  $&#123;emailDestinataire-ASSISTANT&#125;
+                </code>
+                <code style="background: #dbeafe; padding: 1px 4px; border-radius: 3px; margin: 2px">
+                  $&#123;emailDestinataire-INTERIM&#125;
+                </code>
+                <span style="font-size: 11px; color: #6b7280; display: block; margin-top: 4px">
+                  ℹ️ Ces variables affichent les emails dans le corps du mail. Les CHEFs du département sont automatiquement ajoutés en
+                  copie (CC) de l'email envoyé.
+                </span>
+              </div>
             </div>
 
             <!-- Textarea pour saisir du HTML/FreeMarker brut -->

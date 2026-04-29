@@ -375,7 +375,7 @@ export class CorrespDetailComponent implements OnInit {
       this.currentUserEmailDetail = (acc as any)?.email || (acc as any)?.login || '';
     });
     // Charger les modèles email
-    this.modelNotifService.query({ page: 0, size: 1000, sort: ['name,ASC'] }).subscribe({
+    this.modelNotifService.queryByFamilleEmail({ page: 0, size: 1000, sort: ['name,ASC'] }).subscribe({
       next: (res: HttpResponse<IModelNotif[]>) => {
         this.models = res.body || [];
       },
