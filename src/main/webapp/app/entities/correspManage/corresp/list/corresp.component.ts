@@ -87,6 +87,8 @@ export class CorrespComponent implements OnInit {
   isSearching = false;
   societes: { id: number; raisonSociale: string }[] = [];
 
+  private currentApiFilters: ApiFilter[] = [];
+
   // ── Static option lists ────────────────────────────────────────
   statusOptions = [
     { value: 'DRAFT', label: 'Brouillon' },
@@ -207,9 +209,11 @@ export class CorrespComponent implements OnInit {
         const take = loadOptions.take ?? 15;
         const pageIndex = Math.floor(skip / take) + 1;
 
+        // Utiliser this.currentApiFilters au lieu de la closure
+        const activeFilters = this.currentApiFilters;
         const params: any = {};
-        if (apiFilters?.length) {
-          apiFilters.forEach(f => {
+        if (activeFilters?.length) {
+          activeFilters.forEach(f => {
             switch (f.field) {
               case 'corresptype':
                 params.corresptype = f.value;
@@ -224,7 +228,7 @@ export class CorrespComponent implements OnInit {
                 params.dispatchType = f.value;
                 break;
               case 'priority':
-                params.priority = f.value;
+                params.priority = String(f.value);
                 break;
               case 'nomSociete':
                 params.nomSociete = f.value;
@@ -262,8 +266,11 @@ export class CorrespComponent implements OnInit {
         const take = loadOptions.take ?? 15;
         const pageIndex = Math.floor(skip / take) + 1;
 
+        // Utiliser this.currentApiFilters au lieu de la closure apiFilters
+        const activeFilters = this.currentApiFilters;
+
         const response = await firstValueFrom(
-          this.correspService.getCorrespListByAcl(userId, pageIndex, take, this.quickSearch.trim(), apiFilters)
+          this.correspService.getCorrespListByAcl(userId, pageIndex, take, this.quickSearch.trim(), activeFilters)
         );
         return { data: response.content, totalCount: response.totalItems };
       },
@@ -332,6 +339,7 @@ export class CorrespComponent implements OnInit {
 
   resetAllFilters(): void {
     this.flatFilters = { ...EMPTY_FLAT };
+    this.currentApiFilters = [];
     this.filterApplied = false;
     this.isSaving = false;
     this.loadedFiltres.forEach(f => (f.active = false));
@@ -339,10 +347,11 @@ export class CorrespComponent implements OnInit {
   }
 
   private _reloadWithApiFilters(apiFilters: ApiFilter[]): void {
+    this.currentApiFilters = apiFilters; // ← sauvegarder en propriété
     if (this.isAdmin || this.isBoc) {
       this.datasource = this.createDataSource(apiFilters);
     } else if (this.currentUserId != null) {
-      this.datasource = this.createDataSourceByUserAcl(this.currentUserId, apiFilters); // ✅ filtres passés
+      this.datasource = this.createDataSourceByUserAcl(this.currentUserId, apiFilters);
     }
   }
 
@@ -352,13 +361,50 @@ export class CorrespComponent implements OnInit {
       if (f === selected) {
         f.active = !f.active;
         if (f.active) {
-          // Map saved filter keys → ApiFilter[]
-          const apiFilters: ApiFilter[] = Object.keys(selected.filters).map(key => ({
-            field: key,
-            label: this.FILTER_LABELS_FR[key] || key,
-            value: selected.filters[key],
-            displayValue: String(selected.filters[key]),
-          }));
+          // Résoudre les filtres : soit depuis filters (si non vide), soit depuis request (JSON string)
+          let resolvedFilters: Record<string, any> = {};
+
+          if (selected.filters && Object.keys(selected.filters).length > 0) {
+            resolvedFilters = selected.filters;
+          } else if ((selected as any).request) {
+            try {
+              resolvedFilters = JSON.parse((selected as any).request);
+            } catch (e) {
+              console.error('Erreur parsing request JSON', e);
+            }
+          }
+
+          const apiFilters: ApiFilter[] = [];
+
+          Object.keys(resolvedFilters).forEach(key => {
+            const rawValue = resolvedFilters[key];
+
+            // Ignorer startDate/endDate seuls (on les regroupe en courrierDate)
+            if (key === 'startDate' || key === 'endDate') return;
+
+            // Convertir en boolean si nécessaire (peut être string "true" ou boolean true)
+            const parsedValue: string | boolean =
+              rawValue === 'true' || rawValue === true ? true : rawValue === 'false' || rawValue === false ? false : rawValue;
+
+            apiFilters.push({
+              field: key,
+              label: this.FILTER_LABELS_FR[key] || key,
+              value: parsedValue,
+              displayValue: String(parsedValue),
+            });
+          });
+
+          // Reconstruire le filtre de date si startDate ET endDate sont présents
+          if (resolvedFilters['startDate'] && resolvedFilters['endDate']) {
+            apiFilters.push({
+              field: 'courrierDate',
+              label: 'Date courrier',
+              value: { startDate: resolvedFilters['startDate'], endDate: resolvedFilters['endDate'] },
+              displayValue: `${resolvedFilters['startDate']} → ${resolvedFilters['endDate']}`,
+            });
+          }
+
+          console.log('=== apiFilters avant reload ===', JSON.stringify(apiFilters));
           this._reloadWithApiFilters(apiFilters);
           this.filterApplied = true;
         } else {

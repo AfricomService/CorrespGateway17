@@ -78,7 +78,6 @@ export interface SocieteItem {
   codeOrganigramme?: string | null;
 }
 
-// Nouveau DTO de liste
 export interface CorrespListItemDTO {
   id: number;
   reference?: string | null;
@@ -89,6 +88,8 @@ export interface CorrespListItemDTO {
   priority?: boolean | null;
   msgSender?: string | null;
   msgReceiver?: string | null;
+  dispatchType?: string | null;
+  nomSociete?: string | null;
 }
 export interface ApiFilter {
   field: string;
@@ -721,7 +722,7 @@ export class CorrespService {
       startDate?: string;
       endDate?: string;
       corresptype?: string;
-      priority?: boolean;
+      priority?: boolean | string;
       nomSociete?: string;
     }
   ): Observable<PagedCorrespListResponse> {
@@ -733,7 +734,7 @@ export class CorrespService {
     if (filters?.startDate) params['startDate'] = filters.startDate;
     if (filters?.endDate) params['endDate'] = filters.endDate;
     if (filters?.corresptype) params['corresptype'] = filters.corresptype;
-    if (filters?.priority != null) params['priority'] = filters.priority;
+    if (filters?.priority != null) params['priority'] = String(filters.priority);
     if (filters?.nomSociete) params['nomSociete'] = filters.nomSociete;
 
     return this.http
@@ -775,7 +776,9 @@ export class CorrespService {
             params['dispatchType'] = f.value;
             break;
           case 'priority':
-            params['priority'] = f.value;
+            if (f.value !== null && f.value !== undefined) {
+              params['priority'] = String(f.value);
+            }
             break;
           case 'nomSociete':
             params['nomSociete'] = f.value;
@@ -826,7 +829,7 @@ export class CorrespService {
     if (filters?.reference) params['reference'] = filters.reference;
     if (filters?.status) params['status'] = filters.status;
     if (filters?.dispatchType) params['dispatchType'] = filters.dispatchType;
-    if (filters?.priority != null) params['priority'] = filters.priority;
+    if (filters?.priority != null) params['priority'] = String(filters.priority);
     if (filters?.startDate) params['startDate'] = filters.startDate;
     if (filters?.endDate) params['endDate'] = filters.endDate;
     if (filters?.nomSociete) params['nomSociete'] = filters.nomSociete;
