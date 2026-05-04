@@ -78,7 +78,6 @@ export interface SocieteItem {
   codeOrganigramme?: string | null;
 }
 
-// Nouveau DTO de liste
 export interface CorrespListItemDTO {
   id: number;
   reference?: string | null;
@@ -89,6 +88,8 @@ export interface CorrespListItemDTO {
   priority?: boolean | null;
   msgSender?: string | null;
   msgReceiver?: string | null;
+  dispatchType?: string | null;
+  nomSociete?: string | null;
 }
 export interface ApiFilter {
   field: string;

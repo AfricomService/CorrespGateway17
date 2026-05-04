@@ -402,7 +402,9 @@
       <div *dxTemplate="let d of 'subjectTemplate'">
         <div class="subject-cell">
           <span class="subject-title">{{ d.data.subject }}</span>
-          <span class="subject-meta">{{ d.data.reference }} · {{ getCorrespTypeLabel(d.data.corresptype) }}</span>
+          <span class="subject-meta" *ngIf="d.data.nomSociete">
+            {{ d.data.nomSociete }}
+          </span>
         </div>
       </div>
 
