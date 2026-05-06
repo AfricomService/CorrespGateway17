@@ -361,7 +361,7 @@ export class CorrespDetailOutgoingComponent implements OnInit {
       this.currentUserEmailDetail = (acc as any)?.email || (acc as any)?.login || '';
     });
 
-    this.modelNotifService.query({ page: 0, size: 1000, sort: ['name,ASC'] }).subscribe({
+    this.modelNotifService.queryByFamilleEmail({ page: 0, size: 1000, sort: ['name,ASC'] }).subscribe({
       next: (res: HttpResponse<IModelNotif[]>) => {
         this.models = res.body || [];
       },
@@ -378,6 +378,7 @@ export class CorrespDetailOutgoingComponent implements OnInit {
 
     this.correspService.find(Number(id)).subscribe(res => {
       this.correspLoaded = res.body!;
+      this.selectedOrgaCode = null;
       this.loadPermissionsForCorresp(Number(this.correspLoaded.id));
       this.objet = this.correspLoaded.subject || '';
       this.expediteur = this.correspLoaded.sender || '';
@@ -425,7 +426,8 @@ export class CorrespDetailOutgoingComponent implements OnInit {
         },
       });
 
-      this.typeDocumentService.findByCorrespType('Sortant').subscribe(res => {
+      const codeUniqueSociete = this.correspLoaded.codeUniqueSociete ?? null;
+      this.typeDocumentService.findByCorrespType('Sortant', codeUniqueSociete).subscribe(res => {
         this.typedocuments = res.body || [];
         const autre: ITypedocument = {
           id: 0,
@@ -2001,16 +2003,30 @@ export class CorrespDetailOutgoingComponent implements OnInit {
       this.loadTreeForModal(this.selectedOrgaCode);
       return;
     }
-    this.correspService.queryOrga().subscribe({
-      next: (res: HttpResponse<any[]>) => {
-        this.orgaList = res.body || [];
-        const first = this.orgaList?.[0];
-        if (first) this.selectedOrgaCode = first.code ?? first.orgaCode ?? first.id?.toString() ?? null;
-        if (this.selectedOrgaCode) this.loadTreeForModal(this.selectedOrgaCode);
-        else this.taskTree = [];
+    this.correspService.getMySocietes().subscribe({
+      next: societes => {
+        const societe = societes.find(s => s.id === this.correspLoaded?.idSociete);
+        const orgaCode = societe?.codeOrganigramme ?? null;
+        if (!orgaCode) {
+          this.taskTree = [];
+          this.taskTreeFiltered = [];
+          return;
+        }
+        this.correspService.getOrgacareByOrgaCode(orgaCode).subscribe({
+          next: (res: HttpResponse<any>) => {
+            const orgacare = res.body;
+            this.selectedOrgaCode = orgacare?.orgaCode ?? orgacare?.code ?? orgaCode;
+            this.loadTreeForModal(this.selectedOrgaCode!);
+          },
+          error: () => {
+            this.taskTree = [];
+            this.taskTreeFiltered = [];
+          },
+        });
       },
       error: () => {
         this.taskTree = [];
+        this.taskTreeFiltered = [];
       },
     });
   }
@@ -2188,15 +2204,30 @@ export class CorrespDetailOutgoingComponent implements OnInit {
       this.loadRecipientTree(this.selectedOrgaCode);
       return;
     }
-    this.correspService.queryOrga().subscribe({
-      next: (res: HttpResponse<any[]>) => {
-        this.orgaList = res.body || [];
-        const first = this.orgaList?.[0];
-        if (first) this.selectedOrgaCode = first.code ?? first.orgaCode ?? first.id?.toString() ?? null;
-        if (this.selectedOrgaCode) this.loadRecipientTree(this.selectedOrgaCode);
+    this.correspService.getMySocietes().subscribe({
+      next: societes => {
+        const societe = societes.find(s => s.id === this.correspLoaded?.idSociete);
+        const orgaCode = societe?.codeOrganigramme ?? null;
+        if (!orgaCode) {
+          this.recipientTree = [];
+          this.recipientTreeFiltered = [];
+          return;
+        }
+        this.correspService.getOrgacareByOrgaCode(orgaCode).subscribe({
+          next: (res: HttpResponse<any>) => {
+            const orgacare = res.body;
+            this.selectedOrgaCode = orgacare?.orgaCode ?? orgacare?.code ?? orgaCode;
+            this.loadRecipientTree(this.selectedOrgaCode!);
+          },
+          error: () => {
+            this.recipientTree = [];
+            this.recipientTreeFiltered = [];
+          },
+        });
       },
       error: () => {
         this.recipientTree = [];
+        this.recipientTreeFiltered = [];
       },
     });
   }
@@ -2272,15 +2303,30 @@ export class CorrespDetailOutgoingComponent implements OnInit {
       this.loadCcTree(this.selectedOrgaCode);
       return;
     }
-    this.correspService.queryOrga().subscribe({
-      next: (res: HttpResponse<any[]>) => {
-        this.orgaList = res.body || [];
-        const first = this.orgaList?.[0];
-        if (first) this.selectedOrgaCode = first.code ?? first.orgaCode ?? first.id?.toString() ?? null;
-        if (this.selectedOrgaCode) this.loadCcTree(this.selectedOrgaCode);
+    this.correspService.getMySocietes().subscribe({
+      next: societes => {
+        const societe = societes.find(s => s.id === this.correspLoaded?.idSociete);
+        const orgaCode = societe?.codeOrganigramme ?? null;
+        if (!orgaCode) {
+          this.ccTree = [];
+          this.ccTreeFiltered = [];
+          return;
+        }
+        this.correspService.getOrgacareByOrgaCode(orgaCode).subscribe({
+          next: (res: HttpResponse<any>) => {
+            const orgacare = res.body;
+            this.selectedOrgaCode = orgacare?.orgaCode ?? orgacare?.code ?? orgaCode;
+            this.loadCcTree(this.selectedOrgaCode!);
+          },
+          error: () => {
+            this.ccTree = [];
+            this.ccTreeFiltered = [];
+          },
+        });
       },
       error: () => {
         this.ccTree = [];
+        this.ccTreeFiltered = [];
       },
     });
   }
@@ -2600,6 +2646,22 @@ export class CorrespDetailOutgoingComponent implements OnInit {
       .map(r => r.matriculePers || r.codeDept || '')
       .filter(Boolean)
       .join(', ');
+  }
+
+  getResponsablesForNode(node: DepartementTreeFeignDTO): string {
+    if (!node || !node.affectationsByType) return '';
+    const chefs = (node.affectationsByType['CHEF'] || []).map((p: any) => p.nomPrenom).filter(Boolean);
+    const membres = (node.affectationsByType['MEMBRE'] || []).map((p: any) => p.nomPrenom).filter(Boolean);
+    if (chefs.length) return chefs.join(', ');
+    if (membres.length) return membres.join(', ');
+    return '';
+  }
+
+  private sanitize(obj: any): any {
+    Object.keys(obj).forEach(key => {
+      if (obj[key] === undefined) obj[key] = null;
+    });
+    return obj;
   }
 
   private expandAllFilteredNodes(nodes: DepartementTreeFeignDTO[], expandedSet: Set<number>): void {

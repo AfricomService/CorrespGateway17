@@ -715,14 +715,14 @@ export class CorrespOutUpdateComponent implements OnInit {
                   this.correspService
                     .changeTaskStatus({ correspId: savedCorresp.id, taskId: traitementTask.id, status: 'IN_PROGRESS' })
                     .subscribe({
-                      next: () => this.router.navigate(['/corresp', savedCorresp.id, 'view']),
-                      error: () => this.router.navigate(['/corresp', savedCorresp.id, 'view']),
+                      next: () => this.router.navigate(['/corresp', savedCorresp.id, 'view-outgoing']),
+                      error: () => this.router.navigate(['/corresp', savedCorresp.id, 'view-outgoing']),
                     });
                 } else {
-                  this.router.navigate(['/corresp', savedCorresp.id, 'view']);
+                  this.router.navigate(['/corresp', savedCorresp.id, 'view-outgoing']);
                 }
               },
-              error: () => this.router.navigate(['/corresp', savedCorresp.id, 'view']),
+              error: () => this.router.navigate(['/corresp', savedCorresp.id, 'view-outgoing']),
             });
           } else {
             this.router.navigate(['/corresp']);
@@ -778,7 +778,7 @@ export class CorrespOutUpdateComponent implements OnInit {
   private prepareEmailThenOpenPreview(correspId: number): void {
     if (!this.selectedModelNotif?.id) {
       this.isSavingAndPreviewing = false;
-      this.router.navigate(['/corresp', correspId, 'view']);
+      this.router.navigate(['/corresp', correspId, 'view-outgoing']);
       return;
     }
 
@@ -815,7 +815,7 @@ export class CorrespOutUpdateComponent implements OnInit {
         error: err => {
           console.error('Erreur préparation email', err);
           this.isSavingAndPreviewing = false;
-          this.router.navigate(['/corresp', correspId, 'view']);
+          this.router.navigate(['/corresp', correspId, 'view-outgoing']);
         },
       });
     } else {
@@ -915,7 +915,7 @@ export class CorrespOutUpdateComponent implements OnInit {
           this.sendEmailSuccess = true;
           setTimeout(() => {
             this.closeEmailPreview();
-            this.router.navigate(['/corresp', this.savedCorrespId, 'view']);
+            this.router.navigate(['/corresp', this.savedCorrespId, 'view-outgoing']);
           }, 1500);
         },
         error: err => {
@@ -948,7 +948,7 @@ export class CorrespOutUpdateComponent implements OnInit {
           this.sendEmailSuccess = true;
           setTimeout(() => {
             this.closeEmailPreview();
-            this.router.navigate(['/corresp', this.savedCorrespId, 'view']);
+            this.router.navigate(['/corresp', this.savedCorrespId, 'view-outgoing']);
           }, 1500);
         },
         error: err => {
@@ -963,7 +963,7 @@ export class CorrespOutUpdateComponent implements OnInit {
   navigateAfterSave(): void {
     this.closeEmailPreview();
     if (this.savedCorrespId) {
-      this.router.navigate(['/corresp', this.savedCorrespId, 'view']);
+      this.router.navigate(['/corresp', this.savedCorrespId, 'view-outgoing']);
     } else {
       this.router.navigate(['/corresp']);
     }
@@ -971,7 +971,7 @@ export class CorrespOutUpdateComponent implements OnInit {
 
   private sendEmailViaBackend(correspId: number): void {
     if (!this.selectedModelNotif?.id) {
-      this.router.navigate(['/corresp', correspId, 'view']);
+      this.router.navigate(['/corresp', correspId, 'view-outgoing']);
       return;
     }
 
@@ -988,12 +988,12 @@ export class CorrespOutUpdateComponent implements OnInit {
 
     this.correspService.prepareCorrespEmail(request).subscribe({
       next: () => {
-        this.router.navigate(['/corresp', correspId, 'view']);
+        this.router.navigate(['/corresp', correspId, 'view-outgoing']);
       },
       error: err => {
         console.error('Erreur préparation email', err);
         // On navigue quand même même si l'email échoue
-        this.router.navigate(['/corresp', correspId, 'view']);
+        this.router.navigate(['/corresp', correspId, 'view-outgoing']);
       },
     });
   }

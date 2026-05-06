@@ -2090,20 +2090,6 @@ export class CorrespUpdateComponent implements OnInit {
 
     loadTypedocs$.subscribe(res => {
       this.typedocuments = res.body || [];
-      const autre: ITypedocument = {
-        id: 0,
-        nom: 'Autre',
-        defautdest: null,
-        defaultobject: null,
-        defaultencopie: null,
-        labelDD: null,
-        labelDCC: null,
-        correspType: null,
-        usualstatus: null,
-      };
-      if (!this.typedocuments.find(t => t.nom === 'Autre')) {
-        this.typedocuments.push(autre);
-      }
     });
   }
 

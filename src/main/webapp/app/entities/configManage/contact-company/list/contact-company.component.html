@@ -37,7 +37,7 @@
         </div>
 
         <!-- BOUTON EXPORT (à côté immédiat de la recherche) -->
-        <ng-container *jhiHasAnyAuthority="[Authority.ADMIN]">
+        <ng-container *jhiHasAnyAuthority="[Authority.ADMIN, Authority.BOC]">
           <button
             class="btn btn-light btn-animated ms-2"
             type="button"
@@ -53,7 +53,7 @@
 
       <!-- Bouton Ajouter (restreint aux ADMIN) -->
       <div class="actions ms-md-auto">
-        <ng-container *jhiHasAnyAuthority="[Authority.ADMIN]">
+        <ng-container *jhiHasAnyAuthority="[Authority.ADMIN, Authority.BOC]">
           <a
             class="btn btn-light btn-animated"
             [routerLink]="['/contact-company/new']"
@@ -161,7 +161,7 @@
                 <!-- Actions (Modifier, Toggle, Supprimer) -->
                 <div class="text-end action-icons">
                   <!-- EDIT (ADMIN only) -->
-                  <ng-container *jhiHasAnyAuthority="[Authority.ADMIN]">
+                  <ng-container *jhiHasAnyAuthority="[Authority.ADMIN, Authority.BOC]">
                     <button
                       class="btn btn-link p-1 action-btn"
                       [routerLink]="['/contact-company', c.id, 'edit']"
@@ -172,7 +172,7 @@
                   </ng-container>
 
                   <!-- Toggle activation : utilise le modal (masqué si Delated) -->
-                  <ng-container *jhiHasAnyAuthority="[Authority.ADMIN]">
+                  <ng-container *jhiHasAnyAuthority="[Authority.ADMIN, Authority.BOC]">
                     <button
                       *ngIf="c.etat !== 'Delated'"
                       class="btn btn-sm me-1"
@@ -195,7 +195,7 @@
                   </ng-container>
 
                   <!-- DELETE (ADMIN only) -->
-                  <ng-container *jhiHasAnyAuthority="[Authority.ADMIN]">
+                  <ng-container *jhiHasAnyAuthority="[Authority.ADMIN, Authority.BOC]">
                     <button
                       class="btn btn-link p-1 text-danger action-btn"
                       (click)="delete(c)"
@@ -238,7 +238,7 @@
 
               <!-- Bouton Ajouter (ADMIN only) -->
               <div>
-                <ng-container *jhiHasAnyAuthority="[Authority.ADMIN]">
+                <ng-container *jhiHasAnyAuthority="[Authority.ADMIN, Authority.BOC]">
                   <a
                     class="btn btn-sm btn-primary btn-animated"
                     [title]="'correspCareApp.configManageContactCompany.action.addPerson.tooltip' | translate"
@@ -290,7 +290,7 @@
                     </a>
 
                     <!-- Éditer (ADMIN only) -->
-                    <ng-container *jhiHasAnyAuthority="[Authority.ADMIN]">
+                    <ng-container *jhiHasAnyAuthority="[Authority.ADMIN, Authority.BOC]">
                       <a
                         class="btn btn-sm btn-link action-btn"
                         [routerLink]="['/person-company', p.id, 'edit']"
@@ -303,7 +303,7 @@
                     </ng-container>
 
                     <!-- Toggle person activation : utilise le modal -->
-                    <ng-container *jhiHasAnyAuthority="[Authority.ADMIN]">
+                    <ng-container *jhiHasAnyAuthority="[Authority.ADMIN, Authority.BOC]">
                       <button
                         *ngIf="p.etat !== 'Delated'"
                         class="btn btn-sm"
@@ -325,7 +325,7 @@
                     </ng-container>
 
                     <!-- Supprimer personne (ADMIN only) -->
-                    <ng-container *jhiHasAnyAuthority="[Authority.ADMIN]">
+                    <ng-container *jhiHasAnyAuthority="[Authority.ADMIN, Authority.BOC]">
                       <button
                         class="btn btn-sm btn-link text-danger action-btn"
                         (click)="deletePerson(p)"
