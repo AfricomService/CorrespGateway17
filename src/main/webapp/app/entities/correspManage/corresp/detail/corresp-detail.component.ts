@@ -465,26 +465,12 @@ export class CorrespDetailComponent implements OnInit {
 
       loadTypedocs$.subscribe(res => {
         this.typedocuments = res.body || [];
-        const autre: ITypedocument = {
-          id: 0,
-          nom: 'Autre',
-          defautdest: null,
-          defaultobject: null,
-          defaultencopie: null,
-          labelDD: null,
-          labelDCC: null,
-          correspType: null,
-          usualstatus: null,
-        };
-        this.typedocuments.push(autre);
 
-        // FIX 1 : éviter de matcher l'objet "Autre" (id=0) si typeDocumentId est null/0/falsy
         const found = this.correspLoaded.typeDocumentId
           ? this.typedocuments.find(td => td.id === Number(this.correspLoaded.typeDocumentId))
           : null;
         this.selectedTypeDocument = found ?? null;
 
-        // FIX 2 : appel sans argument → mode "chargement initial", ne réinitialise PAS this.objet
         this.onTypeDocumentChange();
         this.objet = this.correspLoaded.subject || '';
       });
@@ -723,9 +709,8 @@ export class CorrespDetailComponent implements OnInit {
       this.objet = this.selectedTypeDocument.defaultobject || '';
     }
 
-    // ✅ FIX : en mode chargement initial (newSelected === undefined),
+    // En mode chargement initial (newSelected === undefined),
     // NE PAS réinitialiser les champs déjà chargés depuis la base
-    // (destinataireLabel, contactEmailCCLabel, selectedCcDepts)
     if (newSelected === undefined) {
       this.pendingTasks = [];
       return;
@@ -740,92 +725,13 @@ export class CorrespDetailComponent implements OnInit {
     this.selectedCcDepts = [];
     this.pendingTasks = [];
 
-    const typeName = (this.selectedTypeDocument?.nom || '').trim().toLowerCase();
-    const is = (s: string) => typeName === s.toLowerCase();
-    const anyOf = (...alts: string[]) => alts.some(a => is(a));
-
-    if (is('autre')) {
-      this.destinataire = '';
-      this.destinataireLabel = '';
-      this.selectedCcDepts = [];
-      this.contactEmailCC = '';
-      this.contactEmailCCLabel = '';
-      return;
-    }
-
-    if (is('note service')) {
-      this.destinataire = '';
-      this.destinataireLabel = 'Direction générale adjoint';
-      this.selectedCcDepts = [{ codeDept: 'Direction IT', nomDept: 'Direction IT', emailDept: '' }];
-      this.updateCcLabelsFromSelection();
-      this.pendingTasks.push({
-        typeTask: 'traitement',
-        responsable: 'Direction générale adjoint',
-        dateLimite: '',
-        responsableName: 'Direction générale adjoint',
-        commentaire: '',
-      });
-      this.pendingTasks.push({
-        typeTask: 'lecture',
-        responsable: 'Direction IT',
-        dateLimite: '',
-        responsableName: 'Direction IT',
-        commentaire: '',
-      });
-      return;
-    }
-
-    if (anyOf("demande d'intervention technique")) {
-      this.destinataire = '';
-      this.destinataireLabel = 'Direction IT';
-      this.selectedCcDepts = [{ codeDept: 'Direction Réalisation', nomDept: 'Direction Réalisation', emailDept: '' }];
-      this.updateCcLabelsFromSelection();
-      this.pendingTasks.push({
-        typeTask: 'traitement',
-        responsable: 'Direction IT',
-        dateLimite: '',
-        responsableName: 'Direction IT',
-        commentaire: '',
-      });
-      this.pendingTasks.push({
-        typeTask: 'lecture',
-        responsable: 'Direction Réalisation',
-        dateLimite: '',
-        responsableName: 'Direction Réalisation',
-        commentaire: '',
-      });
-      return;
-    }
-
-    if (anyOf('example doument', 'example document')) {
-      this.destinataire = '';
-      this.destinataireLabel = 'Administratifs';
-      this.selectedCcDepts = [{ codeDept: 'Direction générale adjoint', nomDept: 'Direction générale adjoint', emailDept: '' }];
-      this.updateCcLabelsFromSelection();
-      this.pendingTasks.push({
-        typeTask: 'traitement',
-        responsable: 'Administratifs',
-        dateLimite: '',
-        responsableName: 'Administratifs',
-        commentaire: '',
-      });
-      this.pendingTasks.push({
-        typeTask: 'lecture',
-        responsable: 'Direction générale adjoint',
-        dateLimite: '',
-        responsableName: 'Direction générale adjoint',
-        commentaire: '',
-      });
-      return;
-    }
-
+    // ✅ Tout vient de la DB via defautdest
     if (this.selectedTypeDocument.defautdest) {
       this.correspService.queryOrgaDepsByCode({ code: this.selectedTypeDocument.defautdest }).subscribe({
         next: (res: HttpResponse<IDepartement>) => {
           if (res.body) {
             this.destinataire = res.body.email || '';
             this.destinataireLabel = res.body.nom || '';
-
             this.pendingTasks = this.pendingTasks.filter(t => t.typeTask !== 'traitement');
             this.pendingTasks.push({
               typeTask: 'traitement',
@@ -852,6 +758,7 @@ export class CorrespDetailComponent implements OnInit {
       this.pendingTasks = this.pendingTasks.filter(t => t.typeTask !== 'traitement');
     }
 
+    // ✅ Tout vient de la DB via defaultencopie
     if (this.selectedTypeDocument.defaultencopie) {
       this.correspService.queryOrgaDepsByCode({ code: this.selectedTypeDocument.defaultencopie }).subscribe({
         next: (res: HttpResponse<IDepartement>) => {
@@ -865,7 +772,6 @@ export class CorrespDetailComponent implements OnInit {
               },
             ];
             this.updateCcLabelsFromSelection();
-
             this.pendingTasks = this.pendingTasks.filter(t => t.typeTask !== 'lecture');
             this.pendingTasks.push({
               typeTask: 'lecture',

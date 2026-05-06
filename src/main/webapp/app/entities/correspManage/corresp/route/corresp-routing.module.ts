@@ -4,6 +4,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { UserRouteAccessService } from 'app/core/auth/user-route-access.service';
 import { CorrespComponent } from '../list/corresp.component';
 import { CorrespDetailComponent } from '../detail/corresp-detail.component';
+import { CorrespDetailOutgoingComponent } from '../corresp-detail-outgoing/corresp-detail-outgoing.component';
 import { CorrespUpdateComponent } from '../update/corresp-update.component';
 import { CorrespRoutingResolveService } from './corresp-routing-resolve.service';
 import { ASC } from 'app/config/navigation.constants';
@@ -21,6 +22,14 @@ const correspRoute: Routes = [
   {
     path: ':id/view',
     component: CorrespDetailComponent,
+    resolve: {
+      corresp: CorrespRoutingResolveService,
+    },
+    canActivate: [UserRouteAccessService],
+  },
+  {
+    path: ':id/view-outgoing',
+    component: CorrespDetailOutgoingComponent,
     resolve: {
       corresp: CorrespRoutingResolveService,
     },

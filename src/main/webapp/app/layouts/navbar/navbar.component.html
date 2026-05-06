@@ -97,7 +97,7 @@
             </span>
           </a>
           <ul class="dropdown-menu" ngbDropdownMenu aria-labelledby="entity-menu">
-            <li *jhiHasAnyAuthority="'ROLE_ADMIN'">
+            <li *ngIf="false">
               <a
                 class="dropdown-item"
                 routerLink="rules"
@@ -109,7 +109,7 @@
                 <span jhiTranslate="global.menu.entities.rules">Rules</span>
               </a>
             </li>
-            <li *jhiHasAnyAuthority="'ROLE_ADMIN'">
+            <li *ngIf="false">
               <a
                 class="dropdown-item"
                 routerLink="hist-consult"
@@ -121,7 +121,7 @@
                 <span jhiTranslate="global.menu.entities.journauxHistConsult">Hist Consult</span>
               </a>
             </li>
-            <li *jhiHasAnyAuthority="'ROLE_ADMIN'">
+            <li *ngIf="false">
               <a
                 class="dropdown-item"
                 routerLink="message"
@@ -145,7 +145,7 @@
                 <span jhiTranslate="global.menu.entities.correspManageCorresp">Corresp</span>
               </a>
             </li>
-            <li *jhiHasAnyAuthority="'ROLE_ADMIN'">
+            <li *ngIf="false">
               <a
                 class="dropdown-item"
                 routerLink="note"
@@ -157,7 +157,7 @@
                 <span jhiTranslate="global.menu.entities.correspManageNote">Note</span>
               </a>
             </li>
-            <li *jhiHasAnyAuthority="'ROLE_ADMIN'">
+            <li *ngIf="false">
               <a
                 class="dropdown-item"
                 routerLink="pj"
@@ -169,7 +169,7 @@
                 <span jhiTranslate="global.menu.entities.correspManagePj">Pj</span>
               </a>
             </li>
-            <li *jhiHasAnyAuthority="'ROLE_ADMIN'">
+            <li *ngIf="false">
               <a
                 class="dropdown-item"
                 routerLink="tasks"
@@ -181,7 +181,7 @@
                 <span jhiTranslate="global.menu.entities.correspManageTasks">Tasks</span>
               </a>
             </li>
-            <li *jhiHasAnyAuthority="'ROLE_ADMIN'">
+            <li *ngIf="false">
               <a
                 class="dropdown-item"
                 routerLink="bordereaux"
@@ -193,7 +193,7 @@
                 <span jhiTranslate="global.menu.entities.correspManageBordereaux">Bordereaux</span>
               </a>
             </li>
-            <li *jhiHasAnyAuthority="'ROLE_ADMIN'">
+            <li *ngIf="false">
               <a
                 class="dropdown-item"
                 routerLink="dossier"
@@ -205,7 +205,7 @@
                 <span jhiTranslate="global.menu.entities.correspManageDossier">Dossier</span>
               </a>
             </li>
-            <li *jhiHasAnyAuthority="'ROLE_ADMIN'">
+            <li *ngIf="false">
               <a
                 class="dropdown-item"
                 routerLink="hist-action"
@@ -229,7 +229,7 @@
                 <span jhiTranslate="global.menu.entities.configManageContactCompany">Contact Company</span>
               </a>
             </li>
-            <li *jhiHasAnyAuthority="'ROLE_ADMIN'">
+            <li *ngIf="false">
               <a
                 class="dropdown-item"
                 routerLink="person-company"
@@ -241,7 +241,7 @@
                 <span jhiTranslate="global.menu.entities.configManagePersonCompany">Person Company</span>
               </a>
             </li>
-            <li *jhiHasAnyAuthority="'ROLE_ADMIN'">
+            <li *ngIf="false">
               <a
                 class="dropdown-item"
                 routerLink="company"
@@ -253,7 +253,7 @@
                 <span jhiTranslate="global.menu.entities.orgacareCompany">Company</span>
               </a>
             </li>
-            <li *jhiHasAnyAuthority="'ROLE_ADMIN'">
+            <li *ngIf="false">
               <a
                 class="dropdown-item"
                 routerLink="orga-entity"
@@ -265,7 +265,7 @@
                 <span jhiTranslate="global.menu.entities.orgacareOrgaEntity">Orga Entity</span>
               </a>
             </li>
-            <li *jhiHasAnyAuthority="'ROLE_ADMIN'">
+            <li *ngIf="false">
               <a
                 class="dropdown-item"
                 routerLink="employe"
@@ -277,7 +277,7 @@
                 <span jhiTranslate="global.menu.entities.employe">Employe</span>
               </a>
             </li>
-            <li *jhiHasAnyAuthority="'ROLE_ADMIN'">
+            <li *ngIf="false">
               <a
                 class="dropdown-item"
                 routerLink="departement"
@@ -299,6 +299,18 @@
               >
                 <fa-icon icon="asterisk" [fixedWidth]="true"></fa-icon>
                 <span jhiTranslate="global.menu.entities.configManageParentClassdef">Parent Classdef</span>
+              </a>
+            </li>
+            <li *jhiHasAnyAuthority="'ROLE_ADMIN'">
+              <a
+                class="dropdown-item"
+                routerLink="numsequentielle"
+                routerLinkActive="active"
+                [routerLinkActiveOptions]="{ exact: true }"
+                (click)="collapseNavbar()"
+              >
+                <fa-icon icon="asterisk" [fixedWidth]="true"></fa-icon>
+                <span jhiTranslate="global.menu.entities.configManageNumsequentielle">Numsequentielle</span>
               </a>
             </li>
             <li *jhiHasAnyAuthority="'ROLE_ADMIN'">
@@ -337,7 +349,7 @@
                 <span>Smtp Config</span>
               </a>
             </li>
-            <li *jhiHasAnyAuthority="'ROLE_ADMIN'">
+            <li *ngIf="false">
               <a
                 class="dropdown-item"
                 routerLink="notif"
@@ -349,19 +361,7 @@
                 <span jhiTranslate="global.menu.entities.connectionManageNotif">Notif</span>
               </a>
             </li>
-            <li *jhiHasAnyAuthority="'ROLE_ADMIN'">
-              <a
-                class="dropdown-item"
-                routerLink="numsequentielle"
-                routerLinkActive="active"
-                [routerLinkActiveOptions]="{ exact: true }"
-                (click)="collapseNavbar()"
-              >
-                <fa-icon icon="asterisk" [fixedWidth]="true"></fa-icon>
-                <span jhiTranslate="global.menu.entities.configManageNumsequentielle">Numsequentielle</span>
-              </a>
-            </li>
-            <li *jhiHasAnyAuthority="'ROLE_ADMIN'">
+            <li *ngIf="false">
               <a
                 class="dropdown-item"
                 routerLink="connecteur"
@@ -373,7 +373,7 @@
                 <span jhiTranslate="global.menu.entities.connectionManageConnecteur">Connecteur</span>
               </a>
             </li>
-            <li *jhiHasAnyAuthority="'ROLE_ADMIN'">
+            <li *ngIf="false">
               <a
                 class="dropdown-item"
                 routerLink="configexport"
@@ -385,7 +385,7 @@
                 <span jhiTranslate="global.menu.entities.configManageConfigexport">Configexport</span>
               </a>
             </li>
-            <li *jhiHasAnyAuthority="'ROLE_ADMIN'">
+            <li *ngIf="false">
               <a
                 class="dropdown-item"
                 routerLink="myreport"
@@ -397,7 +397,7 @@
                 <span jhiTranslate="global.menu.entities.configManageMyreport">Myreport</span>
               </a>
             </li>
-            <li *jhiHasAnyAuthority="'ROLE_ADMIN'">
+            <li *ngIf="false">
               <a
                 class="dropdown-item"
                 routerLink="custom-search"
