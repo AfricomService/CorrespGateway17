@@ -61,6 +61,8 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   isRefreshing = false;
 
+  currentYear = new Date().getFullYear();
+
   constructor(
     private accountService: AccountService,
     private router: Router,

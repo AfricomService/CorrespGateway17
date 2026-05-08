@@ -17,6 +17,7 @@ import {
 import { FilePreviewComponent } from '../pj/file-preview/file-preview.component';
 import { CorrespOutUpdateComponent } from './corresp-out-update/corresp-out-update.component';
 import { CorrespDetailOutgoingComponent } from './corresp-detail-outgoing/corresp-detail-outgoing.component';
+//import { CorrespDetailIncomingComponent } from './corresp-detail-incoming/corresp-detail-incoming.component';
 
 @NgModule({
   imports: [
@@ -38,6 +39,7 @@ import { CorrespDetailOutgoingComponent } from './corresp-detail-outgoing/corres
     CorrespDeleteDialogComponent,
     CorrespOutUpdateComponent,
     CorrespDetailOutgoingComponent,
+    //   CorrespDetailIncomingComponent,
   ],
 })
 export class CorrespManageCorrespModule {}
