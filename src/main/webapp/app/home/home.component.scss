@@ -854,3 +854,395 @@ $container-max: 1800px; // largeur raisonnable
 }
 
 /* End of improved SCSS 111*/
+
+/* ====================== LANDING PAGE STYLES ====================== */
+
+@keyframes lp-fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes lp-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+@keyframes lp-pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 14px rgba(255, 255, 255, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+  }
+}
+
+/* --- Wrapper global --- */
+:host .lp-wrapper {
+  font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background: #f8fafc;
+  overflow-x: hidden;
+  min-height: calc(100vh - 72px);
+}
+
+/* --- HERO --- */
+:host .lp-hero {
+  background: linear-gradient(160deg, #0f2460 0%, #1a3a8f 40%, #1e4db7 100%);
+  padding: 48px 24px 0;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  //border-top: 3px solid rgba(255,255,255,0.15);
+}
+/* Grille de points décorative */
+:host .lp-dots {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+  background-size: 30px 30px;
+  pointer-events: none;
+}
+/* Lueur douce en haut du hero */
+:host .lp-hero::before {
+  content: '';
+  position: absolute;
+  top: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 300px;
+  background: radial-gradient(ellipse, rgba(59, 130, 246, 0.3) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+:host .lp-hero-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 640px;
+  margin: 0 auto;
+  animation: lp-fadeUp 0.7s ease both;
+}
+
+/* Badge "Plateforme sécurisée" */
+:host .lp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 24px;
+  letter-spacing: 0.02em;
+}
+
+/* Anneau logo flottant */
+:host .lp-logo-ring {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  animation: lp-float 3.5s ease-in-out infinite, lp-pulse-ring 3.5s ease-in-out infinite;
+}
+
+:host .lp-h1 {
+  font-size: 38px;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 2px 20px rgba(59, 130, 246, 0.4);
+  margin: 0 0 12px;
+  letter-spacing: -0.5px;
+}
+:host .lp-tagline {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.72);
+  margin: 0 auto 32px;
+  line-height: 1.7;
+}
+
+/* Bouton CTA */
+:host .lp-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  color: #1e40af;
+  padding: 13px 32px;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.15s;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+:host .lp-cta:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.22);
+  background: #eff6ff;
+  color: #1e40af;
+}
+:host .lp-cta:active {
+  transform: translateY(0);
+}
+
+/* Stats row */
+:host .lp-stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin-top: 40px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+:host .lp-stat {
+  padding: 0 28px;
+  text-align: center;
+}
+:host .lp-stat-n {
+  display: block;
+  font-size: 26px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.5px;
+}
+:host .lp-stat-l {
+  display: block;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-top: 2px;
+}
+:host .lp-stat-sep {
+  width: 1px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.15);
+  flex-shrink: 0;
+}
+
+/* Vague SVG de séparation */
+:host .lp-wave {
+  display: block;
+  width: 100%;
+  height: 56px;
+  margin-top: 40px;
+}
+
+/* --- SECTION FEATURES --- */
+:host .lp-section {
+  padding: 48px 24px 40px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+:host .lp-section-label {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #94a3b8;
+  margin: 0 0 24px;
+}
+
+/* Animation d'entrée commune */
+:host .lp-anim {
+  opacity: 0;
+  animation: lp-fadeUp 0.6s ease both;
+  animation-delay: var(--lp-delay, 0s);
+}
+
+/* --- Cartes fonctionnalités --- */
+:host .lp-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 0;
+}
+:host .lp-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px 18px 20px;
+  text-align: center;
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+  cursor: default;
+}
+:host .lp-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 48px rgba(30, 64, 175, 0.1);
+}
+:host .lp-card-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 14px;
+  transition: transform 0.22s ease;
+}
+:host .lp-card:hover .lp-card-icon {
+  transform: scale(1.1) rotate(-3deg);
+}
+
+:host .lp-card--green .lp-card-icon {
+  background: #ecfdf5;
+  color: #059669;
+}
+:host .lp-card--orange .lp-card-icon {
+  background: #fff7ed;
+  color: #ea580c;
+}
+:host .lp-card--blue .lp-card-icon {
+  background: #eff6ff;
+  color: #2563eb;
+}
+:host .lp-card--purple .lp-card-icon {
+  background: #fdf4ff;
+  color: #9333ea;
+}
+
+:host .lp-card-t {
+  font-weight: 700;
+  font-size: 14px;
+  color: #1e293b;
+  margin: 0 0 6px;
+}
+:host .lp-card-s {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* --- Feats (Pourquoi CorrespCare) --- */
+:host .lp-feats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+}
+:host .lp-feat {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 18px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+:host .lp-feat:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(30, 64, 175, 0.08);
+}
+:host .lp-feat-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+:host .lp-feat-icon--green {
+  background: #ecfdf5;
+  color: #059669;
+}
+:host .lp-feat-icon--blue {
+  background: #eff6ff;
+  color: #2563eb;
+}
+:host .lp-feat-icon--orange {
+  background: #fff7ed;
+  color: #ea580c;
+}
+:host .lp-feat-icon--purple {
+  background: #fdf4ff;
+  color: #9333ea;
+}
+
+:host .lp-feat-t {
+  font-weight: 700;
+  font-size: 13px;
+  color: #1e293b;
+  margin: 0 0 4px;
+}
+:host .lp-feat-s {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* --- Footer --- */
+:host .lp-footer {
+  background: #f1f5f9;
+  border-top: 1px solid #e2e8f0;
+  text-align: center;
+  padding: 16px 24px;
+  p {
+    font-size: 12px;
+    color: #94a3b8;
+    margin: 0;
+  }
+}
+
+/* --- Responsive --- */
+@media (max-width: 640px) {
+  :host .lp-h1 {
+    font-size: 28px;
+  }
+  :host .lp-tagline {
+    font-size: 14px;
+  }
+  :host .lp-stat {
+    padding: 0 16px;
+  }
+  :host .lp-stat-n {
+    font-size: 20px;
+  }
+  :host .lp-cards {
+    grid-template-columns: 1fr 1fr;
+  }
+  :host .lp-feats {
+    grid-template-columns: 1fr;
+  }
+  :host .lp-section {
+    padding: 32px 16px;
+  }
+}
+@media (max-width: 400px) {
+  :host .lp-cards {
+    grid-template-columns: 1fr;
+  }
+  :host .lp-stats {
+    flex-direction: column;
+    gap: 12px;
+  }
+  :host .lp-stat-sep {
+    display: none;
+  }
+}
+
+/* ====================== FIN LANDING PAGE STYLES ====================== */
