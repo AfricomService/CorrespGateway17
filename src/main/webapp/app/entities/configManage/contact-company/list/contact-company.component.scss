@@ -356,3 +356,58 @@
     font-size: 0.85rem;
   }
 }
+
+// ---- Import Excel Modal ----
+.import-step {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+
+  .step-number {
+    min-width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #2b6df6;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+  }
+
+  .step-content {
+    flex: 1;
+    h6 {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+  }
+}
+
+.file-drop-zone {
+  border: 2px dashed #d1d5db;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  text-align: center;
+  transition: border-color 200ms, background 200ms;
+  cursor: pointer;
+
+  &.dragover {
+    border-color: #2b6df6;
+    background: rgba(43, 109, 246, 0.04);
+  }
+
+  .upload-icon {
+    font-size: 2rem;
+    color: #9ca3af;
+    margin-bottom: 0.5rem;
+  }
+
+  p {
+    margin: 0.25rem 0;
+    color: #6b7280;
+    font-size: 0.9rem;
+  }
+}

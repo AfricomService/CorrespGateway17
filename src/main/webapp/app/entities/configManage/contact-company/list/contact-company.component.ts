@@ -52,6 +52,14 @@ export class ContactCompanyComponent implements OnInit {
     actionLabel?: string;
   } | null = null;
 
+  // --- Import Excel ---
+  @ViewChild('importModal') importModal!: TemplateRef<any>;
+  selectedFile: File | null = null;
+  isLoadingTemplate = false;
+  isImporting = false;
+  isDragOver = false;
+  importResult: { created: number; skipped: number; errors: string[] } | null = null;
+
   constructor(
     protected contactCompanyService: ContactCompanyService,
     protected activatedRoute: ActivatedRoute,
@@ -553,5 +561,78 @@ export class ContactCompanyComponent implements OnInit {
       default:
         return 'badge ms-2 bg-secondary text-white';
     }
+  }
+
+  openImportModal(): void {
+    this.selectedFile = null;
+    this.importResult = null;
+    this.modalService.open(this.importModal, { size: 'lg', backdrop: 'static' });
+  }
+
+  downloadImportTemplate(): void {
+    this.isLoadingTemplate = true;
+    this.contactCompanyService.downloadImportTemplate().subscribe({
+      next: res => {
+        const blob = res.body!;
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'modele_import_societes.xlsx';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        this.isLoadingTemplate = false;
+      },
+      error: () => {
+        alert('Erreur lors du téléchargement du modèle.');
+        this.isLoadingTemplate = false;
+      },
+    });
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files?.length) {
+      this.selectedFile = input.files[0];
+      this.importResult = null;
+    }
+  }
+
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    this.isDragOver = true;
+  }
+
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    this.isDragOver = false;
+    const file = event.dataTransfer?.files[0];
+    if (file && file.name.endsWith('.xlsx')) {
+      this.selectedFile = file;
+      this.importResult = null;
+    }
+  }
+
+  submitImport(): void {
+    if (!this.selectedFile) return;
+    this.isImporting = true;
+    this.importResult = null;
+
+    this.contactCompanyService.importFromExcel(this.selectedFile).subscribe({
+      next: result => {
+        this.importResult = result;
+        this.isImporting = false;
+        this.selectedFile = null;
+        // Recharger la liste si au moins une société a été créée
+        if (result.created > 0) {
+          this.load();
+        }
+      },
+      error: () => {
+        alert("Erreur lors de l'import.");
+        this.isImporting = false;
+      },
+    });
   }
 }
