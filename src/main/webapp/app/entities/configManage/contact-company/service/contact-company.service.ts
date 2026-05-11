@@ -196,4 +196,19 @@ export class ContactCompanyService {
     }
     return contactCompanyCollection;
   }
+
+  /** Télécharge le modèle Excel vide pour l'import */
+  downloadImportTemplate(): Observable<HttpResponse<Blob>> {
+    return this.http.get(`${this.resourceUrl}/import/template`, {
+      observe: 'response',
+      responseType: 'blob' as 'json',
+    }) as Observable<HttpResponse<Blob>>;
+  }
+
+  /** Envoie le fichier Excel rempli pour créer les sociétés en masse */
+  importFromExcel(file: File): Observable<{ created: number; skipped: number; errors: string[] }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<{ created: number; skipped: number; errors: string[] }>(`${this.resourceUrl}/import/excel`, formData);
+  }
 }

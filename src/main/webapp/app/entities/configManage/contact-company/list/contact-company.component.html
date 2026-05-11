@@ -12,9 +12,9 @@
       </div>
     </div>
 
-    <!-- ESPACE + CONTROLS: recherche + bouton ajouter (alignés sur md+) -->
+    <!-- ESPACE + CONTROLS: recherche + boutons (alignés sur md+) -->
     <div class="controls d-flex flex-column flex-md-row align-items-start align-items-md-center gap-2">
-      <!-- Barre de recherche -->
+      <!-- Barre de recherche + bouton Export -->
       <div class="search-wrapper w-100 w-md-auto me-md-3 d-flex align-items-center">
         <div class="input-group">
           <input
@@ -51,8 +51,17 @@
         </ng-container>
       </div>
 
-      <!-- Bouton Ajouter (restreint aux ADMIN) -->
-      <div class="actions ms-md-auto">
+      <!-- Boutons Importer + Ajouter (restreint aux ADMIN / BOC) -->
+      <div class="actions ms-md-auto d-flex align-items-center gap-2">
+        <!-- BOUTON IMPORTER -->
+        <ng-container *jhiHasAnyAuthority="[Authority.ADMIN, Authority.BOC]">
+          <button class="btn btn-light btn-animated" type="button" (click)="openImportModal()" title="Importer des sociétés depuis Excel">
+            <fa-icon icon="file-import" class="me-1"></fa-icon>
+            <span class="d-none d-md-inline">Importer</span>
+          </button>
+        </ng-container>
+
+        <!-- BOUTON AJOUTER -->
         <ng-container *jhiHasAnyAuthority="[Authority.ADMIN, Authority.BOC]">
           <a
             class="btn btn-light btn-animated"
@@ -114,6 +123,97 @@
         </div>
       </ng-template>
 
+      <!-- ===================== Modal Import Excel ===================== -->
+      <ng-template #importModal let-modal>
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title d-flex align-items-center gap-2">
+            <fa-icon icon="file-import" class="text-primary"></fa-icon>
+            Importer des sociétés depuis Excel
+          </h5>
+          <button type="button" class="btn-close" (click)="modal.dismiss()" aria-label="Fermer"></button>
+        </div>
+
+        <div class="modal-body pt-2">
+          <!-- Étape 1 : Télécharger le modèle -->
+          <div class="import-step mb-4">
+            <div class="step-number">1</div>
+            <div class="step-content">
+              <h6>Télécharger le modèle Excel</h6>
+              <p class="text-muted small mb-2">
+                Téléchargez le fichier modèle vide, remplissez-le avec vos sociétés, puis importez-le à l'étape 2.
+              </p>
+              <button
+                class="btn btn-outline-primary btn-sm"
+                type="button"
+                (click)="downloadImportTemplate()"
+                [disabled]="isLoadingTemplate"
+              >
+                <fa-icon [icon]="isLoadingTemplate ? 'spinner' : 'download'" [spin]="isLoadingTemplate" class="me-1"></fa-icon>
+                {{ isLoadingTemplate ? 'Téléchargement...' : 'Télécharger le modèle (.xlsx)' }}
+              </button>
+            </div>
+          </div>
+
+          <hr class="my-3" />
+
+          <!-- Étape 2 : Importer le fichier rempli -->
+          <div class="import-step">
+            <div class="step-number">2</div>
+            <div class="step-content">
+              <h6>Importer le fichier rempli</h6>
+              <p class="text-muted small mb-2">Sélectionnez votre fichier Excel complété <strong>(.xlsx uniquement)</strong>.</p>
+
+              <!-- Zone drag & drop -->
+              <div
+                class="file-drop-zone"
+                [class.dragover]="isDragOver"
+                (dragover)="onDragOver($event)"
+                (dragleave)="isDragOver = false"
+                (drop)="onDrop($event)"
+              >
+                <fa-icon icon="cloud-upload-alt" class="upload-icon d-block mx-auto mb-2"></fa-icon>
+                <p class="mb-1">Glissez votre fichier ici, ou</p>
+                <label class="btn btn-outline-secondary btn-sm mb-0" style="cursor: pointer">
+                  Parcourir...
+                  <input #fileInput type="file" accept=".xlsx" class="d-none" (change)="onFileSelected($event)" />
+                </label>
+
+                <!-- Fichier sélectionné -->
+                <p *ngIf="selectedFile" class="mt-2 mb-0 text-success small fw-semibold">
+                  <fa-icon icon="check-circle" class="me-1"></fa-icon>
+                  {{ selectedFile.name }}
+                </p>
+              </div>
+
+              <!-- Résultat de l'import -->
+              <div *ngIf="importResult" class="mt-3">
+                <div class="alert mb-1" [ngClass]="importResult.errors?.length ? 'alert-warning' : 'alert-success'" role="alert">
+                  <fa-icon [icon]="importResult.errors?.length ? 'exclamation-triangle' : 'check-circle'" class="me-1"></fa-icon>
+                  <strong>{{ importResult.created }} société(s) créée(s)</strong>
+                  <span *ngIf="importResult.skipped > 0" class="ms-2 text-muted"> · {{ importResult.skipped }} ligne(s) ignorée(s) </span>
+                </div>
+
+                <!-- Détail des erreurs -->
+                <ul *ngIf="importResult.errors?.length" class="list-unstyled small text-danger mt-1 mb-0 ps-1">
+                  <li *ngFor="let err of importResult.errors"><fa-icon icon="times-circle" class="me-1"></fa-icon>{{ err }}</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">
+            <fa-icon icon="times" class="me-1"></fa-icon>Fermer
+          </button>
+          <button type="button" class="btn btn-primary" (click)="submitImport()" [disabled]="!selectedFile || isImporting">
+            <fa-icon [icon]="isImporting ? 'spinner' : 'upload'" [spin]="isImporting" class="me-1"></fa-icon>
+            {{ isImporting ? 'Import en cours...' : "Lancer l'import" }}
+          </button>
+        </div>
+      </ng-template>
+      <!-- =================== Fin Modal Import Excel =================== -->
+
       <!-- Loader -->
       <div *ngIf="isLoading" class="text-center my-4">
         <div class="spinner-border text-primary" role="status">
@@ -130,7 +230,6 @@
             <small class="text-muted companies-count ms-2">({{ contactCompanies?.length || 0 }})</small>
           </h5>
         </div>
-
         <div class="companies-controls d-flex align-items-center gap-2">
           <!-- placeholder -->
         </div>
@@ -144,7 +243,6 @@
               <div class="d-flex justify-content-between">
                 <div>
                   <h5 class="card-title mb-1">{{ c.nom }}</h5>
-
                   <div class="text-muted small">
                     <div *ngIf="c.nomabrege">
                       {{ 'correspCareApp.configManageContactCompany.nomabrege_label' | translate }} {{ c.nomabrege }}
@@ -160,7 +258,7 @@
 
                 <!-- Actions (Modifier, Toggle, Supprimer) -->
                 <div class="text-end action-icons">
-                  <!-- EDIT (ADMIN only) -->
+                  <!-- EDIT -->
                   <ng-container *jhiHasAnyAuthority="[Authority.ADMIN, Authority.BOC]">
                     <button
                       class="btn btn-link p-1 action-btn"
@@ -171,7 +269,7 @@
                     </button>
                   </ng-container>
 
-                  <!-- Toggle activation : utilise le modal (masqué si Delated) -->
+                  <!-- Toggle activation -->
                   <ng-container *jhiHasAnyAuthority="[Authority.ADMIN, Authority.BOC]">
                     <button
                       *ngIf="c.etat !== 'Delated'"
@@ -194,7 +292,7 @@
                     </button>
                   </ng-container>
 
-                  <!-- DELETE (ADMIN only) -->
+                  <!-- DELETE -->
                   <ng-container *jhiHasAnyAuthority="[Authority.ADMIN, Authority.BOC]">
                     <button
                       class="btn btn-link p-1 text-danger action-btn"
@@ -228,7 +326,6 @@
 
           <!-- Personnes (affiché quand c.expanded) -->
           <div *ngIf="c.expanded" class="card-footer persons-list">
-            <!-- HEADER au dessus de la liste des personnes -->
             <div class="persons-header d-flex align-items-center justify-content-between mb-3">
               <div class="persons-title">
                 <h6 class="mb-0">
@@ -236,7 +333,6 @@
                 </h6>
               </div>
 
-              <!-- Bouton Ajouter (ADMIN only) -->
               <div>
                 <ng-container *jhiHasAnyAuthority="[Authority.ADMIN, Authority.BOC]">
                   <a
@@ -263,8 +359,6 @@
                   <div class="person-info">
                     <div class="d-flex align-items-center gap-2">
                       <div class="fw-semibold">{{ p.nom }}</div>
-
-                      <!-- badge d'état de la personne (affiché via traduction) -->
                       <small
                         [attr.aria-label]="'État : ' + (p.etat || '—')"
                         [class]="getPersonBadgeClasses(p.etat)"
@@ -272,14 +366,14 @@
                         >{{ 'correspCareApp.UsualStatus.' + p.etat | translate }}</small
                       >
                     </div>
-
                     <div class="small text-muted mt-1">
                       <fa-icon icon="phone" class="me-1"></fa-icon>{{ p.tel }} &nbsp; • &nbsp;
                       <fa-icon icon="envelope" class="me-1"></fa-icon>{{ p.email }}
                     </div>
                   </div>
+
                   <div class="ms-auto person-actions d-flex align-items-center gap-2">
-                    <!-- Voir (accessible à tous) -->
+                    <!-- Voir -->
                     <a
                       class="btn btn-sm btn-link action-btn"
                       [routerLink]="['/person-company', p.id, 'view']"
@@ -289,7 +383,7 @@
                       <fa-icon icon="eye"></fa-icon>
                     </a>
 
-                    <!-- Éditer (ADMIN only) -->
+                    <!-- Éditer -->
                     <ng-container *jhiHasAnyAuthority="[Authority.ADMIN, Authority.BOC]">
                       <a
                         class="btn btn-sm btn-link action-btn"
@@ -302,7 +396,7 @@
                       </a>
                     </ng-container>
 
-                    <!-- Toggle person activation : utilise le modal -->
+                    <!-- Toggle activation personne -->
                     <ng-container *jhiHasAnyAuthority="[Authority.ADMIN, Authority.BOC]">
                       <button
                         *ngIf="p.etat !== 'Delated'"
@@ -324,7 +418,7 @@
                       </button>
                     </ng-container>
 
-                    <!-- Supprimer personne (ADMIN only) -->
+                    <!-- Supprimer personne -->
                     <ng-container *jhiHasAnyAuthority="[Authority.ADMIN, Authority.BOC]">
                       <button
                         class="btn btn-sm btn-link text-danger action-btn"
