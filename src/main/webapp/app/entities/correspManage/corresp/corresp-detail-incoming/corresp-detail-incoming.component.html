@@ -1160,9 +1160,7 @@
               >
                 <ng-container *ngFor="let task of tachesAssociees">
                   <div
-                    *ngIf="
-                      task.status !== CorrespStatus.DRAFT || isAdminOrBoc || isGlobalAdmin || correspLoaded?.corresptype === 'OUTGOING'
-                    "
+                    *ngIf="task.status !== CorrespStatus.DRAFT || isAdminOrBoc || isGlobalAdmin"
                     [attr.id]="'task-' + task.id"
                     [style.background-color]="getTaskTypeBg(task.taskType)"
                     [style.border-left]="'5px solid ' + getTaskColor(task.status)"
@@ -1618,60 +1616,59 @@
               <!-- --- DRAFT MODE --- -->
               <ng-container *ngIf="correspLoaded?.status === 'DRAFT' && (canWriteCorresp || canAdminCorresp); else readOnlyBody">
                 <!-- ===== En-tête simple pour les autres types (INCOMING, INTERNAL) ===== -->
-                <ng-container *ngIf="correspLoaded?.corresptype !== 'OUTGOING'">
-                  <div
-                    [attr.aria-label]="'correspCareApp.correspManageCorresp.detail.headerQuick' | translate"
-                    class="header-quick"
-                    role="group"
-                  >
-                    <div class="hq-item" title="{{ expediteur || correspLoaded?.sender || '-' }}">
-                      <strong jhiTranslate="correspCareApp.correspManageCorresp.detail.from">De :</strong>
-                      {{ expediteur || correspLoaded?.sender || '-' }}
-                    </div>
-                    <div class="hq-item" title="{{ destinataireLabel || 'Destinataire principal' }}">
-                      <strong jhiTranslate="correspCareApp.correspManageCorresp.detail.to">À :</strong>
-                      <ng-container *ngIf="messageReceiverEmails.length > 0; else fallbackDestNonOut">
-                        <span
-                          *ngFor="let email of messageReceiverEmails"
-                          style="
-                            display: inline-flex;
-                            align-items: center;
-                            background: #e8f2ff;
-                            color: #1565c0;
-                            border-radius: 16px;
-                            padding: 1px 8px;
-                            font-size: 12px;
-                            font-weight: 500;
-                            margin-left: 4px;
-                          "
-                          >{{ email }}</span
-                        >
-                      </ng-container>
-                      <ng-template #fallbackDestNonOut> -</ng-template>
-                    </div>
-                    <div class="hq-item" title="{{ contactEmailCCLabel || 'Contact en copie' }}">
-                      <strong jhiTranslate="correspCareApp.correspManageCorresp.cc">CC :</strong>
-                      <ng-container *ngIf="messageCopyToEmails.length > 0; else fallbackCCNonOut">
-                        <span
-                          *ngFor="let email of messageCopyToEmails"
-                          style="
-                            display: inline-flex;
-                            align-items: center;
-                            background: #fff3e0;
-                            color: #e65100;
-                            border-radius: 16px;
-                            padding: 1px 8px;
-                            font-size: 12px;
-                            font-weight: 500;
-                            margin-left: 4px;
-                          "
-                          >{{ email }}</span
-                        >
-                      </ng-container>
-                      <ng-template #fallbackCCNonOut> -</ng-template>
-                    </div>
+
+                <div
+                  [attr.aria-label]="'correspCareApp.correspManageCorresp.detail.headerQuick' | translate"
+                  class="header-quick"
+                  role="group"
+                >
+                  <div class="hq-item" title="{{ expediteur || correspLoaded?.sender || '-' }}">
+                    <strong jhiTranslate="correspCareApp.correspManageCorresp.detail.from">De :</strong>
+                    {{ expediteur || correspLoaded?.sender || '-' }}
                   </div>
-                </ng-container>
+                  <div class="hq-item" title="{{ destinataireLabel || 'Destinataire principal' }}">
+                    <strong jhiTranslate="correspCareApp.correspManageCorresp.detail.to">À :</strong>
+                    <ng-container *ngIf="messageReceiverEmails.length > 0; else fallbackDestNonOut">
+                      <span
+                        *ngFor="let email of messageReceiverEmails"
+                        style="
+                          display: inline-flex;
+                          align-items: center;
+                          background: #e8f2ff;
+                          color: #1565c0;
+                          border-radius: 16px;
+                          padding: 1px 8px;
+                          font-size: 12px;
+                          font-weight: 500;
+                          margin-left: 4px;
+                        "
+                        >{{ email }}</span
+                      >
+                    </ng-container>
+                    <ng-template #fallbackDestNonOut> -</ng-template>
+                  </div>
+                  <div class="hq-item" title="{{ contactEmailCCLabel || 'Contact en copie' }}">
+                    <strong jhiTranslate="correspCareApp.correspManageCorresp.cc">CC :</strong>
+                    <ng-container *ngIf="messageCopyToEmails.length > 0; else fallbackCCNonOut">
+                      <span
+                        *ngFor="let email of messageCopyToEmails"
+                        style="
+                          display: inline-flex;
+                          align-items: center;
+                          background: #fff3e0;
+                          color: #e65100;
+                          border-radius: 16px;
+                          padding: 1px 8px;
+                          font-size: 12px;
+                          font-weight: 500;
+                          margin-left: 4px;
+                        "
+                        >{{ email }}</span
+                      >
+                    </ng-container>
+                    <ng-template #fallbackCCNonOut> -</ng-template>
+                  </div>
+                </div>
 
                 <!-- Éditeur -->
                 <dx-html-editor
@@ -1999,7 +1996,7 @@
         <button
           (click)="soumettreCorresp(correspLoaded?.id!)"
           *ngIf="canSoumettreCorresp"
-          [disabled]="!(canWriteCorresp || canAdminCorresp || isAdminOrBoc)"
+          [disabled]="!isAdminOrBoc"
           class="btn btn-success"
           jhiTranslate="correspCareApp.correspManageCorresp.actions.submit"
           style="font-weight: 600; text-transform: uppercase; min-width: 120px"

@@ -1363,6 +1363,9 @@ export class CorrespDetailComponent implements OnInit {
       msgSender: this.currentUserEmailDetail || '',
       msgReceiver: this.messageReceiverEmails.join(', ') || this.draftEmailReceiver || '',
       msgCopyTo: this.messageCopyToEmails.join(', ') || this.draftEmailCopyTo || '',
+      idSociete: this.correspLoaded.idSociete ?? null,
+      nomSociete: this.correspLoaded.nomSociete ?? null,
+      codeUniqueSociete: this.correspLoaded.codeUniqueSociete ?? null,
     };
 
     const typeDocumentDTO = this.selectedTypeDocument!;
@@ -2472,6 +2475,10 @@ export class CorrespDetailComponent implements OnInit {
       dispatchType: this.correspLoaded.dispatchType || 'NORMAL',
       labelDestinataire: this.destinataireLabel || '',
       labelContactCC: this.contactEmailCCLabel || '',
+      // ✅ AJOUT : préserver les infos société pour que generateReference() ait le bon codeUniqueSociete
+      idSociete: this.correspLoaded.idSociete ?? null,
+      nomSociete: this.correspLoaded.nomSociete ?? null,
+      codeUniqueSociete: this.correspLoaded.codeUniqueSociete ?? null,
     };
 
     this.isSaving = true;
