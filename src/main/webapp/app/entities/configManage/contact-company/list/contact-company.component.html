@@ -56,7 +56,14 @@
         <!-- BOUTON IMPORTER -->
         <ng-container *jhiHasAnyAuthority="[Authority.ADMIN, Authority.BOC]">
           <button class="btn btn-light btn-animated" type="button" (click)="openImportModal()" title="Importer des sociétés depuis Excel">
-            <fa-icon icon="file-import" class="me-1"></fa-icon>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" class="me-1">
+              <path
+                d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"
+              />
+              <path
+                d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"
+              />
+            </svg>
             <span class="d-none d-md-inline">Importer</span>
           </button>
         </ng-container>
@@ -127,7 +134,14 @@
       <ng-template #importModal let-modal>
         <div class="modal-header border-0 pb-0">
           <h5 class="modal-title d-flex align-items-center gap-2">
-            <fa-icon icon="file-import" class="text-primary"></fa-icon>
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="text-primary" viewBox="0 0 16 16">
+              <path
+                d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"
+              />
+              <path
+                d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"
+              />
+            </svg>
             Importer des sociétés depuis Excel
           </h5>
           <button type="button" class="btn-close" (click)="modal.dismiss()" aria-label="Fermer"></button>
