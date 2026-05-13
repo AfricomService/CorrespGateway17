@@ -42,12 +42,15 @@ export class TypedocumentUpdateComponent implements OnInit {
   treeSearchQuery = '';
   selectedDeptDD: DepartementTreeFeignDTO | null = null;
 
-  // Tree state pour Destinataire En Copie
+  // Tree state pour Destinataire En Copie — multi-select
   ccTree: DepartementTreeFeignDTO[] = [];
   ccTreeFiltered: DepartementTreeFeignDTO[] = [];
   ccLoadingTree = false;
   ccTreeSearchQuery = '';
+  // On garde selectedDeptDCC pour affichage du chip principal (premier sélectionné)
   selectedDeptDCC: DepartementTreeFeignDTO | null = null;
+  // NOUVEAU : liste multi-sélection
+  selectedCcDepts: Array<{ id?: number; code: string; nom: string }> = [];
 
   societes: ISocieteLight[] = [];
   loadingSocietes = false;
@@ -107,11 +110,8 @@ export class TypedocumentUpdateComponent implements OnInit {
 
   // ── Nouvelle méthode : appelée quand l'utilisateur change la société dans le select ──
   onSocieteChange(codeSociete: string | null): void {
-    // Trouver la société complète dans la liste
     const societe = this.societes.find(s => s.codeSociete === codeSociete) ?? null;
     this.selectedSociete = societe;
-
-    // Réinitialiser l'arbre et les sélections
     this.selectedOrgaCodeForTree = null;
     this.taskTree = [];
     this.taskTreeFiltered = [];
@@ -119,6 +119,8 @@ export class TypedocumentUpdateComponent implements OnInit {
     this.ccTreeFiltered = [];
     this.selectedDeptDD = null;
     this.selectedDeptDCC = null;
+    // NOUVEAU
+    this.selectedCcDepts = [];
     this.editForm.get('defautdest')?.setValue('');
     this.editForm.get('labelDD')?.setValue('');
     this.editForm.get('defaultencopie')?.setValue('');
@@ -159,7 +161,8 @@ export class TypedocumentUpdateComponent implements OnInit {
   }
 
   openAddTaskModal1(content: any, departementCode?: string): void {
-    this.selectedDeptDCC = null;
+    // On ne réinitialise plus selectedDeptDCC ni selectedCcDepts ici
+    // pour conserver les sélections déjà faites
     this.ccTreeSearchQuery = '';
     this.ccExpandedNodes.clear();
     this.prepareAndLoadOrgaThenCcTree();
@@ -334,12 +337,54 @@ export class TypedocumentUpdateComponent implements OnInit {
     modal.close();
   }
 
-  selectDeptDCC(node: DepartementTreeFeignDTO, modal: any): void {
-    this.selectedDeptDCC = node;
-    this.editForm.get('labelDCC')?.setValue(node.nom ?? '');
-    this.editForm.get('defaultencopie')?.setValue(node.code ?? '');
-    this.selectedDepartementNom1 = node.nom ?? '';
+  // Multi-select CC : toggle sélection d'un nœud
+  toggleCcDeptSelection(node: DepartementTreeFeignDTO): void {
+    const code = node.code ?? '';
+    if (!code) return;
+    const idx = this.selectedCcDepts.findIndex(d => d.code === code);
+    if (idx >= 0) {
+      this.selectedCcDepts.splice(idx, 1);
+    } else {
+      this.selectedCcDepts.push({
+        id: node.id,
+        code,
+        nom: node.nom ?? code,
+      });
+    }
+  }
+
+  isCcDeptSelected(node: DepartementTreeFeignDTO): boolean {
+    return !!this.selectedCcDepts.find(d => d.code === (node.code ?? ''));
+  }
+
+  removeCcDept(cc: { code: string; nom: string }): void {
+    const idx = this.selectedCcDepts.findIndex(d => d.code === cc.code);
+    if (idx >= 0) this.selectedCcDepts.splice(idx, 1);
+    this.updateCcFormValues();
+  }
+
+  clearCcSelections(): void {
+    this.selectedCcDepts = [];
+    this.updateCcFormValues();
+  }
+
+  confirmCcSelection(modal: any): void {
+    this.updateCcFormValues();
     modal.close();
+  }
+
+  private updateCcFormValues(): void {
+    if (this.selectedCcDepts.length === 0) {
+      this.editForm.get('labelDCC')?.setValue('');
+      this.editForm.get('defaultencopie')?.setValue('');
+      this.selectedDeptDCC = null;
+      this.selectedDepartementNom1 = '';
+    } else {
+      // Tous les codes joints par virgule
+      this.editForm.get('defaultencopie')?.setValue(this.selectedCcDepts.map(d => d.code).join(','));
+      this.editForm.get('labelDCC')?.setValue(this.selectedCcDepts.map(d => d.nom).join(', '));
+      this.selectedDepartementNom1 = this.selectedCcDepts[0].nom;
+    }
   }
 
   save(): void {

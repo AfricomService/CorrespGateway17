@@ -74,7 +74,13 @@
         <div class="mb-3">
           <label class="form-label">Destinataire En Copie Par Défaut</label>
           <div class="d-flex" style="gap: 0.5em">
-            <input type="text" class="form-control" formControlName="labelDCC" readonly />
+            <input
+              type="text"
+              class="form-control"
+              formControlName="labelDCC"
+              readonly
+              [placeholder]="selectedCcDepts.length === 0 ? 'Aucune sélection' : ''"
+            />
             <input type="text" class="form-control" formControlName="defaultencopie" readonly />
             <button
               type="button"
@@ -85,6 +91,33 @@
             >
               {{ isEditMode ? 'Modifier' : 'Ajouter' }}
             </button>
+          </div>
+          <!-- Chips des départements CC sélectionnés -->
+          <div *ngIf="selectedCcDepts.length > 0" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px">
+            <span
+              *ngFor="let cc of selectedCcDepts"
+              style="
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+                background: #e8f2ff;
+                color: #1e7bff;
+                border-radius: 16px;
+                padding: 2px 10px;
+                font-size: 13px;
+                font-weight: 500;
+              "
+            >
+              {{ cc.nom }}
+              <button
+                type="button"
+                (click)="removeCcDept(cc)"
+                style="background: none; border: none; color: #1e7bff; font-size: 14px; cursor: pointer; padding: 0 2px; line-height: 1"
+                title="Retirer"
+              >
+                &times;
+              </button>
+            </span>
           </div>
           <small *ngIf="!selectedSociete" class="text-muted"> Sélectionnez une société pour activer ce champ. </small>
         </div>
@@ -215,11 +248,50 @@
 
       <ng-template #AddTaskModal1 let-AddTaskModal1>
         <div class="modal-header">
-          <h5 class="modal-title">Sélectionner un département — Destinataire En Copie Par Défaut</h5>
+          <h5 class="modal-title">Sélectionner les départements — Destinataire En Copie Par Défaut</h5>
           <button type="button" class="btn-close" (click)="AddTaskModal1.close()"></button>
         </div>
 
         <div class="modal-body">
+          <!-- Chips des sélections en cours -->
+          <div
+            *ngIf="selectedCcDepts.length > 0"
+            style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; align-items: center"
+          >
+            <span
+              *ngFor="let cc of selectedCcDepts"
+              style="
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+                background: #e8f2ff;
+                color: #1e7bff;
+                border-radius: 16px;
+                padding: 4px 12px;
+                font-size: 13px;
+                font-weight: 500;
+              "
+            >
+              {{ cc.nom }}
+              <button
+                type="button"
+                (click)="removeCcDept(cc)"
+                style="background: none; border: none; color: #1e7bff; font-size: 14px; cursor: pointer; padding: 0 2px; line-height: 1"
+                title="Retirer"
+              >
+                &times;
+              </button>
+            </span>
+            <button
+              type="button"
+              class="btn btn-link btn-sm"
+              (click)="clearCcSelections()"
+              style="font-size: 12px; text-decoration: underline; color: #dc3545"
+            >
+              Tout effacer
+            </button>
+          </div>
+
           <div style="height: 480px; overflow: auto; border: 1px solid #e9ecef; border-radius: 8px; padding: 12px; background: #fff">
             <!-- Barre de recherche -->
             <div style="margin-bottom: 10px">
@@ -254,9 +326,12 @@
 
         <div class="modal-footer d-flex justify-content-between">
           <button type="button" class="btn btn-light" (click)="AddTaskModal1.close()">Annuler</button>
+          <button type="button" class="btn btn-primary" (click)="confirmCcSelection(AddTaskModal1)">
+            Confirmer ({{ selectedCcDepts.length }})
+          </button>
         </div>
 
-        <!-- Template récursif de rendu des nœuds -->
+        <!-- Template récursif — CHECKBOXES au lieu de radio buttons -->
         <ng-template #renderDCCNode let-node="node" let-level="level">
           <li style="margin: 6px 0; list-style: none">
             <div
@@ -273,7 +348,7 @@
                 border-style: solid;
               "
               [style.borderColor]="getLevelColor(level)"
-              [style.background]="selectedDeptDCC?.id === node.id ? '#e9f2ff' : '#ffffff'"
+              [style.background]="isCcDeptSelected(node) ? '#e9f2ff' : '#ffffff'"
             >
               <div style="display: flex; align-items: center; gap: 8px">
                 <i
@@ -286,12 +361,12 @@
                 <span *ngIf="(node.children?.length || 0) > 0" style="font-size: 12px; color: #6c757d">
                   {{ node.children.length }} sous-dept.
                 </span>
+                <!-- CHECKBOX au lieu de radio -->
                 <input
-                  type="radio"
-                  name="selectedDCCDept"
+                  type="checkbox"
                   style="width: 18px; height: 18px; cursor: pointer; accent-color: #1e7bff"
-                  [checked]="selectedDeptDCC?.id === node.id"
-                  (change)="selectDeptDCC(node, AddTaskModal1); $event.stopPropagation()"
+                  [checked]="isCcDeptSelected(node)"
+                  (change)="toggleCcDeptSelection(node); $event.stopPropagation()"
                   (click)="$event.stopPropagation()"
                 />
               </div>
