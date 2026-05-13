@@ -486,46 +486,57 @@ export class CorrespUpdateComponent implements OnInit {
     }
 
     if (this.selectedTypeDocument.defaultencopie) {
-      this.correspService.queryOrgaDepsByCode({ code: this.selectedTypeDocument.defaultencopie }).subscribe({
-        next: (res: HttpResponse<IDepartement>) => {
-          if (res.body) {
-            this.selectedCcDepts = [
-              {
-                idDept: res.body.id ?? null,
-                codeDept: res.body.code ?? '',
-                nomDept: res.body.nom ?? '',
-                emailDept: res.body.email ?? '',
-              },
-            ];
-            this.updateCcLabelsFromSelection();
+      // Splitter les codes multiples
+      const codes = this.selectedTypeDocument.defaultencopie
+        .split(',')
+        .map(c => c.trim())
+        .filter(c => !!c);
 
-            const taskData = {
-              typeTask: 'lecture',
-              responsable: res.body.code ?? '',
-              dateLimite: '',
-              responsableName: res.body.nom ?? '',
-              commentaire: '',
-            };
+      this.selectedCcDepts = [];
+      this.tasks = this.tasks.filter(t => t.typeTask !== 'lecture');
 
-            this.tasks.push(taskData);
-            this.syncDefaultTaskNames();
-          } else {
-            this.selectedCcDepts = [];
-            this.contactEmailCC = '';
-            this.contactEmailCCLabel = '';
-          }
-        },
-        error: () => {
-          this.selectedCcDepts = [];
-          this.contactEmailCC = '';
-          this.contactEmailCCLabel = '';
-        },
+      // Appel individuel pour chaque code
+      codes.forEach(code => {
+        this.correspService.queryOrgaDepsByCode({ code }).subscribe({
+          next: (res: HttpResponse<IDepartement>) => {
+            if (res.body) {
+              // Éviter les doublons
+              if (!this.selectedCcDepts.find(d => d.codeDept === res.body!.code)) {
+                this.selectedCcDepts.push({
+                  idDept: res.body.id ?? null,
+                  codeDept: res.body.code ?? '',
+                  nomDept: res.body.nom ?? '',
+                  emailDept: res.body.email ?? '',
+                });
+              }
+
+              this.updateCcLabelsFromSelection();
+
+              // Ajouter une tâche lecture par département
+              if (!this.tasks.find(t => t.typeTask === 'lecture' && t.responsable === (res.body!.code ?? ''))) {
+                this.tasks.push({
+                  typeTask: 'lecture',
+                  responsable: res.body.code ?? '',
+                  dateLimite: '',
+                  responsableName: res.body.nom ?? '',
+                  commentaire: '',
+                });
+              }
+
+              this.syncDefaultTaskNames();
+            }
+          },
+          error: () => {
+            console.warn(`Département introuvable pour le code: ${code}`);
+          },
+        });
       });
     } else {
       this.selectedCcDepts = [];
       this.contactEmailCC = '';
       this.contactEmailCCLabel = '';
     }
+
     this.syncDefaultTaskNames();
   }
 
