@@ -281,6 +281,18 @@ export class CorrespDetailComponent implements OnInit {
   draftEmailCopyTo: string = '';
   loadingModels = false;
 
+  // === Modal Expéditeur (detail) ===
+  expediteurModalOpen = false;
+  expediteurModalSearch = '';
+  expediteurModalFilteredCompanies: IContactCompany[] = [];
+  expediteurModalPage = 0;
+  expediteurModalPageSize = 20;
+  expediteurModalTotalItems = 0;
+  expediteurModalTotalPages = 0;
+  expediteurModalLoading = false;
+  expediteurModalSearchDebounce: any = null;
+  hoveredCompanyId: number | null = null;
+
   /**
    * Vrai si la correspondance est dans un état qui rend la partie gauche
    * (infos générales, tâches, PJ, boutons) éditable : DRAFT ou DISPATCH.
@@ -822,6 +834,78 @@ export class CorrespDetailComponent implements OnInit {
         this.loadingCompanies = false;
       },
     });
+  }
+
+  openExpediteurModal(): void {
+    this.expediteurModalSearch = '';
+    this.expediteurModalPage = 0;
+    this.expediteurModalFilteredCompanies = [];
+    this.expediteurModalOpen = true;
+    this.loadExpediteurModalPage();
+  }
+
+  closeExpediteurModal(): void {
+    this.expediteurModalOpen = false;
+  }
+
+  onExpediteurModalSearchChange(): void {
+    if (this.expediteurModalSearchDebounce) {
+      clearTimeout(this.expediteurModalSearchDebounce);
+    }
+    this.expediteurModalSearchDebounce = setTimeout(() => {
+      this.expediteurModalPage = 0;
+      this.loadExpediteurModalPage();
+    }, 300);
+  }
+
+  loadExpediteurModalPage(page?: number): void {
+    if (page !== undefined) {
+      this.expediteurModalPage = page;
+    }
+    this.expediteurModalLoading = true;
+    this.contactCompanyService
+      .searchActiveContactCompanies(this.expediteurModalSearch || '', this.expediteurModalPage, this.expediteurModalPageSize)
+      .subscribe({
+        next: res => {
+          this.expediteurModalFilteredCompanies = res.body || [];
+          const totalCount = res.headers.get('X-Total-Count');
+          this.expediteurModalTotalItems = totalCount ? +totalCount : 0;
+          this.expediteurModalTotalPages = Math.ceil(this.expediteurModalTotalItems / this.expediteurModalPageSize);
+          this.expediteurModalLoading = false;
+        },
+        error: () => {
+          this.expediteurModalFilteredCompanies = [];
+          this.expediteurModalLoading = false;
+        },
+      });
+  }
+
+  selectCompanyFromModal(company: IContactCompany): void {
+    this.expediteurModalOpen = false;
+    this.selectedCompanyId = company.id;
+    this.expediteur = company.nom || '';
+    this.personsForSelectedCompany = [];
+    this.selectedPersonId = null;
+    this.contactEmail = '';
+    this.loadingPersons = true;
+    this.contactCompanyService.getActivePersonsByCompany(company.id).subscribe({
+      next: res => {
+        this.personsForSelectedCompany = res.body || [];
+        this.loadingPersons = false;
+      },
+      error: () => {
+        this.personsForSelectedCompany = [];
+        this.loadingPersons = false;
+      },
+    });
+  }
+
+  clearExpediteurSelection(): void {
+    this.selectedCompanyId = null;
+    this.personsForSelectedCompany = [];
+    this.selectedPersonId = null;
+    this.contactEmail = '';
+    this.expediteur = '';
   }
 
   onExpediteurChange(companyId: number | null | string): void {
