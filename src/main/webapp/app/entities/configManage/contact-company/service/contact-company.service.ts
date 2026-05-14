@@ -167,8 +167,19 @@ export class ContactCompanyService {
     return o1 && o2 ? this.getContactCompanyIdentifier(o1) === this.getContactCompanyIdentifier(o2) : o1 === o2;
   }
 
-  getActiveContactCompanies(): Observable<EntityArrayResponseType> {
-    return this.http.get<IContactCompany[]>(`${this.resourceUrl}/actives`, { observe: 'response' });
+  // NOUVEAU — version avec pagination
+  getActiveContactCompanies(page: number = 0, size: number = 20): Observable<HttpResponse<IContactCompany[]>> {
+    const params = createRequestOption({ page, size });
+    return this.http.get<IContactCompany[]>(`${this.resourceUrl}/actives`, { params, observe: 'response' });
+  }
+
+  /**
+   * Recherche paginée des sociétés actives par nom ou matrne.
+   * GET /api/contact-companies/actives/search?query=...&page=...&size=...
+   */
+  searchActiveContactCompanies(query: string = '', page: number = 0, size: number = 20): Observable<HttpResponse<IContactCompany[]>> {
+    const params = createRequestOption({ query, page, size });
+    return this.http.get<IContactCompany[]>(`${this.resourceUrl}/actives/search`, { params, observe: 'response' });
   }
 
   getActivePersonsByCompany(companyId: number): Observable<HttpResponse<IPersonCompany[]>> {

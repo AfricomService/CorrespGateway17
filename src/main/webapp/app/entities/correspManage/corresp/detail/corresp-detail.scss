@@ -442,3 +442,25 @@ strong {
     transform: translateY(0);
   }
 }
+
+// ============================================================
+// MODAL EXPÉDITEUR — rows
+// ============================================================
+.company-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-bottom: 1px solid #f8fafc;
+  background: #fff;
+
+  &--selected {
+    background: #eff6ff !important;
+  }
+
+  &--hovered {
+    background: #f8fafc;
+  }
+}
