@@ -184,6 +184,20 @@ export class CorrespUpdateComponent implements OnInit {
   showManualExpediteur = false;
   showManualContact: boolean = false;
 
+  // === Modal Expéditeur ===
+  expediteurModalOpen = false;
+  expediteurModalSearch = '';
+  expediteurModalFilteredCompanies: IContactCompany[] = [];
+
+  // pagination du modal expéditeur
+  expediteurModalPage = 0; // page courante (0-based pour Spring)
+  expediteurModalPageSize = 20; // taille de page
+  expediteurModalTotalItems = 0; // total d'éléments
+  expediteurModalTotalPages = 0; // total de pages
+  expediteurModalLoading = false; // indicateur de chargement
+  expediteurModalSearchDebounce: any = null; // timer debounce
+  hoveredCompanyId: number | null = null;
+
   // === NEW: Tree related state ===
   taskTree: DepartementTreeFeignDTO[] = []; // arbre récupéré depuis orgacare
   loadingTree = false;
@@ -321,9 +335,10 @@ export class CorrespUpdateComponent implements OnInit {
     return (dataItem.nom ? dataItem.nom + ' ' : '') + (dataItem.email ? dataItem.email + ' ' : '') + (dataItem.tel ? dataItem.tel : '');
   };
 
+  // NOUVEAU — on charge toutes les actives en une seule page large pour le dx-select-box contact
   loadActiveCompanies(): void {
     this.loadingCompanies = true;
-    this.contactCompanyService.getActiveContactCompanies().subscribe({
+    this.contactCompanyService.getActiveContactCompanies(0, 1000).subscribe({
       next: (res: HttpResponse<IContactCompany[]>) => {
         this.companies = res.body || [];
         this.loadingCompanies = false;
@@ -346,8 +361,15 @@ export class CorrespUpdateComponent implements OnInit {
     this.contactEmailLabel = '';
 
     if (id) {
-      const company = this.companies.find(c => c.id === id);
-      this.expediteur = company ? company.nom || '' : '';
+      // D'abord chercher dans companies (chargé pour le Contact)
+      const companyInList = this.companies.find(c => c.id === id);
+      if (companyInList) {
+        this.expediteur = companyInList.nom || '';
+      } else {
+        // Si la société vient du modal et n'est pas dans companies,
+        // elle est passée directement via selectCompanyFromModal
+        // donc expediteur est déjà défini — on ne le réinitialise pas
+      }
     } else {
       if (!this.showManualExpediteur) {
         this.expediteur = '';
@@ -416,6 +438,94 @@ export class CorrespUpdateComponent implements OnInit {
       this.selectedPersonId = null;
       this.contactEmail = '';
     }
+  }
+
+  openExpediteurModal(): void {
+    this.expediteurModalSearch = '';
+    this.expediteurModalPage = 0;
+    this.expediteurModalFilteredCompanies = [];
+    this.expediteurModalOpen = true;
+    this.loadExpediteurModalPage();
+  }
+
+  closeExpediteurModal(): void {
+    this.expediteurModalOpen = false;
+  }
+
+  onExpediteurModalSearchChange(): void {
+    // Debounce 300ms pour éviter trop d'appels pendant la frappe
+    if (this.expediteurModalSearchDebounce) {
+      clearTimeout(this.expediteurModalSearchDebounce);
+    }
+    this.expediteurModalSearchDebounce = setTimeout(() => {
+      this.expediteurModalPage = 0;
+      this.loadExpediteurModalPage();
+    }, 300);
+  }
+
+  loadExpediteurModalPage(page?: number): void {
+    if (page !== undefined) {
+      this.expediteurModalPage = page;
+    }
+
+    this.expediteurModalLoading = true;
+
+    this.contactCompanyService
+      .searchActiveContactCompanies(this.expediteurModalSearch || '', this.expediteurModalPage, this.expediteurModalPageSize)
+      .subscribe({
+        next: res => {
+          this.expediteurModalFilteredCompanies = res.body || [];
+
+          // lire le total depuis les headers X-Total-Count (standard JHipster)
+          const totalCount = res.headers.get('X-Total-Count');
+          this.expediteurModalTotalItems = totalCount ? +totalCount : 0;
+          this.expediteurModalTotalPages = Math.ceil(this.expediteurModalTotalItems / this.expediteurModalPageSize);
+
+          this.expediteurModalLoading = false;
+        },
+        error: () => {
+          this.expediteurModalFilteredCompanies = [];
+          this.expediteurModalLoading = false;
+        },
+      });
+  }
+
+  // NOUVEAU — on définit directement les champs sans dépendre de this.companies
+  selectCompanyFromModal(company: IContactCompany): void {
+    this.expediteurModalOpen = false;
+
+    // Définir directement les champs depuis l'objet company du modal
+    this.selectedCompanyId = company.id;
+    this.expediteur = company.nom || '';
+
+    // Réinitialiser le contact
+    this.personsForSelectedCompany = [];
+    this.selectedPersonId = null;
+    this.contactEmail = '';
+    this.contactEmailLabel = '';
+
+    // Charger les personnes pour ce company
+    this.loadingPersons = true;
+    this.contactCompanyService.getActivePersonsByCompany(company.id).subscribe({
+      next: (res: HttpResponse<IPersonCompany[]>) => {
+        this.personsForSelectedCompany = res.body || [];
+        this.loadingPersons = false;
+      },
+      error: err => {
+        console.error('Erreur load persons', err);
+        this.personsForSelectedCompany = [];
+        this.loadingPersons = false;
+      },
+    });
+  }
+
+  clearExpediteurSelection(): void {
+    this.selectedCompanyId = null;
+    this.personsForSelectedCompany = [];
+    this.selectedPersonId = null;
+    this.contactEmail = '';
+    this.contactEmailLabel = '';
+    this.expediteur = '';
   }
 
   onRecipientOrCcChange(): void {
