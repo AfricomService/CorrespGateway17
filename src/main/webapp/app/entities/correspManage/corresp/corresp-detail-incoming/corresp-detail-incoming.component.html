@@ -327,40 +327,109 @@
                 <div style="display: flex; gap: 12px; margin-bottom: 1.5em; padding-bottom: 1.5em; border-bottom: 1px dashed #5570a3">
                   <div style="flex: 1">
                     <label class="form-label fw-semibold">Expéditeur <span class="text-danger">*</span></label>
+
+                    <!-- Mode sélection via modal -->
                     <div *ngIf="!showManualExpediteur" style="display: flex; gap: 8px; align-items: center">
-                      <dx-select-box
-                        (onValueChanged)="onExpediteurChange($event.value)"
-                        [(value)]="selectedCompanyId"
-                        [dataSource]="companies"
-                        [disabled]="loadingCompanies"
-                        [searchEnabled]="true"
-                        [searchExpr]="companySearchExpr"
-                        [valueExpr]="'id'"
-                        class="w-100"
-                        displayExpr="nom"
-                        placeholder="-- Choisir une société --"
-                      >
-                        <div *dxTemplate="let item of 'listItem'">
-                          <div>
-                            {{ item.nom }} <span *ngIf="item.matrne"> - {{ item.matrne }}</span>
-                          </div>
+                      <div style="flex: 1">
+                        <!-- Aucune sélection -->
+                        <div *ngIf="!selectedCompanyId">
+                          <button
+                            type="button"
+                            class="btn btn-outline-secondary w-100"
+                            [disabled]="loadingCompanies"
+                            (click)="openExpediteurModal()"
+                            style="
+                              color: #6c757d;
+                              font-weight: 400;
+                              display: flex;
+                              align-items: center;
+                              justify-content: center;
+                              gap: 6px;
+                              min-width: 0;
+                              overflow: hidden;
+                            "
+                          >
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="flex-shrink: 0">
+                              <path
+                                d="M8 1a.5.5 0 0 1 .5.5V7.5H14a.5.5 0 0 1 0 1H8.5V14a.5.5 0 0 1-1 0V8.5H2a.5.5 0 0 1 0-1h5.5V1.5A.5.5 0 0 1 8 1z"
+                              />
+                            </svg>
+                            <span class="d-none d-md-inline">Sélectionner un expéditeur</span>
+                            <span class="d-inline d-md-none">···</span>
+                          </button>
                         </div>
-                      </dx-select-box>
+                        <!-- Société sélectionnée → chip -->
+                        <div *ngIf="selectedCompanyId" style="display: flex; align-items: center; gap: 8px">
+                          <span
+                            style="
+                              display: inline-flex;
+                              align-items: center;
+                              gap: 6px;
+                              background: #e8f2ff;
+                              color: #1e40af;
+                              border-radius: 20px;
+                              padding: 5px 14px;
+                              font-size: 13px;
+                              font-weight: 600;
+                              flex: 1;
+                              min-width: 0;
+                            "
+                          >
+                            <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" style="flex-shrink: 0">
+                              <path
+                                d="M8.277.084a.5.5 0 0 0-.554 0l-7.5 5A.5.5 0 0 0 .5 6H2v2.5a.5.5 0 0 0 .5.5H4v-2a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2h1.5a.5.5 0 0 0 .5-.5V6h1.5a.5.5 0 0 0 .277-.916zM5 14v-2h2v2z"
+                              />
+                              <path
+                                d="M14.5 6h-1V4h1A1.5 1.5 0 0 1 16 5.5v7a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 12.5v-1A1.5 1.5 0 0 1 1.5 10h.75V8.5A.5.5 0 0 1 3 8h.5v2H4V8.5A.5.5 0 0 1 4.5 8H5v2h.5V8.5A.5.5 0 0 1 6 8h.5v2H7V8.5A.5.5 0 0 1 7.5 8H8v2H9V8H10V6h-1V4h5z"
+                              />
+                            </svg>
+                            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ expediteur }}</span>
+                            <button
+                              type="button"
+                              (click)="clearExpediteurSelection()"
+                              style="
+                                background: none;
+                                border: none;
+                                color: #1e40af;
+                                font-size: 16px;
+                                cursor: pointer;
+                                padding: 0;
+                                line-height: 1;
+                                flex-shrink: 0;
+                              "
+                              title="Retirer"
+                            >
+                              &times;
+                            </button>
+                          </span>
+                          <button
+                            type="button"
+                            class="btn btn-outline-secondary btn-sm"
+                            (click)="openExpediteurModal()"
+                            title="Changer l'expéditeur"
+                            style="padding: 5px 8px; flex-shrink: 0"
+                          >
+                            ✎
+                          </button>
+                        </div>
+                      </div>
+                      <!-- Bouton crayon → mode manuel -->
                       <button
-                        (click)="toggleManualExpediteur(true)"
-                        aria-label="Entrer manuellement l'expéditeur"
-                        class="btn btn-outline-secondary"
-                        style="padding: 6px 8px; display: inline-flex; align-items: center; justify-content: center"
-                        title="Entrer manuellement"
                         type="button"
+                        class="btn btn-outline-secondary"
+                        (click)="toggleManualExpediteur(true)"
+                        title="Entrer manuellement"
+                        style="padding: 6px 8px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0"
                       >
-                        <svg fill="currentColor" height="16" viewBox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                           <path
-                            d="M8 1a.5.5 0 0 1 .5.5V7.5H14a.5.5 0 0 1 0 1H8.5V14a.5.5 0 0 1-1 0V8.5H2a.5.5 0 0 1 0-1h5.5V1.5A.5.5 0 0 1 8 1z"
+                            d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293z"
                           />
                         </svg>
                       </button>
                     </div>
+
+                    <!-- Mode saisie manuelle -->
                     <div *ngIf="showManualExpediteur" style="display: flex; gap: 8px; align-items: center">
                       <input
                         [(ngModel)]="expediteur"
@@ -372,11 +441,11 @@
                         type="text"
                       />
                       <button
-                        (click)="toggleManualExpediteur(false)"
-                        class="btn btn-outline-secondary"
-                        style="padding: 6px 8px; display: inline-flex; align-items: center; justify-content: center"
-                        title="Choisir dans la liste"
                         type="button"
+                        class="btn btn-outline-secondary"
+                        (click)="toggleManualExpediteur(false)"
+                        title="Choisir dans la liste"
+                        style="padding: 6px 8px; display: inline-flex; align-items: center; justify-content: center"
                       >
                         <svg fill="currentColor" height="16" viewBox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg">
                           <path
@@ -385,6 +454,7 @@
                         </svg>
                       </button>
                     </div>
+
                     <div *ngIf="validationInfoGenErrors['expediteur']" class="invalid-feedback">
                       {{ validationInfoGenErrors['expediteur'] }}
                     </div>
@@ -413,6 +483,7 @@
                           </div>
                         </div>
                       </dx-select-box>
+                      <!-- Bouton "Entrer manuellement" du champ Contact -->
                       <button
                         (click)="toggleManualContact(true)"
                         aria-label="Entrer manuellement le contact"
@@ -421,9 +492,10 @@
                         title="Entrer manuellement"
                         type="button"
                       >
+                        <!-- Remplacer l'icône + par l'icône crayon -->
                         <svg fill="currentColor" height="16" viewBox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg">
                           <path
-                            d="M8 1a.5.5 0 0 1 .5.5V7.5H14a.5.5 0 0 1 0 1H8.5V14a.5.5 0 0 1-1 0V8.5H2a.5.5 0 0 1 0-1h5.5V1.5A.5.5 0 0 1 8 1z"
+                            d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293z"
                           />
                         </svg>
                       </button>
@@ -3327,3 +3399,172 @@
     </button>
   </div>
 </ng-template>
+<!-- ==================== MODAL EXPÉDITEUR (incoming) ==================== -->
+<div
+  *ngIf="expediteurModalOpen"
+  style="
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1060;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  "
+  (click)="closeExpediteurModal()"
+>
+  <div
+    style="
+      background: #fff;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 640px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    "
+    (click)="$event.stopPropagation()"
+  >
+    <!-- Header -->
+    <div
+      style="
+        padding: 16px 20px;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #f8fafc;
+        border-radius: 12px 12px 0 0;
+      "
+    >
+      <h5 style="margin: 0; font-weight: 700; color: #1a2332; font-size: 15px; text-transform: uppercase">🏢 Sélectionner un expéditeur</h5>
+      <button
+        type="button"
+        (click)="closeExpediteurModal()"
+        style="
+          background: none;
+          border: 1px solid #e2e8f0;
+          border-radius: 6px;
+          padding: 4px 10px;
+          cursor: pointer;
+          font-size: 16px;
+          color: #64748b;
+        "
+      >
+        ✕
+      </button>
+    </div>
+
+    <!-- Recherche -->
+    <div style="padding: 12px 20px; border-bottom: 1px solid #f1f5f9">
+      <input
+        type="text"
+        class="form-control"
+        [(ngModel)]="expediteurModalSearch"
+        name="expediteurModalSearchIncoming"
+        placeholder="Rechercher par nom ou matricule..."
+        (input)="onExpediteurModalSearchChange()"
+        autofocus
+      />
+    </div>
+
+    <!-- Liste -->
+    <div style="flex: 1; overflow-y: auto; padding: 8px 0">
+      <div *ngIf="expediteurModalLoading" style="text-align: center; padding: 40px; color: #64748b">
+        <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+        Chargement...
+      </div>
+
+      <div *ngIf="!expediteurModalLoading">
+        <div
+          *ngFor="let company of expediteurModalFilteredCompanies"
+          (click)="selectCompanyFromModal(company)"
+          (mouseenter)="hoveredCompanyId = company.id"
+          (mouseleave)="hoveredCompanyId = null"
+          class="company-row"
+          [class.company-row--selected]="selectedCompanyId === company.id"
+          [class.company-row--hovered]="hoveredCompanyId === company.id && selectedCompanyId !== company.id"
+        >
+          <div
+            style="
+              width: 38px;
+              height: 38px;
+              border-radius: 10px;
+              background: #e0eaff;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              flex-shrink: 0;
+            "
+          >
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="#1e40af">
+              <path
+                d="M8.277.084a.5.5 0 0 0-.554 0l-7.5 5A.5.5 0 0 0 .5 6H2v2.5a.5.5 0 0 0 .5.5H4v-2a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2h1.5a.5.5 0 0 0 .5-.5V6h1.5a.5.5 0 0 0 .277-.916zM5 14v-2h2v2z"
+              />
+            </svg>
+          </div>
+          <div style="flex: 1; min-width: 0">
+            <p
+              style="
+                margin: 0;
+                font-weight: 600;
+                color: #1e293b;
+                font-size: 14px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+              "
+            >
+              {{ company.nom }}
+            </p>
+            <div style="display: flex; gap: 10px; margin-top: 2px; flex-wrap: wrap">
+              <p *ngIf="company.matrne" style="margin: 0; font-size: 12px; color: #94a3b8">🪪 {{ company.matrne }}</p>
+              <p *ngIf="company.pays" style="margin: 0; font-size: 12px; color: #64748b">🌍 {{ company.pays }}</p>
+            </div>
+          </div>
+          <span *ngIf="selectedCompanyId === company.id" style="color: #1e40af; font-weight: 700; font-size: 18px; flex-shrink: 0">✓</span>
+        </div>
+
+        <div
+          *ngIf="expediteurModalFilteredCompanies.length === 0"
+          style="text-align: center; padding: 40px; color: #94a3b8; font-style: italic"
+        >
+          Aucune société trouvée.
+        </div>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div
+      *ngIf="expediteurModalTotalPages > 1"
+      style="padding: 10px 20px; border-top: 1px solid #f1f5f9; display: flex; justify-content: center; align-items: center; gap: 6px"
+    >
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-secondary"
+        [disabled]="expediteurModalPage <= 0 || expediteurModalLoading"
+        (click)="loadExpediteurModalPage(expediteurModalPage - 1)"
+      >
+        ‹
+      </button>
+      <span style="font-size: 13px; color: #64748b; padding: 0 8px"> {{ expediteurModalPage + 1 }} / {{ expediteurModalTotalPages }} </span>
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-secondary"
+        [disabled]="expediteurModalPage >= expediteurModalTotalPages - 1 || expediteurModalLoading"
+        (click)="loadExpediteurModalPage(expediteurModalPage + 1)"
+      >
+        ›
+      </button>
+    </div>
+
+    <div style="padding: 6px 20px 10px; font-size: 13px; color: #64748b">
+      {{ expediteurModalTotalItems }} société{{ expediteurModalTotalItems > 1 ? 's' : '' }}
+    </div>
+  </div>
+</div>

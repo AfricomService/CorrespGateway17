@@ -255,7 +255,7 @@ export class CorrespDetailComponent implements OnInit {
   userAclTaskIds: Set<number> = new Set<number>();
   // Cache complet des tâches ACL avec responsables résolus (venant de getAllTasksByUserAclAllStatuses)
   private userAclTasksMap: Map<number, ITasks> = new Map();
-  private currentAccountLogin: string | null = null;
+  protected currentAccountLogin: string | null = null;
   private currentUserId: number | null = null;
   isGlobalAdmin = false;
 
@@ -1882,6 +1882,9 @@ export class CorrespDetailComponent implements OnInit {
           const list = r.body || [];
           this.taskService.enrichTasksWithCanModify(list).subscribe(enriched => {
             this.tachesAssociees = enriched || [];
+            this.resolveResponsableNames();
+            this.refreshUserAclEnablement();
+            this.recomputeCorrespPermsFromUserAclTasks();
           });
         });
         this.showNotification('Tâche ajoutée avec succès', 'success');
