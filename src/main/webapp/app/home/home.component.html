@@ -208,9 +208,7 @@
       <div class="welcome">
         <div class="welcome-emoji" aria-hidden="true">👋</div>
         <div class="welcome-text">
-          <h1 class="welcome-title" jhiTranslate="home.title" [translateValues]="{ firstName: account.firstName }">
-            Bienvenue, {{ account.firstName }}
-          </h1>
+          <h1 class="welcome-title">Bienvenue, {{ account.firstName }} {{ account.lastName }}</h1>
           <p class="welcome-sub" jhiTranslate="home.subtitle">Gérez vos courriers et tâches en toute simplicité</p>
         </div>
       </div>

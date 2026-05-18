@@ -802,6 +802,45 @@ export class CorrespService {
       );
   }
 
+  // Méthode ROLE_CAN_SEE_ALL : tous les courriers sans filtre ACL
+  getCorrespListAll(
+    userId: number,
+    page: number = 1,
+    size: number = 15,
+    q: string = '',
+    filters?: {
+      reference?: string;
+      status?: string;
+      dispatchType?: string;
+      startDate?: string;
+      endDate?: string;
+      corresptype?: string;
+      priority?: boolean | string;
+      nomSociete?: string;
+    }
+  ): Observable<PagedCorrespListResponse> {
+    let params: any = { userId, page, size };
+    if (q) params['q'] = q;
+    if (filters?.reference) params['reference'] = filters.reference;
+    if (filters?.status) params['status'] = filters.status;
+    if (filters?.dispatchType) params['dispatchType'] = filters.dispatchType;
+    if (filters?.startDate) params['startDate'] = filters.startDate;
+    if (filters?.endDate) params['endDate'] = filters.endDate;
+    if (filters?.corresptype) params['corresptype'] = filters.corresptype;
+    if (filters?.priority != null) params['priority'] = String(filters.priority);
+    if (filters?.nomSociete) params['nomSociete'] = filters.nomSociete;
+
+    return this.http
+      .get<PagedCorrespListResponse>(`${this.applicationConfigService.getEndpointFor('api/corresps/list-all', 'correspmanage')}`, {
+        params: createRequestOption(params),
+      })
+      .pipe(
+        catchError(() =>
+          of({ content: [], currentPage: page, pageSize: size, totalItems: 0, totalPages: 0, hasNext: false, hasPrevious: false })
+        )
+      );
+  }
+
   getAllSocietes(): Observable<{ id: number; raisonSociale: string }[]> {
     return this.http
       .get<{ id: number; raisonSociale: string }[]>(`${this.applicationConfigService.getEndpointFor('api/societes/list', 'orgacare')}`)

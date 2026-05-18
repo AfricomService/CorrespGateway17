@@ -87,7 +87,7 @@ export class HomeComponent implements OnInit, OnDestroy {
           account.authorities != null &&
           (account.authorities.includes(Authority.BOC) || account.authorities.includes(Authority.ADMIN));
 
-        const name = account && account.firstName ? account.firstName : '';
+        const name = account ? [account.firstName, account.lastName].filter(Boolean).join(' ') : '';
         this.translate.get('home.title', { firstName: name }).subscribe(translatedTitle => {
           if (translatedTitle) {
             this.titleService.setTitle(translatedTitle);
