@@ -74,6 +74,7 @@ export class CorrespComponent implements OnInit {
 
   isAdmin = false;
   isBoc = false;
+  isCanSeeAll = false;
   currentUserId: number | null = null;
 
   isSaving = false;
@@ -140,6 +141,7 @@ export class CorrespComponent implements OnInit {
       if (account) {
         this.isAdmin = this.accountService.hasAnyAuthority(Authority.ADMIN);
         this.isBoc = this.accountService.hasAnyAuthority(Authority.BOC);
+        this.isCanSeeAll = this.accountService.hasAnyAuthority(Authority.CAN_SEE_ALL); // ← AJOUT
         this.currentUserId = (account as any).id ?? null;
       }
       this.load();
@@ -194,11 +196,74 @@ export class CorrespComponent implements OnInit {
 
   // ── Data loading ───────────────────────────────────────────────
   load(): void {
-    if (this.isAdmin || this.isBoc) {
+    if (this.isCanSeeAll) {
+      // Voir tout : endpoint sans filtre ACL
+      this.datasource = this.createDataSourceAll();
+    } else if (this.isAdmin || this.isBoc) {
       this.datasource = this.createDataSource();
     } else if (this.currentUserId != null) {
       this.datasource = this.createDataSourceByUserAcl(this.currentUserId);
     }
+  }
+
+  // ── DataSource : ROLE_CAN_SEE_ALL ─────────────────────────────
+  createDataSourceAll(): CustomStore {
+    return new CustomStore({
+      key: 'id',
+      load: async (loadOptions: any) => {
+        const skip = loadOptions.skip ?? 0;
+        const take = loadOptions.take ?? 15;
+        const pageIndex = Math.floor(skip / take) + 1;
+
+        const params: any = {};
+        this._mapApiFiltersToParams(this.currentApiFilters, params);
+
+        const response = await firstValueFrom(
+          this.correspService.getCorrespListAll(this.currentUserId!, pageIndex, take, this.quickSearch.trim(), {
+            corresptype: params.corresptype,
+            reference: params.reference,
+            status: params.status,
+            dispatchType: params.dispatchType,
+            priority: params.priority,
+            startDate: params.startDate,
+            endDate: params.endDate,
+            nomSociete: params.nomSociete,
+          })
+        );
+        return { data: response.content, totalCount: response.totalItems };
+      },
+    });
+  }
+
+  // ── Utilitaire : ApiFilter[] → objet params ────────────────────
+  private _mapApiFiltersToParams(activeFilters: ApiFilter[], params: any): void {
+    if (!activeFilters?.length) return;
+    activeFilters.forEach(f => {
+      switch (f.field) {
+        case 'corresptype':
+          params.corresptype = f.value;
+          break;
+        case 'reference':
+          params.reference = f.value;
+          break;
+        case 'status':
+          params.status = f.value;
+          break;
+        case 'dispatchType':
+          params.dispatchType = f.value;
+          break;
+        case 'priority':
+          params.priority = String(f.value);
+          break;
+        case 'nomSociete':
+          params.nomSociete = f.value;
+          break;
+        case 'courrierDate':
+          params.startDate = f.value.startDate;
+          params.endDate = f.value.endDate;
+          break;
+      }
+    });
   }
 
   createDataSource(apiFilters?: ApiFilter[]): CustomStore {
@@ -347,8 +412,10 @@ export class CorrespComponent implements OnInit {
   }
 
   private _reloadWithApiFilters(apiFilters: ApiFilter[]): void {
-    this.currentApiFilters = apiFilters; // ← sauvegarder en propriété
-    if (this.isAdmin || this.isBoc) {
+    this.currentApiFilters = apiFilters;
+    if (this.isCanSeeAll) {
+      this.datasource = this.createDataSourceAll();
+    } else if (this.isAdmin || this.isBoc) {
       this.datasource = this.createDataSource(apiFilters);
     } else if (this.currentUserId != null) {
       this.datasource = this.createDataSourceByUserAcl(this.currentUserId, apiFilters);
@@ -476,17 +543,32 @@ export class CorrespComponent implements OnInit {
     }
 
     this.isSearching = true;
-    this.datasource = new CustomStore({
-      key: 'id',
-      load: async (loadOptions: any) => {
-        const skip = loadOptions.skip ?? 0;
-        const take = loadOptions.take ?? 15;
-        const pageIndex = Math.floor(skip / take) + 1;
 
-        const response = await firstValueFrom(this.correspService.searchCorresps(this.currentUserId!, q, pageIndex, take));
-        return { data: response.content, totalCount: response.totalItems };
-      },
-    });
+    if (this.isCanSeeAll) {
+      // ROLE_CAN_SEE_ALL : recherche via list-all (sans restriction ACL)
+      this.datasource = new CustomStore({
+        key: 'id',
+        load: async (loadOptions: any) => {
+          const skip = loadOptions.skip ?? 0;
+          const take = loadOptions.take ?? 15;
+          const pageIndex = Math.floor(skip / take) + 1;
+          const response = await firstValueFrom(this.correspService.getCorrespListAll(this.currentUserId!, pageIndex, take, q, {}));
+          return { data: response.content, totalCount: response.totalItems };
+        },
+      });
+    } else {
+      // Comportement existant pour Admin/BOC et utilisateur simple
+      this.datasource = new CustomStore({
+        key: 'id',
+        load: async (loadOptions: any) => {
+          const skip = loadOptions.skip ?? 0;
+          const take = loadOptions.take ?? 15;
+          const pageIndex = Math.floor(skip / take) + 1;
+          const response = await firstValueFrom(this.correspService.searchCorresps(this.currentUserId!, q, pageIndex, take));
+          return { data: response.content, totalCount: response.totalItems };
+        },
+      });
+    }
   }
 
   clearQuickSearch(): void {
@@ -577,7 +659,8 @@ export class CorrespComponent implements OnInit {
       nomSociete: this.flatFilters.nomSociete ?? undefined,
     };
 
-    this.correspService.exportCorresps(this.currentUserId, this.isAdmin || this.isBoc, filters).subscribe({
+    const useFullExport = this.isAdmin || this.isBoc || this.isCanSeeAll;
+    this.correspService.exportCorresps(this.currentUserId, useFullExport, filters).subscribe({
       next: (blob: Blob) => {
         const url = window.URL.createObjectURL(blob);
         const anchor = document.createElement('a');
