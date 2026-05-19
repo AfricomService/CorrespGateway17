@@ -33,6 +33,7 @@ interface IFileUpload {
 export interface CorrespSummaryDTO {
   subject?: string | null;
   reference?: string | null;
+  nomSociete?: string | null;
 }
 
 export interface DepartementAffectationDTO {
