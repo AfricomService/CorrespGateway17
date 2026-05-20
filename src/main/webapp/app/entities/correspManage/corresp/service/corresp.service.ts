@@ -470,6 +470,14 @@ export class CorrespService {
     return this.http.patch(`${this.resourceUrl}/saveBodyToFile`, options);
   }
 
+  getDepartementByMatricule(matricule: string): Observable<IDepartement> {
+    return this.http
+      .get<IDepartement>(
+        `${this.applicationConfigService.getEndpointFor(`api/departements/by-matricule/${encodeURIComponent(matricule)}`, 'orgacare')}`
+      )
+      .pipe(catchError(() => of(null as any)));
+  }
+
   /**
    * POST /api/corresps/send-email-direct
    * Prépare et envoie l'email sans persister le message en base (saveCopy=false).
