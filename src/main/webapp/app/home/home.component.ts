@@ -14,7 +14,7 @@ import { ITasks } from '../entities/correspManage/tasks/tasks.model';
 import { CorrespStatus } from 'app/entities/enumerations/corresp-status.model';
 import { HttpResponse } from '@angular/common/http';
 import { TasksService } from '../entities/correspManage/tasks/service/tasks.service';
-import { CorrespService } from '../entities/correspManage/corresp/service/corresp.service';
+import { CorrespService, CorrespSummaryDTO } from '../entities/correspManage/corresp/service/corresp.service';
 import { IDepartement } from '../entities/orgacare/departement/departement.model';
 
 import { TranslateService } from '@ngx-translate/core';
@@ -30,7 +30,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   tasks?: ITasks[];
   authSubscription?: Subscription;
   private destroy$ = new Subject<void>();
-  private correspInfoByTaskId: Record<number, { subject?: string | null; reference?: string | null }> = {};
+  private correspInfoByTaskId: Record<number, CorrespSummaryDTO> = {};
   private deptNameByCode: Map<string, string> = new Map<string, string>();
 
   // vue courante: 'inProgress' | 'draft'
@@ -689,7 +689,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.correspService
       .getCorrespSummariesByTasks(ids)
       .pipe(takeUntil(this.destroy$))
-      .subscribe((summaries: Record<number, { subject?: string | null; reference?: string | null }>) => {
+      .subscribe((summaries: Record<number, CorrespSummaryDTO>) => {
         Object.entries(summaries).forEach(([taskId, summary]) => {
           this.correspInfoByTaskId[+taskId] = summary;
         });
@@ -706,6 +706,12 @@ export class HomeComponent implements OnInit, OnDestroy {
     const id = (t as any)?.id;
     const info = typeof id === 'number' ? this.correspInfoByTaskId[id] : undefined;
     return (info && info.reference) || '';
+  }
+
+  getTaskNomSociete(t: ITasks): string {
+    const id = (t as any)?.id;
+    const info = typeof id === 'number' ? this.correspInfoByTaskId[id] : undefined;
+    return (info && info.nomSociete) || '';
   }
 
   getResponsibleDisplay(t: ITasks): string {
