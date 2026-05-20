@@ -33,6 +33,7 @@ interface IFileUpload {
 export interface CorrespSummaryDTO {
   subject?: string | null;
   reference?: string | null;
+  nomSociete?: string | null;
 }
 
 export interface DepartementAffectationDTO {
@@ -467,6 +468,14 @@ export class CorrespService {
     const options = createRequestOption(req);
 
     return this.http.patch(`${this.resourceUrl}/saveBodyToFile`, options);
+  }
+
+  getDepartementByMatricule(matricule: string): Observable<IDepartement> {
+    return this.http
+      .get<IDepartement>(
+        `${this.applicationConfigService.getEndpointFor(`api/departements/by-matricule/${encodeURIComponent(matricule)}`, 'orgacare')}`
+      )
+      .pipe(catchError(() => of(null as any)));
   }
 
   /**
