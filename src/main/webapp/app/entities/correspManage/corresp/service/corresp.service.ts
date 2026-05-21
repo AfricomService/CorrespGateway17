@@ -434,6 +434,14 @@ export class CorrespService {
 
     return this.http.patch(`${this.resourceUrl}ChangeTaskStatus`, options);
   }
+
+  /**
+   * Clôture automatiquement les tâches LECTURE IN_PROGRESS
+   * après 5 secondes d'ouverture de la page de détail.
+   */
+  autoCloseLectureTasks(correspId: number, taskIds: number[]): Observable<any> {
+    return this.http.patch(`${this.resourceUrl}/${correspId}/auto-close-lecture-tasks`, taskIds);
+  }
   generateReferenceForCorresp(id: number): Observable<ICorresp> {
     return this.http.patch<ICorresp>(`${this.resourceUrl}/${id}/generateReference`, {});
   }
