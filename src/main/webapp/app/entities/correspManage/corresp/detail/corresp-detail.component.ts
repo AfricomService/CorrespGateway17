@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, HostListener } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import dayjs from 'dayjs/esm';
 import { ICorresp, IContactCopieCorresp } from '../corresp.model';
@@ -62,7 +62,7 @@ import { IModelNotif } from 'app/entities/configManage/model-notif/model-notif.m
   templateUrl: './corresp-detail.component.html',
   styleUrls: ['corresp-detail.scss'],
 })
-export class CorrespDetailComponent implements OnInit {
+export class CorrespDetailComponent implements OnInit, OnDestroy {
   objet: string = '';
   expediteur: string = '';
   destinataireLabel: string = '';
@@ -210,6 +210,7 @@ export class CorrespDetailComponent implements OnInit {
 
   treeSearchQuery = '';
   selectedTaskId: number | null = null;
+  private lectureAutoCloseTimer: any = null;
   taskTreeFiltered: DepartementTreeFeignDTO[] = [];
 
   // === Recipient (Destinataire) Tree state ===
@@ -542,6 +543,13 @@ export class CorrespDetailComponent implements OnInit {
     });
 
     this.loadActiveCompanies();
+  }
+
+  ngOnDestroy(): void {
+    if (this.lectureAutoCloseTimer) {
+      clearTimeout(this.lectureAutoCloseTimer);
+      this.lectureAutoCloseTimer = null;
+    }
   }
 
   @HostListener('window:resize', [])
@@ -1049,6 +1057,7 @@ export class CorrespDetailComponent implements OnInit {
       this.currentAccountLogin = acc?.login ?? null;
       if (typeof uid === 'number') {
         this.currentUserId = uid;
+        // NOUVEAU CODE
         this.taskService.getAllTasksByUserAclAllStatuses(uid).subscribe({
           next: resp => {
             const list = resp.body || [];
@@ -1064,9 +1073,10 @@ export class CorrespDetailComponent implements OnInit {
             });
             this.userAclTaskIds = ids;
             console.log('[PERMISSIONS] userAclTaskIds loaded:', Array.from(ids));
-            // Enrichir les tâches associées avec les responsables des tâches ACL
             this.enrichTachesAssocieesFromAclTasks();
             this.refreshUserAclEnablement();
+            // ← NOUVEAU : planifier l'auto-close MAINTENANT que userAclTaskIds est chargé
+            this.scheduleLectureTasksAutoClose();
             if (callback) callback();
           },
           error: () => {
@@ -1367,6 +1377,36 @@ export class CorrespDetailComponent implements OnInit {
         }
       }
     }
+  }
+
+  /**
+   * Planifie la clôture automatique des tâches LECTURE IN_PROGRESS
+   * auxquelles l'utilisateur a accès via ACL, après 5 secondes.
+   */
+  // NOUVEAU scheduleLectureTasksAutoClose
+  private scheduleLectureTasksAutoClose(): void {
+    if (this.lectureAutoCloseTimer) {
+      clearTimeout(this.lectureAutoCloseTimer);
+      this.lectureAutoCloseTimer = null;
+    }
+
+    const lectureTaskIds = (this.tachesAssociees || [])
+      .filter(
+        t => (t.taskType || '').toLowerCase() === 'lecture' && t.status === CorrespStatus.IN_PROGRESS && this.userAclTaskIds.has(t.id)
+      )
+      .map(t => t.id);
+
+    console.log('[AutoClose] lecture tasks eligibles:', lectureTaskIds);
+
+    if (lectureTaskIds.length === 0) return;
+
+    this.lectureAutoCloseTimer = setTimeout(() => {
+      console.log('[AutoClose] 5s écoulées, clôture des tâches lecture:', lectureTaskIds);
+      // Appeler changeTasksStatus pour chaque tâche lecture (gère ACL + statut)
+      lectureTaskIds.forEach(taskId => {
+        this.changeTasksStatus(this.correspLoaded.id, taskId, 'CLOSED');
+      });
+    }, 5000);
   }
 
   onSelectContactPerson(personId: number | null): void {

@@ -1389,6 +1389,7 @@
                           (click)="initiateTaskCancellation(task.id)"
                           *ngIf="
                             CorrespStatus.IN_PROGRESS === task.status &&
+                            (task.taskType || '' | lowercase) !== 'lecture' &&
                             (isGlobalAdmin || canAdminCorresp || taskPermissions[task.id]?.canWrite || userAclTaskIds.has(task.id)) &&
                             !isTaskInCompletionMode(task.id) &&
                             !isTaskInCancellationMode(task.id)
@@ -1409,6 +1410,7 @@
                           (click)="initiateTaskCompletion(task.id)"
                           *ngIf="
                             CorrespStatus.IN_PROGRESS === task.status &&
+                            (task.taskType || '' | lowercase) !== 'lecture' &&
                             (isGlobalAdmin || canAdminCorresp || taskPermissions[task.id]?.canWrite || userAclTaskIds.has(task.id)) &&
                             !isTaskInCompletionMode(task.id) &&
                             !isTaskInCancellationMode(task.id)
@@ -1469,7 +1471,11 @@
 
                     <!-- ===== BLOC SAISIE COMMENTAIRE AVANT TERMINER ===== -->
                     <div
-                      *ngIf="CorrespStatus.IN_PROGRESS === task.status && isTaskInCompletionMode(task.id)"
+                      *ngIf="
+                        CorrespStatus.IN_PROGRESS === task.status &&
+                        isTaskInCompletionMode(task.id) &&
+                        (task.taskType || '' | lowercase) !== 'lecture'
+                      "
                       style="
                         margin-top: 10px;
                         padding: 10px;
@@ -1547,7 +1553,11 @@
                     <!-- ===== FIN BLOC SAISIE COMMENTAIRE ===== -->
                     <!-- ===== BLOC SAISIE COMMENTAIRE AVANT ANNULER ===== -->
                     <div
-                      *ngIf="CorrespStatus.IN_PROGRESS === task.status && isTaskInCancellationMode(task.id)"
+                      *ngIf="
+                        CorrespStatus.IN_PROGRESS === task.status &&
+                        isTaskInCancellationMode(task.id) &&
+                        (task.taskType || '' | lowercase) !== 'lecture'
+                      "
                       style="
                         margin-top: 10px;
                         padding: 10px;
