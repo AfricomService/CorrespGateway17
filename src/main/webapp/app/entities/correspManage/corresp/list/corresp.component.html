@@ -216,6 +216,16 @@
               <option *ngFor="let s of societes" [value]="s.raisonSociale">{{ s.raisonSociale }}</option>
             </select>
           </div>
+
+          <div class="fp-field">
+            <label class="fp-label">EXPÉDITEUR</label>
+            <input class="fp-input" type="text" [(ngModel)]="flatFilters.sender" placeholder="Ex: Mohamed Ben Ali..." />
+          </div>
+
+          <div class="fp-field">
+            <label class="fp-label">DESTINATAIRE</label>
+            <input class="fp-input" type="text" [(ngModel)]="flatFilters.labelDestinataire" placeholder="Ex: Direction Générale..." />
+          </div>
         </div>
 
         <!-- Apply button -->

@@ -741,6 +741,8 @@ export class CorrespService {
       corresptype?: string;
       priority?: boolean | string;
       nomSociete?: string;
+      sender?: string;
+      labelDestinataire?: string;
     }
   ): Observable<PagedCorrespListResponse> {
     let params: any = { userId, page, size };
@@ -753,6 +755,8 @@ export class CorrespService {
     if (filters?.corresptype) params['corresptype'] = filters.corresptype;
     if (filters?.priority != null) params['priority'] = String(filters.priority);
     if (filters?.nomSociete) params['nomSociete'] = filters.nomSociete;
+    if (filters?.sender) params['sender'] = filters.sender;
+    if (filters?.labelDestinataire) params['labelDestinataire'] = filters.labelDestinataire;
 
     return this.http
       .get<PagedCorrespListResponse>(`${this.applicationConfigService.getEndpointFor('api/corresps/list', 'correspmanage')}`, {
@@ -800,6 +804,12 @@ export class CorrespService {
           case 'nomSociete':
             params['nomSociete'] = f.value;
             break;
+          case 'sender':
+            params['sender'] = f.value;
+            break;
+          case 'labelDestinataire':
+            params['labelDestinataire'] = f.value;
+            break;
           case 'courrierDate':
             params['startDate'] = f.value.startDate;
             params['endDate'] = f.value.endDate;
@@ -834,6 +844,8 @@ export class CorrespService {
       corresptype?: string;
       priority?: boolean | string;
       nomSociete?: string;
+      sender?: string;
+      labelDestinataire?: string;
     }
   ): Observable<PagedCorrespListResponse> {
     let params: any = { userId, page, size };
@@ -846,6 +858,8 @@ export class CorrespService {
     if (filters?.corresptype) params['corresptype'] = filters.corresptype;
     if (filters?.priority != null) params['priority'] = String(filters.priority);
     if (filters?.nomSociete) params['nomSociete'] = filters.nomSociete;
+    if (filters?.sender) params['sender'] = filters.sender;
+    if (filters?.labelDestinataire) params['labelDestinataire'] = filters.labelDestinataire;
 
     return this.http
       .get<PagedCorrespListResponse>(`${this.applicationConfigService.getEndpointFor('api/corresps/list-all', 'correspmanage')}`, {

@@ -30,6 +30,8 @@ interface FlatFilters {
   endDate: string | null;
   reference: string | null;
   nomSociete: string | null;
+  sender: string | null;
+  labelDestinataire: string | null;
 }
 
 const EMPTY_FLAT: FlatFilters = {
@@ -41,6 +43,8 @@ const EMPTY_FLAT: FlatFilters = {
   endDate: null,
   reference: null,
   nomSociete: null,
+  sender: null,
+  labelDestinataire: null,
 };
 
 @Component({
@@ -115,6 +119,8 @@ export class CorrespComponent implements OnInit {
     startDate: 'Date de début',
     endDate: 'Date de fin',
     nomSociete: 'Société',
+    sender: 'Expéditeur',
+    labelDestinataire: 'Destinataire',
   };
 
   public resourceUrl = SERVER_API_URL + 'services/correspmanage/api/corresps';
@@ -228,6 +234,8 @@ export class CorrespComponent implements OnInit {
             startDate: params.startDate,
             endDate: params.endDate,
             nomSociete: params.nomSociete,
+            sender: params.sender,
+            labelDestinataire: params.labelDestinataire,
           })
         );
         return { data: response.content, totalCount: response.totalItems };
@@ -257,6 +265,12 @@ export class CorrespComponent implements OnInit {
           break;
         case 'nomSociete':
           params.nomSociete = f.value;
+          break;
+        case 'sender':
+          params.sender = f.value;
+          break;
+        case 'labelDestinataire':
+          params.labelDestinataire = f.value;
           break;
         case 'courrierDate':
           params.startDate = f.value.startDate;
@@ -298,6 +312,12 @@ export class CorrespComponent implements OnInit {
               case 'nomSociete':
                 params.nomSociete = f.value;
                 break;
+              case 'sender':
+                params.sender = f.value;
+                break;
+              case 'labelDestinataire':
+                params.labelDestinataire = f.value;
+                break;
               case 'courrierDate':
                 params.startDate = f.value.startDate;
                 params.endDate = f.value.endDate;
@@ -316,6 +336,8 @@ export class CorrespComponent implements OnInit {
             startDate: params.startDate,
             endDate: params.endDate,
             nomSociete: params.nomSociete,
+            sender: params.sender,
+            labelDestinataire: params.labelDestinataire,
           })
         );
         return { data: response.content, totalCount: response.totalItems };
@@ -385,6 +407,22 @@ export class CorrespComponent implements OnInit {
         label: 'Société',
         value: this.flatFilters.nomSociete.trim(),
         displayValue: this.flatFilters.nomSociete.trim(),
+      });
+    }
+    if (this.flatFilters.sender?.trim()) {
+      apiFilters.push({
+        field: 'sender',
+        label: 'Expéditeur',
+        value: this.flatFilters.sender.trim(),
+        displayValue: this.flatFilters.sender.trim(),
+      });
+    }
+    if (this.flatFilters.labelDestinataire?.trim()) {
+      apiFilters.push({
+        field: 'labelDestinataire',
+        label: 'Destinataire',
+        value: this.flatFilters.labelDestinataire.trim(),
+        displayValue: this.flatFilters.labelDestinataire.trim(),
       });
     }
     if (this.flatFilters.startDate && this.flatFilters.endDate) {
@@ -512,6 +550,8 @@ export class CorrespComponent implements OnInit {
     if (this.flatFilters.reference?.trim()) requestObj['reference'] = this.flatFilters.reference.trim();
     if (this.flatFilters.startDate) requestObj['startDate'] = this.flatFilters.startDate;
     if (this.flatFilters.endDate) requestObj['endDate'] = this.flatFilters.endDate;
+    if (this.flatFilters.sender?.trim()) requestObj['sender'] = this.flatFilters.sender.trim();
+    if (this.flatFilters.labelDestinataire?.trim()) requestObj['labelDestinataire'] = this.flatFilters.labelDestinataire.trim();
 
     this.customSearchService
       .saveCustomSearch({
