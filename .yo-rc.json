@@ -2,7 +2,7 @@
   "generator-jhipster": {
     "applicationIndex": 0,
     "applicationType": "gateway",
-    "authenticationType": "jwt",
+    "authenticationType": "oauth2",
     "baseName": "Corresp_Care",
     "blueprints": [],
     "buildTool": "maven",
@@ -53,7 +53,7 @@
     "gradleEnterpriseHost": "",
     "jhiPrefix": "jhi",
     "jhipsterVersion": "7.9.3",
-    "jwtSecretKey": "MDQ2ODMwMzc5NGEyYmZhMzAwNjI3ODNkNzg5MDQ5YzUyNDg3OTg1YTUwZTk1MGY4NDAwYzU0OTI2ZTQ4OWQ2YjYzNGI1NzFhMGNlZmYzZmRkOWVhZDAwZDEwYmU2NWNhMTE1OTk5MmQ2N2Y2N2IyNThlNDFiMTMzOWZhMmZkM2E=",
+    "jwtSecretKey": "YzJmNWM2ZDBhMzM5ZTJlNDU1ZDllOGY1ZTk2ZjBkMzQyZDBlM2M3MmVhYmM1NzIyNWRjMmE4MjdjMTM2OGYwZmY2MmRmODYxMzE0MmZlMmIxYzZmNGRiNjQwZTI5MDZjMDZiYjU4NWFjZjM1NTVkMGNjYjU0ZTZjYzBmMzAxMzY=",
     "languages": ["fr", "ar-ly", "en"],
     "lastLiquibaseTimestamp": 1755340731000,
     "messageBroker": false,
@@ -71,7 +71,7 @@
     "skipClient": false,
     "skipFakeData": false,
     "skipServer": false,
-    "skipUserManagement": false,
+    "skipUserManagement": true,
     "testFrameworks": [],
     "websocket": false,
     "withAdminUi": true

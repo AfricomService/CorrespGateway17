@@ -35,11 +35,7 @@
               "src/main/webapp/manifest.webapp",
               "src/main/webapp/robots.txt"
             ],
-            "styles": [
-              "src/main/webapp/content/scss/vendor.scss",
-              "src/main/webapp/content/scss/global.scss",
-              "node_modules/devextreme/dist/css/dx.light.css"
-            ],
+            "styles": ["src/main/webapp/content/scss/vendor.scss", "src/main/webapp/content/scss/global.scss"],
             "scripts": []
           },
           "configurations": {
@@ -56,13 +52,13 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "3mb",
-                  "maximumError": "5mb"
+                  "maximumWarning": "500kb",
+                  "maximumError": "1mb"
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "25kb",
-                  "maximumError": "30kb"
+                  "maximumWarning": "2kb",
+                  "maximumError": "4kb"
                 }
               ]
             },
@@ -108,7 +104,6 @@
       "path": "./target/angular/",
       "environment": "all"
     },
-    "packageManager": "npm",
-    "analytics": "2494fc41-5b51-4845-a682-b268eafd06c7"
+    "packageManager": "npm"
   }
 }

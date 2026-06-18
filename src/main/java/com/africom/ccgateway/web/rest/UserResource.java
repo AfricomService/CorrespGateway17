@@ -111,43 +111,43 @@ public class UserResource {
      * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new user, or with status {@code 400 (Bad Request)} if the login or email is already in use.
      * @throws BadRequestAlertException {@code 400 (Bad Request)} if the login or email is already in use.
      */
-    @PostMapping("/users")
-    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
-    public Mono<ResponseEntity<User>> createUser(@Valid @RequestBody AdminUserDTO userDTO) {
-        log.debug("REST request to save User : {}", userDTO);
-
-        if (userDTO.getId() != null) {
-            throw new BadRequestAlertException("A new user cannot already have an ID", "userManagement", "idexists");
-            // Lowercase the user login before comparing with database
-        }
-        return userRepository
-            .findOneByLogin(userDTO.getLogin().toLowerCase())
-            .hasElement()
-            .flatMap(loginExists -> {
-                if (Boolean.TRUE.equals(loginExists)) {
-                    return Mono.error(new LoginAlreadyUsedException());
-                }
-                return userRepository.findOneByEmailIgnoreCase(userDTO.getEmail());
-            })
-            .hasElement()
-            .flatMap(emailExists -> {
-                if (Boolean.TRUE.equals(emailExists)) {
-                    return Mono.error(new EmailAlreadyUsedException());
-                }
-                return userService.createUser(userDTO);
-            })
-            .doOnSuccess(mailService::sendCreationEmail)
-            .map(user -> {
-                try {
-                    return ResponseEntity
-                        .created(new URI("/api/admin/users/" + user.getLogin()))
-                        .headers(HeaderUtil.createAlert(applicationName, "userManagement.created", user.getLogin()))
-                        .body(user);
-                } catch (URISyntaxException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-    }
+    //    @PostMapping("/users")
+    //    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
+    //    public Mono<ResponseEntity<User>> createUser(@Valid @RequestBody AdminUserDTO userDTO) {
+    //        log.debug("REST request to save User : {}", userDTO);
+    //
+    //        if (userDTO.getId() != null) {
+    //            throw new BadRequestAlertException("A new user cannot already have an ID", "userManagement", "idexists");
+    //            // Lowercase the user login before comparing with database
+    //        }
+    //        return userRepository
+    //            .findOneByLogin(userDTO.getLogin().toLowerCase())
+    //            .hasElement()
+    //            .flatMap(loginExists -> {
+    //                if (Boolean.TRUE.equals(loginExists)) {
+    //                    return Mono.error(new LoginAlreadyUsedException());
+    //                }
+    //                return userRepository.findOneByEmailIgnoreCase(userDTO.getEmail());
+    //            })
+    //            .hasElement()
+    //            .flatMap(emailExists -> {
+    //                if (Boolean.TRUE.equals(emailExists)) {
+    //                    return Mono.error(new EmailAlreadyUsedException());
+    //                }
+    //                return userService.createUser(userDTO);
+    //            })
+    //            .doOnSuccess(mailService::sendCreationEmail)
+    //            .map(user -> {
+    //                try {
+    //                    return ResponseEntity
+    //                        .created(new URI("/api/admin/users/" + user.getLogin()))
+    //                        .headers(HeaderUtil.createAlert(applicationName, "userManagement.created", user.getLogin()))
+    //                        .body(user);
+    //                } catch (URISyntaxException e) {
+    //                    throw new RuntimeException(e);
+    //                }
+    //            });
+    //    }
 
     /**
      * {@code PUT /admin/users} : Updates an existing User.
@@ -157,36 +157,36 @@ public class UserResource {
      * @throws EmailAlreadyUsedException {@code 400 (Bad Request)} if the email is already in use.
      * @throws LoginAlreadyUsedException {@code 400 (Bad Request)} if the login is already in use.
      */
-    @PutMapping("/users")
-    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
-    public Mono<ResponseEntity<AdminUserDTO>> updateUser(@Valid @RequestBody AdminUserDTO userDTO) {
-        log.debug("REST request to update User : {}", userDTO);
-        return userRepository
-            .findOneByEmailIgnoreCase(userDTO.getEmail())
-            .filter(user -> !user.getId().equals(userDTO.getId()))
-            .hasElement()
-            .flatMap(emailExists -> {
-                if (Boolean.TRUE.equals(emailExists)) {
-                    return Mono.error(new EmailAlreadyUsedException());
-                }
-                return userRepository.findOneByLogin(userDTO.getLogin().toLowerCase());
-            })
-            .filter(user -> !user.getId().equals(userDTO.getId()))
-            .hasElement()
-            .flatMap(loginExists -> {
-                if (Boolean.TRUE.equals(loginExists)) {
-                    return Mono.error(new LoginAlreadyUsedException());
-                }
-                return userService.updateUser(userDTO);
-            })
-            .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND)))
-            .map(user ->
-                ResponseEntity
-                    .ok()
-                    .headers(HeaderUtil.createAlert(applicationName, "userManagement.updated", userDTO.getLogin()))
-                    .body(user)
-            );
-    }
+    //    @PutMapping("/users")
+    //    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
+    //    public Mono<ResponseEntity<AdminUserDTO>> updateUser(@Valid @RequestBody AdminUserDTO userDTO) {
+    //        log.debug("REST request to update User : {}", userDTO);
+    //        return userRepository
+    //            .findOneByEmailIgnoreCase(userDTO.getEmail())
+    //            .filter(user -> !user.getId().equals(userDTO.getId()))
+    //            .hasElement()
+    //            .flatMap(emailExists -> {
+    //                if (Boolean.TRUE.equals(emailExists)) {
+    //                    return Mono.error(new EmailAlreadyUsedException());
+    //                }
+    //                return userRepository.findOneByLogin(userDTO.getLogin().toLowerCase());
+    //            })
+    //            .filter(user -> !user.getId().equals(userDTO.getId()))
+    //            .hasElement()
+    //            .flatMap(loginExists -> {
+    //                if (Boolean.TRUE.equals(loginExists)) {
+    //                    return Mono.error(new LoginAlreadyUsedException());
+    //                }
+    //                return userService.updateUser(userDTO);
+    //            })
+    //            .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND)))
+    //            .map(user ->
+    //                ResponseEntity
+    //                    .ok()
+    //                    .headers(HeaderUtil.createAlert(applicationName, "userManagement.updated", userDTO.getLogin()))
+    //                    .body(user)
+    //            );
+    //    }
 
     /**
      * {@code GET /admin/users} : get all users with all the details - calling this are only allowed for the administrators.
@@ -239,75 +239,74 @@ public class UserResource {
             .map(AdminUserDTO::new)
             .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND)));
     }
-
     /**
      * {@code DELETE /admin/users/:login} : delete the "login" User.
      *
      * @param login the login of the user to delete.
      * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
      */
-    @DeleteMapping("/users/{login}")
-    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
-    public Mono<ResponseEntity<Void>> deleteUser(@PathVariable @Pattern(regexp = Constants.LOGIN_REGEX) String login) {
-        log.debug("REST request to delete User: {}", login);
-        return userService
-            .deleteUser(login)
-            .then(
-                Mono.just(
-                    ResponseEntity.noContent().headers(HeaderUtil.createAlert(applicationName, "userManagement.deleted", login)).build()
-                )
-            );
-    }
-
-    @GetMapping("/users/id/{id}")
-    @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.USER + "', '" + AuthoritiesConstants.ADMIN + "')")
-    public Mono<ResponseEntity<UserDTO>> getUserById(@PathVariable Long id) {
-        log.debug("REST request to get User by id : {}", id);
-        return userService.getUserById(id).map(userDto -> ResponseEntity.ok(userDto)).defaultIfEmpty(ResponseEntity.notFound().build());
-    }
-
-    /**
-     * GET /api/users/by-login?login=xxx
-     */
-    @GetMapping("/users/by-login")
-    @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.USER + "', '" + AuthoritiesConstants.ADMIN + "')")
-    public Mono<ResponseEntity<UserDTO>> getUserByLogin(@RequestParam("login") String login) {
-        return userService.findUserByLogin(login).map(ResponseEntity::ok).defaultIfEmpty(ResponseEntity.notFound().build());
-    }
-
-    /**
-     * POST /api/users/by-logins
-     * Body: ["login1","login2"]
-     */
-    @PostMapping("/users/by-logins")
-    public Flux<UserDTO> getUsersByLogins(@RequestBody List<String> logins) {
-        return userService.findUsersByLogins(logins);
-    }
-
-    @PutMapping("/users/{login}")
-    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
-    public Mono<ResponseEntity<AdminUserDTO>> updateUserByLogin(
-        @PathVariable @Pattern(regexp = Constants.LOGIN_REGEX) String login,
-        @Valid @RequestBody AdminUserDTO userDTO
-    ) {
-        log.debug("REST request to update User by login : {} with body {}", login, userDTO);
-
-        // S'assurer que le DTO a le même login que le path (empêche la modification du login)
-        userDTO.setLogin(login);
-
-        return userService
-            .updateUserByLogin(login, userDTO)
-            .map(updated ->
-                ResponseEntity.ok().headers(HeaderUtil.createAlert(applicationName, "userManagement.updated", login)).body(updated)
-            )
-            // Propager le NOT_FOUND si le service lève une ResponseStatusException(HttpStatus.NOT_FOUND)
-            .onErrorResume(ResponseStatusException.class, ex -> Mono.error(ex));
-    }
-
-    @GetMapping(value = "/users/me/email-password", produces = MediaType.TEXT_PLAIN_VALUE)
-    @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.USER + "', '" + AuthoritiesConstants.ADMIN + "')")
-    public Mono<ResponseEntity<String>> getCurrentUserEmailPassword() {
-        log.debug("REST request to get current user's emailPassword");
-        return userService.getCurrentUserEmailPassword().map(ResponseEntity::ok);
-    }
+    //    @DeleteMapping("/users/{login}")
+    //    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
+    //    public Mono<ResponseEntity<Void>> deleteUser(@PathVariable @Pattern(regexp = Constants.LOGIN_REGEX) String login) {
+    //        log.debug("REST request to delete User: {}", login);
+    //        return userService
+    //            .deleteUser(login)
+    //            .then(
+    //                Mono.just(
+    //                    ResponseEntity.noContent().headers(HeaderUtil.createAlert(applicationName, "userManagement.deleted", login)).build()
+    //                )
+    //            );
+    //    }
+    //
+    //    @GetMapping("/users/id/{id}")
+    //    @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.USER + "', '" + AuthoritiesConstants.ADMIN + "')")
+    //    public Mono<ResponseEntity<UserDTO>> getUserById(@PathVariable Long id) {
+    //        log.debug("REST request to get User by id : {}", id);
+    //        return userService.getUserById(id).map(userDto -> ResponseEntity.ok(userDto)).defaultIfEmpty(ResponseEntity.notFound().build());
+    //    }
+    //
+    //    /**
+    //     * GET /api/users/by-login?login=xxx
+    //     */
+    //    @GetMapping("/users/by-login")
+    //    @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.USER + "', '" + AuthoritiesConstants.ADMIN + "')")
+    //    public Mono<ResponseEntity<UserDTO>> getUserByLogin(@RequestParam("login") String login) {
+    //        return userService.findUserByLogin(login).map(ResponseEntity::ok).defaultIfEmpty(ResponseEntity.notFound().build());
+    //    }
+    //
+    //    /**
+    //     * POST /api/users/by-logins
+    //     * Body: ["login1","login2"]
+    //     */
+    //    @PostMapping("/users/by-logins")
+    //    public Flux<UserDTO> getUsersByLogins(@RequestBody List<String> logins) {
+    //        return userService.findUsersByLogins(logins);
+    //    }
+    //
+    //    @PutMapping("/users/{login}")
+    //    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
+    //    public Mono<ResponseEntity<AdminUserDTO>> updateUserByLogin(
+    //        @PathVariable @Pattern(regexp = Constants.LOGIN_REGEX) String login,
+    //        @Valid @RequestBody AdminUserDTO userDTO
+    //    ) {
+    //        log.debug("REST request to update User by login : {} with body {}", login, userDTO);
+    //
+    //        // S'assurer que le DTO a le même login que le path (empêche la modification du login)
+    //        userDTO.setLogin(login);
+    //
+    //        return userService
+    //            .updateUserByLogin(login, userDTO)
+    //            .map(updated ->
+    //                ResponseEntity.ok().headers(HeaderUtil.createAlert(applicationName, "userManagement.updated", login)).body(updated)
+    //            )
+    //            // Propager le NOT_FOUND si le service lève une ResponseStatusException(HttpStatus.NOT_FOUND)
+    //            .onErrorResume(ResponseStatusException.class, ex -> Mono.error(ex));
+    //    }
+    //
+    //    @GetMapping(value = "/users/me/email-password", produces = MediaType.TEXT_PLAIN_VALUE)
+    //    @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.USER + "', '" + AuthoritiesConstants.ADMIN + "')")
+    //    public Mono<ResponseEntity<String>> getCurrentUserEmailPassword() {
+    //        log.debug("REST request to get current user's emailPassword");
+    //        return userService.getCurrentUserEmailPassword().map(ResponseEntity::ok);
+    //    }
 }

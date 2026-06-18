@@ -1915,9 +1915,9 @@ export class CorrespUpdateComponent implements OnInit {
   // Users load
   // --------------------------------------------------------------------------
   loadUsers(): void {
-    this.userService.query({ page: 0, size: 1000, sort: ['firstName,ASC'] }).subscribe((res: HttpResponse<IUser[]>) => {
-      this.users = res.body || [];
-    });
+    // this.userService.query({ page: 0, size: 1000, sort: ['firstName,ASC'] }).subscribe((res: HttpResponse<IUser[]>) => {
+    //   this.users = res.body || [];
+    // });
   }
 
   // --------------------------------------------------------------------------
