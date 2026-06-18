@@ -3,6 +3,7 @@ package com.africom.ccgateway.web.rest;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
+import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.csrf;
 
 import com.africom.ccgateway.IntegrationTest;
 import com.africom.ccgateway.domain.Rules;
@@ -109,6 +110,11 @@ class RulesResourceIT {
     @AfterEach
     public void cleanup() {
         deleteEntities(em);
+    }
+
+    @BeforeEach
+    public void setupCsrf() {
+        webTestClient = webTestClient.mutateWith(csrf());
     }
 
     @BeforeEach

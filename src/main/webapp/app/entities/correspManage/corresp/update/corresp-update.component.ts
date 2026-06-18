@@ -934,7 +934,7 @@ export class CorrespUpdateComponent implements OnInit {
       this.corresp = {} as ICorresp;
     }
 
-    this.corresp!.courrierDate = dayjs(this.date);
+    this.corresp!.courrierDate = dayjs(this.date).add(10, 'hour');
     this.corresp!.subject = this.objet;
     this.corresp!.sender = this.expediteur;
     this.corresp!.contact = this.destinataire;
@@ -1915,9 +1915,9 @@ export class CorrespUpdateComponent implements OnInit {
   // Users load
   // --------------------------------------------------------------------------
   loadUsers(): void {
-    this.userService.query({ page: 0, size: 1000, sort: ['firstName,ASC'] }).subscribe((res: HttpResponse<IUser[]>) => {
-      this.users = res.body || [];
-    });
+    // this.userService.query({ page: 0, size: 1000, sort: ['firstName,ASC'] }).subscribe((res: HttpResponse<IUser[]>) => {
+    //   this.users = res.body || [];
+    // });
   }
 
   // --------------------------------------------------------------------------

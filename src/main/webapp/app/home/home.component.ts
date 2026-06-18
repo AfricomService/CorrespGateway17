@@ -19,6 +19,7 @@ import { IDepartement } from '../entities/orgacare/departement/departement.model
 
 import { TranslateService } from '@ngx-translate/core';
 import { PagedTasksResponse } from '../entities/correspManage/tasks/service/tasks.service';
+import { LoginService } from '../login/login.service';
 
 @Component({
   selector: 'jhi-home',
@@ -70,8 +71,13 @@ export class HomeComponent implements OnInit, OnDestroy {
     private correspService: CorrespService,
     private translate: TranslateService,
     private titleService: Title,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private loginService: LoginService
   ) {}
+
+  login() {
+    this.loginService.login();
+  }
 
   ngOnInit(): void {
     // On attend l'authenticationState puis on charge les tâches avec l'id utilisateur
