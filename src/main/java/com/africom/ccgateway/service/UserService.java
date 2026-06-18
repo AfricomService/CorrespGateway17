@@ -94,8 +94,9 @@ public class UserService {
                     persistedUser = userRepository.save(user);
                 }
                 return persistedUser.flatMap(savedUser ->
-                    Flux
-                        .fromIterable(user.getAuthorities())
+                    userRepository
+                        .deleteUserAuthorities(savedUser.getId())
+                        .thenMany(Flux.fromIterable(user.getAuthorities()))
                         .flatMap(authority -> userRepository.saveUserAuthority(savedUser.getId(), authority.getName()))
                         .then(Mono.just(savedUser))
                 );
@@ -154,7 +155,9 @@ public class UserService {
             .then(userRepository.findOneByLogin(user.getLogin()))
             .switchIfEmpty(saveUser(user, true))
             .flatMap(existingUser -> {
-                // if IdP sends last updated information, use it to determine if an update should happen
+                // Toujours synchroniser les authorities depuis Keycloak
+                existingUser.setAuthorities(user.getAuthorities());
+
                 if (details.get("updated_at") != null) {
                     Instant dbModifiedDate = existingUser.getLastModifiedDate();
                     Instant idpModifiedDate;
@@ -165,14 +168,14 @@ public class UserService {
                     }
                     if (idpModifiedDate.isAfter(dbModifiedDate)) {
                         log.debug("Updating user '{}' in local database", user.getLogin());
-                        return updateUser(user.getFirstName(), user.getLastName(), user.getEmail(), user.getLangKey(), user.getImageUrl());
+                        return saveUser(existingUser); // saveUser persiste aussi les authorities
                     }
-                    // no last updated info, blindly update
                 } else {
                     log.debug("Updating user '{}' in local database", user.getLogin());
-                    return updateUser(user.getFirstName(), user.getLastName(), user.getEmail(), user.getLangKey(), user.getImageUrl());
+                    return saveUser(existingUser); // saveUser persiste aussi les authorities
                 }
-                return Mono.empty();
+                // Même sans changement de profil, on synchronise les authorities
+                return saveUser(existingUser);
             })
             .thenReturn(user);
     }
@@ -195,9 +198,19 @@ public class UserService {
             throw new IllegalArgumentException("AuthenticationToken is not OAuth2 or JWT!");
         }
         User user = getUser(attributes);
+
+        // Lire les rôles directement depuis les claims Keycloak
+        List<GrantedAuthority> grantedAuthorities = SecurityUtils.extractAuthorityFromClaims(attributes);
+
+        // Fallback sur les authorities du token si les claims ne contiennent rien
+        if (grantedAuthorities.isEmpty()) {
+            grantedAuthorities =
+                authToken.getAuthorities().stream().filter(a -> a.getAuthority().startsWith("ROLE_")).collect(Collectors.toList());
+        }
+
+        final List<GrantedAuthority> finalAuthorities = grantedAuthorities;
         user.setAuthorities(
-            authToken
-                .getAuthorities()
+            finalAuthorities
                 .stream()
                 .map(GrantedAuthority::getAuthority)
                 .map(authority -> {
