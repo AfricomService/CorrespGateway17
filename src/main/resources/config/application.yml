@@ -185,11 +185,11 @@ spring:
       client:
         provider:
           oidc:
-            issuer-uri: http://localhost:9080/realms/jhipster
+            issuer-uri: http://localhost:9080/realms/Africom
         registration:
           oidc:
-            client-id: web_app
-            client-secret: web_app
+            client-id: corresp_app
+            client-secret: corresp_app
             scope: openid, profile, email, offline_access # last one for refresh tokens
 
 server:

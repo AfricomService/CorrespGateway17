@@ -24,8 +24,6 @@ import org.springframework.security.config.annotation.web.reactive.EnableWebFlux
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcReactiveOAuth2UserService;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
@@ -39,7 +37,6 @@ import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequ
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.oauth2.core.oidc.user.OidcUserAuthority;
-import org.springframework.security.oauth2.core.user.OAuth2UserAuthority;
 import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.ReactiveJwtAuthenticationConverterAdapter;
@@ -195,7 +192,7 @@ public class SecurityConfiguration {
                             if (authority instanceof OidcUserAuthority) {
                                 OidcUserAuthority oidcUserAuthority = (OidcUserAuthority) authority;
                                 mappedAuthorities.addAll(
-                                    SecurityUtils.extractAuthorityFromClaims(oidcUserAuthority.getUserInfo().getClaims())
+                                    SecurityUtils.extractAuthorityFromClaims(oidcUserAuthority.getIdToken().getClaims()) // ← getIdToken() au lieu de getUserInfo()
                                 );
                             }
                         });
@@ -220,33 +217,57 @@ public class SecurityConfiguration {
             .block();
     }
 
-    @Bean
-    public GrantedAuthoritiesMapper userAuthoritiesMapper() {
-        return authorities -> {
-            Set<GrantedAuthority> mappedAuthorities = new HashSet<>();
-            authorities.forEach(authority -> {
-                if (authority instanceof OidcUserAuthority oidcAuthority) {
-                    Map<String, Object> attributes = oidcAuthority.getAttributes();
-                    @SuppressWarnings("unchecked")
-                    Map<String, Object> realmAccess = (Map<String, Object>) attributes.get("realm_access");
-                    if (realmAccess != null) {
-                        @SuppressWarnings("unchecked")
-                        List<String> roles = (List<String>) realmAccess.get("roles");
-                        if (roles != null) {
-                            roles
-                                .stream()
-                                .filter(role -> role.startsWith("ROLE_"))
-                                .map(SimpleGrantedAuthority::new)
-                                .forEach(mappedAuthorities::add);
-                        }
-                    }
-                } else if (authority instanceof OAuth2UserAuthority oauth2Authority) {
-                    mappedAuthorities.add(new SimpleGrantedAuthority("ROLE_USER"));
-                }
-            });
-            return mappedAuthorities;
-        };
-    }
+    //    @Bean
+    //    public GrantedAuthoritiesMapper userAuthoritiesMapper() {
+    //        return authorities -> {
+    //            Set<GrantedAuthority> mappedAuthorities = new HashSet<>();
+    //            authorities.forEach(authority -> {
+    //                if (authority instanceof OidcUserAuthority oidcAuthority) {
+    //                    Map<String, Object> attributes = oidcAuthority.getAttributes();
+    //
+    //                    // 1. Essayer realm_access.roles (standard Keycloak)
+    //                    @SuppressWarnings("unchecked")
+    //                    Map<String, Object> realmAccess = (Map<String, Object>) attributes.get("realm_access");
+    //                    if (realmAccess != null) {
+    //                        @SuppressWarnings("unchecked")
+    //                        List<String> roles = (List<String>) realmAccess.get("roles");
+    //                        if (roles != null) {
+    //                            roles.stream()
+    //                                .filter(role -> role.startsWith("ROLE_"))
+    //                                .map(SimpleGrantedAuthority::new)
+    //                                .forEach(mappedAuthorities::add);
+    //                        }
+    //                    }
+    //
+    //                    // 2. Fallback : claim "roles" direct (votre config Keycloak)
+    //                    Object rolesClaim = attributes.get("roles");
+    //                    if (rolesClaim instanceof List) {
+    //                        @SuppressWarnings("unchecked")
+    //                        List<String> roles = (List<String>) rolesClaim;
+    //                        roles.stream()
+    //                            .filter(role -> role.startsWith("ROLE_"))
+    //                            .map(SimpleGrantedAuthority::new)
+    //                            .forEach(mappedAuthorities::add);
+    //                    }
+    //
+    //                    // 3. Fallback : claim "groups"
+    //                    Object groupsClaim = attributes.get("groups");
+    //                    if (groupsClaim instanceof List) {
+    //                        @SuppressWarnings("unchecked")
+    //                        List<String> groups = (List<String>) groupsClaim;
+    //                        groups.stream()
+    //                            .filter(g -> g.startsWith("ROLE_"))
+    //                            .map(SimpleGrantedAuthority::new)
+    //                            .forEach(mappedAuthorities::add);
+    //                    }
+    //
+    //                } else if (authority instanceof OAuth2UserAuthority) {
+    //                    mappedAuthorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+    //                }
+    //            });
+    //            return mappedAuthorities;
+    //        };
+    //    }
 
     private ReactiveJwtDecoder createJwtDecoder(String issuerUri, String jwkSetUri, String userInfoUri) {
         NimbusReactiveJwtDecoder jwtDecoder = new NimbusReactiveJwtDecoder(jwkSetUri);
