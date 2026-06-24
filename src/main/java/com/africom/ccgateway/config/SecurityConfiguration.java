@@ -68,12 +68,6 @@ public class SecurityConfiguration {
 
     // See https://github.com/jhipster/generator-jhipster/issues/18868
     // We don't use a distributed cache or the user selected cache implementation here on purpose
-    private final Cache<String, Mono<Jwt>> users = Caffeine
-        .newBuilder()
-        .maximumSize(10_000)
-        .expireAfterWrite(Duration.ofHours(1))
-        .recordStats()
-        .build();
 
     private final SecurityProblemSupport problemSupport;
     private final CorsWebFilter corsWebFilter;
@@ -106,10 +100,8 @@ public class SecurityConfiguration {
             .addFilterBefore(corsWebFilter, SecurityWebFiltersOrder.REACTOR_CONTEXT)
             .addFilterAt(new SpaWebFilter(), SecurityWebFiltersOrder.AUTHENTICATION)
             .exceptionHandling()
-                .accessDeniedHandler(problemSupport)
-                .authenticationEntryPoint(
-                    new RedirectServerAuthenticationEntryPoint("/oauth2/authorization/oidc")
-            )
+            .accessDeniedHandler(problemSupport)
+            .authenticationEntryPoint(problemSupport)
         .and()
             .headers()
                 .contentSecurityPolicy(jHipsterProperties.getSecurity().getContentSecurityPolicy())
@@ -125,6 +117,9 @@ public class SecurityConfiguration {
             .pathMatchers("/*.*").permitAll()
             .pathMatchers("/api/authenticate").permitAll()
             .pathMatchers("/api/auth-info").permitAll()
+            .pathMatchers("/api/admin/users/id/**").hasAnyAuthority(AuthoritiesConstants.USER, AuthoritiesConstants.ADMIN)
+            .pathMatchers("/api/admin/users/by-login").hasAnyAuthority(AuthoritiesConstants.USER, AuthoritiesConstants.ADMIN)
+            .pathMatchers("/api/admin/users/by-logins").hasAnyAuthority(AuthoritiesConstants.USER, AuthoritiesConstants.ADMIN)
             .pathMatchers("/api/admin/**").hasAuthority(AuthoritiesConstants.ADMIN)
             .pathMatchers("/api/**").authenticated()
             .pathMatchers("/services/*/v3/api-docs").hasAuthority(AuthoritiesConstants.ADMIN)
@@ -192,7 +187,7 @@ public class SecurityConfiguration {
                             if (authority instanceof OidcUserAuthority) {
                                 OidcUserAuthority oidcUserAuthority = (OidcUserAuthority) authority;
                                 mappedAuthorities.addAll(
-                                    SecurityUtils.extractAuthorityFromClaims(oidcUserAuthority.getIdToken().getClaims()) // ← getIdToken() au lieu de getUserInfo()
+                                    SecurityUtils.extractAuthorityFromClaims(oidcUserAuthority.getUserInfo().getClaims())
                                 );
                             }
                         });
@@ -200,21 +195,6 @@ public class SecurityConfiguration {
                     return new DefaultOidcUser(mappedAuthorities, user.getIdToken(), user.getUserInfo());
                 });
         };
-    }
-
-    @Bean
-    ReactiveJwtDecoder jwtDecoder(ReactiveClientRegistrationRepository registrations) {
-        Mono<ClientRegistration> clientRegistration = registrations.findByRegistrationId("oidc");
-
-        return clientRegistration
-            .map(oidc ->
-                createJwtDecoder(
-                    oidc.getProviderDetails().getIssuerUri(),
-                    oidc.getProviderDetails().getJwkSetUri(),
-                    oidc.getProviderDetails().getUserInfoEndpoint().getUri()
-                )
-            )
-            .block();
     }
 
     //    @Bean
@@ -268,66 +248,16 @@ public class SecurityConfiguration {
     //            return mappedAuthorities;
     //        };
     //    }
+    @Bean
+    ReactiveJwtDecoder jwtDecoder() {
+        NimbusReactiveJwtDecoder jwtDecoder = (NimbusReactiveJwtDecoder) ReactiveJwtDecoders.fromOidcIssuerLocation(issuerUri);
 
-    private ReactiveJwtDecoder createJwtDecoder(String issuerUri, String jwkSetUri, String userInfoUri) {
-        NimbusReactiveJwtDecoder jwtDecoder = new NimbusReactiveJwtDecoder(jwkSetUri);
         OAuth2TokenValidator<Jwt> audienceValidator = new AudienceValidator(jHipsterProperties.getSecurity().getOauth2().getAudience());
         OAuth2TokenValidator<Jwt> withIssuer = JwtValidators.createDefaultWithIssuer(issuerUri);
         OAuth2TokenValidator<Jwt> withAudience = new DelegatingOAuth2TokenValidator<>(withIssuer, audienceValidator);
 
         jwtDecoder.setJwtValidator(withAudience);
 
-        return new ReactiveJwtDecoder() {
-            @Override
-            public Mono<Jwt> decode(String token) throws JwtException {
-                return jwtDecoder.decode(token).flatMap(jwt -> enrich(token, jwt));
-            }
-
-            private Mono<Jwt> enrich(String token, Jwt jwt) {
-                // Only look up user information if identity claims are missing
-                if (jwt.hasClaim("given_name") && jwt.hasClaim("family_name")) {
-                    return Mono.just(jwt);
-                }
-                // Retrieve user info from OAuth provider if not already loaded
-                return users.get(
-                    jwt.getSubject(),
-                    s -> {
-                        WebClient webClient = WebClient.create();
-
-                        return webClient
-                            .get()
-                            .uri(userInfoUri)
-                            .headers(headers -> headers.setBearerAuth(token))
-                            .retrieve()
-                            .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
-                            .map(userInfo ->
-                                Jwt
-                                    .withTokenValue(jwt.getTokenValue())
-                                    .subject(jwt.getSubject())
-                                    .audience(jwt.getAudience())
-                                    .headers(headers -> headers.putAll(jwt.getHeaders()))
-                                    .claims(claims -> {
-                                        String username = userInfo.get("preferred_username").toString();
-                                        // special handling for Auth0
-                                        if (userInfo.get("sub").toString().contains("|") && username.contains("@")) {
-                                            userInfo.put("email", username);
-                                        }
-                                        // Allow full name in a name claim - happens with Auth0
-                                        if (userInfo.get("name") != null) {
-                                            String[] name = userInfo.get("name").toString().split("\\s+");
-                                            if (name.length > 0) {
-                                                userInfo.put("given_name", name[0]);
-                                                userInfo.put("family_name", String.join(" ", Arrays.copyOfRange(name, 1, name.length)));
-                                            }
-                                        }
-                                        claims.putAll(userInfo);
-                                    })
-                                    .claims(claims -> claims.putAll(jwt.getClaims()))
-                                    .build()
-                            );
-                    }
-                );
-            }
-        };
+        return jwtDecoder;
     }
 }

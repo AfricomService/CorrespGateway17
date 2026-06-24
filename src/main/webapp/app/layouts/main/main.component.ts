@@ -13,6 +13,7 @@ import { FindLanguageFromKeyPipe } from 'app/shared/language/find-language-from-
 })
 export class MainComponent implements OnInit {
   private renderer: Renderer2;
+  isHomePage = false;
 
   constructor(
     private accountService: AccountService,
@@ -31,6 +32,7 @@ export class MainComponent implements OnInit {
 
     this.router.events.subscribe(event => {
       if (event instanceof NavigationEnd) {
+        this.isHomePage = event.urlAfterRedirects === '/' || event.urlAfterRedirects === '';
         this.updateTitle();
       }
     });
@@ -53,6 +55,10 @@ export class MainComponent implements OnInit {
   }
 
   private updateTitle(): void {
+    if (this.isHomePage) {
+      // HomeComponent gère lui-même le titre (avec ou sans prénom selon l'authentification)
+      return;
+    }
     let pageTitle = this.getPageTitle(this.router.routerState.snapshot.root);
     if (!pageTitle) {
       pageTitle = 'global.title';

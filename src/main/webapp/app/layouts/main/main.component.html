@@ -4,8 +4,8 @@
   <router-outlet name="navbar"></router-outlet>
 </div>
 
-<div class="container-fluid">
-  <div class="card jh-card">
+<div class="container-fluid" [class.px-0]="isHomePage">
+  <div class="card" [class.jh-card]="!isHomePage" [class.jh-card-home]="isHomePage">
     <router-outlet></router-outlet>
   </div>
 

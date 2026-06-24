@@ -257,7 +257,7 @@ export class CorrespDetailComponent implements OnInit, OnDestroy {
   // Cache complet des tâches ACL avec responsables résolus (venant de getAllTasksByUserAclAllStatuses)
   private userAclTasksMap: Map<number, ITasks> = new Map();
   protected currentAccountLogin: string | null = null;
-  private currentUserId: number | null = null;
+  private currentUserId: string | null = null;
   isGlobalAdmin = false;
 
   /** true si l'utilisateur courant a le rôle ADMIN et/ou BOC */
@@ -1053,9 +1053,9 @@ export class CorrespDetailComponent implements OnInit, OnDestroy {
 
   private loadCurrentUserAndAclTasks(callback?: () => void): void {
     this.accountService.identity().subscribe((acc: Account | null) => {
-      const uid = acc != null ? (acc as any).id : null;
+      const uid: string | null = acc != null ? (acc as any).id ?? null : null;
       this.currentAccountLogin = acc?.login ?? null;
-      if (typeof uid === 'number') {
+      if (uid != null) {
         this.currentUserId = uid;
         // NOUVEAU CODE
         this.taskService.getAllTasksByUserAclAllStatuses(uid).subscribe({
@@ -2350,7 +2350,7 @@ export class CorrespDetailComponent implements OnInit, OnDestroy {
       this.showNotification('Vous n’avez pas le droit de modifier le statut de la tâche', 'error');
       return;
     }
-    this.correspService.changeTaskStatus({ correspId, taskId, status }).subscribe({
+    this.correspService.changeTaskStatus(correspId, taskId, status).subscribe({
       next: () => {
         // refresh tasks list
         this.taskService.getAllTasksByCorrespId({ correspId: this.correspLoaded.id }).subscribe(r => {

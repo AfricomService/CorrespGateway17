@@ -1010,18 +1010,16 @@ export class CorrespUpdateComponent implements OnInit {
                 const savedTasks = tasksRes.body || [];
                 const bocTask = savedTasks.find(t => t.taskType === 'traitement');
                 if (bocTask && bocTask.id) {
-                  this.correspService
-                    .changeTaskStatus({ correspId: savedCorresp.id, taskId: bocTask.id, status: 'IN_PROGRESS' })
-                    .subscribe({
-                      next: () => {
-                        // Navigation après le changement de statut réussi
-                        this.router.navigate(['/corresp', savedCorresp.id, 'view']);
-                      },
-                      error: () => {
-                        // En cas d'erreur du changeTaskStatus, on navigue quand même
-                        this.router.navigate(['/corresp', savedCorresp.id, 'view']);
-                      },
-                    });
+                  this.correspService.changeTaskStatus(savedCorresp.id, bocTask.id, 'IN_PROGRESS').subscribe({
+                    next: () => {
+                      // Navigation après le changement de statut réussi
+                      this.router.navigate(['/corresp', savedCorresp.id, 'view']);
+                    },
+                    error: () => {
+                      // En cas d'erreur du changeTaskStatus, on navigue quand même
+                      this.router.navigate(['/corresp', savedCorresp.id, 'view']);
+                    },
+                  });
                 } else {
                   // Pas de tâche traitement trouvée, navigation normale
                   this.router.navigate(['/corresp', savedCorresp.id, 'view']);

@@ -41,6 +41,8 @@ export class ContactCompanyComponent implements OnInit {
 
   searchTerm = '';
 
+  ngbPaginationPage = 1;
+
   // modal template reference for etat change
   @ViewChild('etatModal') etatModal!: TemplateRef<any>;
   protected currentModalRef?: NgbModalRef;
@@ -449,6 +451,7 @@ export class ContactCompanyComponent implements OnInit {
   protected fillComponentAttributeFromRoute(params: ParamMap, data: Data): void {
     const page = params.get(PAGE_HEADER);
     this.page = +(page ?? 1);
+    this.ngbPaginationPage = this.page;
     const sort = (params.get(SORT) ?? data[DEFAULT_SORT_DATA]).split(',');
     this.predicate = sort[0];
     this.ascending = sort[1] === ASC;

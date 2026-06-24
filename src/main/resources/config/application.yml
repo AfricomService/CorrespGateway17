@@ -34,8 +34,8 @@ eureka:
     instance-info-replication-interval-seconds: 10
     registry-fetch-interval-seconds: 10
   instance:
-    appname: corresp_care
-    instanceId: corresp_care:${spring.application.instance-id:${random.value}}
+    appname: correspcare
+    instanceId: correspcare:${spring.application.instance-id:${random.value}}
     lease-renewal-interval-in-seconds: 5
     lease-expiration-duration-in-seconds: 10
     status-page-url-path: ${management.endpoints.web.base-path}/info
@@ -126,7 +126,7 @@ management:
 
 spring:
   application:
-    name: Corresp_Care
+    name: CorrespCare
   cloud:
     gateway:
       default-filters:
@@ -180,17 +180,17 @@ spring:
   output:
     ansi:
       console-available: true
-  security:
-    oauth2:
-      client:
-        provider:
-          oidc:
-            issuer-uri: http://localhost:9080/realms/Africom
-        registration:
-          oidc:
-            client-id: corresp_app
-            client-secret: corresp_app
-            scope: openid, profile, email, offline_access # last one for refresh tokens
+#  security:
+#    oauth2:
+#      client:
+#        provider:
+#          oidc:
+#            issuer-uri: http://localhost:9080/realms/Africom
+#        registration:
+#          oidc:
+#            client-id: corresp_app
+#            client-secret: corresp_app
+#            scope: openid, profile, email, offline_access # last one for refresh tokens
 
 server:
   servlet:
@@ -224,7 +224,7 @@ jhipster:
   #   allow-credentials: true
   #   max-age: 1800
   mail:
-    from: Corresp_Care@localhost
+    from: CorrespCare@localhost
   api-docs:
     default-include-pattern: ${server.servlet.context-path:}/api/**
     management-include-pattern: ${server.servlet.context-path:}/management/**
