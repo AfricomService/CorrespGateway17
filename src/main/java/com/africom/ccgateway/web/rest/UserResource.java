@@ -239,12 +239,13 @@ public class UserResource {
             .map(AdminUserDTO::new)
             .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND)));
     }
-    /**
-     * {@code DELETE /admin/users/:login} : delete the "login" User.
-     *
-     * @param login the login of the user to delete.
-     * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
-     */
+
+    //    /**
+    //     * {@code DELETE /admin/users/:login} : delete the "login" User.
+    //     *
+    //     * @param login the login of the user to delete.
+    //     * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
+    //     */
     //    @DeleteMapping("/users/{login}")
     //    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
     //    public Mono<ResponseEntity<Void>> deleteUser(@PathVariable @Pattern(regexp = Constants.LOGIN_REGEX) String login) {
@@ -258,30 +259,31 @@ public class UserResource {
     //            );
     //    }
     //
-    //    @GetMapping("/users/id/{id}")
-    //    @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.USER + "', '" + AuthoritiesConstants.ADMIN + "')")
-    //    public Mono<ResponseEntity<UserDTO>> getUserById(@PathVariable Long id) {
-    //        log.debug("REST request to get User by id : {}", id);
-    //        return userService.getUserById(id).map(userDto -> ResponseEntity.ok(userDto)).defaultIfEmpty(ResponseEntity.notFound().build());
-    //    }
+    @GetMapping("/users/id/{id}")
+    @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.USER + "', '" + AuthoritiesConstants.ADMIN + "')")
+    public Mono<ResponseEntity<UserDTO>> getUserById(@PathVariable String id) {
+        log.debug("REST request to get User by id : {}", id);
+        return userService.getUserById(id).map(userDto -> ResponseEntity.ok(userDto)).defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+
+    /**
+     * GET /api/users/by-login?login=xxx
+     */
+    @GetMapping("/users/by-login")
+    @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.USER + "', '" + AuthoritiesConstants.ADMIN + "')")
+    public Mono<ResponseEntity<UserDTO>> getUserByLogin(@RequestParam("login") String login) {
+        return userService.findUserByLogin(login).map(ResponseEntity::ok).defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+
     //
-    //    /**
-    //     * GET /api/users/by-login?login=xxx
-    //     */
-    //    @GetMapping("/users/by-login")
-    //    @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.USER + "', '" + AuthoritiesConstants.ADMIN + "')")
-    //    public Mono<ResponseEntity<UserDTO>> getUserByLogin(@RequestParam("login") String login) {
-    //        return userService.findUserByLogin(login).map(ResponseEntity::ok).defaultIfEmpty(ResponseEntity.notFound().build());
-    //    }
-    //
-    //    /**
-    //     * POST /api/users/by-logins
-    //     * Body: ["login1","login2"]
-    //     */
-    //    @PostMapping("/users/by-logins")
-    //    public Flux<UserDTO> getUsersByLogins(@RequestBody List<String> logins) {
-    //        return userService.findUsersByLogins(logins);
-    //    }
+    /**
+     * POST /api/users/by-logins
+     * Body: ["login1","login2"]
+     */
+    @PostMapping("/users/by-logins")
+    public Flux<UserDTO> getUsersByLogins(@RequestBody List<String> logins) {
+        return userService.findUsersByLogins(logins);
+    }
     //
     //    @PutMapping("/users/{login}")
     //    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")

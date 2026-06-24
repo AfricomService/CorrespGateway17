@@ -79,7 +79,7 @@ export class CorrespComponent implements OnInit {
   isAdmin = false;
   isBoc = false;
   isCanSeeAll = false;
-  currentUserId: number | null = null;
+  currentUserId: string | null = null;
 
   isSaving = false;
   nameFilter = '';
@@ -148,7 +148,7 @@ export class CorrespComponent implements OnInit {
         this.isAdmin = this.accountService.hasAnyAuthority(Authority.ADMIN);
         this.isBoc = this.accountService.hasAnyAuthority(Authority.BOC);
         this.isCanSeeAll = this.accountService.hasAnyAuthority(Authority.CAN_SEE_ALL); // ← AJOUT
-        this.currentUserId = (account as any).id ?? null;
+        this.currentUserId = (account as any).id ? String((account as any).id) : null;
       }
       this.load();
     });
@@ -345,7 +345,7 @@ export class CorrespComponent implements OnInit {
     });
   }
 
-  createDataSourceByUserAcl(userId: number, apiFilters?: ApiFilter[]): CustomStore {
+  createDataSourceByUserAcl(userId: string, apiFilters?: ApiFilter[]): CustomStore {
     return new CustomStore({
       key: 'id',
       load: async (loadOptions: any) => {

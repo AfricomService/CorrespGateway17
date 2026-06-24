@@ -19,10 +19,14 @@ logging:
     tech.jhipster: DEBUG
     org.hibernate.SQL: DEBUG
     com.africom.ccgateway: DEBUG
+    org.springframework.security.oauth2: TRACE
+    org.springframework.security.web.server.authentication: DEBUG
+    reactor.netty.http.client: DEBUG
 
 eureka:
   instance:
-    prefer-ip-address: true
+    prefer-ip-address: false
+    hostname: localhost
   client:
     service-url:
       defaultZone: http://admin:${jhipster.registry.password}@localhost:8761/eureka/
@@ -61,6 +65,17 @@ spring:
     url: r2dbc:postgresql://localhost:5432/Corresp_Care
     username: postgres
     password: africomSaVpPostGreSQL10DataBase
+  security:
+    oauth2:
+      client:
+        provider:
+          oidc:
+            issuer-uri: http://localhost:9080/realms/Africom
+        registration:
+          oidc:
+            client-id: corresp_app
+            client-secret: corresp_app
+            scope: openid, profile, email, offline_access # last one for refresh tokens
   thymeleaf:
     cache: false
   sleuth:

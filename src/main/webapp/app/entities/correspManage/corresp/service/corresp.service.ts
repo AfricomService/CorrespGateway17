@@ -247,7 +247,7 @@ export class CorrespService {
    * Remplace findAllCorrespByFilter + findAllByStatusDispatch (unifié côté backend)
    */
   getCorrespsFiltered(
-    userId: number,
+    userId: string,
     pageIndex: number = 1,
     pageSize: number = 15,
     filters?: {
@@ -429,11 +429,24 @@ export class CorrespService {
     return this.http.post(`${this.resourceUrl}AddPjToCorresp`, formData);
   }
 
-  changeTaskStatus(req?: any) {
-    const options = createRequestOption(req);
-
-    return this.http.patch(`${this.resourceUrl}ChangeTaskStatus`, options);
+  changeTaskStatus(correspId: number, taskId: number, status: string): Observable<any> {
+    const params = createRequestOption({ correspId, taskId, status });
+    return this.http.patch(`${this.resourceUrl}ChangeTaskStatus`, null, { params });
   }
+
+  // changeTaskStatusTest(correspId: number, taskId: number, status: string) {
+  //   const params = {
+  //     correspId,
+  //     taskId,
+  //     status
+  //   };
+  //
+  //   return this.http.patch(
+  //     `${this.resourceUrl}ChangeTaskStatus`,
+  //     null,
+  //     { params }
+  //   );
+  // }
 
   /**
    * Clôture automatiquement les tâches LECTURE IN_PROGRESS
@@ -560,7 +573,7 @@ export class CorrespService {
     return this.http.get<{ subject?: string | null; reference?: string | null }>(`${this.resourceUrl}/by-task/${taskId}/summary`);
   }
 
-  getDepartementAffectationsByUser(userId: number): Observable<DepartementAffectationDTO[]> {
+  getDepartementAffectationsByUser(userId: string): Observable<DepartementAffectationDTO[]> {
     return this.http.get<DepartementAffectationDTO[]>(
       `${this.applicationConfigService.getEndpointFor('api/departements/user', 'orgacare')}/${userId}/affectations`
     );
@@ -641,7 +654,7 @@ export class CorrespService {
     return this.http.get<CorrespPermissionsDTO>(`${this.resourceUrl}/${correspId}/permissions`);
   }
 
-  getCorrespsByUserAcl(userId: number): Observable<EntityArrayResponseType> {
+  getCorrespsByUserAcl(userId: string): Observable<EntityArrayResponseType> {
     const params = createRequestOption({ userId });
     return this.http
       .get<RestCorresp[]>(`${this.resourceUrl}/correspsByUserAcl`, { params, observe: 'response' })
@@ -649,7 +662,7 @@ export class CorrespService {
   }
 
   // Dans la classe CorrespService, ajouter cette méthode :
-  getCorrespsByUserAclPaged(userId: number, page: number = 1, size: number = 15): Observable<PagedCorrespResponse> {
+  getCorrespsByUserAclPaged(userId: string, page: number = 1, size: number = 15): Observable<PagedCorrespResponse> {
     const params = createRequestOption({ userId, page, size });
     return this.http.get<any>(`${this.resourceUrl}/correspsByUserAclPaged`, { params }).pipe(
       map(response => ({
@@ -700,7 +713,7 @@ export class CorrespService {
       .pipe(catchError(() => of([])));
   }
 
-  searchCorresps(userId: number, q: string = '', page: number = 1, size: number = 15): Observable<PagedCorrespResponse> {
+  searchCorresps(userId: string, q: string = '', page: number = 1, size: number = 15): Observable<PagedCorrespResponse> {
     const params = createRequestOption({ userId, q, page, size });
     return this.http.get<any>(`${this.applicationConfigService.getEndpointFor('api/corresps/search', 'correspmanage')}`, { params }).pipe(
       map(response => ({
@@ -728,7 +741,7 @@ export class CorrespService {
 
   // Méthode Admin/BOC
   getCorrespList(
-    userId: number,
+    userId: string,
     page: number = 1,
     size: number = 15,
     q: string = '',
@@ -771,7 +784,7 @@ export class CorrespService {
 
   // Méthode user simple
   getCorrespListByAcl(
-    userId: number,
+    userId: string,
     page: number = 1,
     size: number = 15,
     q: string = '',
@@ -831,7 +844,7 @@ export class CorrespService {
 
   // Méthode ROLE_CAN_SEE_ALL : tous les courriers sans filtre ACL
   getCorrespListAll(
-    userId: number,
+    userId: string,
     page: number = 1,
     size: number = 15,
     q: string = '',
@@ -879,7 +892,7 @@ export class CorrespService {
   }
 
   exportCorresps(
-    userId: number,
+    userId: string,
     isAdmin: boolean,
     filters?: {
       q?: string;

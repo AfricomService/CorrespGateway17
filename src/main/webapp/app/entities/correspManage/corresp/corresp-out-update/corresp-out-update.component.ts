@@ -272,7 +272,7 @@ export class CorrespOutUpdateComponent implements OnInit {
         this.currentUserFirstName = (account as any).firstName || '';
         this.currentUserLastName = (account as any).lastName || '';
 
-        const userId = (account as any)?.id;
+        const userId: string | null = (account as any)?.id ?? null;
         if (userId) {
           this.loadDefaultExpediteurFromUserDepartment(userId);
           this.createDefaultProcessingTask(account);
@@ -333,7 +333,7 @@ export class CorrespOutUpdateComponent implements OnInit {
     });
   }
 
-  private loadDefaultExpediteurFromUserDepartment(userId: number): void {
+  private loadDefaultExpediteurFromUserDepartment(userId: string): void {
     this.correspService.getDepartementAffectationsByUser(userId).subscribe({
       next: data => {
         const affectations = data || [];
@@ -712,12 +712,10 @@ export class CorrespOutUpdateComponent implements OnInit {
                 const savedTasks = tasksRes.body || [];
                 const traitementTask = savedTasks.find(t => t.taskType === 'traitement');
                 if (traitementTask && traitementTask.id) {
-                  this.correspService
-                    .changeTaskStatus({ correspId: savedCorresp.id, taskId: traitementTask.id, status: 'IN_PROGRESS' })
-                    .subscribe({
-                      next: () => this.router.navigate(['/corresp', savedCorresp.id, 'view-outgoing']),
-                      error: () => this.router.navigate(['/corresp', savedCorresp.id, 'view-outgoing']),
-                    });
+                  this.correspService.changeTaskStatus(savedCorresp.id, traitementTask.id, 'IN_PROGRESS').subscribe({
+                    next: () => this.router.navigate(['/corresp', savedCorresp.id, 'view-outgoing']),
+                    error: () => this.router.navigate(['/corresp', savedCorresp.id, 'view-outgoing']),
+                  });
                 } else {
                   this.router.navigate(['/corresp', savedCorresp.id, 'view-outgoing']);
                 }
@@ -754,12 +752,10 @@ export class CorrespOutUpdateComponent implements OnInit {
               const savedTasks = tasksRes.body || [];
               const traitementTask = savedTasks.find(t => t.taskType === 'traitement');
               if (traitementTask && traitementTask.id) {
-                this.correspService
-                  .changeTaskStatus({ correspId: savedCorresp.id, taskId: traitementTask.id, status: 'IN_PROGRESS' })
-                  .subscribe({
-                    next: () => this.prepareEmailThenOpenPreview(savedCorresp.id),
-                    error: () => this.prepareEmailThenOpenPreview(savedCorresp.id),
-                  });
+                this.correspService.changeTaskStatus(savedCorresp.id, traitementTask.id, 'IN_PROGRESS').subscribe({
+                  next: () => this.prepareEmailThenOpenPreview(savedCorresp.id),
+                  error: () => this.prepareEmailThenOpenPreview(savedCorresp.id),
+                });
               } else {
                 this.prepareEmailThenOpenPreview(savedCorresp.id);
               }

@@ -1,6 +1,7 @@
 {
   "home": {
     "title": "Bienvenue, {{firstName}}",
+    "landingTitle": "CorrespCare",
     "subtitle": "Gérez vos courriers et tâches en toute simplicité",
     "newMail": "Nouveau courrier",
     "arrival": "ARRIVÉE",

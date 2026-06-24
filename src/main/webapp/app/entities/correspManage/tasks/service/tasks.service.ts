@@ -90,14 +90,14 @@ export class TasksService {
       .pipe(map((res: HttpResponse<RestTasks[]>) => this.convertResponseArrayFromServer(res)));
   }
 
-  getTasksByUserAcl(userId: number, status?: string): Observable<EntityArrayResponseType> {
+  getTasksByUserAcl(userId: string, status?: string): Observable<EntityArrayResponseType> {
     const params = createRequestOption({ userId, status });
     return this.http
       .get<RestTasks[]>(`${this.resourceUrl}/tasksByUserAcl`, { params, observe: 'response' })
       .pipe(map((res: HttpResponse<RestTasks[]>) => this.convertResponseArrayFromServer(res)));
   }
 
-  getTasksByUserAclPaged(userId: number, status?: string, page: number = 1, size: number = 10): Observable<PagedTasksResponse> {
+  getTasksByUserAclPaged(userId: string, status?: string, page: number = 1, size: number = 10): Observable<PagedTasksResponse> {
     const params = createRequestOption({ userId, status, page, size });
     return this.http.get<any>(`${this.resourceUrl}/tasksByUserAclPaged`, { params }).pipe(
       map(response => ({
@@ -123,7 +123,7 @@ export class TasksService {
     );
   }
 
-  searchTasksByUserAcl(userId: number, keyword: string): Observable<EntityArrayResponseType> {
+  searchTasksByUserAcl(userId: string, keyword: string): Observable<EntityArrayResponseType> {
     // On envoie le même mot-clé sur les deux champs : reference ET subject
     const params = createRequestOption({ userId, reference: keyword, subject: keyword });
     return this.http
@@ -131,7 +131,7 @@ export class TasksService {
       .pipe(map((res: HttpResponse<RestTasks[]>) => this.convertResponseArrayFromServer(res)));
   }
 
-  getAllTasksByUserAclAllStatuses(userId: number): Observable<EntityArrayResponseType> {
+  getAllTasksByUserAclAllStatuses(userId: string): Observable<EntityArrayResponseType> {
     const options = createRequestOption({ userId });
     return this.http
       .get<RestTasks[]>(`${this.resourceUrl}/tasksByUserAclAllStatuses`, { params: options, observe: 'response' })
@@ -155,7 +155,7 @@ export class TasksService {
   }
 
   // retourne HttpResponse<Blob> pour lire headers (filename) + body (blob)
-  downloadTasksExcelByUserAcl(userId: number, status?: string): Observable<HttpResponse<Blob>> {
+  downloadTasksExcelByUserAcl(userId: string, status?: string): Observable<HttpResponse<Blob>> {
     const params = createRequestOption({ userId, status });
     // note: cast pour satisfaire TS quand responseType: 'blob'
     return this.http.get(`${this.resourceUrl}/tasksByUserAcl/export`, {

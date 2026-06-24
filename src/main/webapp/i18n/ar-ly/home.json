@@ -1,6 +1,7 @@
 {
   "home": {
     "title": "مرحبًا، {{firstName}}",
+    "landingTitle": "CorrespCare",
     "subtitle": "إدارة المراسلات والمهام بكل سهولة",
     "newMail": "مراسلة جديدة",
     "arrival": "وارد",

@@ -461,23 +461,19 @@
       </div>
 
       <!-- Pagination -->
-      <nav *ngIf="totalItems > itemsPerPage" class="mt-3">
-        <ul class="pagination justify-content-center">
-          <li class="page-item" [class.disabled]="page === 1">
-            <button class="page-link" (click)="navigateToPage(page - 1)">{{ 'pagination.previous' | translate }}</button>
-          </li>
-          <li
-            class="page-item"
-            *ngFor="let p of [].constructor(Math.ceil(totalItems / itemsPerPage)); let i = index"
-            [class.active]="page === i + 1"
-          >
-            <button class="page-link" (click)="navigateToPage(i + 1)">{{ i + 1 }}</button>
-          </li>
-          <li class="page-item" [class.disabled]="page === Math.ceil(totalItems / itemsPerPage)">
-            <button class="page-link" (click)="navigateToPage(page + 1)">{{ 'pagination.next' | translate }}</button>
-          </li>
-        </ul>
-      </nav>
+      <!-- Pagination -->
+      <div class="pagination-bar" *ngIf="totalItems > itemsPerPage">
+        <jhi-item-count [params]="{ page: page, totalItems: totalItems, itemsPerPage: itemsPerPage }"></jhi-item-count>
+        <ngb-pagination
+          [collectionSize]="totalItems"
+          [(page)]="ngbPaginationPage"
+          [pageSize]="itemsPerPage"
+          [maxSize]="5"
+          [rotate]="true"
+          [boundaryLinks]="true"
+          (pageChange)="navigateToPage($event)"
+        ></ngb-pagination>
+      </div>
     </div>
   </div>
 </div>
