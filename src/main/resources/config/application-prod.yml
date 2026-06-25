@@ -129,7 +129,7 @@ jhipster:
     cache: # Used by the CachingHttpHeadersFilter
       timeToLiveInDays: 1461
   registry:
-    password: africomSaVpPostGreSQL10DataBase
+    password: africomOrgaCareRegistryEureka
   logging:
     use-json-format: false # By default, logs are not in Json format
     logstash: # Forward logs to logstash over a socket, used by LoggingConfiguration
