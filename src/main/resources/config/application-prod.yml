@@ -58,6 +58,17 @@ spring:
     url: r2dbc:postgresql://localhost:5432/Corresp_Care
     username: Corresp_Care
     password:
+  security:
+    oauth2:
+      client:
+        provider:
+          oidc:
+            issuer-uri: ${OAUTH2_ISSUER_URI}
+        registration:
+          oidc:
+            client-id: ${OAUTH2_CLIENT_ID}
+            client-secret: ${OAUTH2_CLIENT_SECRET}
+            scope: ${OAUTH2_SCOPE}
   thymeleaf:
     cache: true
   sleuth:
@@ -95,7 +106,7 @@ spring:
 #     ciphers: TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 ,TLS_DHE_RSA_WITH_AES_128_GCM_SHA256 ,TLS_DHE_RSA_WITH_AES_256_GCM_SHA384 ,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,TLS_DHE_RSA_WITH_AES_128_CBC_SHA256,TLS_DHE_RSA_WITH_AES_128_CBC_SHA,TLS_DHE_RSA_WITH_AES_256_CBC_SHA256,TLS_DHE_RSA_WITH_AES_256_CBC_SHA,TLS_RSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_RSA_WITH_AES_256_CBC_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA,TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA,TLS_RSA_WITH_CAMELLIA_256_CBC_SHA,TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA,TLS_RSA_WITH_CAMELLIA_128_CBC_SHA
 # ===================================================================
 server:
-  port: 8080
+  port: 8055
   shutdown: graceful # see https://docs.spring.io/spring-boot/docs/current/reference/html/spring-boot-features.html#boot-features-graceful-shutdown
   compression:
     enabled: true
@@ -131,3 +142,15 @@ jhipster:
 # ===================================================================
 
 # application:
+application:
+  frontend:
+    keycloak:
+      admin-user-create-url: ${KEYCLOAK_ADMIN_USER_CREATE_URL}
+  keycloak-admin:
+    admin:
+      server-url: ${KEYCLOAK_SERVER_URL}
+      realm: master
+      client-id: admin-cli
+      username: ${KEYCLOAK_ADMIN_USERNAME}
+      password: ${KEYCLOAK_ADMIN_PASSWORD}
+      target-realm: ${KEYCLOAK_TARGET_REALM}
