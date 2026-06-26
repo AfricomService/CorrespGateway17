@@ -110,10 +110,27 @@ public final class SecurityUtils {
 
     @SuppressWarnings("unchecked")
     private static Collection<String> getRolesFromClaims(Map<String, Object> claims) {
-        return (Collection<String>) claims.getOrDefault(
-            "groups",
-            claims.getOrDefault("roles", claims.getOrDefault(CLAIMS_NAMESPACE + "roles", new ArrayList<>()))
-        );
+        // 1. claim plat "groups"
+        if (claims.get("groups") instanceof Collection) {
+            return (Collection<String>) claims.get("groups");
+        }
+        // 2. claim plat "roles"
+        if (claims.get("roles") instanceof Collection) {
+            return (Collection<String>) claims.get("roles");
+        }
+        // 3. namespace JHipster
+        if (claims.get(CLAIMS_NAMESPACE + "roles") instanceof Collection) {
+            return (Collection<String>) claims.get(CLAIMS_NAMESPACE + "roles");
+        }
+        // 4. Keycloak standard: realm_access.roles
+        Object realmAccess = claims.get("realm_access");
+        if (realmAccess instanceof Map) {
+            Object roles = ((Map<String, Object>) realmAccess).get("roles");
+            if (roles instanceof Collection) {
+                return (Collection<String>) roles;
+            }
+        }
+        return new ArrayList<>();
     }
 
     private static List<GrantedAuthority> mapRolesToGrantedAuthorities(Collection<String> roles) {
