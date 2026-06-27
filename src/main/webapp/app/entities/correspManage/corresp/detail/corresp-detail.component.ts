@@ -1057,7 +1057,6 @@ export class CorrespDetailComponent implements OnInit, OnDestroy {
       this.currentAccountLogin = acc?.login ?? null;
       if (uid != null) {
         this.currentUserId = uid;
-        // NOUVEAU CODE
         this.taskService.getAllTasksByUserAclAllStatuses(uid).subscribe({
           next: resp => {
             const list = resp.body || [];
