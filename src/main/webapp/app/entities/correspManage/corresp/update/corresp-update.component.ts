@@ -150,7 +150,7 @@ export class CorrespUpdateComponent implements OnInit {
 
   accordionStates: { [key: string]: boolean } = {
     infoGen: true,
-    infoSupp: false,
+    infoSupp: true,
     taches: true,
     corps: true,
     pieces: true,
@@ -704,6 +704,7 @@ export class CorrespUpdateComponent implements OnInit {
     switch (t) {
       case 'number':
       case 'numeric':
+      case 'digital_input': // <-- AJOUTÉ : correspond à "DIGITAL_INPUT" du backend
         return 'number';
       case 'date':
         return 'date';
