@@ -146,6 +146,31 @@
             <option value="Interne">Interne</option>
           </select>
         </div>
+
+        <!-- AFFECTATION DETAIL INFO — uniquement en mode update -->
+        <div class="mb-3" *ngIf="isEditMode">
+          <label class="form-label">Champs Detail Info affectés à ce Type de Document</label>
+
+          <div *ngIf="loadingDetailInfos" style="color: #6c757d; font-style: italic; padding: 6px 0">Chargement...</div>
+
+          <div
+            *ngIf="!loadingDetailInfos"
+            style="max-height: 260px; overflow-y: auto; border: 1px solid #e9ecef; border-radius: 8px; padding: 10px"
+          >
+            <div class="form-check" *ngFor="let di of allDetailInfos">
+              <input
+                type="checkbox"
+                class="form-check-input"
+                [id]="'di-' + di.id"
+                [checked]="isDetailInfoSelected(di.id)"
+                (change)="toggleDetailInfoSelection(di.id)"
+              />
+              <label class="form-check-label" [for]="'di-' + di.id">{{ di.label }}</label>
+            </div>
+
+            <div *ngIf="allDetailInfos.length === 0" style="color: #6c757d; font-style: italic">Aucun Detail Info disponible.</div>
+          </div>
+        </div>
       </div>
 
       <ng-template #AddTaskModal let-AddTaskModal>

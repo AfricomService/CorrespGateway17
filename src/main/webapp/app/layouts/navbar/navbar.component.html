@@ -340,6 +340,18 @@
             <li *jhiHasAnyAuthority="'ROLE_ADMIN'">
               <a
                 class="dropdown-item"
+                routerLink="detail-info"
+                routerLinkActive="active"
+                [routerLinkActiveOptions]="{ exact: true }"
+                (click)="collapseNavbar()"
+              >
+                <fa-icon icon="asterisk" [fixedWidth]="true"></fa-icon>
+                <span jhiTranslate="global.menu.entities.configManageDetailInfo">Detail Info</span>
+              </a>
+            </li>
+            <li *jhiHasAnyAuthority="'ROLE_ADMIN'">
+              <a
+                class="dropdown-item"
                 routerLink="smtp-config"
                 routerLinkActive="active"
                 [routerLinkActiveOptions]="{ exact: true }"
