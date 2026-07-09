@@ -1,0 +1,65 @@
+<div>
+  <h2 id="page-heading" data-cy="DetailInfoHeading">
+    <span jhiTranslate="correspCareApp.configManageDetailInfo.home.title">Detail Infos</span>
+
+    <div class="d-flex justify-content-end">
+      <button class="btn btn-info me-2" (click)="loadPage()" [disabled]="isLoading">
+        <fa-icon icon="sync" [spin]="isLoading"></fa-icon>&nbsp;<span
+          jhiTranslate="correspCareApp.configManageDetailInfo.home.refreshListLabel"
+          >Actualiser</span
+        >
+      </button>
+
+      <button routerLink="/detail-info/new" class="btn btn-primary jh-create-entity" id="jh-create-entity" data-cy="entityCreateButton">
+        <fa-icon icon="plus"></fa-icon>
+        <span jhiTranslate="correspCareApp.configManageDetailInfo.home.createLabel">Créer un Detail Info</span>
+      </button>
+    </div>
+  </h2>
+
+  <div class="alert alert-warning" *ngIf="detailInfos?.length === 0">
+    <span jhiTranslate="correspCareApp.configManageDetailInfo.home.notFound">Aucun Detail Info trouvé</span>
+  </div>
+
+  <div class="table-responsive" *ngIf="detailInfos && detailInfos.length > 0">
+    <table class="table table-striped" aria-describedby="page-heading">
+      <thead>
+        <tr>
+          <th scope="col" jhiTranslate="correspCareApp.configManageDetailInfo.id">ID</th>
+          <th scope="col" jhiTranslate="correspCareApp.configManageDetailInfo.status">Status</th>
+          <th scope="col" jhiTranslate="correspCareApp.configManageDetailInfo.label">Label</th>
+          <th scope="col" jhiTranslate="correspCareApp.configManageDetailInfo.code">Code</th>
+          <th scope="col" jhiTranslate="correspCareApp.configManageDetailInfo.required">Required</th>
+          <th scope="col" jhiTranslate="correspCareApp.configManageDetailInfo.inputType">Input Type</th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let detailInfo of detailInfos; trackBy: trackId">
+          <td>{{ detailInfo.id }}</td>
+          <td>{{ detailInfo.status }}</td>
+          <td>{{ detailInfo.label }}</td>
+          <td>{{ detailInfo.code }}</td>
+          <td>{{ detailInfo.required }}</td>
+          <td>{{ detailInfo.inputType }}</td>
+          <td class="text-end">
+            <div class="btn-group">
+              <button
+                type="submit"
+                [routerLink]="['/detail-info', detailInfo.id, 'edit']"
+                class="btn btn-primary btn-sm"
+                data-cy="entityEditButton"
+              >
+                <fa-icon icon="pencil-alt"></fa-icon> <span class="d-none d-md-inline" jhiTranslate="entity.action.edit">Modifier</span>
+              </button>
+
+              <button type="submit" (click)="delete(detailInfo)" class="btn btn-danger btn-sm" data-cy="entityDeleteButton">
+                <fa-icon icon="times"></fa-icon> <span class="d-none d-md-inline" jhiTranslate="entity.action.delete">Supprimer</span>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

@@ -16,6 +16,8 @@ import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { DepartementTreeFeignDTO } from '../../../correspManage/corresp/update/DepartementTreeFeignDTO';
 // import { DxTreeViewComponent } from 'devextreme-angular';
 import { ISocieteLight } from '../service/typedocument.service';
+import { IDetailInfo } from 'app/entities/configManage/detailinfo/detail-info.model';
+import { DetailInfoService } from 'app/entities/configManage/detailinfo/service/detail-info.service';
 
 @Component({
   selector: 'jhi-typedocument-update',
@@ -58,6 +60,11 @@ export class TypedocumentUpdateComponent implements OnInit {
   selectedSociete: ISocieteLight | null = null; // société sélectionnée
   selectedOrgaCodeForTree: string | null = null; // code orga résolu
 
+  // ── Affectation DetailInfo (uniquement en mode update) ──────────────────
+  allDetailInfos: IDetailInfo[] = [];
+  selectedDetailInfoIds: Set<number> = new Set();
+  loadingDetailInfos = false;
+
   private levelPalette: string[] = ['#1e90ff', '#22c55e', '#f59e0b', '#8b5cf6', '#ef4444', '#14b8a6'];
   expandedNodes: Set<number> = new Set();
   ccExpandedNodes: Set<number> = new Set();
@@ -71,6 +78,7 @@ export class TypedocumentUpdateComponent implements OnInit {
     protected typedocumentService: TypedocumentService,
     protected typedocumentFormService: TypedocumentFormService,
     protected correspService: CorrespService,
+    protected detailInfoService: DetailInfoService,
     private modalService: NgbModal,
     protected activatedRoute: ActivatedRoute
   ) {}
@@ -86,6 +94,10 @@ export class TypedocumentUpdateComponent implements OnInit {
       if (typedocument) {
         this.updateForm(typedocument);
         this.isEditMode = !!typedocument.id;
+
+        if (this.isEditMode) {
+          this.loadDetailInfosAffectation(typedocument.id);
+        }
 
         // if (typedocument.defautdest) {
         //   this.correspService.getOrgaCodeByDeptCode({ deptCode: typedocument.defautdest }).subscribe(res => {
@@ -146,6 +158,48 @@ export class TypedocumentUpdateComponent implements OnInit {
         this.loadingSocietes = false;
       },
     });
+  }
+
+  // ── Affectation DetailInfo ──────────────────────────────────────────────
+  private loadDetailInfosAffectation(typeDocId: number): void {
+    this.loadingDetailInfos = true;
+    this.detailInfoService.query({ size: 1000 }).subscribe({
+      next: res => {
+        this.allDetailInfos = res.body ?? [];
+        this.typedocumentService.getDetailInfosForTypeDoc(typeDocId).subscribe({
+          next: assignedRes => {
+            const assigned = assignedRes.body ?? [];
+            this.selectedDetailInfoIds = new Set(assigned.map((d: any) => d.id));
+            this.loadingDetailInfos = false;
+          },
+          error: () => {
+            this.selectedDetailInfoIds = new Set();
+            this.loadingDetailInfos = false;
+          },
+        });
+      },
+      error: () => {
+        this.allDetailInfos = [];
+        this.loadingDetailInfos = false;
+      },
+    });
+  }
+
+  toggleDetailInfoSelection(id: number): void {
+    if (this.selectedDetailInfoIds.has(id)) {
+      this.selectedDetailInfoIds.delete(id);
+    } else {
+      this.selectedDetailInfoIds.add(id);
+    }
+  }
+
+  isDetailInfoSelected(id: number): boolean {
+    return this.selectedDetailInfoIds.has(id);
+  }
+
+  private saveDetailInfosAffectation(typeDocId: number): void {
+    const ids = Array.from(this.selectedDetailInfoIds);
+    this.typedocumentService.affecterDetailInfos(typeDocId, ids).subscribe();
   }
 
   previousState(): void {
@@ -392,6 +446,8 @@ export class TypedocumentUpdateComponent implements OnInit {
     this.modalService.dismissAll();
     const typedocument = this.typedocumentFormService.getTypedocument(this.editForm);
     if (typedocument.id !== null) {
+      // Affectation des DetailInfo uniquement en mode update
+      this.saveDetailInfosAffectation(typedocument.id);
       this.subscribeToSaveResponse(this.typedocumentService.update(typedocument));
     } else {
       this.subscribeToSaveResponse(this.typedocumentService.create(typedocument));

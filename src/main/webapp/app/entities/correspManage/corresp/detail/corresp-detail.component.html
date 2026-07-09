@@ -1210,6 +1210,156 @@
             </ng-template>
           </div>
 
+          <!-- 🟩 BLOC ACCORDÉON DÉTAILS SUPPLÉMENTAIRES (Arrivée uniquement) -->
+          <div
+            class="panel-info-supp"
+            style="border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden"
+            *ngIf="correspType === 'Arrivée'"
+          >
+            <div
+              (click)="toggleAccordion('infoSupp')"
+              [style.background-color]="accordionStates['infoSupp'] ? '#e9ecef' : '#f8f9fa'"
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 16px;
+                background-color: #f8f9fa;
+                cursor: pointer;
+                user-select: none;
+                transition: background-color 0.3s ease;
+              "
+            >
+              <h5 style="font-weight: 600; margin: 0; color: #2c3e50">Détails supplémentaires</h5>
+              <svg
+                [style.transform]="accordionStates['infoSupp'] ? 'rotate(180deg)' : 'rotate(0deg)'"
+                fill="none"
+                stroke="currentColor"
+                style="transition: transform 0.3s ease; width: 20px; height: 20px"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+              </svg>
+            </div>
+
+            <!-- MODE ÉDITABLE : DRAFT/DISPATCH + droit d'écriture (même règle que le bloc Informations Générales) -->
+            <div
+              *ngIf="isEditableLeft && (canWriteCorresp || canAdminCorresp); else lectureInfoSupp"
+              [style.max-height]="accordionStates['infoSupp'] ? '2000px' : '0'"
+              [style.padding]="accordionStates['infoSupp'] ? '16px' : '0 16px'"
+              style="overflow: hidden; transition: max-height 0.5s ease, padding 0.5s ease"
+            >
+              <div *ngIf="loadingAdditionalInfo" style="text-align: center; padding: 20px; color: #6c757d">
+                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                Chargement...
+              </div>
+
+              <div
+                *ngIf="!loadingAdditionalInfo && additionalInfoFields.length === 0"
+                style="padding: 24px; text-align: center; background-color: #f8f9fa; border-radius: 8px; border: 2px dashed #dee2e6"
+              >
+                <p style="margin: 0; color: #6c757d; font-style: italic">
+                  Sélectionnez un type de document pour afficher les détails supplémentaires.
+                </p>
+              </div>
+
+              <form *ngIf="!loadingAdditionalInfo && additionalInfoFields.length > 0">
+                <div style="display: flex; flex-wrap: wrap; gap: 16px">
+                  <div *ngFor="let field of additionalInfoFields" style="flex: 1 1 45%; min-width: 220px">
+                    <label class="form-label fw-semibold">
+                      {{ field.label }}
+                      <span *ngIf="field.required" class="text-danger">*</span>
+                    </label>
+
+                    <input
+                      *ngIf="!field.inputType || field.inputType === 'text'"
+                      type="text"
+                      class="form-control"
+                      [class.is-invalid]="validationAdditionalInfoErrors[field.code!]"
+                      [(ngModel)]="additionalInfoValues[field.code!]"
+                      [name]="'addinfoDetail_' + field.code"
+                    />
+
+                    <input
+                      *ngIf="field.inputType === 'number'"
+                      type="number"
+                      class="form-control"
+                      [class.is-invalid]="validationAdditionalInfoErrors[field.code!]"
+                      [(ngModel)]="additionalInfoValues[field.code!]"
+                      [name]="'addinfoDetail_' + field.code"
+                    />
+
+                    <input
+                      *ngIf="field.inputType === 'date'"
+                      type="date"
+                      class="form-control"
+                      [class.is-invalid]="validationAdditionalInfoErrors[field.code!]"
+                      [(ngModel)]="additionalInfoValues[field.code!]"
+                      [name]="'addinfoDetail_' + field.code"
+                    />
+
+                    <div *ngIf="field.inputType === 'checkbox'" style="padding-top: 6px">
+                      <input
+                        type="checkbox"
+                        class="form-check-input"
+                        style="transform: scale(1.4)"
+                        [(ngModel)]="additionalInfoValues[field.code!]"
+                        [name]="'addinfoDetail_' + field.code"
+                      />
+                    </div>
+
+                    <select
+                      *ngIf="field.inputType === 'select'"
+                      class="form-select"
+                      [class.is-invalid]="validationAdditionalInfoErrors[field.code!]"
+                      [(ngModel)]="additionalInfoValues[field.code!]"
+                      [name]="'addinfoDetail_' + field.code"
+                    >
+                      <option value="">-- Choisir --</option>
+                      <option *ngFor="let opt of getMultipleChoiceOptions(field)" [value]="opt">{{ opt }}</option>
+                    </select>
+
+                    <div class="invalid-feedback" *ngIf="validationAdditionalInfoErrors[field.code!]" style="display: block">
+                      {{ validationAdditionalInfoErrors[field.code!] }}
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <!-- MODE LECTURE SEULE -->
+            <ng-template #lectureInfoSupp>
+              <div
+                [style.max-height]="accordionStates['infoSupp'] ? '2000px' : '0'"
+                [style.padding]="accordionStates['infoSupp'] ? '16px' : '0 16px'"
+                style="overflow: hidden; transition: max-height 0.5s ease, padding 0.5s ease"
+              >
+                <div
+                  *ngIf="additionalInfoFields.length > 0; else noAdditionalInfoReadonly"
+                  style="
+                    background: #fff;
+                    border: 1px solid #e9ecef;
+                    border-radius: 8px;
+                    padding: 14px 16px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 10px;
+                  "
+                >
+                  <div *ngFor="let field of additionalInfoFields" style="display: flex; gap: 8px; align-items: baseline; font-size: 14px">
+                    <strong style="white-space: nowrap">{{ field.label }} :</strong>
+                    <span *ngIf="field.inputType !== 'checkbox'">{{ additionalInfoValues[field.code!] || '—' }}</span>
+                    <span *ngIf="field.inputType === 'checkbox'">{{ additionalInfoValues[field.code!] ? 'Oui' : 'Non' }}</span>
+                  </div>
+                </div>
+                <ng-template #noAdditionalInfoReadonly>
+                  <p style="margin: 0; color: #6c757d; font-style: italic">Aucun détail supplémentaire.</p>
+                </ng-template>
+              </div>
+            </ng-template>
+          </div>
+
           <div class="panel-taches" style="border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden">
             <div
               (click)="toggleAccordion('taches')"

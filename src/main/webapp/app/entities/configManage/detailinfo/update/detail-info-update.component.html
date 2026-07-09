@@ -1,0 +1,126 @@
+<div class="row justify-content-center">
+  <div class="col-8">
+    <form name="editForm" role="form" novalidate (ngSubmit)="save()" [formGroup]="editForm">
+      <h2
+        id="jhi-detail-info-heading"
+        data-cy="DetailInfoCreateUpdateHeading"
+        jhiTranslate="correspCareApp.configManageDetailInfo.home.createOrEditLabel"
+      >
+        Créer ou modifier un Detail Info
+      </h2>
+
+      <div>
+        <jhi-alert-error></jhi-alert-error>
+
+        <div class="mb-3" [class.d-none]="editForm.get('id')!.value === null">
+          <label class="form-label" for="field_id" jhiTranslate="correspCareApp.configManageDetailInfo.id">ID</label>
+          <input type="number" class="form-control" name="id" id="field_id" data-cy="id" formControlName="id" [readonly]="true" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-check-label" for="field_status" jhiTranslate="correspCareApp.configManageDetailInfo.status">Status</label>
+          <input type="checkbox" class="form-check-input" name="status" id="field_status" data-cy="status" formControlName="status" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_label" jhiTranslate="correspCareApp.configManageDetailInfo.label">Label</label>
+          <input type="text" class="form-control" name="label" id="field_label" data-cy="label" formControlName="label" />
+          <div *ngIf="editForm.get('label')!.invalid && (editForm.get('label')!.dirty || editForm.get('label')!.touched)">
+            <small class="form-text text-danger" *ngIf="editForm.get('label')?.errors?.required" jhiTranslate="entity.validation.required">
+              Ce champ est obligatoire.
+            </small>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_code" jhiTranslate="correspCareApp.configManageDetailInfo.code">Code</label>
+          <input type="text" class="form-control" name="code" id="field_code" data-cy="code" formControlName="code" />
+          <div *ngIf="editForm.get('code')!.invalid && (editForm.get('code')!.dirty || editForm.get('code')!.touched)">
+            <small class="form-text text-danger" *ngIf="editForm.get('code')?.errors?.required" jhiTranslate="entity.validation.required">
+              Ce champ est obligatoire.
+            </small>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-check-label" for="field_required" jhiTranslate="correspCareApp.configManageDetailInfo.required"
+            >Required</label
+          >
+          <input
+            type="checkbox"
+            class="form-check-input"
+            name="required"
+            id="field_required"
+            data-cy="required"
+            formControlName="required"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_inputType" jhiTranslate="correspCareApp.configManageDetailInfo.inputType">Input Type</label>
+          <select class="form-control" name="inputType" formControlName="inputType" id="field_inputType" data-cy="inputType">
+            <option [ngValue]="null">-- Sélectionner --</option>
+            <option value="INPUT">Input</option>
+            <option value="DIGITAL_INPUT">Digital input</option>
+            <option value="TEXTAREA">TextArea</option>
+            <option value="RADIO_BUTTON">RadioButton</option>
+            <option value="SWITCH">Switch</option>
+            <option value="CHECKBOX">Checkbox</option>
+            <option value="EMAIL">Email</option>
+            <option value="SELECT">Select</option>
+            <option value="DATE">Date</option>
+          </select>
+          <div *ngIf="editForm.get('inputType')!.invalid && (editForm.get('inputType')!.dirty || editForm.get('inputType')!.touched)">
+            <small
+              class="form-text text-danger"
+              *ngIf="editForm.get('inputType')?.errors?.required"
+              jhiTranslate="entity.validation.required"
+            >
+              Ce champ est obligatoire.
+            </small>
+          </div>
+        </div>
+
+        <div class="mb-3" *ngIf="needsOptionsList(editForm.get('inputType')!.value)">
+          <label class="form-label" jhiTranslate="correspCareApp.configManageDetailInfo.multipleChoiceOption"
+            >Options de choix multiple</label
+          >
+
+          <div *ngFor="let option of choiceOptions; let i = index" class="d-flex gap-2 mb-2 align-items-center">
+            <span class="badge bg-secondary" style="min-width: 2.5rem">{{ option.value }}</span>
+            <input
+              type="text"
+              class="form-control"
+              placeholder="Label"
+              [(ngModel)]="option.label"
+              [ngModelOptions]="{ standalone: true }"
+            />
+            <button type="button" class="btn btn-danger btn-sm" (click)="removeChoiceOption(i)">
+              <fa-icon icon="times"></fa-icon>
+            </button>
+          </div>
+
+          <button type="button" class="btn btn-outline-primary btn-sm" (click)="addChoiceOption()">
+            <fa-icon icon="plus"></fa-icon>&nbsp;Ajouter une option
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <button type="button" id="cancel-save" data-cy="entityCreateCancelButton" class="btn btn-secondary" (click)="previousState()">
+          <fa-icon icon="ban"></fa-icon>&nbsp;<span jhiTranslate="entity.action.cancel">Annuler</span>
+        </button>
+
+        <button
+          type="submit"
+          id="save-entity"
+          data-cy="entityCreateSaveButton"
+          [disabled]="editForm.invalid || isSaving"
+          class="btn btn-primary"
+        >
+          <fa-icon icon="save"></fa-icon>&nbsp;<span jhiTranslate="entity.action.save">Enregistrer</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
