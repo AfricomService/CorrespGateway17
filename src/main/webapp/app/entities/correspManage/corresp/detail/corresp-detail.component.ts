@@ -302,6 +302,13 @@ export class CorrespDetailComponent implements OnInit, OnDestroy {
   expediteurModalSearchDebounce: any = null;
   hoveredCompanyId: number | null = null;
 
+  // === Rename PJ modal ===
+  showRenamePjModal = false;
+  pjToRename: IPj | null = null;
+  renamePjNewName = '';
+  renamePjError = '';
+  isRenamingPj = false;
+
   /**
    * Vrai si la correspondance est dans un état qui rend la partie gauche
    * (infos générales, tâches, PJ, boutons) éditable : DRAFT ou DISPATCH.
@@ -3030,6 +3037,56 @@ export class CorrespDetailComponent implements OnInit, OnDestroy {
       },
       error: err => {
         console.error('Download failed', err);
+      },
+    });
+  }
+
+  // === Rename PJ ===
+  openRenamePjModal(pj: IPj): void {
+    if (!(this.canManageAttachments || this.canWriteCorresp || this.canAdminCorresp)) {
+      this.showNotification("Vous n'avez pas le droit de renommer cette pièce jointe", 'error');
+      return;
+    }
+    this.pjToRename = pj;
+    this.renamePjNewName = pj.name || '';
+    this.renamePjError = '';
+    this.showRenamePjModal = true;
+  }
+
+  closeRenamePjModal(): void {
+    if (this.isRenamingPj) return;
+    this.showRenamePjModal = false;
+    this.pjToRename = null;
+    this.renamePjNewName = '';
+    this.renamePjError = '';
+  }
+
+  confirmRenamePj(): void {
+    if (!this.pjToRename) return;
+
+    const trimmed = (this.renamePjNewName || '').trim();
+    if (!trimmed) {
+      this.renamePjError = 'Le nom ne peut pas être vide';
+      return;
+    }
+
+    this.isRenamingPj = true;
+    this.renamePjError = '';
+
+    this.pjService.renamePj(this.pjToRename.id, trimmed).subscribe({
+      next: () => {
+        this.isRenamingPj = false;
+        const idx = this.pjsLoaded.findIndex(p => p.id === this.pjToRename!.id);
+        if (idx >= 0) {
+          this.pjsLoaded[idx] = { ...this.pjsLoaded[idx], name: trimmed };
+        }
+        this.showNotification('Pièce jointe renommée', 'success');
+        this.closeRenamePjModal();
+      },
+      error: err => {
+        this.isRenamingPj = false;
+        console.error('Erreur renommage PJ', err);
+        this.renamePjError = 'Erreur lors du renommage';
       },
     });
   }

@@ -178,4 +178,10 @@ export class PjService {
     const options = createRequestOption(req);
     return this.http.delete<{}>(`${this.resourceUrl}WithCorresp`, { params: options, observe: 'response' });
   }
+
+  renamePj(id: number, name: string): Observable<EntityResponseType> {
+    return this.http
+      .patch<RestPj>(`${this.resourceUrl}/${id}/rename`, { name }, { observe: 'response' })
+      .pipe(map(res => this.convertResponseFromServer(res)));
+  }
 }

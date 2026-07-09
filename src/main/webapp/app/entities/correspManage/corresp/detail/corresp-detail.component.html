@@ -2417,6 +2417,16 @@
                   <!-- Actions (must NOT trigger preview) -->
                   <div (click)="$event.stopPropagation()" class="d-flex align-items-center gap-2">
                     <dx-button
+                      (click)="openRenamePjModal(pj)"
+                      [disabled]="isUploading || !canManageAttachments"
+                      [elementAttr]="{ title: canManageAttachments ? 'Renommer' : 'Droit insuffisant' }"
+                      class="pj-action-btn"
+                      icon="edit"
+                      stylingMode="contained"
+                      type="default"
+                    ></dx-button>
+
+                    <dx-button
                       (click)="downloadSelectedPj(pj)"
                       [disabled]="isUploading"
                       class="pj-action-btn"
@@ -4203,6 +4213,51 @@
 
     <div style="padding: 6px 20px 10px; font-size: 13px; color: #64748b">
       {{ expediteurModalTotalItems }} société{{ expediteurModalTotalItems > 1 ? 's' : '' }}
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MODAL RENOMMER PJ ==================== -->
+<div *ngIf="showRenamePjModal" class="rename-pj-overlay" (click)="closeRenamePjModal()">
+  <div class="rename-pj-dialog" (click)="$event.stopPropagation()">
+    <!-- Header -->
+    <div class="rename-pj-header">
+      <h5>✎ Renommer la pièce jointe</h5>
+      <button type="button" [disabled]="isRenamingPj" (click)="closeRenamePjModal()" class="rename-pj-close-btn">✕</button>
+    </div>
+
+    <!-- Body -->
+    <div class="rename-pj-body">
+      <p class="rename-pj-current-name">
+        Nom actuel : <strong>{{ pjToRename?.name }}.{{ pjToRename?.fileType }}</strong>
+      </p>
+
+      <label class="form-label fw-semibold" style="margin-top: 10px">Nouveau nom</label>
+      <div class="rename-pj-input-row">
+        <input
+          type="text"
+          class="form-control"
+          [(ngModel)]="renamePjNewName"
+          name="renamePjNewName"
+          [class.is-invalid]="renamePjError"
+          (keyup.enter)="confirmRenamePj()"
+          [disabled]="isRenamingPj"
+          autofocus
+        />
+        <span class="rename-pj-extension">.{{ pjToRename?.fileType }}</span>
+      </div>
+      <div *ngIf="renamePjError" class="invalid-feedback" style="display: block">
+        {{ renamePjError }}
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="rename-pj-footer">
+      <button type="button" class="btn btn-light" [disabled]="isRenamingPj" (click)="closeRenamePjModal()">Annuler</button>
+      <button type="button" class="btn btn-primary" [disabled]="isRenamingPj" (click)="confirmRenamePj()">
+        <span *ngIf="isRenamingPj" class="spinner-border spinner-border-sm me-2" role="status"></span>
+        Enregistrer
+      </button>
     </div>
   </div>
 </div>
