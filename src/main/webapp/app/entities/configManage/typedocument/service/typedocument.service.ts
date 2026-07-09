@@ -97,4 +97,15 @@ export class TypedocumentService {
       { observe: 'response' }
     );
   }
+
+  // ── Affectation DetailInfo ──────────────────────────────────────────────
+  affecterDetailInfos(typeDocId: number, detailInfoIds: number[]): Observable<HttpResponse<any>> {
+    const url = this.applicationConfigService.getEndpointFor(`api/type-documents/${typeDocId}/detail-infos`, 'configmanage');
+    return this.http.post(url, detailInfoIds, { observe: 'response' });
+  }
+
+  getDetailInfosForTypeDoc(typeDocId: number): Observable<HttpResponse<any[]>> {
+    const url = this.applicationConfigService.getEndpointFor(`api/type-documents/${typeDocId}/detail-infos`, 'configmanage');
+    return this.http.get<any[]>(url, { observe: 'response' });
+  }
 }

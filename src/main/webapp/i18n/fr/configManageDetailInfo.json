@@ -1,0 +1,33 @@
+{
+  "correspCareApp": {
+    "configManageDetailInfo": {
+      "home": {
+        "title": "DetailInfos",
+        "refreshListLabel": "Actualiser la liste",
+        "createLabel": "Créer un nouveau Detail Info",
+        "createOrEditLabel": "Créer ou éditer un Detail Info",
+        "notFound": "Aucun Detail Info trouvé"
+      },
+      "delete": {
+        "question": "Êtes-vous certain de vouloir supprimer le Detail Info {{ id }} ?"
+      },
+      "detail": {
+        "title": "Detail Info"
+      },
+      "id": "Id",
+      "status": "Status",
+      "label": "Label",
+      "code": "Code",
+      "required": "Required",
+      "inputType": "Input Type",
+      "multipleChoiceOption": "Options de choix"
+    }
+  },
+  "configManageApp": {
+    "configManageDetailInfo": {
+      "created": "Un nouveau Detail Info a été créé avec l'identifiant {{ param }}",
+      "updated": "Le Detail Info avec l'identifiant {{ param }} a été mis à jour",
+      "deleted": "Le Detail Info avec l'identifiant {{ param }} a été supprimé"
+    }
+  }
+}

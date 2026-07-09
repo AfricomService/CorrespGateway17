@@ -14,6 +14,7 @@ import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ITypedocument } from '../../../configManage/typedocument/typedocument.model';
 import { IDepartement } from '../../../orgacare/departement/departement.model';
 import { TypedocumentService } from '../../../configManage/typedocument/service/typedocument.service';
+import { IDetailInfo } from '../../../configManage/detailinfo/detail-info.model';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { FilePreviewComponent } from '../../pj/file-preview/file-preview.component';
@@ -80,6 +81,12 @@ export class CorrespDetailComponent implements OnInit, OnDestroy {
   priorite: boolean = false;
   typedocuments: ITypedocument[] = [];
   validationInfoGenErrors: { [key: string]: string } = {};
+
+  // === Détails supplémentaires (additionalInfo) — uniquement Arrivée (INCOMING) ===
+  additionalInfoFields: IDetailInfo[] = [];
+  additionalInfoValues: { [code: string]: any } = {};
+  loadingAdditionalInfo = false;
+  validationAdditionalInfoErrors: { [code: string]: string } = {};
   // --- Body Content ---
   htmlContent = '<h3>Rapport Annuel</h3><p>Veuillez trouver ci-joint le rapport détaillé concernant...</p>';
   isEditingBody = false;
@@ -91,6 +98,7 @@ export class CorrespDetailComponent implements OnInit, OnDestroy {
   // --- Accordion States (Closed by default as requested) ---
   accordionStates: { [key: string]: boolean } = {
     infoGen: true,
+    infoSupp: true,
     taches: true,
     corps: true,
     pieces: true,
@@ -293,6 +301,13 @@ export class CorrespDetailComponent implements OnInit, OnDestroy {
   expediteurModalLoading = false;
   expediteurModalSearchDebounce: any = null;
   hoveredCompanyId: number | null = null;
+
+  // === Rename PJ modal ===
+  showRenamePjModal = false;
+  pjToRename: IPj | null = null;
+  renamePjNewName = '';
+  renamePjError = '';
+  isRenamingPj = false;
 
   /**
    * Vrai si la correspondance est dans un état qui rend la partie gauche
@@ -721,6 +736,8 @@ export class CorrespDetailComponent implements OnInit, OnDestroy {
       this.contactEmailCCLabel = '';
       this.selectedCcDepts = [];
       this.pendingTasks = [];
+      this.additionalInfoFields = [];
+      this.additionalInfoValues = {};
       return;
     }
 
@@ -733,6 +750,7 @@ export class CorrespDetailComponent implements OnInit, OnDestroy {
     // NE PAS réinitialiser les champs déjà chargés depuis la base
     if (newSelected === undefined) {
       this.pendingTasks = [];
+      this.loadAdditionalInfoFields(true);
       return;
     }
 
@@ -820,7 +838,155 @@ export class CorrespDetailComponent implements OnInit, OnDestroy {
       this.contactEmailCCLabel = this.selectedTypeDocument.labelDCC || '';
       this.pendingTasks = this.pendingTasks.filter(t => t.typeTask !== 'lecture');
     }
+
+    this.loadAdditionalInfoFields(false);
   }
+
+  // --------------------------------------------------------------------------
+  // Détails supplémentaires (additionalInfo) — dépend du Type de document
+  // Uniquement affiché/rempli pour les courriers Arrivée (INCOMING)
+  // --------------------------------------------------------------------------
+  private loadAdditionalInfoFields(preserveExisting: boolean): void {
+    this.additionalInfoFields = [];
+    this.validationAdditionalInfoErrors = {};
+    if (!preserveExisting) {
+      this.additionalInfoValues = {};
+    }
+
+    if (this.correspType !== 'Arrivée' || !this.selectedTypeDocument?.id) {
+      return;
+    }
+
+    this.loadingAdditionalInfo = true;
+    this.typeDocumentService.getDetailInfosForTypeDoc(this.selectedTypeDocument.id).subscribe({
+      next: (res: HttpResponse<IDetailInfo[]>) => {
+        this.additionalInfoFields = (res.body || [])
+          .filter(f => f.status !== false)
+          .map(f => ({ ...f, inputType: this.normalizeInputType(f.inputType) }));
+
+        // Récupérer additionalInfo depuis correspLoaded, en tolérant le cas
+        // où le back renverrait une chaîne JSON stringifiée au lieu d'un tableau.
+        let rawAdditionalInfo: any[] = [];
+        const src: any = (this.correspLoaded as any)?.additionalInfo;
+        if (preserveExisting && src) {
+          if (Array.isArray(src)) {
+            rawAdditionalInfo = src;
+          } else if (typeof src === 'string') {
+            try {
+              const parsed = JSON.parse(src);
+              if (Array.isArray(parsed)) rawAdditionalInfo = parsed;
+            } catch {
+              console.warn('[additionalInfo] impossible de parser la chaîne JSON reçue :', src);
+            }
+          }
+        }
+
+        // Normaliser les clés (string + trim) pour éviter tout mismatch de type/espace
+        const existingValues = new Map<string, any>();
+        rawAdditionalInfo.forEach(item => {
+          const code = item?.code != null ? String(item.code).trim() : null;
+          if (code) {
+            existingValues.set(code, item.value);
+          }
+        });
+
+        console.debug(
+          '[additionalInfo] fields codes:',
+          this.additionalInfoFields.map(f => f.code)
+        );
+        console.debug('[additionalInfo] existingValues keys:', Array.from(existingValues.keys()));
+
+        this.additionalInfoFields.forEach(f => {
+          const code = f.code != null ? String(f.code).trim() : null;
+          if (!code) return;
+          if (existingValues.has(code)) {
+            const raw = existingValues.get(code);
+            this.additionalInfoValues[code] = f.inputType === 'checkbox' ? raw === 'true' || raw === true : raw ?? '';
+          } else if (this.additionalInfoValues[code] === undefined) {
+            this.additionalInfoValues[code] = f.inputType === 'checkbox' ? false : '';
+          }
+        });
+        this.loadingAdditionalInfo = false;
+      },
+      error: () => {
+        this.additionalInfoFields = [];
+        this.loadingAdditionalInfo = false;
+      },
+    });
+  }
+
+  private normalizeInputType(rawType: string | null | undefined): string {
+    const t = (rawType || '').toLowerCase();
+    switch (t) {
+      case 'number':
+      case 'numeric':
+        return 'number';
+      case 'date':
+        return 'date';
+      case 'checkbox':
+      case 'boolean':
+        return 'checkbox';
+      case 'select':
+      case 'list':
+      case 'dropdown':
+        return 'select';
+      case 'text':
+      case 'input':
+      case '':
+        return 'text';
+      default:
+        return 'text';
+    }
+  }
+
+  getMultipleChoiceOptions(field: IDetailInfo): string[] {
+    if (!field.multipleChoiceOption) return [];
+    return field.multipleChoiceOption.map((opt: any) => opt.value ?? opt.label ?? Object.values(opt)[0]);
+  }
+
+  validateAdditionalInfoForm(): boolean {
+    this.validationAdditionalInfoErrors = {};
+    let isValid = true;
+
+    if (this.correspType !== 'Arrivée') {
+      return true;
+    }
+
+    for (const field of this.additionalInfoFields) {
+      if (!field.code || !field.required) continue;
+      const val = this.additionalInfoValues[field.code];
+      const isEmpty = val === null || val === undefined || val === '' || (Array.isArray(val) && val.length === 0);
+      if (isEmpty) {
+        this.validationAdditionalInfoErrors[field.code] = `${field.label || field.code} est obligatoire`;
+        isValid = false;
+      }
+    }
+
+    return isValid;
+  }
+
+  private buildAdditionalInfoPayload(): Array<Record<string, string>> | null {
+    if (this.correspType !== 'Arrivée' || this.additionalInfoFields.length === 0) {
+      return null;
+    }
+
+    return this.additionalInfoFields
+      .filter(f => !!f.code)
+      .map(f => ({
+        code: f.code as string,
+        label: f.label ?? '',
+        inputType: f.inputType ?? 'text',
+        value: this.formatAdditionalInfoValue(this.additionalInfoValues[f.code as string]),
+      }));
+  }
+
+  private formatAdditionalInfoValue(value: any): string {
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'boolean') return value ? 'true' : 'false';
+    if (Array.isArray(value)) return value.join(', ');
+    return String(value);
+  }
+
   private sanitize(obj: any): any {
     Object.keys(obj).forEach(key => {
       if (obj[key] === undefined) {
@@ -1465,6 +1631,11 @@ export class CorrespDetailComponent implements OnInit, OnDestroy {
       return;
     }
 
+    if (!this.validateAdditionalInfoForm()) {
+      this.showNotification('Veuillez remplir tous les champs obligatoires des détails supplémentaires', 'error');
+      return;
+    }
+
     const correspDTO: any = {
       id: this.correspLoaded.id,
       idinstance: this.correspLoaded.idinstance,
@@ -1490,6 +1661,7 @@ export class CorrespDetailComponent implements OnInit, OnDestroy {
       idSociete: this.correspLoaded.idSociete ?? null,
       nomSociete: this.correspLoaded.nomSociete ?? null,
       codeUniqueSociete: this.correspLoaded.codeUniqueSociete ?? null,
+      additionalInfo: this.buildAdditionalInfoPayload(),
     };
 
     const typeDocumentDTO = this.selectedTypeDocument!;
@@ -2583,6 +2755,11 @@ export class CorrespDetailComponent implements OnInit, OnDestroy {
       return;
     }
 
+    if (!this.validateAdditionalInfoForm()) {
+      this.showNotification('Veuillez remplir tous les champs obligatoires des détails supplémentaires', 'error');
+      return;
+    }
+
     const correspDTO: any = {
       id: this.correspLoaded.id,
       idinstance: this.correspLoaded.idinstance,
@@ -2606,6 +2783,7 @@ export class CorrespDetailComponent implements OnInit, OnDestroy {
       idSociete: this.correspLoaded.idSociete ?? null,
       nomSociete: this.correspLoaded.nomSociete ?? null,
       codeUniqueSociete: this.correspLoaded.codeUniqueSociete ?? null,
+      additionalInfo: this.buildAdditionalInfoPayload(),
     };
 
     this.isSaving = true;
@@ -2859,6 +3037,56 @@ export class CorrespDetailComponent implements OnInit, OnDestroy {
       },
       error: err => {
         console.error('Download failed', err);
+      },
+    });
+  }
+
+  // === Rename PJ ===
+  openRenamePjModal(pj: IPj): void {
+    if (!(this.canManageAttachments || this.canWriteCorresp || this.canAdminCorresp)) {
+      this.showNotification("Vous n'avez pas le droit de renommer cette pièce jointe", 'error');
+      return;
+    }
+    this.pjToRename = pj;
+    this.renamePjNewName = pj.name || '';
+    this.renamePjError = '';
+    this.showRenamePjModal = true;
+  }
+
+  closeRenamePjModal(): void {
+    if (this.isRenamingPj) return;
+    this.showRenamePjModal = false;
+    this.pjToRename = null;
+    this.renamePjNewName = '';
+    this.renamePjError = '';
+  }
+
+  confirmRenamePj(): void {
+    if (!this.pjToRename) return;
+
+    const trimmed = (this.renamePjNewName || '').trim();
+    if (!trimmed) {
+      this.renamePjError = 'Le nom ne peut pas être vide';
+      return;
+    }
+
+    this.isRenamingPj = true;
+    this.renamePjError = '';
+
+    this.pjService.renamePj(this.pjToRename.id, trimmed).subscribe({
+      next: () => {
+        this.isRenamingPj = false;
+        const idx = this.pjsLoaded.findIndex(p => p.id === this.pjToRename!.id);
+        if (idx >= 0) {
+          this.pjsLoaded[idx] = { ...this.pjsLoaded[idx], name: trimmed };
+        }
+        this.showNotification('Pièce jointe renommée', 'success');
+        this.closeRenamePjModal();
+      },
+      error: err => {
+        this.isRenamingPj = false;
+        console.error('Erreur renommage PJ', err);
+        this.renamePjError = 'Erreur lors du renommage';
       },
     });
   }
