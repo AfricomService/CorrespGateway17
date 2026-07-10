@@ -1,0 +1,33 @@
+{
+  "correspCareApp": {
+    "configManageDetailInfo": {
+      "home": {
+        "title": "DetailInfos",
+        "refreshListLabel": "Refresh list",
+        "createLabel": "Create a new Detail Info",
+        "createOrEditLabel": "Create or edit a Detail Info",
+        "notFound": "No Detail Info found"
+      },
+      "delete": {
+        "question": "Are you sure you want to delete Detail Info {{ id }}?"
+      },
+      "detail": {
+        "title": "Detail Info"
+      },
+      "id": "Id",
+      "status": "Status",
+      "label": "Label",
+      "code": "Code",
+      "required": "Required",
+      "inputType": "Input Type",
+      "multipleChoiceOption": "Choice Options"
+    }
+  },
+  "configManageApp": {
+    "configManageDetailInfo": {
+      "created": "A new Detail Info is created with identifier {{ param }}",
+      "updated": "A Detail Info is updated with identifier {{ param }}",
+      "deleted": "A Detail Info is deleted with identifier {{ param }}"
+    }
+  }
+}

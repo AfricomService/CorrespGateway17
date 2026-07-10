@@ -35,6 +35,7 @@ import { ContactCompanyService } from 'app/entities/configManage/contact-company
 import { IContactCompany } from 'app/entities/configManage/contact-company/contact-company.model';
 import { IPersonCompany } from 'app/entities/configManage/person-company/person-company.model';
 import { ParentClassdefService } from 'app/entities/configManage/parent-classdef/service/parent-classdef.service';
+import { IDetailInfo } from 'app/entities/configManage/detailinfo/detail-info.model';
 
 // <-- NEW: import du DTO de l'arbre (vérifie le chemin si besoin)
 import { DepartementTreeFeignDTO } from './DepartementTreeFeignDTO';
@@ -149,6 +150,7 @@ export class CorrespUpdateComponent implements OnInit {
 
   accordionStates: { [key: string]: boolean } = {
     infoGen: true,
+    infoSupp: true,
     taches: true,
     corps: true,
     pieces: true,
@@ -170,6 +172,12 @@ export class CorrespUpdateComponent implements OnInit {
 
   typedocuments: ITypedocument[] = [];
   selectedTypeDocument?: ITypedocument;
+
+  // === Détails supplémentaires (additionalInfo) — uniquement Arrivée (INCOMING) ===
+  additionalInfoFields: IDetailInfo[] = [];
+  additionalInfoValues: { [code: string]: any } = {};
+  loadingAdditionalInfo = false;
+  validationAdditionalInfoErrors: { [code: string]: string } = {};
 
   finalPath = '';
 
@@ -554,6 +562,8 @@ export class CorrespUpdateComponent implements OnInit {
       this.contactEmailCC = '';
       this.contactEmailCCLabel = '';
       this.selectedCcDepts = [];
+      this.additionalInfoFields = [];
+      this.additionalInfoValues = {};
       return;
     }
 
@@ -648,6 +658,120 @@ export class CorrespUpdateComponent implements OnInit {
     }
 
     this.syncDefaultTaskNames();
+    this.loadAdditionalInfoFields();
+  }
+
+  // --------------------------------------------------------------------------
+  // Détails supplémentaires (additionalInfo) — dépend du Type de document
+  // Uniquement affiché/rempli pour les courriers Arrivée (INCOMING)
+  // --------------------------------------------------------------------------
+  private loadAdditionalInfoFields(): void {
+    this.additionalInfoFields = [];
+    this.additionalInfoValues = {};
+    this.validationAdditionalInfoErrors = {};
+
+    if (this.correspType !== 'Arrivée' || !this.selectedTypeDocument?.id) {
+      return;
+    }
+
+    this.loadingAdditionalInfo = true;
+    this.typeDocumentService.getDetailInfosForTypeDoc(this.selectedTypeDocument.id).subscribe({
+      next: (res: HttpResponse<IDetailInfo[]>) => {
+        this.additionalInfoFields = (res.body || [])
+          .filter(f => f.status !== false)
+          .map(f => ({ ...f, inputType: this.normalizeInputType(f.inputType) }));
+
+        this.additionalInfoFields.forEach(f => {
+          if (!f.code) return;
+          this.additionalInfoValues[f.code] = f.inputType === 'checkbox' ? false : '';
+        });
+        this.loadingAdditionalInfo = false;
+      },
+      error: () => {
+        this.additionalInfoFields = [];
+        this.loadingAdditionalInfo = false;
+      },
+    });
+  }
+
+  /**
+   * Normalise les inputType renvoyés par le backend (casse variable, valeurs génériques
+   * comme "INPUT") vers les types HTML supportés par le template.
+   */
+  private normalizeInputType(rawType: string | null | undefined): string {
+    const t = (rawType || '').toLowerCase();
+
+    switch (t) {
+      case 'number':
+      case 'numeric':
+      case 'digital_input': // <-- AJOUTÉ : correspond à "DIGITAL_INPUT" du backend
+        return 'number';
+      case 'date':
+        return 'date';
+      case 'checkbox':
+      case 'boolean':
+        return 'checkbox';
+      case 'select':
+      case 'list':
+      case 'dropdown':
+        return 'select';
+      case 'text':
+      case 'input':
+      case '':
+        return 'text';
+      default:
+        // Type inconnu → fallback texte plutôt que de ne rien afficher
+        return 'text';
+    }
+  }
+
+  getMultipleChoiceOptions(field: IDetailInfo): string[] {
+    if (!field.multipleChoiceOption) return [];
+    // Adapter selon la structure réelle renvoyée : ex. [{ value: 'A' }, { value: 'B' }]
+    return field.multipleChoiceOption.map((opt: any) => opt.value ?? opt.label ?? Object.values(opt)[0]);
+  }
+
+  validateAdditionalInfoForm(): boolean {
+    this.validationAdditionalInfoErrors = {};
+    let isValid = true;
+
+    if (this.correspType !== 'Arrivée') {
+      return true;
+    }
+
+    for (const field of this.additionalInfoFields) {
+      if (!field.code || !field.required) continue;
+      const val = this.additionalInfoValues[field.code];
+      const isEmpty = val === null || val === undefined || val === '' || (Array.isArray(val) && val.length === 0);
+      if (isEmpty) {
+        this.validationAdditionalInfoErrors[field.code] = `${field.label || field.code} est obligatoire`;
+        isValid = false;
+      }
+    }
+
+    return isValid;
+  }
+
+  private buildAdditionalInfoPayload(): Array<Record<string, string>> | null {
+    if (this.correspType !== 'Arrivée' || this.additionalInfoFields.length === 0) {
+      return null;
+    }
+
+    return this.additionalInfoFields
+      .filter(f => !!f.code)
+      .map(f => ({
+        code: f.code as string,
+        label: f.label ?? '',
+        inputType: f.inputType ?? 'text',
+        value: this.formatAdditionalInfoValue(this.additionalInfoValues[f.code as string]),
+      }));
+  }
+
+  private formatAdditionalInfoValue(value: any): string {
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'boolean') return value ? 'true' : 'false';
+    if (Array.isArray(value)) return value.join(', ');
+    return String(value);
   }
 
   generateRandomId(length: number = 8): string {
@@ -925,6 +1049,10 @@ export class CorrespUpdateComponent implements OnInit {
       return;
     }
 
+    if (!this.validateAdditionalInfoForm()) {
+      return;
+    }
+
     this.isSaving = true;
 
     // Réinitialiser les listes pour éviter l'accumulation lors de clics multiples
@@ -960,6 +1088,9 @@ export class CorrespUpdateComponent implements OnInit {
         this.corresp!.corresptype = CorrespType.INTERNAL;
         break;
     }
+
+    // Détails supplémentaires — uniquement pour Arrivée (INCOMING)
+    this.corresp!.additionalInfo = this.buildAdditionalInfoPayload();
 
     this.tasks.forEach(t => {
       const taskModel: ITasks = {} as ITasks;

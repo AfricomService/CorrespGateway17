@@ -26,6 +26,7 @@
         "configManageParentClassdef": "Parent Classdef",
         "configManageTypedocument": "Typedocument",
         "configManageModelNotif": "Model Notif",
+        "configManageDetailInfo": "Detail Info",
         "connectionManageNotif": "Notif",
         "configManageNumsequentielle": "Numsequentielle",
         "connectionManageConnecteur": "Connecteur",

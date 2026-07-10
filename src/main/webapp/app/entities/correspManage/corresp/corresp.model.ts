@@ -58,6 +58,9 @@ export interface ICorresp {
   nomSociete?: string | null;
   codeUniqueSociete?: string | null;
 
+  // Détails supplémentaires (uniquement pour les corresp INCOMING)
+  additionalInfo?: Array<Record<string, string>> | null;
+
   //msgReceiver?: string | null;  // transient, pour passer au backend
   //msgCopyTo?: string | null;    // transient
 }

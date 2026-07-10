@@ -1,0 +1,33 @@
+{
+  "correspCareApp": {
+    "configManageDetailInfo": {
+      "home": {
+        "title": "DetailInfos",
+        "refreshListLabel": "تحديث القائمة",
+        "createLabel": "إنشاء Detail Info جديد",
+        "createOrEditLabel": "إنشاء أو تعديل Detail Info",
+        "notFound": "لم يتم العثور على أي Detail Info"
+      },
+      "delete": {
+        "question": "هل أنت متأكد أنك تريد حذف Detail Info {{ id }} ؟"
+      },
+      "detail": {
+        "title": "Detail Info"
+      },
+      "id": "Id",
+      "status": "Status",
+      "label": "Label",
+      "code": "Code",
+      "required": "Required",
+      "inputType": "Input Type",
+      "multipleChoiceOption": "خيارات الاختيار"
+    }
+  },
+  "configManageApp": {
+    "configManageDetailInfo": {
+      "created": "تم إنشاء Detail Info جديد بالمعرف {{ param }}",
+      "updated": "تم تحديث Detail Info بالمعرف {{ param }}",
+      "deleted": "تم حذف Detail Info بالمعرف {{ param }}"
+    }
+  }
+}
