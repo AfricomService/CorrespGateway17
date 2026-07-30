@@ -460,15 +460,13 @@ export class CorrespService {
   }
 
   soumettreCorresp(req?: any) {
-    const options = createRequestOption(req);
-
-    return this.http.patch(`${this.resourceUrl}SoumettreCorresp`, options);
+    const params = createRequestOption(req);
+    return this.http.patch(`${this.resourceUrl}SoumettreCorresp`, null, { params });
   }
 
   cloturerCorresp(req?: any) {
-    const options = createRequestOption(req);
-
-    return this.http.patch(`${this.resourceUrl}CloturerCorresp`, options);
+    const params = createRequestOption(req);
+    return this.http.patch(`${this.resourceUrl}CloturerCorresp`, null, { params });
   }
 
   loadBodyFromFile(req?: any) {
