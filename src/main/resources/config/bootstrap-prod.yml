@@ -26,14 +26,14 @@ hostserver: 172.30.1.113
 hostserverKeyCloak: 172.30.1.111
 
 # ── OAuth2 / OIDC ─────────────────────────────────────
-OAUTH2_ISSUER_URI: http://${hostserverKeyCloak}:9080/realms/AfricomProd
+OAUTH2_ISSUER_URI: http://${hostserverKeyCloak}:9080/realms/Africom
 OAUTH2_CLIENT_ID: correspcare_web_app
-OAUTH2_CLIENT_SECRET: 6ao8YNbgNNlUWPmNrvQrVRYxk9SAUGvB
+OAUTH2_CLIENT_SECRET: xXA0npKlvYecVpB7mAK1clTFlyRwUXOM
 OAUTH2_SCOPE: openid,profile,email,offline_access
 
 # ── ApplicationProperties du Gateway ──────────────────
-KEYCLOAK_ADMIN_USER_CREATE_URL: http://${hostserverKeyCloak}:9080/admin/AfricomProd/console/#/AfricomProd/users/add-user
+KEYCLOAK_ADMIN_USER_CREATE_URL: http://${hostserverKeyCloak}:9080/admin/Africom/console/#/Africom/users/add-user
 KEYCLOAK_SERVER_URL: http://${hostserverKeyCloak}:9080
 KEYCLOAK_ADMIN_USERNAME: admin
 KEYCLOAK_ADMIN_PASSWORD: admin
-KEYCLOAK_TARGET_REALM: AfricomProd
+KEYCLOAK_TARGET_REALM: Africom
