@@ -698,18 +698,28 @@
                       Préc
                     </button>
 
-                    <span class="page-numbers" style="display: flex; gap: 6px">
-                      <button
-                        *ngFor="let p of pages"
-                        type="button"
-                        (click)="setPage(p)"
-                        [class.active]="currentPage === p"
-                        [attr.aria-current]="currentPage === p ? 'page' : null"
-                        style="min-width: 34px"
-                        [attr.aria-label]="'home.pageLabel' | translate: { page: p }"
-                      >
-                        {{ p }}
-                      </button>
+<span class="page-numbers" style="display: flex; gap: 6px; align-items: center">
+                      <ng-container *ngFor="let p of pages">
+                        <button
+                          *ngIf="p !== '...'"
+                          type="button"
+                          (click)="setPage(+p)"
+                          [class.active]="currentPage === p"
+                          [attr.aria-current]="currentPage === p ? 'page' : null"
+                          style="min-width: 34px"
+                          [attr.aria-label]="'home.pageLabel' | translate: { page: p }"
+                        >
+                          {{ p }}
+                        </button>
+                        <span
+                          *ngIf="p === '...'"
+                          class="page-ellipsis"
+                          aria-hidden="true"
+                          style="padding: 0 4px; color: #94a3b8; user-select: none"
+                        >
+                          …
+                        </span>
+                      </ng-container>
                     </span>
 
                     <button
