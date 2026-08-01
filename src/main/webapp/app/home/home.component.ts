@@ -355,8 +355,39 @@ export class HomeComponent implements OnInit, OnDestroy {
     return this.tasks ?? [];
   }
 
-  get pages(): number[] {
-    return Array.from({ length: this.totalPages }, (_, i) => i + 1);
+get pages(): (number | string)[] {
+    const total = this.totalPages;
+    const current = this.currentPage;
+    const delta = 2; // nombre de pages affichées de chaque côté de la page courante
+    const range: (number | string)[] = [];
+
+    if (total <= 7) {
+      // peu de pages -> on les affiche toutes, pas besoin d'ellipsis
+      for (let i = 1; i <= total; i++) {
+        range.push(i);
+      }
+      return range;
+    }
+
+    range.push(1);
+
+    if (current - delta > 2) {
+      range.push('...');
+    }
+
+    const start = Math.max(2, current - delta);
+    const end = Math.min(total - 1, current + delta);
+    for (let i = start; i <= end; i++) {
+      range.push(i);
+    }
+
+    if (current + delta < total - 1) {
+      range.push('...');
+    }
+
+    range.push(total);
+
+    return range;
   }
 
   get startItem(): number {
