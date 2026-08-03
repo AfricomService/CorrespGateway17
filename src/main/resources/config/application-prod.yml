@@ -74,7 +74,7 @@ spring:
             client-id: ${OAUTH2_CLIENT_ID}
             client-secret: ${OAUTH2_CLIENT_SECRET}
             scope: ${OAUTH2_SCOPE}
-            redirect-uri: 'http://172.30.1.113/cc/login/oauth2/code/oidc'
+            redirect-uri: 'http://172.30.1.111/cc/login/oauth2/code/oidc'
   thymeleaf:
     cache: true
   sleuth:
