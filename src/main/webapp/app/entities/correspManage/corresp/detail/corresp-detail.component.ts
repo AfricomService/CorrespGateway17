@@ -75,6 +75,7 @@ export class CorrespDetailComponent implements OnInit, OnDestroy {
   minDate!: string;
   maxDate!: string;
   isSaving: boolean = false;
+  isSubmitting: boolean = false;
   notificationMessage: string | null = null;
   notificationType: 'success' | 'error' | null = null;
   referenceEmetteur: string = '';
@@ -2585,13 +2586,18 @@ export class CorrespDetailComponent implements OnInit, OnDestroy {
     this.doSoumettreCorresp(correspId);
   }
 
-  /** Soumettre sans envoyer email (logique originale) */
+/** Soumettre sans envoyer email (logique originale) */
   doSoumettreCorresp(correspId: number): void {
+    if (this.isSubmitting) {
+      return;
+    }
+    this.isSubmitting = true;
     this.correspService.soumettreCorresp({ correspId }).subscribe({
       next: () => {
         this.router.navigate(['/']);
       },
       error: err => {
+        this.isSubmitting = false;
         console.error(err);
         this.showNotification('Erreur', 'error');
       },
