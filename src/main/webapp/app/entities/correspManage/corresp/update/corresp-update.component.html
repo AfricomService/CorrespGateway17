@@ -57,7 +57,7 @@
       <div *ngIf="generatedReference" style="font-weight: bold; font-size: 1.1em; color: #2c3e50; font-style: italic">
         {{ generatedReference }}
       </div>
-      <button
+<button
         *ngIf="!generatedReference"
         class="btn btn-outline-secondary btn-sm"
         style="
@@ -70,6 +70,8 @@
           align-items: center;
           justify-content: center;
         "
+        [style.opacity]="isGeneratingReference ? '0.6' : '1'"
+        [style.cursor]="isGeneratingReference ? 'not-allowed' : 'pointer'"
         [disabled]="isGeneratingReference"
         (click)="generateReference()"
         [attr.title]="'correspCareApp.correspManageCorresp.update.identify' | translate"
@@ -79,7 +81,7 @@
       </button>
     </div>
 
-    <!-- Right Side Button -->
+<!-- Right Side Button -->
     <div style="display: flex; gap: 1em; align-items: center">
       <button
         [disabled]="isUploading || isSaving"
@@ -95,9 +97,12 @@
           align-items: center;
           justify-content: center;
         "
+        [style.opacity]="isUploading || isSaving ? '0.6' : '1'"
+        [style.cursor]="isUploading || isSaving ? 'not-allowed' : 'pointer'"
         [attr.title]="'correspCareApp.correspManageCorresp.actions.save' | translate"
       >
-        <fa-icon icon="save"></fa-icon>
+        <fa-icon *ngIf="!isSaving" icon="save"></fa-icon>
+        <span *ngIf="isSaving" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
       </button>
     </div>
   </div>
