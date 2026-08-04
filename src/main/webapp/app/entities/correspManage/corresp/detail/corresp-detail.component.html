@@ -62,7 +62,7 @@
         </span>
       </div>
 
-      <ng-template #showButton>
+<ng-template #showButton>
         <button
           (click)="generateReference()"
           [attr.title]="
@@ -70,7 +70,9 @@
               ? ('correspCareApp.correspManageCorresp.detail.identify' | translate)
               : ('correspCareApp.correspManageCorresp.actions.insufficientRights' | translate)
           "
-          [disabled]="!(canWriteCorresp || canAdminCorresp)"
+          [disabled]="isSaving || !(canWriteCorresp || canAdminCorresp)"
+          [style.opacity]="isSaving ? '0.6' : '1'"
+          [style.cursor]="isSaving ? 'not-allowed' : 'pointer'"
           class="btn btn-outline-secondary btn-sm"
           style="
             font-weight: 600;
@@ -83,7 +85,8 @@
             justify-content: center;
           "
         >
-          <fa-icon icon="id-badge"></fa-icon>
+          <fa-icon *ngIf="!isSaving" icon="id-badge"></fa-icon>
+          <span *ngIf="isSaving" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
         </button>
       </ng-template>
 
@@ -166,7 +169,7 @@
       >
         <fa-icon icon="book"></fa-icon>
       </button>
-      <button
+<button
         (click)="saveDraft()"
         *ngIf="isEditableLeft"
         [attr.title]="
@@ -175,6 +178,8 @@
             : ('correspCareApp.correspManageCorresp.actions.insufficientRights' | translate)
         "
         [disabled]="isSaving || !(canWriteCorresp || canAdminCorresp)"
+        [style.opacity]="isSaving ? '0.6' : '1'"
+        [style.cursor]="isSaving ? 'not-allowed' : 'pointer'"
         class="btn btn-primary btn-sm"
         style="
           font-weight: 600;
@@ -187,7 +192,8 @@
           justify-content: center;
         "
       >
-        <fa-icon icon="save"></fa-icon>
+        <fa-icon *ngIf="!isSaving" icon="save"></fa-icon>
+        <span *ngIf="isSaving" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
       </button>
     </div>
   </div>
@@ -2503,15 +2509,25 @@
         >
           Annuler
         </button>
-        <button
+<button
           (click)="soumettreCorresp(correspLoaded?.id!)"
           *ngIf="canSoumettreCorresp"
-          [disabled]="!(canWriteCorresp || canAdminCorresp || isAdminOrBoc)"
+          [disabled]="isSubmitting || !(canWriteCorresp || canAdminCorresp || isAdminOrBoc)"
+          [style.opacity]="isSubmitting ? '0.6' : '1'"
+          [style.cursor]="isSubmitting ? 'not-allowed' : 'pointer'"
           class="btn btn-success"
-          jhiTranslate="correspCareApp.correspManageCorresp.actions.submit"
-          style="font-weight: 600; text-transform: uppercase; min-width: 120px"
+          style="
+            font-weight: 600;
+            text-transform: uppercase;
+            min-width: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+          "
         >
-          Soumettre
+          <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+          <span jhiTranslate="correspCareApp.correspManageCorresp.actions.submit">Soumettre</span>
         </button>
         <button
           (click)="cloturerCorresp(correspLoaded?.id!)"
