@@ -62,7 +62,7 @@
         </span>
       </div>
 
-<ng-template #showButton>
+      <ng-template #showButton>
         <button
           (click)="generateReference()"
           [attr.title]="
@@ -169,7 +169,7 @@
       >
         <fa-icon icon="book"></fa-icon>
       </button>
-<button
+      <button
         (click)="saveDraft()"
         *ngIf="isEditableLeft"
         [attr.title]="
@@ -2509,7 +2509,7 @@
         >
           Annuler
         </button>
-<button
+        <button
           (click)="soumettreCorresp(correspLoaded?.id!)"
           *ngIf="canSoumettreCorresp"
           [disabled]="isSubmitting || !(canWriteCorresp || canAdminCorresp || isAdminOrBoc)"
@@ -2913,24 +2913,9 @@
     </h5>
   </div>
 
-  <div class="modal-body" style="font-size: 1.3em; background-color: white; text-transform: uppercase">
-    <p jhiTranslate="correspCareApp.correspManageCorresp.delete.confirmQuestionCorresp">
-      Êtes-vous sûr de vouloir <strong>supprimer cette correspondance</strong> ?
-    </p>
-
-    <p class="text-warning mb-0" jhiTranslate="correspCareApp.correspManageCorresp.delete.alsoRemoves">
-      Cette action entraînera également la suppression :
-    </p>
-
-    <ul class="mt-2">
-      <li jhiTranslate="correspCareApp.correspManageCorresp.delete.alsoRemovesTasks">de <strong>toutes les tâches associées</strong></li>
-      <li jhiTranslate="correspCareApp.correspManageCorresp.delete.alsoRemovesAttachments">
-        de <strong>toutes les pièces jointes</strong>
-      </li>
-    </ul>
-
-    <p class="text-danger mt-3" jhiTranslate="correspCareApp.correspManageCorresp.delete.irreversible">
-      ⚠️ Cette action est <strong>irréversible</strong>.
+  <div class="modal-body" style="font-size: 1.2em; background-color: white">
+    <p class="mb-0" jhiTranslate="correspCareApp.correspManageCorresp.delete.confirmQuestionCorresp">
+      Êtes-vous sûr de vouloir supprimer cette correspondance ?
     </p>
   </div>
 
