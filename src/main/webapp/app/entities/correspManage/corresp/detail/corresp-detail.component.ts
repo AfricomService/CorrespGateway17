@@ -2586,7 +2586,7 @@ export class CorrespDetailComponent implements OnInit, OnDestroy {
     this.doSoumettreCorresp(correspId);
   }
 
-/** Soumettre sans envoyer email (logique originale) */
+  /** Soumettre sans envoyer email (logique originale) */
   doSoumettreCorresp(correspId: number): void {
     if (this.isSubmitting) {
       return;
@@ -3132,11 +3132,6 @@ export class CorrespDetailComponent implements OnInit, OnDestroy {
   deleteCorresp(): void {
     if (!(this.canDeleteCorresp || this.canAdminCorresp)) {
       this.showNotification("Vous n'avez pas le droit de supprimer cette correspondance", 'error');
-      return;
-    }
-
-    // petite confirmation UX
-    if (!confirm('Confirmez-vous la suppression de cette correspondance ?')) {
       return;
     }
 

@@ -197,7 +197,7 @@ export class CorrespComponent implements OnInit {
   }
 
   onRowDoubleClick(e: any): void {
-    window.open(`/cc/corresp/${e.data.id}/view`, '_blank');
+    window.open(`/corresp/${e.data.id}/view`, '_blank');
   }
 
   // ── Data loading ───────────────────────────────────────────────

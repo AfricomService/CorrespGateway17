@@ -129,7 +129,7 @@ public class SecurityConfiguration {
 
         http.oauth2Login(oauth2 -> oauth2
                 .authorizationRequestResolver(authorizationRequestResolver(this.clientRegistrationRepository))
-                .authenticationSuccessHandler(new RedirectServerAuthenticationSuccessHandler("/cc/"))
+                .authenticationSuccessHandler(new RedirectServerAuthenticationSuccessHandler("/"))
             )
             .oauth2ResourceServer()
             .jwt()
