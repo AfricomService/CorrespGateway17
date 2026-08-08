@@ -1,0 +1,39 @@
+# ===================================================================
+# Spring Cloud Config bootstrap configuration for the "prod" profile
+# ===================================================================
+
+spring:
+  cloud:
+    config:
+      fail-fast: true
+      retry:
+        initial-interval: 1000
+        max-interval: 2000
+        max-attempts: 100
+      uri: http://africomServices:${jhipster.registry.password}@${hostserver}:8761/config
+      # name of the config server's property source (file.yml) that we want to use
+      name: Corresp_Care
+      profile: preprod # profile(s) of the property source
+      label: main # toggle to switch to a different version of the configuration as stored in git
+      # it can be set to any label, branch or commit of the configuration source Git repository
+
+jhipster:
+  registry:
+    password: africomOrgaCareRegistryEureka
+
+# ── Serveur ───────────────────────────────────────────
+hostserver: 172.30.1.113
+hostserverKeyCloak: 172.30.1.111
+
+# ── OAuth2 / OIDC ─────────────────────────────────────
+OAUTH2_ISSUER_URI: http://${hostserverKeyCloak}:9080/realms/AfricomProd
+OAUTH2_CLIENT_ID: correspcare_web_app
+OAUTH2_CLIENT_SECRET: 6ao8YNbgNNlUWPmNrvQrVRYxk9SAUGvB
+OAUTH2_SCOPE: openid,profile,email,offline_access
+
+# ── ApplicationProperties du Gateway ──────────────────
+KEYCLOAK_ADMIN_USER_CREATE_URL: http://${hostserverKeyCloak}:9080/admin/AfricomProd/console/#/AfricomProd/users/add-user
+KEYCLOAK_SERVER_URL: http://${hostserverKeyCloak}:9080
+KEYCLOAK_ADMIN_USERNAME: admin
+KEYCLOAK_ADMIN_PASSWORD: admin
+KEYCLOAK_TARGET_REALM: AfricomProd
