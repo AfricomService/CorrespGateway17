@@ -23,7 +23,7 @@ jhipster:
 
 # ── Serveur ───────────────────────────────────────────
 hostserver: 172.30.1.111
-hostserverKeyCloak: 172.30.1.111
+hostserverKeyCloak: appafricom
 
 # ── OAuth2 / OIDC ─────────────────────────────────────
 OAUTH2_ISSUER_URI: http://${hostserverKeyCloak}:9080/realms/Africom
