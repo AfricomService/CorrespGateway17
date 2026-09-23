@@ -722,6 +722,44 @@ export class CorrespDetailComponent implements OnInit, OnDestroy {
     if (!date) return '';
     return dayjs(date).format('dddd DD MMMM YYYY - HH:mm').toUpperCase();
   }
+
+  /**
+   * Retourne le libellé "terminée - <date>" et ajoute la mention du retard
+   * si la tâche a été clôturée après sa date limite (dueDate).
+   */
+  getClosedTaskLabel(task: ITasks): string {
+    const baseDate = this.formatLongDate(task.closeDate);
+    const closeDate = task.closeDate ? dayjs(task.closeDate) : null;
+    const dueDate = task.dueDate ? dayjs(task.dueDate) : null;
+
+    if (!closeDate || !dueDate || !closeDate.isAfter(dueDate)) {
+      return `terminée - ${baseDate}`;
+    }
+
+    const retard = this.formatRetardDuration(closeDate.diff(dueDate));
+    return `terminée - ${baseDate} avec retard de ${retard}`;
+  }
+
+  /**
+   * Formate une durée en millisecondes en texte lisible (jours / heures / minutes).
+   */
+  private formatRetardDuration(ms: number): string {
+    const totalMinutes = Math.floor(ms / 60000);
+    const days = Math.floor(totalMinutes / (60 * 24));
+    const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+    const minutes = totalMinutes % 60;
+
+    if (days > 0) {
+      return hours > 0 ? `${days} j ${hours} h` : `${days} j`;
+    }
+    if (hours > 0) {
+      return minutes > 0 ? `${hours} h ${minutes} min` : `${hours} h`;
+    }
+    if (minutes > 0) {
+      return `${minutes} min`;
+    }
+    return 'quelques instants';
+  }
   onTypeDocumentChange(newSelected?: ITypedocument | null): void {
     this.selectedTypeDocument = newSelected ?? this.selectedTypeDocument ?? null;
 
@@ -1898,6 +1936,76 @@ export class CorrespDetailComponent implements OnInit, OnDestroy {
     return date ? date.format('DD/MM/YYYY') : 'pas de date limite';
   }
 
+  // --- Logic: Alerte échéance (même logique que home.component.ts) ---
+
+  /**
+   * Convertit n'importe quelle valeur date (Dayjs, string, Date, timestamp) en Date native ou null.
+   */
+  formatToDate(value: any): Date | null {
+    if (value == null) {
+      return null;
+    }
+    if (typeof (value as any).toDate === 'function') {
+      try {
+        return (value as any).toDate();
+      } catch {
+        return null;
+      }
+    }
+    if (value instanceof Date) {
+      return value;
+    }
+    if (typeof value === 'string' || typeof value === 'number') {
+      const d = new Date(value);
+      return isNaN(d.getTime()) ? null : d;
+    }
+    return null;
+  }
+
+  /**
+   * true si la tâche n'est pas clôturée et que sa dueDate est à ≤ 1 jour (ou dépassée).
+   */
+  isTaskUrgent(t: ITasks): boolean {
+    if (this.formatToDate(t.closeDate)) {
+      return false;
+    }
+    const due = this.formatToDate(t.dueDate);
+    if (!due) {
+      return false;
+    }
+    const now = new Date();
+    const oneDayMs = 24 * 60 * 60 * 1000;
+    return due.getTime() - now.getTime() <= oneDayMs;
+  }
+
+  /**
+   * Couleur de bordure gauche : rouge si urgente, sinon couleur de statut habituelle.
+   */
+  getTaskBorderColor(t: ITasks): string {
+    if (this.isTaskUrgent(t)) {
+      return '#ef4444';
+    }
+    return this.getTaskColor(t.status);
+  }
+
+  /**
+   * Message d'alerte ("Il reste X" / "Échéance dépassée depuis X").
+   */
+  getDeadlineMessage(t: ITasks): string | null {
+    const due = this.formatToDate(t.dueDate);
+    if (!due) {
+      return null;
+    }
+    const now = new Date();
+    const diffMs = due.getTime() - now.getTime();
+    const duration = this.formatRetardDuration(Math.abs(diffMs));
+
+    if (diffMs > 0) {
+      return `Il reste ${duration} avant l'échéance`;
+    }
+    return `Échéance dépassée depuis ${duration}`;
+  }
+
   // --- Logic: Accordion Toggle ---
   toggleAccordion(section: string): void {
     this.accordionStates[section] = !this.accordionStates[section];
@@ -2514,6 +2622,32 @@ export class CorrespDetailComponent implements OnInit, OnDestroy {
     });
   }
 
+  priseEnChargeTask(correspId: number, taskId: number): void {
+    const perm = this.taskPermissions[taskId];
+    const isAdminEffective = this.isGlobalAdmin || this.canAdminCorresp;
+    const canModifyLocal = !!(this.tachesAssociees.find(t => (t as any)?.id === taskId) as any)?.canModify;
+    if (!isAdminEffective && !(this.userAclTaskIds.has(taskId) || perm?.canWrite === true || canModifyLocal)) {
+      this.showNotification('Vous n’avez pas le droit de prendre en charge cette tâche', 'error');
+      return;
+    }
+    this.taskService.markPriseEnCharge(taskId).subscribe({
+      next: () => {
+        this.taskService.getAllTasksByCorrespId({ correspId: this.correspLoaded.id }).subscribe(r => {
+          const list = r.body || [];
+          this.taskService.enrichTasksWithCanModify(list).subscribe(enriched => {
+            this.tachesAssociees = enriched || [];
+            this.resolveResponsableNames();
+          });
+        });
+        this.showNotification('Tâche prise en charge', 'success');
+      },
+      error: err => {
+        console.error('Erreur prise en charge tâche', err);
+        this.showNotification('Erreur lors de la prise en charge', 'error');
+      },
+    });
+  }
+
   changeTasksStatus(correspId: number, taskId: number, status: string): void {
     const perm = this.taskPermissions[taskId];
     const isAdminEffective = this.isGlobalAdmin || this.canAdminCorresp;
@@ -2625,10 +2759,10 @@ export class CorrespDetailComponent implements OnInit, OnDestroy {
 
     const dateFormatted = this.correspLoaded?.courrierDate
       ? new Date(this.correspLoaded.courrierDate.toString()).toLocaleDateString('fr-FR', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-        })
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      })
       : '';
 
     const receiverEmail = this.messageReceiverEmails.join(', ') || this.correspLoaded?.contactEmail || '';
@@ -2691,10 +2825,10 @@ export class CorrespDetailComponent implements OnInit, OnDestroy {
 
     const dateFormatted = this.correspLoaded?.courrierDate
       ? new Date(this.correspLoaded.courrierDate.toString()).toLocaleDateString('fr-FR', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-        })
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      })
       : '';
 
     const receiverEmail = this.messageReceiverEmails.join(', ') || this.correspLoaded?.contactEmail || '';

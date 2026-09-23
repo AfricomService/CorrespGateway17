@@ -28,6 +28,7 @@ type RestOf<T extends ITasks | NewTasks> = Omit<T, 'creationDate' | 'startDate' 
   dueDate?: string | null;
   closeDate?: string | null;
   updatedDate?: string | null;
+  datePriseEnCharge?: string | null;
 };
 
 export type RestTasks = RestOf<ITasks>;
@@ -142,6 +143,12 @@ export class TasksService {
     return this.http.delete(`${this.resourceUrl}/${id}`, { observe: 'response' });
   }
 
+  markPriseEnCharge(id: number): Observable<EntityResponseType> {
+    return this.http
+      .patch<RestTasks>(`${this.resourceUrl}/${id}/prise-en-charge`, null, { observe: 'response' })
+      .pipe(map(res => this.convertResponseFromServer(res)));
+  }
+
   deleteTaskFromCorrespAndDB(correspId: number, tasksId: number): Observable<HttpResponse<{}>> {
     return this.http.delete(`${this.resourceUrl}/deleteTaskFromCorrespAndDB/${correspId}/${tasksId}`, { observe: 'response' });
   }
@@ -234,6 +241,7 @@ export class TasksService {
       dueDate: tasks.dueDate?.toJSON() ?? null,
       closeDate: tasks.closeDate?.toJSON() ?? null,
       updatedDate: tasks.updatedDate?.toJSON() ?? null,
+      datePriseEnCharge: tasks.datePriseEnCharge?.toJSON() ?? null,
     };
   }
 
@@ -245,6 +253,7 @@ export class TasksService {
       dueDate: restTasks.dueDate ? dayjs(restTasks.dueDate) : undefined,
       closeDate: restTasks.closeDate ? dayjs(restTasks.closeDate) : undefined,
       updatedDate: restTasks.updatedDate ? dayjs(restTasks.updatedDate) : undefined,
+      datePriseEnCharge: restTasks.datePriseEnCharge ? dayjs(restTasks.datePriseEnCharge) : undefined,
     };
   }
 

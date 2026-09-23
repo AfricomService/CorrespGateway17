@@ -482,18 +482,44 @@
                   <div
                     *ngFor="let t of paginatedTasks"
                     class="task-card"
+                    [class.task-card--urgent]="isTaskUrgent(t)"
                     role="button"
                     tabindex="0"
                     (dblclick)="openTask(t)"
                     (keydown.enter)="openTask(t)"
                     (click)="openTask(t)"
                     [style.background-color]="getTaskTypeBg(t.taskType)"
-                    [style.border-left]="'6px solid ' + getTaskStatusColor(t.status)"
+                    [style.border-left]="'6px solid ' + getTaskBorderColor(t)"
                     [attr.aria-label]="getTaskSubject(t) + ' [' + getTaskReference(t) + '] - ' + (t.status || '')"
                   >
                     <div class="task-card-header">
-                      <div class="task-title">{{ getTaskSubject(t) }}</div>
-                      <div style="display: flex; gap: 8px; align-items: center">
+                      <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 auto">
+                        <div class="task-title">{{ getTaskSubject(t) }}</div>
+                        <div *ngIf="isTaskUrgent(t)" class="deadline-alert" role="alert">
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path
+                              d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a1.5 1.5 0 0 0 1.29 2.25h17.78A1.5 1.5 0 0 0 22.18 18L13.71 3.86a1.5 1.5 0 0 0-2.42 0Z"
+                              stroke="currentColor"
+                              stroke-width="1.6"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                          </svg>
+                          <span>{{ getDeadlineMessage(t) }}</span>
+                        </div>
+                      </div>
+                      <div style="display: flex; gap: 8px; align-items: center; flex-shrink: 0">
+                        <div
+                          *ngIf="formatToDate(t.datePriseEnCharge)"
+                          class="prise-en-charge-badge"
+                          [title]="'Prise en charge le ' + (formatToDate(t.datePriseEnCharge) | date: 'dd/MM/yyyy HH:mm')"
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6" />
+                            <path d="M12 7v5l3.5 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                          </svg>
+                          <span>Prise en charge le {{ formatToDate(t.datePriseEnCharge) | date: 'dd/MM/yyyy HH:mm' }}</span>
+                        </div>
                         <div
                           class="task-status-pill"
                           [style.background-color]="getTaskStatusColor(t.status)"
@@ -698,7 +724,7 @@
                       Préc
                     </button>
 
-<span class="page-numbers" style="display: flex; gap: 6px; align-items: center">
+                    <span class="page-numbers" style="display: flex; gap: 6px; align-items: center">
                       <ng-container *ngFor="let p of pages">
                         <button
                           *ngIf="p !== '...'"

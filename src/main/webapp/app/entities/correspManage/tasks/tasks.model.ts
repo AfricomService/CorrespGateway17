@@ -23,6 +23,7 @@ export interface ITasks {
   responsables?: ResponsableSelection[] | null;
   canModify?: boolean;
   commentaireTraitement?: string | null;
+  datePriseEnCharge?: dayjs.Dayjs | null;
 }
 
 export type NewTasks = Omit<ITasks, 'id'> & { id: null };

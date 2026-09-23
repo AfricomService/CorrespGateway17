@@ -20,6 +20,7 @@ import { IDepartement } from '../entities/orgacare/departement/departement.model
 import { TranslateService } from '@ngx-translate/core';
 import { PagedTasksResponse } from '../entities/correspManage/tasks/service/tasks.service';
 import { LoginService } from '../login/login.service';
+import { AclDiagnosticService } from 'app/core/acl-diagnostic/acl-diagnostic.service';
 
 @Component({
   selector: 'jhi-home',
@@ -72,7 +73,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     private translate: TranslateService,
     private titleService: Title,
     private cdr: ChangeDetectorRef,
-    private loginService: LoginService
+    private loginService: LoginService,
+    private aclDiagnosticService: AclDiagnosticService
   ) {}
 
   login() {
@@ -110,6 +112,11 @@ export class HomeComponent implements OnInit, OnDestroy {
 
         // <-- important : on charge les tâches une fois que l'account est connu
         this.loadTasks();
+
+        // Diagnostic ACL : appel silencieux (visible uniquement dans l'onglet Network)
+        if (account) {
+          this.loadMySids();
+        }
       });
 
     // NOTE: on ne lance plus loadTasks() ici (on l'appelle après que account soit défini)
@@ -158,6 +165,24 @@ export class HomeComponent implements OnInit, OnDestroy {
         } catch {
           // noop
         }
+      });
+  }
+
+  /**
+   * Diagnostic ACL : la requête est visible dans l'onglet Network (DevTools).
+   * Aucun affichage ni log : la réponse est volontairement ignorée côté interface.
+   */
+  private loadMySids(): void {
+    this.aclDiagnosticService
+      .getMySids()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          // noop : la réponse se consulte dans Network > sids > Response
+        },
+        error: () => {
+          // noop : ne jamais perturber l'utilisateur pour un simple diagnostic
+        },
       });
   }
 
@@ -225,7 +250,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     // convertit les champs de date (Dayjs, string, Date, ...) en Date natif ou undefined
     let mapped = raw.map(t => {
       const copy: any = { ...t };
-      const dateFields = ['creationDate', 'startDate', 'dueDate', 'closeDate', 'updatedDate'];
+      const dateFields = ['creationDate', 'startDate', 'dueDate', 'closeDate', 'updatedDate', 'datePriseEnCharge'];
       dateFields.forEach(f => {
         const v = (copy as any)[f];
         if (v == null) {
@@ -355,7 +380,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     return this.tasks ?? [];
   }
 
-get pages(): (number | string)[] {
+  get pages(): (number | string)[] {
     const total = this.totalPages;
     const current = this.currentPage;
     const delta = 2; // nombre de pages affichées de chaque côté de la page courante
@@ -700,6 +725,77 @@ get pages(): (number | string)[] {
       default:
         return '#6c757d'; // Grey default
     }
+  }
+
+  /**
+   * Retourne true si la tâche a une date limite (dueDate) définie
+   * et que celle-ci est à 1 jour ou moins de la date actuelle
+   * (inclut également les tâches dont l'échéance est déjà dépassée).
+   */
+  isTaskUrgent(t: ITasks): boolean {
+    // Tâche déjà clôturée (closeDate renseignée) → plus d'alerte d'échéance, quelle que soit dueDate
+    if (this.formatToDate(t.closeDate)) {
+      return false;
+    }
+    const due = this.formatToDate(t.dueDate);
+    if (!due) {
+      return false;
+    }
+    const now = new Date();
+    const oneDayMs = 24 * 60 * 60 * 1000;
+    return due.getTime() - now.getTime() <= oneDayMs;
+  }
+
+  /**
+   * Couleur de la bordure gauche de la carte tâche :
+   * rouge clignotant si la tâche est urgente, sinon la couleur de statut habituelle.
+   */
+  getTaskBorderColor(t: ITasks): string {
+    if (this.isTaskUrgent(t)) {
+      return '#ef4444';
+    }
+    return this.getTaskStatusColor(t.status);
+  }
+
+  /**
+   * Message d'alerte affiché sur les tâches urgentes, indiquant le temps
+   * restant avant l'échéance ou le retard accumulé.
+   * Retourne null si la tâche n'a pas de date limite.
+   */
+  getDeadlineMessage(t: ITasks): string | null {
+    const due = this.formatToDate(t.dueDate);
+    if (!due) {
+      return null;
+    }
+    const now = new Date();
+    const diffMs = due.getTime() - now.getTime();
+    const duration = this.formatDuration(Math.abs(diffMs));
+
+    if (diffMs > 0) {
+      return `Il reste ${duration} avant l'échéance`;
+    }
+    return `Échéance dépassée depuis ${duration}`;
+  }
+
+  /**
+   * Formate une durée en millisecondes en texte lisible (jours / heures / minutes).
+   */
+  private formatDuration(ms: number): string {
+    const totalMinutes = Math.floor(ms / 60000);
+    const days = Math.floor(totalMinutes / (60 * 24));
+    const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+    const minutes = totalMinutes % 60;
+
+    if (days > 0) {
+      return hours > 0 ? `${days} j ${hours} h` : `${days} j`;
+    }
+    if (hours > 0) {
+      return minutes > 0 ? `${hours} h ${minutes} min` : `${hours} h`;
+    }
+    if (minutes > 0) {
+      return `${minutes} min`;
+    }
+    return 'quelques instants';
   }
 
   // ---------- Recherche distante ----------

@@ -702,6 +702,55 @@ $container-max: 1800px; // largeur raisonnable
   outline: 3px solid rgba($accent-start, 0.12);
 }
 
+/* Tâche dont l'échéance est très proche (≤ 1 jour) ou déjà dépassée */
+:host .task-card--urgent {
+  animation: urgent-blink 1.1s ease-in-out infinite;
+}
+:host .task-card--urgent .task-title {
+  color: #b91c1c;
+}
+
+@keyframes urgent-blink {
+  0%,
+  100% {
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.95), 0 8px 20px rgba(11, 19, 43, 0.04);
+  }
+  50% {
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15), 0 8px 20px rgba(11, 19, 43, 0.04);
+  }
+}
+
+/* Message d'alerte de délai (dans les tâches urgentes) */
+:host .deadline-alert {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 0;
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.08);
+  color: #b91c1c;
+  font-size: 12.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+  animation: deadline-text-pulse 1.1s ease-in-out infinite;
+}
+:host .deadline-alert svg {
+  flex-shrink: 0;
+  color: #dc2626;
+}
+
+@keyframes deadline-text-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
 :host .task-card-header {
   display: flex;
   justify-content: space-between;
@@ -722,6 +771,28 @@ $container-max: 1800px; // largeur raisonnable
   border-radius: 999px;
   background: rgba(0, 0, 0, 0.06);
   color: $text-dark;
+}
+
+:host .prise-en-charge-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 8px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%) !important;
+  color: #ffffff !important;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(109, 40, 217, 0.25);
+}
+:host .prise-en-charge-badge svg {
+  flex-shrink: 0;
+  color: #ffffff;
+}
+:host .prise-en-charge-badge span {
+  color: #ffffff;
 }
 
 :host .task-card-body {
