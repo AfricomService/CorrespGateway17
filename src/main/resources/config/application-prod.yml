@@ -19,6 +19,7 @@ logging:
     tech.jhipster: INFO
     com.africom.ccgateway: DEBUG
     org.hibernate.SQL: DEBUG
+    io.r2dbc.postgresql.QUERY: DEBUG
 
 eureka:
   instance:
