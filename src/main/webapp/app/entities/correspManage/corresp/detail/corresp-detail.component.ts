@@ -164,6 +164,9 @@ export class CorrespDetailComponent implements OnInit, OnDestroy {
 
   btnSaveTaskDisabled = false;
 
+  /** ids des tâches dont le changement de statut est en cours (anti double-clic + spinner) */
+  taskStatusLoading: Set<number> = new Set<number>();
+
   selectedPj: IPj | null = null;
 
   isUploading = false; // Prevents new uploads while one is in progress
@@ -2648,7 +2651,22 @@ export class CorrespDetailComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** true si un changement de statut est en cours pour cette tâche */
+  isTaskStatusLoading(taskId: number): boolean {
+    return this.taskStatusLoading.has(taskId);
+  }
+
+  /** true si l'utilisateur a le droit d'agir sur cette tâche (même règle que dans le template) */
+  canActOnTask(task: ITasks): boolean {
+    return this.isGlobalAdmin || this.canAdminCorresp || !!(task as any).canModify || this.userAclTaskIds.has(+task.id);
+  }
+
   changeTasksStatus(correspId: number, taskId: number, status: string): void {
+    // ✅ Anti double-clic : si cette tâche est déjà en cours de traitement, on ignore
+    if (this.taskStatusLoading.has(taskId)) {
+      return;
+    }
+
     const perm = this.taskPermissions[taskId];
     const isAdminEffective = this.isGlobalAdmin || this.canAdminCorresp;
     const canModifyLocal = !!(this.tachesAssociees.find(t => (t as any)?.id === taskId) as any)?.canModify;
@@ -2656,23 +2674,33 @@ export class CorrespDetailComponent implements OnInit, OnDestroy {
       this.showNotification('Vous n’avez pas le droit de modifier le statut de la tâche', 'error');
       return;
     }
+
+    // ✅ Début du chargement pour cette tâche
+    this.taskStatusLoading.add(taskId);
+
     this.correspService.changeTaskStatus(correspId, taskId, status).subscribe({
       next: () => {
-        // refresh tasks list
-        this.taskService.getAllTasksByCorrespId({ correspId: this.correspLoaded.id }).subscribe(r => {
-          const list = r.body || [];
-          this.taskService.enrichTasksWithCanModify(list).subscribe(enriched => {
-            this.tachesAssociees = enriched || [];
-            this.resolveResponsableNames();
-            // Recompute permissions based on updated task statuses
-            // canManageAttachments and isReadOnlyAclUser are getters that depend on tachesAssociees,
-            // so they auto-recompute. But canWriteCorresp needs explicit refresh:
-            this.refreshCorrespWritePermission();
-          });
+        // refresh tasks list — le chargement reste actif jusqu'à la fin du rafraîchissement
+        this.taskService.getAllTasksByCorrespId({ correspId: this.correspLoaded.id }).subscribe({
+          next: r => {
+            const list = r.body || [];
+            this.taskService.enrichTasksWithCanModify(list).subscribe({
+              next: enriched => {
+                this.tachesAssociees = enriched || [];
+                this.resolveResponsableNames();
+                // Recompute permissions based on updated task statuses
+                this.refreshCorrespWritePermission();
+                this.taskStatusLoading.delete(taskId);
+              },
+              error: () => this.taskStatusLoading.delete(taskId),
+            });
+          },
+          error: () => this.taskStatusLoading.delete(taskId),
         });
         this.showNotification('Statut modifié', 'success');
       },
       error: err => {
+        this.taskStatusLoading.delete(taskId);
         console.error('Erreur changement statut', err);
         this.showNotification('Erreur lors du changement', 'error');
       },
@@ -2759,10 +2787,10 @@ export class CorrespDetailComponent implements OnInit, OnDestroy {
 
     const dateFormatted = this.correspLoaded?.courrierDate
       ? new Date(this.correspLoaded.courrierDate.toString()).toLocaleDateString('fr-FR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-      })
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        })
       : '';
 
     const receiverEmail = this.messageReceiverEmails.join(', ') || this.correspLoaded?.contactEmail || '';
@@ -2825,10 +2853,10 @@ export class CorrespDetailComponent implements OnInit, OnDestroy {
 
     const dateFormatted = this.correspLoaded?.courrierDate
       ? new Date(this.correspLoaded.courrierDate.toString()).toLocaleDateString('fr-FR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-      })
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        })
       : '';
 
     const receiverEmail = this.messageReceiverEmails.join(', ') || this.correspLoaded?.contactEmail || '';

@@ -990,10 +990,19 @@ export class CorrespUpdateComponent implements OnInit {
   // Identifier : génère la référence puis sauvegarde et navigue vers le détail
   // --------------------------------------------------------------------------
   generateReference(): void {
-    // Valider les champs obligatoires AVANT de générer la référence
+    // Anti double-clic : si une génération ou une sauvegarde est déjà en cours, on ignore
+    if (this.isGeneratingReference || this.isSaving) {
+      return;
+    }
+
+    // Valider TOUT avant de consommer un numéro de référence
     this.validationInfoGenErrors = {};
     if (!this.validateInfoGeneralesForm()) {
       this.showNotification("Veuillez remplir tous les champs obligatoires avant d'identifier", 'error');
+      return;
+    }
+    if (!this.validateAdditionalInfoForm()) {
+      this.showNotification('Veuillez remplir tous les champs obligatoires des détails supplémentaires', 'error');
       return;
     }
 
@@ -1016,15 +1025,16 @@ export class CorrespUpdateComponent implements OnInit {
       return;
     }
 
+    // ✅ Le flag reste à true pendant TOUTE la chaîne (génération + sauvegarde + navigation)
     this.isGeneratingReference = true;
-    // Récupérer le codeSociete depuis la société sélectionnée
     const societeCode = this.selectedSociete?.codeSociete ?? null;
 
     this.parentClassdefService.getNextNumber(correspTypeValue, societeCode).subscribe({
       next: nextNumber => {
         this.generatedReference = nextNumber || '';
-        this.isGeneratingReference = false;
-        this.showNotification(`Référence générée : ${this.generatedReference}`, 'success');
+        // ⚠️ NE PAS remettre isGeneratingReference à false ici :
+        // il sera remis à false dans saveCorresp() uniquement en cas d'erreur.
+        // En cas de succès, on navigue vers la page détail.
         this.saveCorresp(false, true);
       },
       error: () => {
@@ -1046,10 +1056,12 @@ export class CorrespUpdateComponent implements OnInit {
     this.validationInfoGenErrors = {};
 
     if (!this.validateInfoGeneralesForm()) {
+      this.isGeneratingReference = false;
       return;
     }
 
     if (!this.validateAdditionalInfoForm()) {
+      this.isGeneratingReference = false;
       return;
     }
 
@@ -1131,7 +1143,8 @@ export class CorrespUpdateComponent implements OnInit {
       .saveCorrespWithTasksAndPj(this.corresp, this.tasksToSave, this.pjsToSave, this.selectedTypeDocument, false)
       .subscribe({
         next: (savedCorresp: any) => {
-          this.isSaving = false;
+          // ✅ isSaving reste à true jusqu'à la navigation (évite un doublon
+          // pendant getAllTasksByCorrespId / changeTaskStatus)
 
           // Si l'utilisateur BOC a une tâche de traitement auto-créée,
           // on change son statut en IN_PROGRESS après la sauvegarde
@@ -1169,6 +1182,7 @@ export class CorrespUpdateComponent implements OnInit {
         },
         error: () => {
           this.isSaving = false;
+          this.isGeneratingReference = false;
         },
       });
   }

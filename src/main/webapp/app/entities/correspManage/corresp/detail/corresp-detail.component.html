@@ -957,32 +957,32 @@
                             style="font-size: 13px"
                           >
                             <thead style="position: sticky; top: 0; background: #f8fafc; z-index: 1">
-                            <tr>
-                              <th style="padding: 10px 16px; color: #64748b; font-weight: 600; border-bottom: 2px solid #e2e8f0">
-                                Référence
-                              </th>
-                              <th style="padding: 10px 16px; color: #64748b; font-weight: 600; border-bottom: 2px solid #e2e8f0">
-                                Objet
-                              </th>
-                              <th style="padding: 10px 16px; color: #64748b; font-weight: 600; border-bottom: 2px solid #e2e8f0">Date</th>
-                              <th style="padding: 10px 16px; color: #64748b; font-weight: 600; border-bottom: 2px solid #e2e8f0">
-                                Expéditeur
-                              </th>
-                              <th style="padding: 10px 16px; border-bottom: 2px solid #e2e8f0"></th>
-                            </tr>
+                              <tr>
+                                <th style="padding: 10px 16px; color: #64748b; font-weight: 600; border-bottom: 2px solid #e2e8f0">
+                                  Référence
+                                </th>
+                                <th style="padding: 10px 16px; color: #64748b; font-weight: 600; border-bottom: 2px solid #e2e8f0">
+                                  Objet
+                                </th>
+                                <th style="padding: 10px 16px; color: #64748b; font-weight: 600; border-bottom: 2px solid #e2e8f0">Date</th>
+                                <th style="padding: 10px 16px; color: #64748b; font-weight: 600; border-bottom: 2px solid #e2e8f0">
+                                  Expéditeur
+                                </th>
+                                <th style="padding: 10px 16px; border-bottom: 2px solid #e2e8f0"></th>
+                              </tr>
                             </thead>
                             <tbody>
-                            <tr
-                              *ngFor="let item of refsModalItems"
-                              style="cursor: pointer; transition: background 0.15s"
-                              (click)="selectRefItem(item)"
-                              [style.background]="refsSelectedItem?.id === item.id ? '#eff6ff' : ''"
-                            >
-                              <td style="padding: 10px 16px; font-weight: 700; color: #1e40af; border-bottom: 1px solid #f1f5f9">
-                                {{ item.reference }}
-                              </td>
-                              <td
-                                style="
+                              <tr
+                                *ngFor="let item of refsModalItems"
+                                style="cursor: pointer; transition: background 0.15s"
+                                (click)="selectRefItem(item)"
+                                [style.background]="refsSelectedItem?.id === item.id ? '#eff6ff' : ''"
+                              >
+                                <td style="padding: 10px 16px; font-weight: 700; color: #1e40af; border-bottom: 1px solid #f1f5f9">
+                                  {{ item.reference }}
+                                </td>
+                                <td
+                                  style="
                                     padding: 10px 16px;
                                     color: #374151;
                                     border-bottom: 1px solid #f1f5f9;
@@ -991,21 +991,21 @@
                                     text-overflow: ellipsis;
                                     white-space: nowrap;
                                   "
-                              >
-                                {{ item.subject || '—' }}
-                              </td>
-                              <td style="padding: 10px 16px; color: #64748b; border-bottom: 1px solid #f1f5f9; white-space: nowrap">
-                                {{ formatRefDate(item.dateCreated) }}
-                              </td>
-                              <td style="padding: 10px 16px; color: #374151; border-bottom: 1px solid #f1f5f9">
-                                {{ item.sender || '—' }}
-                              </td>
-                              <td style="padding: 10px 16px; border-bottom: 1px solid #f1f5f9; text-align: center">
+                                >
+                                  {{ item.subject || '—' }}
+                                </td>
+                                <td style="padding: 10px 16px; color: #64748b; border-bottom: 1px solid #f1f5f9; white-space: nowrap">
+                                  {{ formatRefDate(item.dateCreated) }}
+                                </td>
+                                <td style="padding: 10px 16px; color: #374151; border-bottom: 1px solid #f1f5f9">
+                                  {{ item.sender || '—' }}
+                                </td>
+                                <td style="padding: 10px 16px; border-bottom: 1px solid #f1f5f9; text-align: center">
                                   <span *ngIf="refsSelectedItem?.id === item.id" style="color: #1e40af; font-weight: 700; font-size: 16px"
-                                  >✓</span
+                                    >✓</span
                                   >
-                              </td>
-                            </tr>
+                                </td>
+                              </tr>
                             </tbody>
                           </table>
 
@@ -1066,7 +1066,7 @@
                                   (i + 1 === refsModalTotalPages - 1 && refsModalPage < refsModalTotalPages - 2)
                                 "
                                 style="color: #94a3b8; line-height: 30px"
-                              >…</span
+                                >…</span
                               >
                             </ng-container>
 
@@ -1426,7 +1426,7 @@
                   <span
                     jhiTranslate="correspCareApp.correspManageCorresp.detail.overallProgress"
                     style="font-size: 0.85em; font-weight: 600; color: #495057"
-                  >Avancement global</span
+                    >Avancement global</span
                   >
                   <span style="font-size: 0.85em; font-weight: bold">{{ taskCompletionPercentage }}%</span>
                 </div>
@@ -1471,7 +1471,16 @@
                       flex-direction: column;
                     "
                   >
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; gap: 8px; flex-wrap: wrap">
+                    <div
+                      style="
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        margin-bottom: 6px;
+                        gap: 8px;
+                        flex-wrap: wrap;
+                      "
+                    >
                       <span
                         [style.background-color]="getTaskColor(task.status)"
                         class="badge"
@@ -1509,15 +1518,12 @@
                           (click)="changeTasksStatus(correspLoaded?.id!, task.id, 'CANCELLED')"
                           *ngIf="CorrespStatus.DRAFT === task.status"
                           [style.background-color]="'#6a2020'"
-                          [style.opacity]="isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? '1' : '0.4'"
-                          [style.pointer-events]="
-                            isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? 'auto' : 'none'
-                          "
+                          [style.opacity]="canActOnTask(task) && !isTaskStatusLoading(task.id) ? '1' : '0.4'"
+                          [style.pointer-events]="canActOnTask(task) && !isTaskStatusLoading(task.id) ? 'auto' : 'none'"
+                          [style.cursor]="isTaskStatusLoading(task.id) ? 'not-allowed' : 'pointer'"
                           class="badge"
-                          style="font-size: 0.7em; text-transform: uppercase; cursor: pointer"
-                          title="{{
-                            isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? '' : 'Droit insuffisant'
-                          }}"
+                          style="font-size: 0.7em; text-transform: uppercase"
+                          title="{{ canActOnTask(task) ? '' : 'Droit insuffisant' }}"
                         >
                           <span jhiTranslate="correspCareApp.correspManageCorresp.actions.cancel">annuler</span>
                         </span>
@@ -1526,15 +1532,12 @@
                           (click)="deleteTask(correspLoaded?.id!, task.id)"
                           *ngIf="CorrespStatus.DRAFT === task.status"
                           [style.background-color]="'#dc3545'"
-                          [style.opacity]="isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? '1' : '0.4'"
-                          [style.pointer-events]="
-                            isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? 'auto' : 'none'
-                          "
+                          [style.opacity]="canActOnTask(task) && !isTaskStatusLoading(task.id) ? '1' : '0.4'"
+                          [style.pointer-events]="canActOnTask(task) && !isTaskStatusLoading(task.id) ? 'auto' : 'none'"
+                          [style.cursor]="isTaskStatusLoading(task.id) ? 'not-allowed' : 'pointer'"
                           class="badge"
-                          style="font-size: 0.7em; text-transform: uppercase; cursor: pointer"
-                          title="{{
-                            isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? '' : 'Droit insuffisant'
-                          }}"
+                          style="font-size: 0.7em; text-transform: uppercase"
+                          title="{{ canActOnTask(task) ? '' : 'Droit insuffisant' }}"
                         >
                           <span jhiTranslate="correspCareApp.correspManageCorresp.actions.deleteUpper">SUPPRIMER</span>
                         </span>
@@ -1543,16 +1546,20 @@
                           (click)="changeTasksStatus(correspLoaded?.id!, task.id, 'IN_PROGRESS')"
                           *ngIf="CorrespStatus.DRAFT === task.status"
                           [style.background-color]="'#0d6efd'"
-                          [style.opacity]="isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? '1' : '0.4'"
-                          [style.pointer-events]="
-                            isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? 'auto' : 'none'
-                          "
+                          [style.opacity]="canActOnTask(task) && !isTaskStatusLoading(task.id) ? '1' : '0.6'"
+                          [style.pointer-events]="canActOnTask(task) && !isTaskStatusLoading(task.id) ? 'auto' : 'none'"
+                          [style.cursor]="isTaskStatusLoading(task.id) ? 'not-allowed' : 'pointer'"
                           class="badge"
-                          style="font-size: 0.7em; text-transform: uppercase; cursor: pointer"
-                          title="{{
-                            isGlobalAdmin || canAdminCorresp || task.canModify || userAclTaskIds.has(+task.id) ? '' : 'Droit insuffisant'
-                          }}"
+                          style="font-size: 0.7em; text-transform: uppercase; display: inline-flex; align-items: center; gap: 5px"
+                          title="{{ canActOnTask(task) ? '' : 'Droit insuffisant' }}"
                         >
+                          <span
+                            *ngIf="isTaskStatusLoading(task.id)"
+                            class="spinner-border spinner-border-sm"
+                            role="status"
+                            aria-hidden="true"
+                            style="width: 10px; height: 10px; border-width: 1.5px"
+                          ></span>
                           <span jhiTranslate="correspCareApp.correspManageCorresp.actions.start">commencer</span>
                         </span>
 
@@ -1741,8 +1748,8 @@
                         >
                           <span>✔</span>
                           <span>{{
-                              getTaskCompletionComment(task.id).trim().length > 0 ? 'Terminer avec commentaire' : 'Terminer sans commentaire'
-                            }}</span>
+                            getTaskCompletionComment(task.id).trim().length > 0 ? 'Terminer avec commentaire' : 'Terminer sans commentaire'
+                          }}</span>
                         </button>
                       </div>
                     </div>
@@ -1821,8 +1828,8 @@
                         >
                           <span>✕</span>
                           <span>{{
-                              getTaskCancellationComment(task.id).trim().length > 0 ? 'Annuler avec motif' : 'Annuler sans motif'
-                            }}</span>
+                            getTaskCancellationComment(task.id).trim().length > 0 ? 'Annuler avec motif' : 'Annuler sans motif'
+                          }}</span>
                         </button>
                       </div>
                     </div>
@@ -2101,7 +2108,7 @@
                               font-size: 12px;
                               font-weight: 500;
                             "
-                          >{{ email }}</span
+                            >{{ email }}</span
                           >
                         </div>
                       </ng-container>
@@ -2142,7 +2149,7 @@
                               font-size: 12px;
                               font-weight: 500;
                             "
-                          >{{ email }}</span
+                            >{{ email }}</span
                           >
                         </div>
                       </ng-container>
@@ -2187,7 +2194,7 @@
                             font-weight: 500;
                             margin-left: 4px;
                           "
-                        >{{ email }}</span
+                          >{{ email }}</span
                         >
                       </ng-container>
                       <ng-template #fallbackDestNonOut> -</ng-template>
@@ -2208,7 +2215,7 @@
                             font-weight: 500;
                             margin-left: 4px;
                           "
-                        >{{ email }}</span
+                          >{{ email }}</span
                         >
                       </ng-container>
                       <ng-template #fallbackCCNonOut> -</ng-template>
@@ -2627,7 +2634,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px">
               <div style="flex: 1">
                 <label class="form-label fw-semibold mb-1" jhiTranslate="correspCareApp.correspManageCorresp.detail.selections"
-                >Sélections</label
+                  >Sélections</label
                 >
                 <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
                   <span
@@ -2654,7 +2661,7 @@
                     *ngIf="selectedResponsables.length === 0"
                     jhiTranslate="correspCareApp.correspManageCorresp.detail.noSelection"
                     style="color: #6c757d"
-                  >Aucune sélection</span
+                    >Aucune sélection</span
                   >
                 </div>
               </div>
@@ -2815,7 +2822,7 @@
         </div>
         <div class="col-md-5 assign-controls">
           <label class="form-label fw-semibold" jhiTranslate="correspCareApp.correspManageCorresp.detail.taskType"
-          >Type De Tâche <span class="text-danger">*</span></label
+            >Type De Tâche <span class="text-danger">*</span></label
           >
           <div class="form-text" jhiTranslate="correspCareApp.correspManageCorresp.detail.selectActionType" style="margin-top: -6px">
             Sélectionnez le type d'action à effectuer
@@ -3307,7 +3314,7 @@
           >
             <div *ngIf="availableDrivers.length > 1" style="margin-bottom: 14px">
               <label class="form-label fw-semibold" style="font-size: 13px; color: #374151; margin-bottom: 8px; display: block"
-              >Pilote (driver)</label
+                >Pilote (driver)</label
               >
               <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px">
                 <button
@@ -3369,7 +3376,7 @@
             <div *ngIf="loadingScanners" style="padding: 12px 0; color: #6c757d; font-size: 13px">
               <span class="spinner-border spinner-border-sm me-2"></span>
               Recherche des scanners avec le driver <strong>{{ selectedDriver || '...' }}</strong
-            >…
+              >…
             </div>
 
             <div
@@ -3384,12 +3391,12 @@
               "
             >
               ℹ️ Aucun scanner détecté avec le driver <strong>{{ selectedDriver }}</strong
-            >. Essayez un autre driver ou vérifiez la connexion.
+              >. Essayez un autre driver ou vérifiez la connexion.
             </div>
 
             <div *ngIf="!loadingScanners && scanners.length > 0">
               <label class="form-label fw-semibold" style="font-size: 13px; color: #374151; margin-bottom: 6px; display: block"
-              >Scanner</label
+                >Scanner</label
               >
               <select
                 class="form-select"
@@ -3422,7 +3429,7 @@
                 ⚙️ Paramètres
               </p>
               <span style="font-size: 10px; background: #dcfce7; color: #166534; border-radius: 10px; padding: 2px 8px; font-weight: 600"
-              >mémorisés</span
+                >mémorisés</span
               >
             </div>
             <svg
@@ -3445,7 +3452,7 @@
               <!-- Format -->
               <div>
                 <label class="form-label" style="font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; display: block"
-                >Format de sortie</label
+                  >Format de sortie</label
                 >
                 <div style="display: flex; gap: 6px; flex-wrap: wrap">
                   <button
@@ -3486,7 +3493,7 @@
               <!-- Mode couleur -->
               <div>
                 <label class="form-label" style="font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; display: block"
-                >Mode couleur</label
+                  >Mode couleur</label
                 >
                 <div style="display: flex; gap: 6px">
                   <button
@@ -3853,8 +3860,8 @@
         isScanning
           ? 'Numérisation...'
           : currentDocumentPages.length > 0
-            ? 'Numériser encore (page ' + (currentDocumentPages.length + 1) + ')'
-            : 'Numériser'
+          ? 'Numériser encore (page ' + (currentDocumentPages.length + 1) + ')'
+          : 'Numériser'
       }}
     </button>
 
@@ -3872,8 +3879,8 @@
         isMerging
           ? 'Fusion en cours...'
           : currentDocumentPages.length === 1
-            ? 'Attacher le document (1 page)'
-            : 'Attacher le document (' + currentDocumentPages.length + ' pages)'
+          ? 'Attacher le document (1 page)'
+          : 'Attacher le document (' + currentDocumentPages.length + ' pages)'
       }}
     </button>
   </div>

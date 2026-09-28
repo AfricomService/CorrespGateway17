@@ -54,11 +54,14 @@
         {{ selectedSociete.raisonSociale }}
       </div>
 
-      <div *ngIf="generatedReference" style="font-weight: bold; font-size: 1.1em; color: #2c3e50; font-style: italic">
+      <div
+        *ngIf="generatedReference && !isGeneratingReference"
+        style="font-weight: bold; font-size: 1.1em; color: #2c3e50; font-style: italic"
+      >
         {{ generatedReference }}
       </div>
-<button
-        *ngIf="!generatedReference"
+      <button
+        *ngIf="!generatedReference || isGeneratingReference"
         class="btn btn-outline-secondary btn-sm"
         style="
           font-weight: 600;
@@ -70,9 +73,9 @@
           align-items: center;
           justify-content: center;
         "
-        [style.opacity]="isGeneratingReference ? '0.6' : '1'"
-        [style.cursor]="isGeneratingReference ? 'not-allowed' : 'pointer'"
-        [disabled]="isGeneratingReference"
+        [style.opacity]="isGeneratingReference || isSaving ? '0.6' : '1'"
+        [style.cursor]="isGeneratingReference || isSaving ? 'not-allowed' : 'pointer'"
+        [disabled]="isGeneratingReference || isSaving"
         (click)="generateReference()"
         [attr.title]="'correspCareApp.correspManageCorresp.update.identify' | translate"
       >
@@ -81,10 +84,10 @@
       </button>
     </div>
 
-<!-- Right Side Button -->
+    <!-- Right Side Button -->
     <div style="display: flex; gap: 1em; align-items: center">
       <button
-        [disabled]="isUploading || isSaving"
+        [disabled]="isUploading || isSaving || isGeneratingReference"
         (click)="saveCorresp(false)"
         class="btn btn-primary btn-sm"
         style="
@@ -97,12 +100,12 @@
           align-items: center;
           justify-content: center;
         "
-        [style.opacity]="isUploading || isSaving ? '0.6' : '1'"
-        [style.cursor]="isUploading || isSaving ? 'not-allowed' : 'pointer'"
+        [style.opacity]="isUploading || isSaving || isGeneratingReference ? '0.6' : '1'"
+        [style.cursor]="isUploading || isSaving || isGeneratingReference ? 'not-allowed' : 'pointer'"
         [attr.title]="'correspCareApp.correspManageCorresp.actions.save' | translate"
       >
-        <fa-icon *ngIf="!isSaving" icon="save"></fa-icon>
-        <span *ngIf="isSaving" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+        <fa-icon *ngIf="!(isSaving || isGeneratingReference)" icon="save"></fa-icon>
+        <span *ngIf="isSaving || isGeneratingReference" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
       </button>
     </div>
   </div>
