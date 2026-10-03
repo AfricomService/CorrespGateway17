@@ -98,8 +98,19 @@ export class TasksService {
       .pipe(map((res: HttpResponse<RestTasks[]>) => this.convertResponseArrayFromServer(res)));
   }
 
-  getTasksByUserAclPaged(userId: string, status?: string, page: number = 1, size: number = 10): Observable<PagedTasksResponse> {
-    const params = createRequestOption({ userId, status, page, size });
+  getTasksByUserAclPaged(
+    userId: string,
+    status?: string,
+    page: number = 1,
+    size: number = 10,
+    startDateFrom?: string,
+    startDateTo?: string
+  ): Observable<PagedTasksResponse> {
+    const req: any = { userId, page, size };
+    if (status) req.status = status;
+    if (startDateFrom) req.startDateFrom = startDateFrom;
+    if (startDateTo) req.startDateTo = startDateTo;
+    const params = createRequestOption(req);
     return this.http.get<any>(`${this.resourceUrl}/tasksByUserAclPaged`, { params }).pipe(
       map(response => ({
         content: (response.content ?? []).map((item: RestTasks) => this.convertDateFromServer(item)),

@@ -32,7 +32,9 @@ export class MainComponent implements OnInit {
 
     this.router.events.subscribe(event => {
       if (event instanceof NavigationEnd) {
-        this.isHomePage = event.urlAfterRedirects === '/' || event.urlAfterRedirects === '';
+        // on ignore la query string (?status=...) et le fragment (#...) pour détecter la page d'accueil
+        const path = event.urlAfterRedirects.split('?')[0].split('#')[0];
+        this.isHomePage = path === '/' || path === '';
         this.updateTitle();
       }
     });

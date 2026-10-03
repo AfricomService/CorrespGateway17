@@ -399,13 +399,7 @@
                   <div class="header-search">
                     <label class="sr-only" for="tasksSearch" jhiTranslate="home.searchTasksLabel">Rechercher tâches</label>
                     <div class="search-container header-search--large">
-                      <input
-                        id="tasksSearch"
-                        #tasksSearch
-                        class="search-input"
-                        [placeholder]="'home.searchTasks' | translate"
-                        (input)="onTasksSearchInput($any($event.target).value)"
-                      />
+                      <!-- Bouton recherche (à gauche) -->
                       <button
                         class="search-btn"
                         type="button"
@@ -425,7 +419,18 @@
                         </svg>
                       </button>
 
+                      <input
+                        id="tasksSearch"
+                        #tasksSearch
+                        class="search-input"
+                        [value]="searchTerm"
+                        [placeholder]="'home.searchTasks' | translate"
+                        (input)="onTasksSearchInput($any($event.target).value)"
+                      />
+
+                      <!-- Bouton ✖ : visible seulement quand il y a du texte -->
                       <button
+                        *ngIf="searchTerm"
                         class="search-clear-btn"
                         type="button"
                         [attr.aria-label]="'home.clearSearch' | translate"
@@ -433,6 +438,39 @@
                       >
                         ✖
                       </button>
+
+                      <!-- Bouton filtres avancés (ouvre le modal) -->
+                      <button
+                        class="search-filter-btn"
+                        type="button"
+                        aria-label="Filtres avancés"
+                        title="Filtres avancés"
+                        [class.has-filter]="activeFilterCount > 0"
+                        (click)="openFilterModal()"
+                      >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+                          <path d="M4 7h9M19 7h1M4 17h1M11 17h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                          <circle cx="16" cy="7" r="2.2" stroke="currentColor" stroke-width="1.8" />
+                          <circle cx="8" cy="17" r="2.2" stroke="currentColor" stroke-width="1.8" />
+                        </svg>
+                        <span *ngIf="activeFilterCount > 0" class="filter-badge">{{ activeFilterCount }}</span>
+                      </button>
+                    </div>
+
+                    <!-- Puces des filtres appliqués (✕ = supprimer ce paramètre) -->
+                    <div class="filter-chips" *ngIf="filterChips.length > 0" role="list" aria-label="Filtres appliqués">
+                      <span *ngFor="let chip of filterChips" class="filter-chip" role="listitem">
+                        <span class="filter-chip-label">{{ chip.label }}</span>
+                        <button
+                          type="button"
+                          class="filter-chip-remove"
+                          [attr.aria-label]="'Supprimer le filtre ' + chip.label"
+                          [attr.title]="'Supprimer ce filtre'"
+                          (click)="removeFilterChip(chip.key)"
+                        >
+                          ✕
+                        </button>
+                      </span>
                     </div>
                   </div>
 
@@ -516,7 +554,13 @@
                         >
                           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                             <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6" />
-                            <path d="M12 7v5l3.5 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                            <path
+                              d="M12 7v5l3.5 2"
+                              stroke="currentColor"
+                              stroke-width="1.6"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
                           </svg>
                           <span>Prise en charge le {{ formatToDate(t.datePriseEnCharge) | date: 'dd/MM/yyyy HH:mm' }}</span>
                         </div>
@@ -776,6 +820,43 @@
       <!-- end home-columns111 -->
     </div>
   </main>
+  <!-- ==================== MODAL FILTRE TÂCHES ==================== -->
+  <div *ngIf="filterModalOpen" class="filter-backdrop" (click)="closeFilterModal()">
+    <div class="filter-modal" role="dialog" aria-modal="true" aria-labelledby="filter-modal-title" (click)="$event.stopPropagation()">
+      <div class="filter-modal-header">
+        <h5 id="filter-modal-title">Filtrer les tâches</h5>
+        <button type="button" class="filter-modal-close" aria-label="Fermer" (click)="closeFilterModal()">✕</button>
+      </div>
+
+      <div class="filter-modal-body">
+        <div class="filter-row">
+          <label for="filterStatus">Statut</label>
+          <select id="filterStatus" [(ngModel)]="filterForm.status">
+            <option *ngFor="let o of statusOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+
+        <div class="filter-row">
+          <label for="filterDateFrom">Date début</label>
+          <input id="filterDateFrom" type="date" [(ngModel)]="filterForm.startDateFrom" />
+        </div>
+
+        <div class="filter-row">
+          <label for="filterDateTo">Date fin</label>
+          <input id="filterDateTo" type="date" [(ngModel)]="filterForm.startDateTo" [min]="filterForm.startDateFrom" />
+        </div>
+
+        <p class="filter-hint">Les dates filtrent sur la date de début (startDate) de la tâche.</p>
+        <p *ngIf="filterDateError" class="filter-error" role="alert">{{ filterDateError }}</p>
+      </div>
+
+      <div class="filter-modal-footer">
+        <button type="button" class="filter-btn filter-btn--ghost" (click)="resetFilterForm()">Réinitialiser</button>
+        <button type="button" class="filter-btn filter-btn--primary" (click)="applyFilterModal()">Rechercher</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ==================== MODAL SÉLECTION SOCIÉTÉ ==================== -->
   <div
     *ngIf="societeModalOpen"

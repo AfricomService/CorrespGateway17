@@ -1317,3 +1317,199 @@ $container-max: 1800px; // largeur raisonnable
 }
 
 /* ====================== FIN LANDING PAGE STYLES ====================== */
+
+/* ====================== FILTRE TÂCHES (bouton + modal) ====================== */
+:host .search-filter-btn {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: $muted;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+}
+:host .search-filter-btn:hover,
+:host .search-filter-btn.has-filter {
+  background: rgba($accent-start, 0.1);
+  color: $accent-end;
+}
+:host .search-filter-btn .filter-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
+:host .filter-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 1060;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 90px 20px 20px;
+}
+:host .filter-modal {
+  width: 100%;
+  max-width: 520px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+}
+:host .filter-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, $accent-start 0%, $accent-end 100%);
+  h5 {
+    margin: 0;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+}
+:host .filter-modal-close {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+:host .filter-modal-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+:host .filter-row {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  align-items: center;
+  gap: 12px;
+  label {
+    font-size: 13px;
+    color: $muted;
+  }
+  select,
+  input[type='date'] {
+    border: none;
+    border-bottom: 1px solid #cbd5e1;
+    padding: 6px 2px;
+    font-size: 14px;
+    color: $text-dark;
+    background: transparent;
+    outline: none;
+    width: 100%;
+  }
+  select:focus,
+  input[type='date']:focus {
+    border-bottom-color: $accent-end;
+  }
+}
+:host .filter-hint {
+  margin: 0;
+  font-size: 12px;
+  color: $muted;
+}
+:host .filter-error {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #b91c1c;
+}
+:host .filter-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+:host .filter-btn {
+  padding: 8px 20px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+:host .filter-btn--ghost {
+  background: transparent;
+  color: $muted;
+  border-color: #e2e8f0;
+}
+:host .filter-btn--primary {
+  background: linear-gradient(135deg, $accent-start 0%, $accent-end 100%);
+  color: #fff;
+}
+
+@media (max-width: 640px) {
+  :host .filter-row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}
+
+/* ====================== PUCES DES FILTRES ====================== */
+:host .header-search {
+  flex-wrap: wrap; /* si la place manque, les puces passent à la ligne */
+  gap: 10px;
+}
+:host .filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+:host .filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 6px 5px 12px;
+  border-radius: 999px;
+  background: rgba($accent-start, 0.1);
+  border: 1px solid rgba($accent-start, 0.25);
+  color: $accent-end;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+:host .filter-chip-remove {
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 50%;
+  background: rgba($accent-end, 0.12);
+  color: $accent-end;
+  font-size: 10px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+}
+:host .filter-chip-remove:hover {
+  background: #ef4444;
+  color: #fff;
+}

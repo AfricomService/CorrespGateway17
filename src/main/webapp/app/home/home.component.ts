@@ -1,8 +1,8 @@
 // src/main/webapp/app/home/home.component.ts
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
-import { Router } from '@angular/router';
-import { Subject, Subscription, forkJoin, of } from 'rxjs';
-import { debounceTime, distinctUntilChanged, switchMap, catchError } from 'rxjs/operators';
+import { ActivatedRoute, ParamMap, Router } from '@angular/router';
+import { EMPTY, Subject, Subscription, forkJoin, of } from 'rxjs';
+import { debounceTime, distinctUntilChanged, switchMap, catchError, skip } from 'rxjs/operators';
 import { takeUntil } from 'rxjs/operators';
 
 import { Title } from '@angular/platform-browser';
@@ -22,6 +22,17 @@ import { PagedTasksResponse } from '../entities/correspManage/tasks/service/task
 import { LoginService } from '../login/login.service';
 import { AclDiagnosticService } from 'app/core/acl-diagnostic/acl-diagnostic.service';
 
+export interface TasksFilter {
+  status: string; // DRAFT | IN_PROGRESS | DISPATCH | CLOSED | CANCELLED | ALL
+  startDateFrom: string; // yyyy-MM-dd ou ''
+  startDateTo: string; // yyyy-MM-dd ou ''
+}
+
+export interface FilterChip {
+  key: 'status' | 'startDateFrom' | 'startDateTo';
+  label: string;
+}
+
 @Component({
   selector: 'jhi-home',
   templateUrl: './home.component.html',
@@ -35,8 +46,31 @@ export class HomeComponent implements OnInit, OnDestroy {
   private correspInfoByTaskId: Record<number, CorrespSummaryDTO> = {};
   private deptNameByCode: Map<string, string> = new Map<string, string>();
 
-  // vue courante: 'inProgress' | 'draft'
-  tasksView: 'inProgress' | 'draft' = 'inProgress';
+  // vue courante: 'inProgress' | 'draft' | 'custom' (autre statut ou "tous")
+  tasksView: 'inProgress' | 'draft' | 'custom' = 'inProgress';
+
+  // ---- Filtre avancé (modal) ----
+  filterModalOpen = false;
+  filterDateError = '';
+  readonly statusOptions: { value: string; label: string }[] = [
+    { value: 'ALL', label: 'Tous les statuts' },
+    { value: 'DRAFT', label: 'Brouillon' },
+    { value: 'IN_PROGRESS', label: 'En cours' },
+    { value: 'DISPATCH', label: 'Dispatch' },
+    { value: 'CLOSED', label: 'Terminée' },
+    { value: 'CANCELLED', label: 'Annulée' },
+  ];
+  // filtre appliqué (lu depuis l'URL) et copie de travail du modal
+  appliedFilter: TasksFilter = { status: 'IN_PROGRESS', startDateFrom: '', startDateTo: '' };
+  filterForm: TasksFilter = { status: 'IN_PROGRESS', startDateFrom: '', startDateTo: '' };
+  // puces affichées à côté de la barre de recherche (recalculées à chaque lecture de l'URL)
+  filterChips: FilterChip[] = [];
+
+  /** Nombre de filtres actifs (pour le badge du bouton) */
+  get activeFilterCount(): number {
+    const f = this.appliedFilter;
+    return (this.tasksView === 'custom' ? 1 : 0) + (f.startDateFrom ? 1 : 0) + (f.startDateTo ? 1 : 0);
+  }
 
   // map taskId -> liste de noms (deptName ou personneName ou matricule/code)
   private taskResponsablesMap: Record<number, string[]> = {};
@@ -74,7 +108,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     private titleService: Title,
     private cdr: ChangeDetectorRef,
     private loginService: LoginService,
-    private aclDiagnosticService: AclDiagnosticService
+    private aclDiagnosticService: AclDiagnosticService,
+    private route: ActivatedRoute
   ) {}
 
   login() {
@@ -110,8 +145,8 @@ export class HomeComponent implements OnInit, OnDestroy {
           });
         }
 
-        // <-- important : on charge les tâches une fois que l'account est connu
-        this.loadTasks();
+        // on charge les tâches une fois que l'account est connu, en lisant le filtre depuis l'URL
+        this.applyFilterFromUrl(this.route.snapshot.queryParamMap);
 
         // Diagnostic ACL : appel silencieux (visible uniquement dans l'onglet Network)
         if (account) {
@@ -119,7 +154,12 @@ export class HomeComponent implements OnInit, OnDestroy {
         }
       });
 
-    // NOTE: on ne lance plus loadTasks() ici (on l'appelle après que account soit défini)
+    // NOTE: le 1er chargement est fait ci-dessus (après account) ; ici on réagit aux changements d'URL suivants
+    this.route.queryParamMap.pipe(skip(1), takeUntil(this.destroy$)).subscribe(params => {
+      if (this.account) {
+        this.applyFilterFromUrl(params);
+      }
+    });
 
     // pipeline de recherche distante (debounce + switchMap)
     this.search$
@@ -134,12 +174,10 @@ export class HomeComponent implements OnInit, OnDestroy {
             return of(new HttpResponse<ITasks[]>({ body: [] }));
           }
           if (!trimmed) {
-            // pas de recherche → recharger statut courant
-            if (this.tasksView === 'inProgress') {
-              return this.tasksService.getTasksByUserAcl(userId, CorrespStatus.IN_PROGRESS as any);
-            } else {
-              return this.tasksService.getTasksByUserAcl(userId, CorrespStatus.CLOSED as any);
-            }
+            // pas de recherche → recharger la liste paginée avec le filtre courant (statut + dates)
+            this.currentPage = 1;
+            this.loadTasksPage();
+            return EMPTY;
           }
           this.isSearching = true;
           return this.tasksService.searchTasksByUserAcl(userId, trimmed).pipe(
@@ -154,8 +192,17 @@ export class HomeComponent implements OnInit, OnDestroy {
       .subscribe((res: HttpResponse<ITasks[]>) => {
         this.currentPage = 1;
         const predicate = (t: ITasks) => {
+          const f = this.appliedFilter;
           const s = String((t as any)?.status || '').toUpperCase();
-          return this.tasksView === 'inProgress' ? s === 'IN_PROGRESS' : s === 'CLOSED';
+          if (f.status !== 'ALL' && s !== f.status) return false;
+          if (f.startDateFrom || f.startDateTo) {
+            const d = this.formatToDate((t as any).startDate);
+            if (!d) return false;
+            const ymd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            if (f.startDateFrom && ymd < f.startDateFrom) return false;
+            if (f.startDateTo && ymd > f.startDateTo) return false;
+          }
+          return true;
         };
         this.processTasksResponse(res, predicate);
         this.isSearching = false;
@@ -200,22 +247,28 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   // --------- Data ----------
   loadTasks(): void {
-    // comportement par défaut : charger les tâches IN_PROGRESS
-    this.tasksView = 'inProgress';
-    this.loadTasksByStatus(CorrespStatus.IN_PROGRESS);
+    this.loadTasksPage();
   }
 
   /**
-   * Charge les tâches pour l'utilisateur courant en fonction du status demandé.
+   * Charge la page courante des tâches selon le filtre appliqué (statut + dates).
    * Si account.id est absent on appelle le fallback getAllTasksByEtat.
    */
-  private loadTasksByStatus(status: CorrespStatus): void {
+  private loadTasksPage(onDone?: () => void): void {
     const userId = this.account && (this.account as any).id != null ? (this.account as any).id : null;
+    const f = this.appliedFilter;
 
     if (userId != null) {
-      const statusStr = status === CorrespStatus.IN_PROGRESS ? 'IN_PROGRESS' : 'CLOSED';
+      const statusStr = f.status === 'ALL' ? undefined : f.status;
       this.tasksService
-        .getTasksByUserAclPaged(userId, statusStr, this.currentPage, this.pageSize)
+        .getTasksByUserAclPaged(
+          userId,
+          statusStr,
+          this.currentPage,
+          this.pageSize,
+          f.startDateFrom || undefined,
+          f.startDateTo || undefined
+        )
         .pipe(takeUntil(this.destroy$))
         .subscribe(
           (res: PagedTasksResponse) => {
@@ -224,22 +277,29 @@ export class HomeComponent implements OnInit, OnDestroy {
             this.hasNextFromServer = res.hasNext;
             this.hasPreviousFromServer = res.hasPrevious;
             this.processTasksResponse(new HttpResponse<ITasks[]>({ body: res.content }));
+            onDone?.();
           },
           err => {
-            console.warn(`Erreur chargement tâches ACL paginées (status=${status})`, err);
+            console.warn(`Erreur chargement tâches ACL paginées (filtre=${JSON.stringify(f)})`, err);
             this.tasks = [];
+            onDone?.();
           }
         );
     } else {
       // fallback sans userId
+      const etat = f.status === 'ALL' ? 'IN_PROGRESS' : f.status;
       this.tasksService
-        .getAllTasksByEtat({ etat: status })
+        .getAllTasksByEtat({ etat })
         .pipe(takeUntil(this.destroy$))
         .subscribe(
-          (res: HttpResponse<ITasks[]>) => this.processTasksResponse(res),
+          (res: HttpResponse<ITasks[]>) => {
+            this.processTasksResponse(res);
+            onDone?.();
+          },
           err => {
             console.warn('Erreur fallback getAllTasksByEtat', err);
             this.tasks = [];
+            onDone?.();
           }
         );
     }
@@ -299,48 +359,14 @@ export class HomeComponent implements OnInit, OnDestroy {
   refresh(): void {
     if (this.isRefreshing) return;
     this.isRefreshing = true;
-    const status = this.tasksView === 'inProgress' ? CorrespStatus.IN_PROGRESS : CorrespStatus.CLOSED;
-    const userId = this.account && (this.account as any).id != null ? (this.account as any).id : null;
-
-    if (userId != null) {
-      const statusStr = status === CorrespStatus.IN_PROGRESS ? 'IN_PROGRESS' : 'CLOSED';
-      this.tasksService
-        .getTasksByUserAclPaged(userId, statusStr, this.currentPage, this.pageSize)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe(
-          (res: PagedTasksResponse) => {
-            this.totalItemsFromServer = res.totalItems;
-            this.totalPagesFromServer = res.totalPages;
-            this.hasNextFromServer = res.hasNext;
-            this.hasPreviousFromServer = res.hasPrevious;
-            this.processTasksResponse(new HttpResponse<ITasks[]>({ body: res.content }));
-            this.isRefreshing = false;
-            try {
-              this.cdr.detectChanges();
-            } catch {
-              /* noop */
-            }
-          },
-          err => {
-            console.warn('Erreur refresh tâches', err);
-            this.isRefreshing = false;
-          }
-        );
-    } else {
-      this.tasksService
-        .getAllTasksByEtat({ etat: status })
-        .pipe(takeUntil(this.destroy$))
-        .subscribe(
-          (res: HttpResponse<ITasks[]>) => {
-            this.processTasksResponse(res);
-            this.isRefreshing = false;
-          },
-          err => {
-            console.warn('Erreur refresh fallback', err);
-            this.isRefreshing = false;
-          }
-        );
-    }
+    this.loadTasksPage(() => {
+      this.isRefreshing = false;
+      try {
+        this.cdr.detectChanges();
+      } catch {
+        /* noop */
+      }
+    });
   }
 
   get tasksCount(): number {
@@ -429,7 +455,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     if (page > this.totalPages) page = this.totalPages;
     if (page === this.currentPage) return;
     this.currentPage = page;
-    this.loadTasksByStatus(this.tasksView === 'inProgress' ? CorrespStatus.IN_PROGRESS : CorrespStatus.CLOSED);
+    this.loadTasksPage();
   }
 
   nextPage(): void {
@@ -501,18 +527,14 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   // --- Tabs / boutons ---
   showInProgress(): void {
-    if (this.tasksView !== 'inProgress') {
-      this.tasksView = 'inProgress';
-      this.currentPage = 1;
-      this.loadTasksByStatus(CorrespStatus.IN_PROGRESS);
+    if (this.appliedFilter.status !== 'IN_PROGRESS') {
+      this.navigateWithFilter({ ...this.appliedFilter, status: 'IN_PROGRESS' });
     }
   }
 
   showDraft(): void {
-    if (this.tasksView !== 'draft') {
-      this.tasksView = 'draft';
-      this.currentPage = 1;
-      this.loadTasksByStatus(CorrespStatus.CLOSED);
+    if (this.appliedFilter.status !== 'CLOSED') {
+      this.navigateWithFilter({ ...this.appliedFilter, status: 'CLOSED' });
     }
   }
 
@@ -560,6 +582,116 @@ export class HomeComponent implements OnInit, OnDestroy {
     }
   }
 
+  // --------- Filtre avancé (modal) + URL ----------
+  openFilterModal(): void {
+    this.filterForm = { ...this.appliedFilter };
+    this.filterDateError = '';
+    this.filterModalOpen = true;
+  }
+
+  closeFilterModal(): void {
+    this.filterModalOpen = false;
+  }
+
+  resetFilterForm(): void {
+    // on revient au statut de l'onglet courant (Tâches terminées → CLOSED, sinon IN_PROGRESS)
+    const tabStatus = this.tasksView === 'draft' ? 'CLOSED' : 'IN_PROGRESS';
+    this.filterForm = { status: tabStatus, startDateFrom: '', startDateTo: '' };
+    this.filterDateError = '';
+
+    // application immédiate : fermeture du modal + mise à jour de l'URL (la liste se recharge via queryParamMap)
+    this.closeFilterModal();
+    this.navigateWithFilter({ ...this.filterForm });
+  }
+
+  applyFilterModal(): void {
+    const from = this.filterForm.startDateFrom || '';
+    const to = this.filterForm.startDateTo || '';
+    if (from && to && from > to) {
+      this.filterDateError = 'La date de début doit être antérieure ou égale à la date de fin.';
+      return;
+    }
+    this.closeFilterModal();
+    this.navigateWithFilter({ status: this.filterForm.status, startDateFrom: from, startDateTo: to });
+  }
+
+  /** Écrit le filtre dans l'URL (la liste se recharge via queryParamMap). */
+  private navigateWithFilter(f: TasksFilter): void {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        status: f.status || 'IN_PROGRESS',
+        startDateFrom: f.startDateFrom || null, // null = paramètre retiré de l'URL
+        startDateTo: f.startDateTo || null,
+      },
+      queryParamsHandling: 'merge',
+    });
+  }
+
+  /** Construit les puces à afficher à partir du filtre appliqué. */
+  private buildFilterChips(): FilterChip[] {
+    const f = this.appliedFilter;
+    const chips: FilterChip[] = [];
+    // le statut n'a sa propre puce que s'il sort des deux onglets (En cours / Terminées)
+    if (this.tasksView === 'custom') {
+      const label = this.statusOptions.find(o => o.value === f.status)?.label ?? f.status;
+      chips.push({ key: 'status', label: `Statut : ${label}` });
+    }
+    if (f.startDateFrom) {
+      chips.push({ key: 'startDateFrom', label: `Date début : ${this.formatIsoDate(f.startDateFrom)}` });
+    }
+    if (f.startDateTo) {
+      chips.push({ key: 'startDateTo', label: `Date fin : ${this.formatIsoDate(f.startDateTo)}` });
+    }
+    return chips;
+  }
+
+  /** yyyy-MM-dd → dd/MM/yyyy */
+  private formatIsoDate(iso: string): string {
+    const [y, m, d] = iso.split('-');
+    return `${d}/${m}/${y}`;
+  }
+
+  /** Supprime un seul paramètre du filtre (bouton ✕ d'une puce) sans ouvrir le modal. */
+  removeFilterChip(key: FilterChip['key']): void {
+    const f: TasksFilter = { ...this.appliedFilter };
+    if (key === 'status') {
+      f.status = 'IN_PROGRESS'; // statut par défaut de la page
+    } else if (key === 'startDateFrom') {
+      f.startDateFrom = '';
+    } else {
+      f.startDateTo = '';
+    }
+    this.navigateWithFilter(f); // l'URL change → la liste se recharge via queryParamMap
+  }
+
+  /** Lit le filtre depuis l'URL, met à jour l'état puis recharge la liste. */
+  private applyFilterFromUrl(params: ParamMap): void {
+    const rawStatus = (params.get('status') || '').toUpperCase();
+    const status = this.statusOptions.some(o => o.value === rawStatus) ? rawStatus : 'IN_PROGRESS';
+    const isoDate = /^\d{4}-\d{2}-\d{2}$/;
+    const from = params.get('startDateFrom') || '';
+    const to = params.get('startDateTo') || '';
+
+    this.appliedFilter = {
+      status,
+      startDateFrom: isoDate.test(from) ? from : '',
+      startDateTo: isoDate.test(to) ? to : '',
+    };
+    this.filterForm = { ...this.appliedFilter };
+    this.tasksView = status === 'IN_PROGRESS' ? 'inProgress' : status === 'CLOSED' ? 'draft' : 'custom';
+    this.filterChips = this.buildFilterChips();
+    this.currentPage = 1;
+
+    if (this.searchTerm) {
+      // on réinitialise la recherche texte ; le pipeline search$ recharge alors la liste paginée
+      this.searchTerm = '';
+      this.search$.next('');
+    } else {
+      this.loadTasksPage();
+    }
+  }
+
   // --------- Export helpers ----------
   exportTasksToExcel(): void {
     const userId = this.account && (this.account as any).id != null ? (this.account as any).id : null;
@@ -568,13 +700,14 @@ export class HomeComponent implements OnInit, OnDestroy {
       console.warn('Utilisateur non identifié, export impossible.');
       return;
     }
-    const status = this.tasksView === 'inProgress' ? 'IN_PROGRESS' : 'CLOSED';
+    const status = this.appliedFilter.status === 'ALL' ? undefined : this.appliedFilter.status;
+    const statusLabel = (status || 'all').toLowerCase();
     this.tasksService.downloadTasksExcelByUserAcl(userId, status).subscribe({
       next: (resp: HttpResponse<Blob>) => {
         const blob = resp.body || new Blob([], { type: 'application/octet-stream' });
         // Essayer de récupérer le nom de fichier depuis Content-Disposition
         const cd = resp.headers?.get('Content-Disposition') || resp.headers?.get('content-disposition') || '';
-        let fileName = `tasks_${status.toLowerCase()}_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.xlsx`;
+        let fileName = `tasks_${statusLabel}_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.xlsx`;
         const match = /filename=\"?([^\";]+)\"?/i.exec(cd);
         if (match && match[1]) {
           fileName = match[1];

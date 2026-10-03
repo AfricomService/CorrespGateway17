@@ -1744,7 +1744,7 @@ export class CorrespDetailComponent implements OnInit, OnDestroy {
               taskType: t.typeTask,
               commentaire: t.commentaire || null,
               responsible: t.responsable,
-              dueDate: t.dateLimite ? dayjs(t.dateLimite).toISOString() : null,
+              dueDate: this.toUtcMidnightIso(t.dateLimite),
               responsables: t.responsable ? [{ codeDept: t.responsable }] : [],
             };
 
@@ -2042,6 +2042,18 @@ export class CorrespDetailComponent implements OnInit, OnDestroy {
     return String(value);
   }
 
+  /**
+   * Convertit une date choisie (YYYY-MM-DD) en ISO à minuit UTC,
+   * pour que le jour choisi soit conservé tel quel en base (pas de décalage de fuseau).
+   * Ex : "2026-10-03" -> "2026-10-03T00:00:00.000Z"
+   */
+  private toUtcMidnightIso(value: any): string | null {
+    if (!value) return null;
+    const d = dayjs(value);
+    if (!d.isValid()) return null;
+    return `${d.format('YYYY-MM-DD')}T00:00:00.000Z`;
+  }
+
   // --- helper: build a readable summary of selectedResponsables (for object/responsible display)
   private getResponsablesSummary(): string {
     if (!this.selectedResponsables || this.selectedResponsables.length === 0) return '';
@@ -2185,7 +2197,7 @@ export class CorrespDetailComponent implements OnInit, OnDestroy {
       taskType: this.selectedType || null,
       commentaire: this.commentaire || null,
       responsible: responsibleText || this.selectedDepartement || null,
-      dueDate: this.dateLimite ? this.toIso(dayjs(this.dateLimite)) : null,
+      dueDate: this.toUtcMidnightIso(this.dateLimite),
       responsables: (this.selectedResponsables || [])
         .map(r => {
           const out: any = {};
@@ -2978,7 +2990,7 @@ export class CorrespDetailComponent implements OnInit, OnDestroy {
               taskType: t.typeTask,
               commentaire: t.commentaire || null,
               responsible: t.responsable,
-              dueDate: t.dateLimite ? dayjs(t.dateLimite).toISOString() : null,
+              dueDate: this.toUtcMidnightIso(t.dateLimite),
               responsables: t.responsable ? [{ codeDept: t.responsable }] : [],
             };
 
