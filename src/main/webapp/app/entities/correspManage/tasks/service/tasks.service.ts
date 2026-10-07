@@ -8,6 +8,7 @@ import { isPresent } from 'app/core/util/operators';
 import { ApplicationConfigService } from 'app/core/config/application-config.service';
 import { createRequestOption } from 'app/core/request/request-util';
 import { ITasks, NewTasks } from '../tasks.model';
+import { DepartementTreeFeignDTO } from 'app/entities/correspManage/corresp/update/DepartementTreeFeignDTO';
 
 // Interface pour la réponse paginée
 export interface PagedTasksResponse {
@@ -18,6 +19,16 @@ export interface PagedTasksResponse {
   totalPages: number;
   hasNext: boolean;
   hasPrevious: boolean;
+}
+
+// Société de l'utilisateur connecté (réponse de /api/tasks/mesSocietes)
+export interface ISocieteLight {
+  id: number;
+  raisonSociale: string;
+  abreviation?: string | null;
+  codeSociete?: string | null;
+  codeOrganigramme?: string | null;
+  etat?: string | null;
 }
 
 export type PartialUpdateTasks = Partial<ITasks> & Pick<ITasks, 'id'>;
@@ -104,12 +115,14 @@ export class TasksService {
     page: number = 1,
     size: number = 10,
     startDateFrom?: string,
-    startDateTo?: string
+    startDateTo?: string,
+    includeChildren: boolean = false
   ): Observable<PagedTasksResponse> {
     const req: any = { userId, page, size };
     if (status) req.status = status;
     if (startDateFrom) req.startDateFrom = startDateFrom;
     if (startDateTo) req.startDateTo = startDateTo;
+    if (includeChildren) req.includeChildren = true;
     const params = createRequestOption(req);
     return this.http.get<any>(`${this.resourceUrl}/tasksByUserAclPaged`, { params }).pipe(
       map(response => ({
@@ -135,12 +148,25 @@ export class TasksService {
     );
   }
 
-  searchTasksByUserAcl(userId: string, keyword: string): Observable<EntityArrayResponseType> {
+  searchTasksByUserAcl(userId: string, keyword: string, includeChildren: boolean = false): Observable<EntityArrayResponseType> {
     // On envoie le même mot-clé sur les deux champs : reference ET subject
-    const params = createRequestOption({ userId, reference: keyword, subject: keyword });
+    const req: any = { userId, reference: keyword, subject: keyword };
+    if (includeChildren) req.includeChildren = true;
+    const params = createRequestOption(req);
     return this.http
       .get<RestTasks[]>(`${this.resourceUrl}/searchByUserAcl`, { params, observe: 'response' })
       .pipe(map((res: HttpResponse<RestTasks[]>) => this.convertResponseArrayFromServer(res)));
+  }
+
+  // Sociétés de l'utilisateur connecté (CorrespCare -> OrgaCare)
+  getMesSocietes(): Observable<ISocieteLight[]> {
+    return this.http.get<ISocieteLight[]>(`${this.resourceUrl}/mesSocietes`).pipe(catchError(() => of([])));
+  }
+
+  // Mon département + mes sous-départements, dans l'organigramme donné
+  getMesDepartementsTree(userId: string, orgaCode: string): Observable<DepartementTreeFeignDTO[]> {
+    const params = createRequestOption({ userId, orgaCode });
+    return this.http.get<DepartementTreeFeignDTO[]>(`${this.resourceUrl}/mesDepartements`, { params }).pipe(catchError(() => of([])));
   }
 
   getAllTasksByUserAclAllStatuses(userId: string): Observable<EntityArrayResponseType> {

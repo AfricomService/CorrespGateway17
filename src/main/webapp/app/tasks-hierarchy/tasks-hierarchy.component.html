@@ -1,0 +1,383 @@
+<div class="th-page">
+  <!-- HEADER -->
+  <header class="th-hero">
+    <div class="th-container">
+      <h1>Tâches de mon département</h1>
+      <p *ngIf="includeChildren">Vos tâches et celles de vos sous-départements.</p>
+      <p *ngIf="!includeChildren">Uniquement les tâches de votre département.</p>
+    </div>
+  </header>
+
+  <main class="th-container">
+    <section class="th-panel" [ngClass]="{ 'th-panel--closed': tasksView === 'closed' }">
+      <!-- LIGNE 1 : onglets + périmètre -->
+      <div class="th-toolbar">
+        <div class="th-tabs">
+          <button type="button" class="th-tab" [class.active]="tasksView === 'inProgress'" (click)="showInProgress()">
+            Tâches en cours
+          </button>
+          <button type="button" class="th-tab th-tab--closed" [class.active]="tasksView === 'closed'" (click)="showClosed()">
+            Tâches terminées
+          </button>
+          <span class="th-count" aria-live="polite">{{ totalItems }}</span>
+        </div>
+
+        <div class="th-toolbar-right">
+          <button type="button" class="th-dept-btn" (click)="openSocieteModal()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            Département
+          </button>
+
+          <div class="th-scope" role="group" aria-label="Périmètre">
+            <button type="button" [class.active]="!includeChildren" (click)="setScope(false)">Mon département</button>
+            <button type="button" [class.active]="includeChildren" (click)="setScope(true)">+ Sous-départements</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- LIGNE 2 : recherche + puces + rafraîchir -->
+      <div class="th-search-row">
+        <div class="th-search">
+          <label class="sr-only" for="thSearch">Rechercher une tâche</label>
+          <div class="th-search-container">
+            <button type="button" class="th-search-btn" aria-label="Rechercher" (click)="onSearchClick(thSearch.value)">
+              <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path
+                  d="M21 21l-4.35-4.35"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  fill="none"
+                ></path>
+                <circle cx="11" cy="11" r="5" stroke="currentColor" stroke-width="1.8" fill="none"></circle>
+              </svg>
+            </button>
+
+            <input
+              id="thSearch"
+              #thSearch
+              class="th-search-input"
+              [value]="searchTerm"
+              placeholder="Rechercher une tâche (référence ou objet)"
+              (input)="onSearchInput($any($event.target).value)"
+            />
+
+            <button
+              *ngIf="searchTerm"
+              type="button"
+              class="th-search-clear"
+              aria-label="Effacer la recherche"
+              (click)="clearSearch(thSearch)"
+            >
+              ✖
+            </button>
+
+            <button
+              type="button"
+              class="th-search-filter-btn"
+              title="Filtres avancés"
+              aria-label="Filtres avancés"
+              [class.has-filter]="activeFilterCount > 0"
+              [class.is-open]="filterPanelOpen"
+              [attr.aria-expanded]="filterPanelOpen"
+              (click)="toggleFilterPanel()"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+                <path d="M4 7h9M19 7h1M4 17h1M11 17h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                <circle cx="16" cy="7" r="2.2" stroke="currentColor" stroke-width="1.8" />
+                <circle cx="8" cy="17" r="2.2" stroke="currentColor" stroke-width="1.8" />
+              </svg>
+              <span *ngIf="activeFilterCount > 0" class="th-badge">{{ activeFilterCount }}</span>
+            </button>
+          </div>
+
+          <!-- Puces des filtres appliqués -->
+          <div class="th-chips" *ngIf="filterChips.length > 0" role="list" aria-label="Filtres appliqués">
+            <span *ngFor="let chip of filterChips" class="th-chip" role="listitem">
+              <span>{{ chip.label }}</span>
+              <button
+                type="button"
+                title="Supprimer ce filtre"
+                [attr.aria-label]="'Supprimer le filtre ' + chip.label"
+                (click)="removeFilterChip(chip.key)"
+              >
+                ✕
+              </button>
+            </span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          class="th-icon-btn th-icon-btn--green"
+          title="Rafraîchir"
+          aria-label="Rafraîchir"
+          [class.spinning]="isRefreshing || isSearching"
+          (click)="refresh()"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path
+              d="M4.5 12a7.5 7.5 0 0 1 7.5-7.5A7.48 7.48 0 0 1 17.77 7H15a1 1 0 0 0 0 2h5a1 1 0 0 0 1-1V3a1 1 0 0 0-2 0v2.1A9.48 9.48 0 0 0 12 2.5C6.75 2.5 2.5 6.75 2.5 12S6.75 21.5 12 21.5 21.5 17.25 21.5 12a1 1 0 0 0-2 0A7.5 7.5 0 0 1 4.5 12Z"
+              fill="currentColor"
+            />
+          </svg>
+        </button>
+      </div>
+
+      <!-- PANNEAU FILTRES AVANCÉS -->
+      <div class="th-filters" *ngIf="filterPanelOpen" (keydown.enter)="applyFilter()">
+        <div class="th-filters-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M3 4h18l-7 8v6l-4 2v-8L3 4z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+          </svg>
+          Filtres avancés
+        </div>
+
+        <div class="th-filters-grid">
+          <div class="th-filter-field">
+            <label for="thFilterStatus">Statut</label>
+            <select id="thFilterStatus" [(ngModel)]="filterForm.status">
+              <option *ngFor="let o of statusOptions" [value]="o.value">{{ o.label }}</option>
+            </select>
+          </div>
+
+          <div class="th-filter-field th-filter-field--period">
+            <label for="thFilterFrom">Période</label>
+            <div class="th-filter-period">
+              <input id="thFilterFrom" type="date" aria-label="Date début" [(ngModel)]="filterForm.startDateFrom" />
+              <span>à</span>
+              <input
+                id="thFilterTo"
+                type="date"
+                aria-label="Date fin"
+                [(ngModel)]="filterForm.startDateTo"
+                [min]="filterForm.startDateFrom"
+              />
+            </div>
+          </div>
+        </div>
+
+        <p *ngIf="filterDateError" class="th-filters-error" role="alert">{{ filterDateError }}</p>
+
+        <div class="th-filters-actions">
+          <button type="button" class="th-fbtn th-fbtn--primary" (click)="applyFilter()">✓ Appliquer les filtres</button>
+          <button type="button" class="th-fbtn th-fbtn--ghost" (click)="resetFilterForm()">↺ Réinitialiser</button>
+        </div>
+      </div>
+
+      <!-- LISTE (tableau) -->
+      <div class="th-list">
+        <div class="tt-wrap" *ngIf="tasks.length > 0">
+          <table class="tt-table">
+            <thead>
+              <tr>
+                <th>Référence</th>
+                <th>Objet</th>
+                <th>Type</th>
+                <th>Responsable</th>
+                <th>Société</th>
+                <th>Création</th>
+                <th>Date limite</th>
+                <th>Prise en charge</th>
+                <th>Statut</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                *ngFor="let t of tasks; trackBy: trackById"
+                class="tt-row"
+                [class.tt-row--urgent]="isTaskUrgent(t)"
+                tabindex="0"
+                (click)="openTask(t)"
+                (keydown.enter)="openTask(t)"
+                [style.background-color]="getTaskTypeBg(t.taskType)"
+              >
+                <td class="tt-cell tt-cell--nowrap" [style.border-left]="'6px solid ' + getTaskBorderColor(t)">
+                  <span *ngIf="getTaskReference(t)" class="tt-ref">{{ getTaskReference(t) }}</span>
+                </td>
+                <td class="tt-cell tt-cell--title">
+                  <div class="tt-title">{{ getTaskSubject(t) || t.object }}</div>
+                  <div *ngIf="isTaskUrgent(t)" class="deadline-alert" role="alert">⚠ {{ getDeadlineMessage(t) }}</div>
+                </td>
+                <td class="tt-cell tt-cell--nowrap">
+                  <span *ngIf="t.taskType" class="tt-type" [attr.data-type]="(t.taskType + '').toLowerCase()">{{ t.taskType }}</span>
+                </td>
+                <td class="tt-cell">{{ getResponsibleDisplay(t) }}</td>
+                <td class="tt-cell">{{ getTaskNomSociete(t) }}</td>
+                <td class="tt-cell tt-cell--nowrap">{{ formatToDate(t.creationDate) | date: 'yyyy-MM-dd HH:mm' }}</td>
+                <td class="tt-cell tt-cell--nowrap">
+                  <ng-container *ngIf="formatToDate(t.dueDate)">{{ formatToDate(t.dueDate) | date: 'yyyy-MM-dd HH:mm' }}</ng-container>
+                </td>
+                <td class="tt-cell tt-cell--nowrap">
+                  <span *ngIf="formatToDate(t.datePriseEnCharge)" class="pec-badge">
+                    ⏱ {{ formatToDate(t.datePriseEnCharge) | date: 'dd/MM/yyyy HH:mm' }}
+                  </span>
+                </td>
+                <td class="tt-cell tt-cell--nowrap">
+                  <span class="task-status-pill" [style.background-color]="getTaskStatusColor(t.status)">{{ t.status }}</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div *ngIf="loading" class="no-tasks" aria-live="polite">Chargement des tâches…</div>
+        <div *ngIf="!loading && totalItems === 0" class="no-tasks" aria-live="polite">Aucune tâche trouvée.</div>
+      </div>
+
+      <!-- PAGINATION -->
+      <div class="th-pagination" *ngIf="totalItems > 0">
+        <div class="th-pagination-info" aria-live="polite">Affichage {{ startItem }} - {{ endItem }} sur {{ totalItems }}</div>
+        <div class="th-pagination-controls">
+          <button type="button" (click)="setPage(1)" [disabled]="currentPage === 1" aria-label="Première page">«</button>
+          <button type="button" (click)="prevPage()" [disabled]="!hasPrevious">Préc</button>
+
+          <ng-container *ngFor="let p of pages">
+            <button
+              *ngIf="p !== '...'"
+              type="button"
+              [class.active]="currentPage === p"
+              [attr.aria-current]="currentPage === p ? 'page' : null"
+              (click)="setPage(+p)"
+            >
+              {{ p }}
+            </button>
+            <span *ngIf="p === '...'" class="th-ellipsis" aria-hidden="true">…</span>
+          </ng-container>
+
+          <button type="button" (click)="nextPage()" [disabled]="!hasNext">Suiv</button>
+          <button
+            type="button"
+            (click)="setPage(paginationTotalPages)"
+            [disabled]="currentPage === paginationTotalPages"
+            aria-label="Dernière page"
+          >
+            »
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL DÉPARTEMENT / SOCIÉTÉS -->
+  <div class="th-modal-backdrop" *ngIf="societeModalOpen" (click)="closeSocieteModal()">
+    <div class="th-modal" role="dialog" aria-modal="true" aria-labelledby="thSocieteTitle" (click)="$event.stopPropagation()">
+      <div class="th-modal-header">
+        <h2 id="thSocieteTitle">Département</h2>
+        <button type="button" class="th-modal-close" aria-label="Fermer" (click)="closeSocieteModal()">✕</button>
+      </div>
+
+      <div class="th-modal-body">
+        <!-- aucune société -->
+        <p *ngIf="mesSocietes.length === 0" class="th-modal-empty">Aucune société trouvée.</p>
+
+        <!-- une seule société : champ rempli + lecture seule -->
+        <div class="th-filter-field" *ngIf="mesSocietes.length === 1">
+          <label for="thSocieteInput">Société</label>
+          <input id="thSocieteInput" type="text" class="th-societe-input" [value]="mesSocietes[0].raisonSociale" readonly />
+        </div>
+
+        <!-- plusieurs sociétés : liste -->
+        <ul class="th-societe-list" *ngIf="mesSocietes.length > 1" role="listbox" aria-label="Sociétés">
+          <li
+            *ngFor="let s of mesSocietes"
+            role="option"
+            tabindex="0"
+            [class.selected]="selectedSociete?.id === s.id"
+            [attr.aria-selected]="selectedSociete?.id === s.id"
+            (click)="selectSociete(s)"
+            (keydown.enter)="selectSociete(s)"
+          >
+            <span class="th-societe-name">{{ s.raisonSociale }}</span>
+            <small *ngIf="s.codeSociete">{{ s.codeSociete }}</small>
+          </li>
+        </ul>
+
+        <!-- Organigramme de la société sélectionnée -->
+        <div class="th-filter-field th-orga-field" *ngIf="selectedSociete">
+          <label for="thOrgaInput">Département (organigramme)</label>
+          <div class="th-orga-row">
+            <input
+              id="thOrgaInput"
+              type="text"
+              class="th-societe-input"
+              [value]="selectedDept?.nom || ''"
+              placeholder="Aucun département sélectionné"
+              readonly
+            />
+            <button type="button" class="th-fbtn th-fbtn--primary" (click)="toggleOrgaTree()">
+              {{ orgaTreeOpen ? 'Fermer' : selectedDept ? 'Modifier' : 'Choisir' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Arbre de l'organigramme -->
+        <div class="th-orga-panel" *ngIf="selectedSociete && orgaTreeOpen">
+          <input
+            type="text"
+            class="th-orga-search"
+            [(ngModel)]="orgaSearchQuery"
+            (input)="onOrgaSearchChange()"
+            placeholder="Rechercher un département..."
+          />
+
+          <div *ngIf="loadingOrgaTree" class="th-modal-empty">Chargement de l'organigramme...</div>
+
+          <ul *ngIf="!loadingOrgaTree && orgaTreeFiltered.length" class="th-orga-tree">
+            <ng-container *ngFor="let node of orgaTreeFiltered">
+              <ng-template [ngTemplateOutlet]="renderOrgaNode" [ngTemplateOutletContext]="{ node: node, level: 0 }"></ng-template>
+            </ng-container>
+          </ul>
+
+          <div *ngIf="!loadingOrgaTree && orgaTreeFiltered.length === 0" class="th-modal-empty">Aucun département disponible.</div>
+        </div>
+
+        <!-- Template récursif de rendu des nœuds -->
+        <ng-template #renderOrgaNode let-node="node" let-level="level">
+          <li class="th-orga-item">
+            <div
+              class="th-orga-node"
+              [class.selected]="selectedDept?.id === node.id"
+              [style.borderColor]="getLevelColor(level)"
+              (click)="toggleNodeExpand(node.id)"
+            >
+              <div class="th-orga-node-left">
+                <i [class]="isNodeExpanded(node.id) ? 'fa fa-chevron-down' : 'fa fa-chevron-right'"></i>
+                <span class="th-orga-name">{{ node.nom }}</span>
+              </div>
+              <div class="th-orga-node-right">
+                <span *ngIf="(node.children?.length || 0) > 0" class="th-orga-count">{{ node.children.length }} sous-dept.</span>
+                <input
+                  type="radio"
+                  name="selectedOrgaDept"
+                  [checked]="selectedDept?.id === node.id"
+                  (change)="selectDept(node); $event.stopPropagation()"
+                  (click)="$event.stopPropagation()"
+                />
+              </div>
+            </div>
+
+            <ul *ngIf="isNodeExpanded(node.id) && node.children?.length" class="th-orga-children" [style.marginLeft.px]="(level + 1) * 18">
+              <ng-container *ngFor="let c of node.children">
+                <ng-template [ngTemplateOutlet]="renderOrgaNode" [ngTemplateOutletContext]="{ node: c, level: level + 1 }"></ng-template>
+              </ng-container>
+            </ul>
+          </li>
+        </ng-template>
+      </div>
+
+      <div class="th-modal-footer">
+        <button type="button" class="th-fbtn th-fbtn--primary" (click)="closeSocieteModal()">Fermer</button>
+      </div>
+    </div>
+  </div>
+</div>

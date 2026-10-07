@@ -21,6 +21,10 @@ import { UserRouteAccessService } from 'app/core/auth/user-route-access.service'
           loadChildren: () => import('./admin/admin-routing.module').then(m => m.AdminRoutingModule),
         },
         {
+          path: 'tasks-hierarchy',
+          loadChildren: () => import('./tasks-hierarchy/tasks-hierarchy.module').then(m => m.TasksHierarchyModule),
+        },
+        {
           path: '',
           loadChildren: () => import(`./entities/entity-routing.module`).then(m => m.EntityRoutingModule),
         },

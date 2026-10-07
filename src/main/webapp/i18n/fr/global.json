@@ -34,6 +34,7 @@
         "configManageMyreport": "Myreport",
         "correspManageCustomSearch": "Custom Search",
         "correspManageSmtpConfig": "Smtp Config",
+        "tasksHierarchy": "Tâches de mon département",
         "jhipster-needle-menu-add-entry": "JHipster will add additional entities here (do not translate!)"
       },
       "account": {

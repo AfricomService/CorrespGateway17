@@ -145,6 +145,18 @@
                 <span jhiTranslate="global.menu.entities.correspManageCorresp">Corresp</span>
               </a>
             </li>
+            <li *jhiHasAnyAuthority="['ROLE_USER', 'ROLE_ADMIN']">
+              <a
+                class="dropdown-item"
+                routerLink="tasks-hierarchy"
+                routerLinkActive="active"
+                [routerLinkActiveOptions]="{ exact: true }"
+                (click)="collapseNavbar()"
+              >
+                <fa-icon icon="sitemap" [fixedWidth]="true"></fa-icon>
+                <span jhiTranslate="global.menu.entities.tasksHierarchy">Tâches de mon département</span>
+              </a>
+            </li>
             <li *ngIf="false">
               <a
                 class="dropdown-item"
