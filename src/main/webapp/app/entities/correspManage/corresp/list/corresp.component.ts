@@ -68,7 +68,7 @@ export class CorrespComponent implements OnInit {
   sorting = { mode: 'none' };
 
   datasource: any = {};
-
+  gridPageIndex = 0; // page courante du dx-data-grid (0-based), remise à 0 à chaque nouvelle source
   // ── Flat filter model (bound to template) ──────────────────────
   flatFilters: FlatFilters = { ...EMPTY_FLAT };
 
@@ -202,6 +202,7 @@ export class CorrespComponent implements OnInit {
 
   // ── Data loading ───────────────────────────────────────────────
   load(): void {
+    this.gridPageIndex = 0;
     if (this.isCanSeeAll) {
       // Voir tout : endpoint sans filtre ACL
       this.datasource = this.createDataSourceAll();
@@ -451,6 +452,7 @@ export class CorrespComponent implements OnInit {
 
   private _reloadWithApiFilters(apiFilters: ApiFilter[]): void {
     this.currentApiFilters = apiFilters;
+    this.gridPageIndex = 0;
     if (this.isCanSeeAll) {
       this.datasource = this.createDataSourceAll();
     } else if (this.isAdmin || this.isBoc) {
@@ -576,39 +578,10 @@ export class CorrespComponent implements OnInit {
   // ── Quick search ───────────────────────────────────────────────
   onQuickSearch(): void {
     if (!this.currentUserId) return;
-    const q = this.quickSearch.trim();
-    if (!q) {
-      this.load();
-      return;
-    }
-
-    this.isSearching = true;
-
-    if (this.isCanSeeAll) {
-      // ROLE_CAN_SEE_ALL : recherche via list-all (sans restriction ACL)
-      this.datasource = new CustomStore({
-        key: 'id',
-        load: async (loadOptions: any) => {
-          const skip = loadOptions.skip ?? 0;
-          const take = loadOptions.take ?? 15;
-          const pageIndex = Math.floor(skip / take) + 1;
-          const response = await firstValueFrom(this.correspService.getCorrespListAll(this.currentUserId!, pageIndex, take, q, {}));
-          return { data: response.content, totalCount: response.totalItems };
-        },
-      });
-    } else {
-      // Comportement existant pour Admin/BOC et utilisateur simple
-      this.datasource = new CustomStore({
-        key: 'id',
-        load: async (loadOptions: any) => {
-          const skip = loadOptions.skip ?? 0;
-          const take = loadOptions.take ?? 15;
-          const pageIndex = Math.floor(skip / take) + 1;
-          const response = await firstValueFrom(this.correspService.searchCorresps(this.currentUserId!, q, pageIndex, take));
-          return { data: response.content, totalCount: response.totalItems };
-        },
-      });
-    }
+    this.isSearching = this.quickSearch.trim().length > 0;
+    // Les 3 datasources (all / admin-boc / acl) lisent déjà this.quickSearch.trim()
+    // et envoient q au backend, qui filtre en SQL avant de paginer.
+    this.load();
   }
 
   clearQuickSearch(): void {

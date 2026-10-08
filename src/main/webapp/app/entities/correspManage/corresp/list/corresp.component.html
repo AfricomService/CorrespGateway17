@@ -311,7 +311,8 @@
       (onRowDblClick)="onRowDoubleClick($event)"
       (onRowPrepared)="onRowPrepared($event)"
     >
-      <dxo-paging [enabled]="true" [pageSize]="15"></dxo-paging>
+      <dxo-paging [enabled]="true" [pageSize]="15" [(pageIndex)]="gridPageIndex"></dxo-paging>
+      <dxo-pager [visible]="'auto'" [showInfo]="false" [showNavigationButtons]="true"></dxo-pager>
 
       <!-- N° -->
       <dxi-column dataField="reference" caption="N°" [width]="145" cellTemplate="referenceTemplate"></dxi-column>

@@ -12,6 +12,8 @@ import { ISocieteLight, PagedTasksResponse, TasksService } from 'app/entities/co
 import { CorrespService, CorrespSummaryDTO } from 'app/entities/correspManage/corresp/service/corresp.service';
 import { DepartementTreeFeignDTO } from 'app/entities/correspManage/corresp/update/DepartementTreeFeignDTO';
 
+const SELECTED_SOCIETE_COOKIE = 'tasksHierarchy_selectedSocieteId';
+
 export interface TasksFilter {
   status: string; // DRAFT | IN_PROGRESS | DISPATCH | CLOSED | CANCELLED | ALL
   startDateFrom: string; // yyyy-MM-dd ou ''
@@ -19,7 +21,7 @@ export interface TasksFilter {
 }
 
 export interface FilterChip {
-  key: 'status' | 'startDateFrom' | 'startDateTo';
+  key: 'status' | 'startDateFrom' | 'startDateTo' | 'dept';
   label: string;
 }
 
@@ -48,6 +50,13 @@ export class TasksHierarchyComponent implements OnInit, OnDestroy {
   orgaSearchQuery = '';
   orgaTreeOpen = false;
   selectedDept: DepartementTreeFeignDTO | null = null;
+
+  // filtre "département" appliqué (lu depuis l'URL)
+  deptFilterCode = '';
+  deptFilterName = '';
+
+  // département choisi dans le panneau, pas encore appliqué
+  deptForm = { code: '', name: '' };
   expandedNodes: Set<number> = new Set();
   private levelPalette: string[] = ['#1e90ff', '#22c55e', '#f59e0b', '#8b5cf6', '#ef4444', '#14b8a6'];
 
@@ -137,7 +146,7 @@ export class TasksHierarchyComponent implements OnInit, OnDestroy {
           this.isSearching = true;
           this.loading = true;
           return this.tasksService
-            .searchTasksByUserAcl(userId, trimmed, this.includeChildren)
+            .searchTasksByUserAcl(userId, trimmed, this.includeChildren, this.deptFilterCode || undefined)
             .pipe(catchError(() => of(new HttpResponse<ITasks[]>({ body: [] }))));
         }),
         takeUntil(this.destroy$)
@@ -153,7 +162,7 @@ export class TasksHierarchyComponent implements OnInit, OnDestroy {
   /** Nombre de filtres actifs (badge du bouton filtre) */
   get activeFilterCount(): number {
     const f = this.appliedFilter;
-    return (this.tasksView === 'custom' ? 1 : 0) + (f.startDateFrom ? 1 : 0) + (f.startDateTo ? 1 : 0);
+    return (this.tasksView === 'custom' ? 1 : 0) + (f.startDateFrom ? 1 : 0) + (f.startDateTo ? 1 : 0) + (this.deptFilterCode ? 1 : 0);
   }
 
   // ---------------------------------------------------------------- Data
@@ -177,7 +186,8 @@ export class TasksHierarchyComponent implements OnInit, OnDestroy {
         this.pageSize,
         f.startDateFrom || undefined,
         f.startDateTo || undefined,
-        this.includeChildren
+        this.includeChildren,
+        this.deptFilterCode || undefined
       )
       .pipe(takeUntil(this.destroy$))
       .subscribe(
@@ -217,8 +227,14 @@ export class TasksHierarchyComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe((societes: ISocieteLight[]) => {
         this.mesSocietes = societes ?? [];
-        // une seule société : elle est sélectionnée d'office (champ en lecture seule)
-        this.selectedSociete = this.mesSocietes.length === 1 ? this.mesSocietes[0] : null;
+        if (this.mesSocietes.length === 1) {
+          // une seule société : elle est sélectionnée d'office (champ en lecture seule)
+          this.selectedSociete = this.mesSocietes[0];
+        } else {
+          // plusieurs sociétés : on restaure le dernier choix mémorisé dans le cookie (s'il existe encore)
+          const savedId = this.getCookie(SELECTED_SOCIETE_COOKIE);
+          this.selectedSociete = this.mesSocietes.find(s => String(s.id) === savedId) ?? null;
+        }
       });
   }
 
@@ -239,8 +255,22 @@ export class TasksHierarchyComponent implements OnInit, OnDestroy {
   selectSociete(s: ISocieteLight): void {
     if (this.selectedSociete?.id === s.id) return;
     this.selectedSociete = s;
+    this.setCookie(SELECTED_SOCIETE_COOKIE, String(s.id), 365);
     this.resetOrga();
     this.loadOrgaTree();
+    // le département choisi appartenait à l'ancienne société
+    this.deptForm = { code: '', name: '' };
+  }
+
+  // ---------------------------------------------------------------- Cookies
+  private setCookie(name: string, value: string, days: number): void {
+    const maxAge = days * 24 * 60 * 60;
+    document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${maxAge}; SameSite=Lax`;
+  }
+
+  private getCookie(name: string): string | null {
+    const match = document.cookie.split('; ').find(c => c.startsWith(`${name}=`));
+    return match ? decodeURIComponent(match.substring(name.length + 1)) : null;
   }
 
   // ---------------------------------------------------------------- Organigramme
@@ -311,9 +341,35 @@ export class TasksHierarchyComponent implements OnInit, OnDestroy {
     return this.levelPalette[level % this.levelPalette.length];
   }
 
+  /** Choisit un département : pas d'appel serveur, il sera appliqué par « Appliquer les filtres ». */
   selectDept(node: DepartementTreeFeignDTO): void {
     this.selectedDept = node;
     this.orgaTreeOpen = false;
+    this.deptForm = { code: node.code ?? '', name: node.nom ?? '' };
+    this.closeSocieteModal();
+  }
+
+  /** Bouton « Retirer le filtre » du modal : vide la sélection en attente. */
+  clearDeptSelection(): void {
+    this.selectedDept = null;
+    this.deptForm = { code: '', name: '' };
+    this.closeSocieteModal();
+  }
+
+  /** Puce « Département » : retire le filtre déjà appliqué, tout de suite (comme les autres puces). */
+  clearDeptFilter(): void {
+    this.selectedDept = null;
+    this.deptForm = { code: '', name: '' };
+    this.navigateWithDept(null, null);
+  }
+
+  /** Écrit le département dans l'URL ; la liste se recharge via queryParamMap. */
+  private navigateWithDept(code: string | null, name: string | null): void {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { dept: code || null, deptName: name || null },
+      queryParamsHandling: 'merge',
+    });
   }
 
   private loadCorrespInfoForTasks(): void {
@@ -472,6 +528,7 @@ export class TasksHierarchyComponent implements OnInit, OnDestroy {
   toggleFilterPanel(): void {
     if (!this.filterPanelOpen) {
       this.filterForm = { ...this.appliedFilter };
+      this.deptForm = { code: this.deptFilterCode, name: this.deptFilterName };
       this.filterDateError = '';
     }
     this.filterPanelOpen = !this.filterPanelOpen;
@@ -485,7 +542,9 @@ export class TasksHierarchyComponent implements OnInit, OnDestroy {
     const tabStatus = this.tasksView === 'closed' ? 'CLOSED' : 'IN_PROGRESS';
     this.filterForm = { status: tabStatus, startDateFrom: '', startDateTo: '' };
     this.filterDateError = '';
-    this.navigateWithFilter({ ...this.filterForm });
+    this.selectedDept = null;
+    this.deptForm = { code: '', name: '' };
+    this.navigateWithFilter({ ...this.filterForm }, this.includeChildren, { code: '', name: '' });
   }
 
   applyFilter(): void {
@@ -496,10 +555,14 @@ export class TasksHierarchyComponent implements OnInit, OnDestroy {
       return;
     }
     this.closeFilterPanel();
-    this.navigateWithFilter({ status: this.filterForm.status, startDateFrom: from, startDateTo: to });
+    this.navigateWithFilter({ status: this.filterForm.status, startDateFrom: from, startDateTo: to }, this.includeChildren, this.deptForm);
   }
 
   removeFilterChip(key: FilterChip['key']): void {
+    if (key === 'dept') {
+      this.clearDeptFilter();
+      return;
+    }
     const f: TasksFilter = { ...this.appliedFilter };
     if (key === 'status') {
       f.status = 'IN_PROGRESS';
@@ -512,7 +575,7 @@ export class TasksHierarchyComponent implements OnInit, OnDestroy {
   }
 
   /** Écrit l'état dans l'URL ; la liste se recharge via queryParamMap. */
-  private navigateWithFilter(f: TasksFilter, withChildren: boolean = this.includeChildren): void {
+  private navigateWithFilter(f: TasksFilter, withChildren: boolean = this.includeChildren, dept?: { code: string; name: string }): void {
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: {
@@ -520,6 +583,7 @@ export class TasksHierarchyComponent implements OnInit, OnDestroy {
         startDateFrom: f.startDateFrom || null,
         startDateTo: f.startDateTo || null,
         children: withChildren ? null : 'false', // absent = avec sous-départements (défaut)
+        ...(dept ? { dept: dept.code || null, deptName: dept.name || null } : {}),
       },
       queryParamsHandling: 'merge',
     });
@@ -540,6 +604,12 @@ export class TasksHierarchyComponent implements OnInit, OnDestroy {
     };
     this.filterForm = { ...this.appliedFilter };
     this.includeChildren = params.get('children') !== 'false';
+    this.deptFilterCode = params.get('dept') || '';
+    this.deptFilterName = this.deptFilterCode ? params.get('deptName') || this.deptFilterCode : '';
+    if (!this.deptFilterCode) {
+      this.selectedDept = null;
+    }
+    this.deptForm = { code: this.deptFilterCode, name: this.deptFilterName };
     this.tasksView = status === 'IN_PROGRESS' ? 'inProgress' : status === 'CLOSED' ? 'closed' : 'custom';
     this.filterChips = this.buildFilterChips();
     this.currentPage = 1;
@@ -563,6 +633,9 @@ export class TasksHierarchyComponent implements OnInit, OnDestroy {
     }
     if (f.startDateTo) {
       chips.push({ key: 'startDateTo', label: `Date fin : ${this.formatIsoDate(f.startDateTo)}` });
+    }
+    if (this.deptFilterCode) {
+      chips.push({ key: 'dept', label: `Département : ${this.deptFilterName}` });
     }
     return chips;
   }

@@ -763,27 +763,6 @@ $container-max: 1800px;
   gap: 10px;
 }
 
-.th-dept-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 9px 16px;
-  border: 1px solid rgba($accent-start, 0.35);
-  border-radius: 10px;
-  background-color: #fff !important;
-  background-image: none !important;
-  color: $accent-end !important;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: transform 120ms ease, background 140ms ease;
-
-  &:hover {
-    background-color: rgba($accent-start, 0.08) !important;
-    transform: translateY(-1px);
-  }
-}
-
 .th-modal-backdrop {
   position: fixed;
   inset: 0;

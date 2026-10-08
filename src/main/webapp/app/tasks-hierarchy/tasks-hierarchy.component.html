@@ -23,19 +23,6 @@
         </div>
 
         <div class="th-toolbar-right">
-          <button type="button" class="th-dept-btn" (click)="openSocieteModal()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path
-                d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-            Département
-          </button>
-
           <div class="th-scope" role="group" aria-label="Périmètre">
             <button type="button" [class.active]="!includeChildren" (click)="setScope(false)">Mon département</button>
             <button type="button" [class.active]="includeChildren" (click)="setScope(true)">+ Sous-départements</button>
@@ -162,6 +149,23 @@
                 [(ngModel)]="filterForm.startDateTo"
                 [min]="filterForm.startDateFrom"
               />
+            </div>
+          </div>
+
+          <div class="th-filter-field">
+            <label for="thFilterDept">Département</label>
+            <div class="th-orga-row">
+              <input
+                id="thFilterDept"
+                type="text"
+                class="th-societe-input"
+                [value]="deptForm.name"
+                placeholder="Tous les départements"
+                readonly
+              />
+              <button type="button" class="th-fbtn th-fbtn--primary" (click)="openSocieteModal()">
+                {{ deptForm.code ? 'Modifier' : 'Choisir' }}
+              </button>
             </div>
           </div>
         </div>
@@ -310,12 +314,12 @@
               id="thOrgaInput"
               type="text"
               class="th-societe-input"
-              [value]="selectedDept?.nom || ''"
+              [value]="deptForm.name"
               placeholder="Aucun département sélectionné"
               readonly
             />
             <button type="button" class="th-fbtn th-fbtn--primary" (click)="toggleOrgaTree()">
-              {{ orgaTreeOpen ? 'Fermer' : selectedDept ? 'Modifier' : 'Choisir' }}
+              {{ orgaTreeOpen ? 'Fermer' : deptForm.code ? 'Modifier' : 'Choisir' }}
             </button>
           </div>
         </div>
@@ -376,6 +380,9 @@
       </div>
 
       <div class="th-modal-footer">
+        <button *ngIf="deptForm.code" type="button" class="th-fbtn th-fbtn--ghost" (click)="clearDeptSelection()">
+          ↺ Retirer la sélection
+        </button>
         <button type="button" class="th-fbtn th-fbtn--primary" (click)="closeSocieteModal()">Fermer</button>
       </div>
     </div>

@@ -39,6 +39,13 @@ import {
   faWrench,
   faEnvelope,
   faSitemap,
+  faEnvelopeOpenText,
+  faAddressBook,
+  faProjectDiagram,
+  faListOl,
+  faFileAlt,
+  faInfoCircle,
+  faServer,
   // jhipster-needle-add-icon-import
 } from '@fortawesome/free-solid-svg-icons';
 
@@ -83,5 +90,12 @@ export const fontAwesomeIcons = [
   faWrench,
   faEnvelope,
   faSitemap,
+  faEnvelopeOpenText,
+  faAddressBook,
+  faProjectDiagram,
+  faListOl,
+  faFileAlt,
+  faInfoCircle,
+  faServer,
   // jhipster-needle-add-icon-import
 ];

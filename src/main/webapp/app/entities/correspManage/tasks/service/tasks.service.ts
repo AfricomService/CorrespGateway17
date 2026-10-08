@@ -116,13 +116,15 @@ export class TasksService {
     size: number = 10,
     startDateFrom?: string,
     startDateTo?: string,
-    includeChildren: boolean = false
+    includeChildren: boolean = false,
+    deptCode?: string
   ): Observable<PagedTasksResponse> {
     const req: any = { userId, page, size };
     if (status) req.status = status;
     if (startDateFrom) req.startDateFrom = startDateFrom;
     if (startDateTo) req.startDateTo = startDateTo;
     if (includeChildren) req.includeChildren = true;
+    if (deptCode) req.deptCode = deptCode;
     const params = createRequestOption(req);
     return this.http.get<any>(`${this.resourceUrl}/tasksByUserAclPaged`, { params }).pipe(
       map(response => ({
@@ -148,10 +150,16 @@ export class TasksService {
     );
   }
 
-  searchTasksByUserAcl(userId: string, keyword: string, includeChildren: boolean = false): Observable<EntityArrayResponseType> {
+  searchTasksByUserAcl(
+    userId: string,
+    keyword: string,
+    includeChildren: boolean = false,
+    deptCode?: string
+  ): Observable<EntityArrayResponseType> {
     // On envoie le même mot-clé sur les deux champs : reference ET subject
     const req: any = { userId, reference: keyword, subject: keyword };
     if (includeChildren) req.includeChildren = true;
+    if (deptCode) req.deptCode = deptCode;
     const params = createRequestOption(req);
     return this.http
       .get<RestTasks[]>(`${this.resourceUrl}/searchByUserAcl`, { params, observe: 'response' })
