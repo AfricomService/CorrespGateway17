@@ -696,6 +696,10 @@
     }
   }
 
+  .dx-data-row {
+    cursor: pointer;
+  }
+
   .dx-data-row td {
     padding: 10px 12px;
     border-bottom: 1px solid #f3f4f6 !important;
@@ -899,39 +903,26 @@
   }
 }
 
-// ── Priority ──────────────────────────────────────────────────────
-.priority-high {
+// ── Bouton "Voir la correspondance" ───────────────────────────────
+.btn-view-corresp {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 7px;
-  background: #fef2f2;
-  color: #dc2626;
-  border: 1px solid #fecaca;
-  animation: pulse-priority 2s ease-in-out infinite;
-}
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  background: var(--c-primary-dim);
+  color: var(--c-primary);
+  border: 1px solid var(--c-primary-border);
+  cursor: pointer;
+  transition: all 0.18s ease;
 
-.priority-low {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 7px;
-  background: #f9fafb;
-  color: #d1d5db;
-  border: 1px solid #e5e7eb;
-}
-
-@keyframes pulse-priority {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
-  }
-  50% {
-    box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.15);
+  &:hover {
+    background: var(--c-primary);
+    color: #fff;
+    border-color: var(--c-primary);
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+    transform: translateY(-1px);
   }
 }
 @keyframes spin-once {

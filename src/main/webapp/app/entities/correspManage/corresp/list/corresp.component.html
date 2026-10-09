@@ -308,7 +308,8 @@
       [height]="'100%'"
       [columnAutoWidth]="true"
       [remoteOperations]="{ paging: true }"
-      (onRowDblClick)="onRowDoubleClick($event)"
+      [hoverStateEnabled]="true"
+      (onRowClick)="onRowClick($event)"
       (onRowPrepared)="onRowPrepared($event)"
     >
       <dxo-paging [enabled]="true" [pageSize]="15" [(pageIndex)]="gridPageIndex"></dxo-paging>
@@ -454,52 +455,32 @@
         </span>
       </div>
 
-      <!-- Priorité -->
+      <!-- Action -->
       <dxi-column
-        caption="Priorité"
+        caption="Action"
         alignment="center"
-        [width]="76"
+        [width]="80"
         [fixed]="true"
         fixedPosition="right"
-        cellTemplate="priorityTemplate"
+        [allowSorting]="false"
+        cellTemplate="actionTemplate"
       ></dxi-column>
-      <div *dxTemplate="let d of 'priorityTemplate'" style="display: flex; justify-content: center; align-items: center">
-        <ng-container *ngIf="d.data.priority; else noPriority">
-          <span class="priority-high" ngbTooltip="Priorité haute" placement="top">
-            <svg
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-              <line x1="12" y1="9" x2="12" y2="13" />
-              <line x1="12" y1="17" x2="12.01" y2="17" />
-            </svg>
-          </span>
-        </ng-container>
-        <ng-template #noPriority>
-          <span class="priority-low" ngbTooltip="Priorité normale" placement="top">
-            <svg
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-          </span>
-        </ng-template>
+      <div *dxTemplate="let d of 'actionTemplate'" style="display: flex; justify-content: center; align-items: center">
+        <button type="button" class="btn-view-corresp" title="Consulter la correspondance" (click)="openCorresp(d.data.id, $event)">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+        </button>
       </div>
     </dx-data-grid>
   </div>

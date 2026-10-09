@@ -196,8 +196,21 @@ export class CorrespComponent implements OnInit {
     }
   }
 
-  onRowDoubleClick(e: any): void {
-    window.open(`/cc/corresp/${e.data.id}/view`, '_blank');
+  /** Clic simple sur une ligne → ouvre la correspondance */
+  onRowClick(e: any): void {
+    if (e.rowType !== 'data') return;
+
+    // Si on a cliqué sur le bouton "voir", il gère déjà l'ouverture (évite le double déclenchement)
+    const target = e.event?.target as HTMLElement | undefined;
+    if (target?.closest('.btn-view-corresp')) return;
+
+    this.openCorresp(e.data.id);
+  }
+
+  /** Ouvre la vue d'une correspondance (utilisé par le clic sur la ligne ET par le bouton) */
+  openCorresp(id: number, event?: Event): void {
+    event?.stopPropagation();
+    window.open(`/cc/corresp/${id}/view`, '_blank');
   }
 
   // ── Data loading ───────────────────────────────────────────────
