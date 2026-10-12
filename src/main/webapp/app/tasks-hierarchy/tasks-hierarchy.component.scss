@@ -229,6 +229,35 @@ $container-max: 1800px;
   }
 }
 
+.th-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.th-icon-btn.th-icon-btn--excel {
+  width: auto;
+  padding: 0 14px;
+  gap: 8px;
+  border: none;
+  color: #fff !important;
+  font-size: 13px;
+  font-weight: 700;
+  background-color: #217346 !important;
+  background-image: linear-gradient(135deg, #2e9e61 0%, #185c37 100%) !important;
+  box-shadow: 0 8px 20px rgba(33, 115, 70, 0.2);
+
+  &:hover:not(:disabled) {
+    color: #fff !important;
+  }
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
 /* ---------- Puces ---------- */
 .th-chips {
   display: flex;
@@ -275,29 +304,29 @@ $container-max: 1800px;
 }
 
 .tt-wrap {
-  overflow-x: auto;
+  overflow-x: hidden;
   border-radius: 12px;
   border: 1px solid rgba(29, 53, 87, 0.06);
 }
 
 .tt-table {
   width: 100%;
-  min-width: 1150px;
+  table-layout: auto;
   border-collapse: separate;
   border-spacing: 0 6px;
   padding: 0 6px;
-  font-size: 13px;
+  font-size: 12px;
 
   thead th {
-    padding: 10px 12px;
+    padding: 8px 6px;
     text-align: left;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
-    letter-spacing: 0.4px;
+    letter-spacing: 0.2px;
     text-transform: uppercase;
     color: $muted;
     background: #f8fafc;
-    white-space: nowrap;
+    white-space: normal;
   }
 }
 
@@ -324,7 +353,7 @@ $container-max: 1800px;
 }
 
 .tt-cell {
-  padding: 10px 12px;
+  padding: 8px 6px;
   vertical-align: middle;
   color: rgba(29, 53, 87, 0.9);
   word-break: break-word;
@@ -333,15 +362,18 @@ $container-max: 1800px;
   white-space: nowrap;
 }
 .tt-cell--title {
-  min-width: 240px;
+  min-width: 160px;
+}
+.tt-cell--sender {
+  max-width: 180px;
 }
 .tt-type {
   display: inline-block;
-  padding: 5px 10px;
+  padding: 4px 8px;
   border-radius: 999px;
   background: rgba(29, 53, 87, 0.08);
   color: $text-dark;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   text-transform: capitalize;
   white-space: nowrap;
@@ -372,12 +404,12 @@ $container-max: 1800px;
 
 .tt-ref {
   display: inline-block;
-  padding: 5px 10px;
+  padding: 4px 6px;
   border-radius: 8px;
   background-color: #dbeafe;
   color: $accent-end;
   border: 1px solid rgba($accent-start, 0.25);
-  font-size: 12.5px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.2px;
   white-space: nowrap;
@@ -404,22 +436,23 @@ $container-max: 1800px;
 
 .task-status-pill {
   display: inline-block;
-  padding: 6px 10px;
+  padding: 4px 8px;
   border-radius: 999px;
   color: #fff;
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 .pec-badge {
   display: inline-block;
-  padding: 6px 10px;
+  padding: 4px 8px;
   border-radius: 999px;
   background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
   color: #fff;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
-  white-space: nowrap;
+  white-space: normal;
 }
 .deadline-alert {
   display: inline-block;
@@ -625,8 +658,7 @@ $container-max: 1800px;
     flex-wrap: wrap;
   }
   .tt-table {
-    min-width: 1000px;
-    font-size: 12px;
+    font-size: 11px;
   }
   .th-filters-grid {
     grid-template-columns: 1fr;
@@ -779,7 +811,8 @@ $container-max: 1800px;
   flex-direction: column;
   width: 100%;
   max-width: 640px;
-  max-height: 90vh;
+  height: 600px; /* taille fixe */
+  max-height: 92vh; /* sécurité sur petits écrans */
   background: #fff;
   border-radius: $radius;
   box-shadow: 0 20px 50px rgba(11, 19, 43, 0.25);
@@ -818,8 +851,14 @@ $container-max: 1800px;
 }
 
 .th-modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
   padding: 18px;
   overflow-y: auto;
+}
+
+.th-modal-body.no-scroll {
+  overflow: visible;
 }
 
 .th-modal-footer {
@@ -848,38 +887,89 @@ $container-max: 1800px;
   outline: none;
 }
 
-.th-societe-list {
+/* ---------- Liste déroulante des sociétés ---------- */
+.th-dropdown {
+  position: relative;
+}
+
+.th-dropdown-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 14px;
+  background-color: #fff !important;
+  background-image: none !important;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  color: $text-dark !important;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+
+  &:hover,
+  &.is-open {
+    border-color: $accent-start;
+  }
+  &.is-open {
+    box-shadow: 0 0 0 3px rgba($accent-start, 0.15);
+  }
+
+  .placeholder {
+    color: $muted;
+    font-weight: 500;
+  }
+}
+
+.th-dropdown-caret {
+  flex-shrink: 0;
+  color: $muted;
+  transition: transform 140ms ease;
+}
+.th-dropdown-toggle.is-open .th-dropdown-caret {
+  transform: rotate(180deg);
+}
+
+.th-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 20;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 2px;
   margin: 0;
-  padding: 0;
-  max-height: 320px;
+  padding: 6px;
+  max-height: 200px;
   overflow-y: auto;
   list-style: none;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 12px 30px rgba(11, 19, 43, 0.15);
 
   li {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    padding: 10px 14px;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    background: #fff;
+    padding: 9px 12px;
+    border-radius: 8px;
     color: $text-dark;
     cursor: pointer;
-    transition: background 120ms ease, border-color 120ms ease;
 
-    &:hover {
-      background: rgba($accent-start, 0.06);
-    }
+    &:hover,
     &:focus-visible {
-      outline: 3px solid rgba($accent-start, 0.25);
+      background: rgba($accent-start, 0.08);
+      outline: none;
     }
     &.selected {
-      background: rgba($accent-start, 0.12);
-      border-color: $accent-start;
+      background: rgba($accent-start, 0.14);
     }
 
     .th-societe-name {

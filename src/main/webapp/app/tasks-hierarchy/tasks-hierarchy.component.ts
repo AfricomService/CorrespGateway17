@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 import { HttpResponse } from '@angular/common/http';
 import { EMPTY, Subject, of } from 'rxjs';
-import { catchError, debounceTime, skip, switchMap, takeUntil } from 'rxjs/operators';
+import { catchError, debounceTime, finalize, skip, switchMap, takeUntil } from 'rxjs/operators';
 
 import { AccountService } from 'app/core/auth/account.service';
 import { Account } from 'app/core/auth/account.model';
@@ -35,12 +35,14 @@ export class TasksHierarchyComponent implements OnInit, OnDestroy {
   tasks: ITasks[] = [];
   loading = false;
   isRefreshing = false;
+  isExporting = false;
 
   // sociétés de l'utilisateur connecté (chargées à l'ouverture de la page)
   mesSocietes: ISocieteLight[] = [];
 
   // ---- Modal "Département" ----
   societeModalOpen = false;
+  societeListOpen = false; // liste déroulante des sociétés
   selectedSociete: ISocieteLight | null = null;
 
   // ---- Organigramme de la société sélectionnée ----
@@ -162,7 +164,7 @@ export class TasksHierarchyComponent implements OnInit, OnDestroy {
   /** Nombre de filtres actifs (badge du bouton filtre) */
   get activeFilterCount(): number {
     const f = this.appliedFilter;
-    return (this.tasksView === 'custom' ? 1 : 0) + (f.startDateFrom ? 1 : 0) + (f.startDateTo ? 1 : 0) + (this.deptFilterCode ? 1 : 0);
+    return (f.status !== 'IN_PROGRESS' ? 1 : 0) + (f.startDateFrom ? 1 : 0) + (f.startDateTo ? 1 : 0) + (this.deptFilterCode ? 1 : 0);
   }
 
   // ---------------------------------------------------------------- Data
@@ -221,6 +223,53 @@ export class TasksHierarchyComponent implements OnInit, OnDestroy {
     this.loadTasksPage(() => (this.isRefreshing = false));
   }
 
+  /** Export Excel : utilise exactement les filtres appliqués (statut, dates, département, périmètre, recherche). */
+  exportExcel(): void {
+    if (this.isExporting) return;
+    const userId = this.account && (this.account as any).id != null ? (this.account as any).id : null;
+    if (userId == null) return;
+
+    const f = this.appliedFilter;
+    this.isExporting = true;
+
+    this.tasksService
+      .exportTasksByUserAclPaged(
+        userId,
+        f.status === 'ALL' ? undefined : f.status,
+        f.startDateFrom || undefined,
+        f.startDateTo || undefined,
+        this.includeChildren,
+        this.deptFilterCode || undefined,
+        this.searchTerm.trim() || undefined
+      )
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => (this.isExporting = false))
+      )
+      .subscribe({
+        next: res => {
+          const blob = res.body;
+          if (!blob) return;
+          const now = new Date();
+          const pad = (n: number): string => String(n).padStart(2, '0');
+          const fileName = `taches_${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}${pad(
+            now.getMinutes()
+          )}.xlsx`;
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
+        },
+        error: () => {
+          window.alert("Échec de l'export Excel. Veuillez réessayer.");
+        },
+      });
+  }
+
   private loadMesSocietes(): void {
     this.tasksService
       .getMesSocietes()
@@ -241,22 +290,32 @@ export class TasksHierarchyComponent implements OnInit, OnDestroy {
   // ---------------------------------------------------------------- Modal Département
   openSocieteModal(): void {
     this.societeModalOpen = true;
-    // une seule société (sélectionnée d'office) : on charge son organigramme si besoin
-    if (this.selectedSociete && this.orgaTree.length === 0 && !this.loadingOrgaTree) {
-      this.loadOrgaTree();
+    if (this.selectedSociete) {
+      // société déjà sélectionnée : l'organigramme s'affiche directement
+      this.orgaTreeOpen = true;
+      if (this.orgaTree.length === 0 && !this.loadingOrgaTree) {
+        this.loadOrgaTree();
+      }
     }
   }
 
   @HostListener('document:keydown.escape')
   closeSocieteModal(): void {
     this.societeModalOpen = false;
+    this.societeListOpen = false;
+  }
+
+  toggleSocieteList(): void {
+    this.societeListOpen = !this.societeListOpen;
   }
 
   selectSociete(s: ISocieteLight): void {
+    this.societeListOpen = false; // referme la liste dans tous les cas
     if (this.selectedSociete?.id === s.id) return;
     this.selectedSociete = s;
     this.setCookie(SELECTED_SOCIETE_COOKIE, String(s.id), 365);
     this.resetOrga();
+    this.orgaTreeOpen = true; // affiche directement le nouvel organigramme
     this.loadOrgaTree();
     // le département choisi appartenait à l'ancienne société
     this.deptForm = { code: '', name: '' };
@@ -539,8 +598,7 @@ export class TasksHierarchyComponent implements OnInit, OnDestroy {
   }
 
   resetFilterForm(): void {
-    const tabStatus = this.tasksView === 'closed' ? 'CLOSED' : 'IN_PROGRESS';
-    this.filterForm = { status: tabStatus, startDateFrom: '', startDateTo: '' };
+    this.filterForm = { status: 'IN_PROGRESS', startDateFrom: '', startDateTo: '' };
     this.filterDateError = '';
     this.selectedDept = null;
     this.deptForm = { code: '', name: '' };
@@ -624,7 +682,7 @@ export class TasksHierarchyComponent implements OnInit, OnDestroy {
   private buildFilterChips(): FilterChip[] {
     const f = this.appliedFilter;
     const chips: FilterChip[] = [];
-    if (this.tasksView === 'custom') {
+    if (f.status !== 'IN_PROGRESS') {
       const label = this.statusOptions.find(o => o.value === f.status)?.label ?? f.status;
       chips.push({ key: 'status', label: `Statut : ${label}` });
     }
@@ -677,6 +735,14 @@ export class TasksHierarchyComponent implements OnInit, OnDestroy {
     return this.correspInfoByTaskId[(t as any)?.id]?.nomSociete || '';
   }
 
+  getTaskSender(t: ITasks): string {
+    return this.correspInfoByTaskId[(t as any)?.id]?.sender || '';
+  }
+
+  getTaskDestinataire(t: ITasks): string {
+    return this.correspInfoByTaskId[(t as any)?.id]?.labelDestinataire || '';
+  }
+
   /** Le backend renvoie déjà responsableName / responsables[] avec les noms résolus. */
   getResponsibleDisplay(t: ITasks): string {
     const anyT = t as any;
@@ -710,6 +776,23 @@ export class TasksHierarchyComponent implements OnInit, OnDestroy {
     if (k === 'traitement') return '#fff0e6';
     if (k === 'validation') return '#e9f7ee';
     return '#ffffff';
+  }
+
+  getTaskStatusLabel(status?: CorrespStatus | null): string {
+    switch (status) {
+      case CorrespStatus.DRAFT:
+        return 'Brouillon';
+      case CorrespStatus.IN_PROGRESS:
+        return 'En cours';
+      case CorrespStatus.DISPATCH:
+        return 'Dispatch';
+      case CorrespStatus.CLOSED:
+        return 'Terminée';
+      case CorrespStatus.CANCELLED:
+        return 'Annulée';
+      default:
+        return status ? String(status) : '';
+    }
   }
 
   getTaskStatusColor(status?: CorrespStatus | null): string {

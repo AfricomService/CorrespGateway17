@@ -2,7 +2,7 @@
   <!-- HEADER -->
   <header class="th-hero">
     <div class="th-container">
-      <h1>Tâches de mon département</h1>
+      <h1>Tâches</h1>
       <p *ngIf="includeChildren">Vos tâches et celles de vos sous-départements.</p>
       <p *ngIf="!includeChildren">Uniquement les tâches de votre département.</p>
     </div>
@@ -13,12 +13,6 @@
       <!-- LIGNE 1 : onglets + périmètre -->
       <div class="th-toolbar">
         <div class="th-tabs">
-          <button type="button" class="th-tab" [class.active]="tasksView === 'inProgress'" (click)="showInProgress()">
-            Tâches en cours
-          </button>
-          <button type="button" class="th-tab th-tab--closed" [class.active]="tasksView === 'closed'" (click)="showClosed()">
-            Tâches terminées
-          </button>
           <span class="th-count" aria-live="polite">{{ totalItems }}</span>
         </div>
 
@@ -103,21 +97,42 @@
           </div>
         </div>
 
-        <button
-          type="button"
-          class="th-icon-btn th-icon-btn--green"
-          title="Rafraîchir"
-          aria-label="Rafraîchir"
-          [class.spinning]="isRefreshing || isSearching"
-          (click)="refresh()"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path
-              d="M4.5 12a7.5 7.5 0 0 1 7.5-7.5A7.48 7.48 0 0 1 17.77 7H15a1 1 0 0 0 0 2h5a1 1 0 0 0 1-1V3a1 1 0 0 0-2 0v2.1A9.48 9.48 0 0 0 12 2.5C6.75 2.5 2.5 6.75 2.5 12S6.75 21.5 12 21.5 21.5 17.25 21.5 12a1 1 0 0 0-2 0A7.5 7.5 0 0 1 4.5 12Z"
-              fill="currentColor"
-            />
-          </svg>
-        </button>
+        <div class="th-row-actions">
+          <button
+            type="button"
+            class="th-icon-btn th-icon-btn--excel"
+            title="Exporter en Excel (selon les filtres appliqués)"
+            aria-label="Exporter en Excel"
+            [disabled]="isExporting || totalItems === 0"
+            (click)="exportExcel()"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+
+          <button
+            type="button"
+            class="th-icon-btn th-icon-btn--green"
+            title="Rafraîchir"
+            aria-label="Rafraîchir"
+            [class.spinning]="isRefreshing || isSearching"
+            (click)="refresh()"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M4.5 12a7.5 7.5 0 0 1 7.5-7.5A7.48 7.48 0 0 1 17.77 7H15a1 1 0 0 0 0 2h5a1 1 0 0 0 1-1V3a1 1 0 0 0-2 0v2.1A9.48 9.48 0 0 0 12 2.5C6.75 2.5 2.5 6.75 2.5 12S6.75 21.5 12 21.5 21.5 17.25 21.5 12a1 1 0 0 0-2 0A7.5 7.5 0 0 1 4.5 12Z"
+                fill="currentColor"
+              />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <!-- PANNEAU FILTRES AVANCÉS -->
@@ -189,6 +204,8 @@
                 <th>Type</th>
                 <th>Responsable</th>
                 <th>Société</th>
+                <th>Expéditeur</th>
+                <th>Destinataire</th>
                 <th>Création</th>
                 <th>Date limite</th>
                 <th>Prise en charge</th>
@@ -217,17 +234,21 @@
                 </td>
                 <td class="tt-cell">{{ getResponsibleDisplay(t) }}</td>
                 <td class="tt-cell">{{ getTaskNomSociete(t) }}</td>
-                <td class="tt-cell tt-cell--nowrap">{{ formatToDate(t.creationDate) | date: 'yyyy-MM-dd HH:mm' }}</td>
+                <td class="tt-cell tt-cell--sender">{{ getTaskSender(t) }}</td>
+                <td class="tt-cell">{{ getTaskDestinataire(t) }}</td>
+                <td class="tt-cell tt-cell--nowrap">{{ formatToDate(t.creationDate) | date: 'dd/MM/yy HH:mm' }}</td>
                 <td class="tt-cell tt-cell--nowrap">
-                  <ng-container *ngIf="formatToDate(t.dueDate)">{{ formatToDate(t.dueDate) | date: 'yyyy-MM-dd HH:mm' }}</ng-container>
+                  <ng-container *ngIf="formatToDate(t.dueDate)">{{ formatToDate(t.dueDate) | date: 'dd/MM/yy HH:mm' }}</ng-container>
                 </td>
                 <td class="tt-cell tt-cell--nowrap">
                   <span *ngIf="formatToDate(t.datePriseEnCharge)" class="pec-badge">
-                    ⏱ {{ formatToDate(t.datePriseEnCharge) | date: 'dd/MM/yyyy HH:mm' }}
+                    ⏱ {{ formatToDate(t.datePriseEnCharge) | date: 'dd/MM/yy HH:mm' }}
                   </span>
                 </td>
                 <td class="tt-cell tt-cell--nowrap">
-                  <span class="task-status-pill" [style.background-color]="getTaskStatusColor(t.status)">{{ t.status }}</span>
+                  <span class="task-status-pill" [style.background-color]="getTaskStatusColor(t.status)">{{
+                    getTaskStatusLabel(t.status)
+                  }}</span>
                 </td>
               </tr>
             </tbody>
@@ -280,7 +301,7 @@
         <button type="button" class="th-modal-close" aria-label="Fermer" (click)="closeSocieteModal()">✕</button>
       </div>
 
-      <div class="th-modal-body">
+      <div class="th-modal-body" [class.no-scroll]="societeListOpen">
         <!-- aucune société -->
         <p *ngIf="mesSocietes.length === 0" class="th-modal-empty">Aucune société trouvée.</p>
 
@@ -290,21 +311,44 @@
           <input id="thSocieteInput" type="text" class="th-societe-input" [value]="mesSocietes[0].raisonSociale" readonly />
         </div>
 
-        <!-- plusieurs sociétés : liste -->
-        <ul class="th-societe-list" *ngIf="mesSocietes.length > 1" role="listbox" aria-label="Sociétés">
-          <li
-            *ngFor="let s of mesSocietes"
-            role="option"
-            tabindex="0"
-            [class.selected]="selectedSociete?.id === s.id"
-            [attr.aria-selected]="selectedSociete?.id === s.id"
-            (click)="selectSociete(s)"
-            (keydown.enter)="selectSociete(s)"
-          >
-            <span class="th-societe-name">{{ s.raisonSociale }}</span>
-            <small *ngIf="s.codeSociete">{{ s.codeSociete }}</small>
-          </li>
-        </ul>
+        <!-- plusieurs sociétés : liste déroulante -->
+        <div class="th-filter-field" *ngIf="mesSocietes.length > 1">
+          <label for="thSocieteSelect">Société</label>
+
+          <div class="th-dropdown">
+            <button
+              id="thSocieteSelect"
+              type="button"
+              class="th-dropdown-toggle"
+              [class.is-open]="societeListOpen"
+              aria-haspopup="listbox"
+              [attr.aria-expanded]="societeListOpen"
+              (click)="toggleSocieteList()"
+            >
+              <span class="th-dropdown-value" [class.placeholder]="!selectedSociete">
+                {{ selectedSociete ? selectedSociete.raisonSociale : 'Choisir une société' }}
+              </span>
+              <svg class="th-dropdown-caret" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+
+            <ul *ngIf="societeListOpen" class="th-dropdown-menu" role="listbox" aria-label="Sociétés">
+              <li
+                *ngFor="let s of mesSocietes"
+                role="option"
+                tabindex="0"
+                [class.selected]="selectedSociete?.id === s.id"
+                [attr.aria-selected]="selectedSociete?.id === s.id"
+                (click)="selectSociete(s)"
+                (keydown.enter)="selectSociete(s)"
+              >
+                <span class="th-societe-name">{{ s.raisonSociale }}</span>
+                <small *ngIf="s.codeSociete">{{ s.codeSociete }}</small>
+              </li>
+            </ul>
+          </div>
+        </div>
 
         <!-- Organigramme de la société sélectionnée -->
         <div class="th-filter-field th-orga-field" *ngIf="selectedSociete">

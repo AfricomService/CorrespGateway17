@@ -34,6 +34,8 @@ export interface CorrespSummaryDTO {
   subject?: string | null;
   reference?: string | null;
   nomSociete?: string | null;
+  sender?: string | null;
+  labelDestinataire?: string | null;
 }
 
 export interface DepartementAffectationDTO {

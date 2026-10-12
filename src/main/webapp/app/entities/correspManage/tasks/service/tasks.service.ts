@@ -150,6 +150,30 @@ export class TasksService {
     );
   }
 
+  exportTasksByUserAclPaged(
+    userId: string,
+    status?: string,
+    startDateFrom?: string,
+    startDateTo?: string,
+    includeChildren: boolean = false,
+    deptCode?: string,
+    keyword?: string
+  ): Observable<HttpResponse<Blob>> {
+    const req: any = { userId };
+    if (status) req.status = status;
+    if (startDateFrom) req.startDateFrom = startDateFrom;
+    if (startDateTo) req.startDateTo = startDateTo;
+    if (includeChildren) req.includeChildren = true;
+    if (deptCode) req.deptCode = deptCode;
+    if (keyword) req.keyword = keyword;
+    const params = createRequestOption(req);
+    return this.http.get(`${this.resourceUrl}/tasksByUserAclPaged/export`, {
+      params,
+      responseType: 'blob',
+      observe: 'response',
+    }) as Observable<HttpResponse<Blob>>;
+  }
+
   searchTasksByUserAcl(
     userId: string,
     keyword: string,
