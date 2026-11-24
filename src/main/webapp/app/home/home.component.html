@@ -1,5 +1,14 @@
-<!-- ====================== LANDING PAGE (non authentifié) ====================== -->
-<div *ngIf="!account" class="lp-wrapper">
+<!-- ====================== PROD : redirection automatique (spinner) ====================== -->
+<div *ngIf="!account && !isDev" class="lp-redirect">
+  <img src="content/images/CorrespCare.png" alt="CorrespCare" class="lp-redirect-logo" />
+  <div class="loading-container">
+    <div class="spinner" role="status" aria-label="Chargement"></div>
+    <p class="loading-text">Chargement en cours...</p>
+  </div>
+</div>
+
+<!-- ====================== LANDING PAGE (DEV uniquement, non authentifié) ====================== -->
+<div *ngIf="!account && isDev" class="lp-wrapper">
   <!-- HERO -->
   <section class="lp-hero">
     <div class="lp-dots" aria-hidden="true"></div>
