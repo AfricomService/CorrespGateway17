@@ -127,9 +127,11 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.account = account;
 
         // En production : pas de page d'accueil publique, redirection automatique vers Keycloak
-        if (!this.isDev && !account && !this.loginTriggered) {
-          this.loginTriggered = true;
-          this.login();
+        if (!this.isDev && !account) {
+          if (!this.loginTriggered) {
+            this.loginTriggered = true;
+            this.login();
+          }
           return;
         }
 
