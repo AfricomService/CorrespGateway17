@@ -1,5 +1,5 @@
 // src/main/webapp/app/home/home.component.ts
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, isDevMode } from '@angular/core';
 import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 import { EMPTY, Subject, Subscription, forkJoin, of } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap, catchError, skip } from 'rxjs/operators';
@@ -40,6 +40,8 @@ export interface FilterChip {
 })
 export class HomeComponent implements OnInit, OnDestroy {
   account: Account | null = null;
+  isDev = isDevMode();
+  private loginTriggered = false; // évite d'appeler login() plusieurs fois
   tasks?: ITasks[];
   authSubscription?: Subscription;
   private destroy$ = new Subject<void>();
@@ -123,6 +125,13 @@ export class HomeComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(account => {
         this.account = account;
+
+        // En production : pas de page d'accueil publique, redirection automatique vers Keycloak
+        if (!this.isDev && !account && !this.loginTriggered) {
+          this.loginTriggered = true;
+          this.login();
+          return;
+        }
 
         // Vérifier si l'utilisateur a le rôle BOC ou ADMIN pour activer le bouton ARRIVÉE
         this.canCreateArrivee =
