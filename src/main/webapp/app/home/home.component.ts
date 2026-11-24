@@ -120,20 +120,17 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     // On attend l'authenticationState puis on charge les tâches avec l'id utilisateur
-    this.authSubscription = this.accountService
-      .getAuthenticationState()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(account => {
-        this.account = account;
+this.authSubscription = this.accountService
+  .identity()
+  .pipe(takeUntil(this.destroy$))
+  .subscribe(account => {
+    this.account = account;
 
-        // En production : pas de page d'accueil publique, redirection automatique vers Keycloak
-        if (!this.isDev && !account) {
-          if (!this.loginTriggered) {
-            this.loginTriggered = true;
-            this.login();
-          }
-          return;
-        }
+    // En production : pas de page d'accueil publique, redirection automatique vers Keycloak
+    if (!this.isDev && !account) {
+      this.login();
+      return;
+    }
 
         // Vérifier si l'utilisateur a le rôle BOC ou ADMIN pour activer le bouton ARRIVÉE
         this.canCreateArrivee =
